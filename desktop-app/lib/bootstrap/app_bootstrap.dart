@@ -2,8 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/app.dart';
+import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
-import 'package:quantus_desktop_wallet/services/desktop_local_notifications.dart';
 import 'package:quantus_desktop_wallet/services/desktop_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/desktop_telemetry.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
@@ -23,7 +23,7 @@ List<Override> desktopWalletCoreOverrides() => [
   ...walletCoreOverrides(
     telemetry: (_) => const DesktopTelemetry(),
     pushRegistration: (_) => const DesktopPushRegistration(),
-    localNotifications: (_) => const DesktopLocalNotifications(),
+    localNotifications: (ref) => ref.watch(desktopLocalNotificationsProvider.notifier),
     userApproval: (ref) => ref.watch(systemApprovalProvider),
   ),
   // The sidebar shows every account's balance, so each refresh of the active

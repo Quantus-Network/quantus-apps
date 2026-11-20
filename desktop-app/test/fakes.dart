@@ -9,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
+import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
@@ -26,6 +27,8 @@ import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
+
+import 'services/fake_notification_plugin.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
 /// wallet with its recovery phrase is there unless a test says otherwise.
@@ -1095,6 +1098,9 @@ class FakeEncryptedSendController extends EncryptedSendController {
 ///
 /// The open wallet's polling is a fake one ([polling]) unless [realPolling]
 /// asks for the app's own.
+///
+/// The system's notifications are always a fake one: [notifications] when a
+/// test looks at them.
 Future<void> pumpShell(
   WidgetTester tester, {
   required List<Override> overrides,
@@ -1102,6 +1108,7 @@ Future<void> pumpShell(
   FakeHistoryPollingManager? polling,
   bool realPolling = false,
   FakeNetwork? network,
+  FakeNotificationPlugin? notifications,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -1120,6 +1127,7 @@ Future<void> pumpShell(
         // otherwise reach.
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
         ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
+        notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
       ],
     ),
   );
