@@ -110,7 +110,7 @@ List<PlatformMenuItem> _accountMenuItems(WidgetTester tester) {
   final account = menus.singleWhere((menu) => menu.label == 'Account');
   return [
     for (final entry in account.menus)
-      if (entry is PlatformMenuItemGroup) ...entry.members.cast<PlatformMenuItem>() else entry as PlatformMenuItem,
+      if (entry is PlatformMenuItemGroup) ...entry.members.cast<PlatformMenuItem>() else entry,
   ];
 }
 

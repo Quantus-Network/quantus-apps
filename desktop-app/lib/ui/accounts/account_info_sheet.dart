@@ -1,4 +1,3 @@
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
@@ -102,7 +101,7 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
     final multisigs = ref.watch(multisigAccountsProvider).value;
     if (accounts != null && multisigs != null) {
       final account =
-          accounts.firstWhereOrNull((a) => a.accountId == id) ?? multisigs.firstWhereOrNull((m) => m.accountId == id);
+          accounts.where((a) => a.accountId == id).firstOrNull ?? multisigs.where((m) => m.accountId == id).firstOrNull;
       if (account == null) {
         _close();
       } else {
@@ -478,7 +477,7 @@ class _MultisigInfo extends StatelessWidget {
               _SignerRow(
                 key: AccountInfoSheet.signerKey(signer),
                 address: signer,
-                own: ownAccounts.firstWhereOrNull((a) => a.accountId == signer),
+                own: ownAccounts.where((a) => a.accountId == signer).firstOrNull,
                 isCreator: signer == multisig.creator,
                 isYou: signer == multisig.myMemberAccountId,
                 l10n: l10n,

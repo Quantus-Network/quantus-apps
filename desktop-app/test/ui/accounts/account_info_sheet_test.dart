@@ -8,7 +8,6 @@ import 'package:quantus_desktop_wallet/providers/account_management_providers.da
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
-import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';

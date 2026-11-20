@@ -276,6 +276,7 @@ class FakeWalletStorage extends FakeSettingsService {
     activeAccount = RegularAccount(replacement);
   }
 
+  @override
   Future<void> removeAccount(Account account) async {
     _checkWrite();
     final remaining = accounts.where((a) => a.accountId != account.accountId).toList();
@@ -285,6 +286,7 @@ class FakeWalletStorage extends FakeSettingsService {
       ..addAll(remaining);
   }
 
+  @override
   Future<void> removeWallet(int walletIndex) async {
     _checkWrite();
     final remaining = accounts.where((a) => a.walletIndex != walletIndex).toList();
