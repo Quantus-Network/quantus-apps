@@ -4608,5 +4608,9 @@
     "desktopRecoveryPhraseChooseWallet": "Choose a wallet",
     "@desktopRecoveryPhraseChooseWallet": {
       "description": "Desktop Settings: label over the list of wallets whose recovery phrase can be shown"
+    },
+    "desktopWalletRenameFailed": "Couldn't rename the wallet",
+    "@desktopWalletRenameFailed": {
+      "description": "Desktop sidebar: under a wallet heading for a few seconds when the name typed over it could not be saved; the heading keeps its name"
     }
 }

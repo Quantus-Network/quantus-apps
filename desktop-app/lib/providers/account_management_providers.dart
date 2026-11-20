@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -75,6 +76,53 @@ class AccountInfoTargetNotifier extends Notifier<AccountInfoTarget?> {
   void set(AccountInfoTarget target) => state = target;
 }
 
+/// What is being renamed in the sidebar: an account's row, or a wallet's
+/// heading, which shows a name field in place of its name.
+@immutable
+sealed class RenameTarget {
+  const RenameTarget();
+}
+
+final class RenameAccount extends RenameTarget {
+  const RenameAccount(this.accountId);
+
+  final String accountId;
+
+  @override
+  bool operator ==(Object other) => other is RenameAccount && other.accountId == accountId;
+
+  @override
+  int get hashCode => accountId.hashCode;
+}
+
+final class RenameWallet extends RenameTarget {
+  const RenameWallet(this.walletIndex);
+
+  final int walletIndex;
+
+  @override
+  bool operator ==(Object other) => other is RenameWallet && other.walletIndex == walletIndex;
+
+  @override
+  int get hashCode => walletIndex.hashCode;
+}
+
+/// The name being typed over in the sidebar, if any. One at a time: starting
+/// another ends the first, which keeps what was typed as it loses the focus.
+final sidebarRenameProvider = NotifierProvider<SidebarRenameNotifier, RenameTarget?>(SidebarRenameNotifier.new);
+
+class SidebarRenameNotifier extends Notifier<RenameTarget?> {
+  @override
+  RenameTarget? build() => null;
+
+  void start(RenameTarget target) => state = target;
+
+  /// Ends renaming [target], unless another rename has started since.
+  void end(RenameTarget target) {
+    if (state == target) state = null;
+  }
+}
+
 /// The wallet whose recovery phrase Settings opens on, when it is opened for
 /// one: Settings takes it on opening, and clears it.
 final recoveryPhraseTargetProvider = NotifierProvider<RecoveryPhraseTargetNotifier, int?>(
@@ -143,6 +191,31 @@ class AccountManager {
   Future<void> openInfo(BaseAccount account, {AccountInfoStart start = AccountInfoStart.info}) {
     _ref.read(accountInfoTargetProvider.notifier).set(AccountInfoTarget(account.accountId, start: start));
     return _ref.read(shellSheetProvider.notifier).open(ShellSheet.accountInfo);
+  }
+
+  /// Starts renaming [account]: in its row when the sidebar shows, or else
+  /// in Get Info, on its name.
+  Future<void> startRename(BaseAccount account) async {
+    if (!_ref.read(sidebarVisibleProvider)) return openInfo(account, start: AccountInfoStart.rename);
+    _ref.read(sidebarRenameProvider.notifier).start(RenameAccount(account.accountId));
+  }
+
+  /// Starts renaming the wallet at [walletIndex], in its heading.
+  void startRenameWallet(int walletIndex) => _ref.read(sidebarRenameProvider.notifier).start(RenameWallet(walletIndex));
+
+  /// Names the wallet at [walletIndex] [entered], trimmed. A blank name
+  /// clears its own name, so it is called by its number again, as on the
+  /// phone; the name it is shown by, unchanged, is not written. A write that
+  /// fails is thrown.
+  Future<void> renameWallet(int walletIndex, String entered) async {
+    final name = entered.trim();
+    if (name.isEmpty) {
+      if (_ref.read(walletNameProvider(walletIndex)) == null) return;
+    } else if (name == _ref.read(walletLabelProvider(walletIndex))) {
+      return;
+    }
+    await _ref.read(settingsServiceProvider).setWalletName(walletIndex, name.isEmpty ? null : name);
+    _ref.invalidate(walletNameProvider(walletIndex));
   }
 
   /// Opens Settings on the recovery phrase of the wallet at [walletIndex].

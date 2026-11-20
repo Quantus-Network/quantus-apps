@@ -3153,4 +3153,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopRecoveryPhraseChooseWallet => 'Pilih dompet';
+
+  @override
+  String get desktopWalletRenameFailed => 'Tidak dapat mengganti nama dompet';
 }

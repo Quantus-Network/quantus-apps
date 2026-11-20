@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +13,7 @@ import 'package:quantus_desktop_wallet/ui/accounts/account_note_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
+import 'package:quantus_desktop_wallet/ui/components/inline_name_field.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
@@ -21,6 +24,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// The Accounts panel: the accounts grouped by wallet, with Mining Rewards
@@ -141,36 +145,104 @@ class Sidebar extends ConsumerWidget {
   }
 }
 
-class _WalletHeader extends ConsumerWidget {
+class _WalletHeader extends ConsumerStatefulWidget {
   const _WalletHeader({required this.wallet});
 
   final WalletGroup wallet;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ref.watch(l10nProvider);
-    final name = walletDisplayName(l10n, wallet, ref.watch(walletNameProvider(wallet.walletIndex)));
+  ConsumerState<_WalletHeader> createState() => _WalletHeaderState();
+}
 
-    // Drawn in capitals, which is a look and not the name: a screen reader
-    // gets the name as it is written.
-    final heading = Semantics(
-      label: name,
-      excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(10, 14, 10, 6),
-        child: Text(
-          name.toUpperCase(),
-          style: context.themeTextV3.caption.copyWith(
-            color: context.colorsV3.textMuted2,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.8,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    );
-    return WalletContextMenu(wallet: wallet, child: heading);
+class _WalletHeaderState extends ConsumerState<_WalletHeader> {
+  /// Why the name typed over the heading was not kept, shown under it for a
+  /// while, as an account's note shows on its row.
+  String? _error;
+  Timer? _clearError;
+
+  RenameTarget get _target => RenameWallet(widget.wallet.walletIndex);
+
+  @override
+  void dispose() {
+    _clearError?.cancel();
+    super.dispose();
+  }
+
+  Future<String?> _keep(String entered) async {
+    final l10n = ref.read(l10nProvider);
+    final renames = ref.read(sidebarRenameProvider.notifier);
+    try {
+      await ref.read(accountManagerProvider).renameWallet(widget.wallet.walletIndex, entered);
+    } catch (e) {
+      quantusPrint('Renaming wallet ${widget.wallet.walletIndex} failed: $e');
+      if (mounted) _showError(l10n.desktopWalletRenameFailed);
+    } finally {
+      renames.end(_target);
+    }
+    return null;
+  }
+
+  void _showError(String message) {
+    _clearError?.cancel();
+    setState(() => _error = message);
+    _clearError = Timer(AccountNoteNotifier.failureShownFor, () {
+      if (mounted) setState(() => _error = null);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = ref.watch(l10nProvider);
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final name = walletDisplayName(l10n, widget.wallet, ref.watch(walletNameProvider(widget.wallet.walletIndex)));
+    final renaming = ref.watch(sidebarRenameProvider) == _target;
+    final error = _error;
+
+    final Widget title = renaming
+        ? Padding(
+            padding: const EdgeInsets.fromLTRB(4, 8, 4, 2),
+            child: InlineNameField(
+              name: name,
+              autofocus: true,
+              height: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              textStyle: text.caption.copyWith(color: colors.textContent, fontWeight: FontWeight.w500),
+              onKeep: _keep,
+              onCancel: () => ref.read(sidebarRenameProvider.notifier).end(_target),
+            ),
+          )
+        // Drawn in capitals, which is a look and not the name: a screen
+        // reader gets the name as it is written.
+        : Semantics(
+            label: name,
+            excludeSemantics: true,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 14, 10, 6),
+              child: Text(
+                name.toUpperCase(),
+                style: text.caption.copyWith(color: colors.textMuted2, fontWeight: FontWeight.w500, letterSpacing: 0.8),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          );
+    final heading = error == null
+        ? title
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              title,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(error, style: text.caption.copyWith(color: colors.semanticEmber)),
+                ),
+              ),
+            ],
+          );
+    return WalletContextMenu(wallet: widget.wallet, child: heading);
   }
 }
 
@@ -194,9 +266,21 @@ class _AccountRow extends ConsumerWidget {
       if (mark.waitingForSignature > 0) l10n.desktopMarksWaitingForSignature(mark.waitingForSignature),
     ];
     final badge = DesktopAccountBadge(account: account, size: _badgeSize, count: mark.count);
+    final renaming = ref.watch(sidebarRenameProvider) == RenameAccount(account.accountId);
 
     final row = SidebarRow(
       title: account.name,
+      titleEditor: renaming
+          ? InlineNameField(
+              name: account.name,
+              autofocus: true,
+              height: 22,
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              textStyle: context.themeTextV3.bodyEmphasis.copyWith(color: context.colorsV3.textContent),
+              onKeep: (entered) => _keep(ref, account, entered),
+              onCancel: () => ref.read(sidebarRenameProvider.notifier).end(RenameAccount(account.accountId)),
+            )
+          : null,
       isSelected: isSelected,
       // The count on the badge, as a screen reader hears it.
       leading: marked.isEmpty ? badge : Semantics(label: marked.join(', '), child: badge),
@@ -207,12 +291,33 @@ class _AccountRow extends ConsumerWidget {
               style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),
             ),
       trailing: display is MultisigDisplayAccount ? QuantusBadge(label: ref.watch(l10nProvider).multisigTag) : null,
-      // A Control-click opens the menu instead.
+      // A Control-click opens the menu instead; a click while the name is
+      // being typed over only ends the typing.
       onTap: () {
-        if (ContextMenuRegion.isControlClick) return;
+        if (ContextMenuRegion.isControlClick || renaming) return;
         ref.read(sidebarSelectionProvider.notifier).showAccount(display);
       },
     );
     return AccountContextMenu(account: account, child: row);
+  }
+
+  /// Keeps the name typed over the row. One that is not kept says why on the
+  /// row, in its balance's place.
+  static Future<String?> _keep(WidgetRef ref, BaseAccount account, String entered) async {
+    final l10n = ref.read(l10nProvider);
+    final notes = ref.read(accountNoteProvider.notifier);
+    final renames = ref.read(sidebarRenameProvider.notifier);
+    AccountNote failure(String message) => AccountNote(accountId: account.accountId, message: message, isError: true);
+    try {
+      if (await ref.read(accountManagerProvider).rename(account, entered) is NameBlank) {
+        notes.show(failure(l10n.editAccountNameEmpty));
+      }
+    } catch (e) {
+      quantusPrint('Renaming ${account.accountId} failed: $e');
+      notes.show(failure(l10n.editAccountRenameFailed));
+    } finally {
+      renames.end(RenameAccount(account.accountId));
+    }
+    return null;
   }
 }

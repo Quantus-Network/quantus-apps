@@ -852,5 +852,6 @@
   "desktopDisconnectWalletReason": "Hapus {wallet} dan frasa pemulihannya",
   "desktopDisconnectWalletDeclined": "Menghapus {wallet} memerlukan persetujuan Anda",
   "desktopRecoveryPhraseWalletsSubtitle": "Lihat 24 kata dari setiap {count} dompet Anda",
-  "desktopRecoveryPhraseChooseWallet": "Pilih dompet"
+  "desktopRecoveryPhraseChooseWallet": "Pilih dompet",
+  "desktopWalletRenameFailed": "Tidak dapat mengganti nama dompet"
 }

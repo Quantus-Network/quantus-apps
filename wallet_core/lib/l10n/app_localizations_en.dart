@@ -3148,4 +3148,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopRecoveryPhraseChooseWallet => 'Choose a wallet';
+
+  @override
+  String get desktopWalletRenameFailed => 'Couldn\'t rename the wallet';
 }

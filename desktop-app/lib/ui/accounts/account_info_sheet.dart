@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
+import 'package:quantus_desktop_wallet/ui/components/inline_name_field.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
@@ -594,73 +595,28 @@ class _NameRow extends ConsumerStatefulWidget {
 }
 
 class _NameRowState extends ConsumerState<_NameRow> {
-  late final _controller = TextEditingController(text: widget.account.name);
-  final _focus = FocusNode();
-
   /// Why the typed name was not kept, if it was not.
   String? _error;
 
-  @override
-  void initState() {
-    super.initState();
-    _focus.addListener(_onFocusChange);
-    if (widget.autofocus) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _focus.requestFocus();
-        _controller.selection = TextSelection(baseOffset: 0, extentOffset: _controller.text.length);
-      });
-    }
-  }
-
-  @override
-  void didUpdateWidget(_NameRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Renamed elsewhere while not being typed in.
-    if (!_focus.hasFocus && widget.account.name != oldWidget.account.name) _controller.text = widget.account.name;
-  }
-
-  @override
-  void dispose() {
-    _focus.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (!_focus.hasFocus) _keep();
-  }
-
-  Future<void> _keep() async {
+  /// Keeps [entered] as the account's name, and answers what the field
+  /// shows after: the name kept, or the old one when a blank or unchanged
+  /// one was not written. A write that fails leaves what was typed.
+  Future<String?> _keep(String entered) async {
     final l10n = widget.l10n;
     final account = widget.account;
     try {
-      final edit = await ref.read(accountManagerProvider).rename(account, _controller.text);
-      if (!mounted) return;
-      setState(() {
-        switch (edit) {
-          case NameBlank():
-            _error = l10n.editAccountNameEmpty;
-            _controller.text = account.name;
-          case NameUnchanged():
-            _error = null;
-            _controller.text = account.name;
-          case NameChanged(:final name):
-            _error = null;
-            _controller.text = name;
-        }
-      });
+      final edit = await ref.read(accountManagerProvider).rename(account, entered);
+      if (!mounted) return null;
+      setState(() => _error = edit is NameBlank ? l10n.editAccountNameEmpty : null);
+      return switch (edit) {
+        NameBlank() || NameUnchanged() => account.name,
+        NameChanged(:final name) => name,
+      };
     } catch (e) {
       quantusPrint('Renaming ${account.accountId} failed: $e');
       if (mounted) setState(() => _error = l10n.editAccountRenameFailed);
+      return null;
     }
-  }
-
-  /// Escape while typing puts the name back, and leaves the sheet open.
-  void _putBack() {
-    _controller.text = widget.account.name;
-    setState(() => _error = null);
-    _focus.unfocus();
   }
 
   @override
@@ -689,22 +645,12 @@ class _NameRowState extends ConsumerState<_NameRow> {
           const SizedBox(width: 16),
           SizedBox(
             width: 260,
-            child: Actions(
-              actions: {DismissIntent: CallbackAction<DismissIntent>(onInvoke: (_) => _putBack())},
-              child: QuantusTextField(
-                key: AccountInfoSheet.nameFieldKey,
-                controller: _controller,
-                focusNode: _focus,
-                textInputAction: TextInputAction.done,
-                onSubmitted: (_) => _focus.unfocus(),
-                height: 30,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                textStyle: text.body.copyWith(color: colors.textContent),
-                fillColor: colors.bgVoid,
-                borderRadius: context.radiusV3.smBorder,
-                autocorrect: false,
-                enableSuggestions: false,
-              ),
+            child: InlineNameField(
+              key: AccountInfoSheet.nameFieldKey,
+              name: widget.account.name,
+              autofocus: widget.autofocus,
+              onKeep: _keep,
+              onCancel: () => setState(() => _error = null),
             ),
           ),
         ],
