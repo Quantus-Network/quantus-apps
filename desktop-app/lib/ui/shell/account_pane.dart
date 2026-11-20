@@ -11,6 +11,7 @@ import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
+import 'package:quantus_desktop_wallet/ui/shell/panel_widths.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
@@ -205,31 +206,38 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
       ),
     );
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(child: lists),
-        if (opened != null) ...[
-          PanelResizeHandle(
-            width: inspectorWidth,
-            resizes: ResizedPanel.right,
-            onResize: inspector.resizeTo,
-            onResizeEnd: () => unawaited(inspector.save()),
-          ),
-          SizedBox(
-            width: inspectorWidth,
-            child: Focus(
-              focusNode: _inspector,
-              includeSemantics: false,
-              onKeyEvent: _onInspectorKey,
-              child: Listener(
-                onPointerDown: (_) => _inspector.requestFocus(),
-                child: ActivityInspector(isFocused: _inspector.hasFocus),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // As shown: it gives way to the lists in a narrow window, once the
+        // sidebar has.
+        final shown = shownInspectorWidth(paneWidth: constraints.maxWidth, made: inspectorWidth);
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: lists),
+            if (opened != null) ...[
+              PanelResizeHandle(
+                width: shown,
+                resizes: ResizedPanel.right,
+                onResize: inspector.resizeTo,
+                onResizeEnd: () => unawaited(inspector.save()),
               ),
-            ),
-          ),
-        ],
-      ],
+              SizedBox(
+                width: shown,
+                child: Focus(
+                  focusNode: _inspector,
+                  includeSemantics: false,
+                  onKeyEvent: _onInspectorKey,
+                  child: Listener(
+                    onPointerDown: (_) => _inspector.requestFocus(),
+                    child: ActivityInspector(isFocused: _inspector.hasFocus),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
     );
   }
 }

@@ -4,6 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/ui/activity/activity_inspector.dart';
+import 'package:quantus_desktop_wallet/ui/activity/activity_panel.dart';
+import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
+import 'package:quantus_desktop_wallet/ui/shell/panel_widths.dart';
+import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -226,5 +233,126 @@ void main() {
 
     expect(_inPane(find.text('No active account')), findsOneWidget);
     expect(find.byType(AccountToolbar), findsNothing);
+  });
+
+  group('the lists keep their least width: the sidebar gives way first, then the panel at the right', () {
+    final now = DateTime.now();
+    const smallest = Size(960, 640);
+    late FakeSettingsService settings;
+
+    /// The window at [window], with the sidebar and the panel at the right
+    /// both made their widest.
+    Future<void> open(
+      WidgetTester tester, {
+      required Size window,
+      DisplayAccount active = const RegularAccount(mainAccount),
+      List<MultisigAccount> multisigs = const [],
+      required FakeSendChain chain,
+    }) async {
+      settings = FakeSettingsService(activeAccount: active, multisigs: multisigs)
+        ..strings[SidebarWidthNotifier.settingsKey] = '${SidebarWidthNotifier.maximum}'
+        ..strings[InspectorWidthNotifier.settingsKey] = '${InspectorWidthNotifier.maximum}';
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, savingsAccount],
+          settings: settings,
+          balances: oneTokenEach,
+          chain: chain,
+        ),
+      );
+      tester.view.physicalSize = window;
+      await tester.pumpAndSettle();
+    }
+
+    FakeSendChain history() => FakeSendChain()
+      ..scheduledTransfers = [
+        ReversibleTransferEvent(
+          id: 'scheduled',
+          from: 'qzMain',
+          to: 'qzBob4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+          amount: oneToken,
+          timestamp: now,
+          txId: '0xtxid',
+          status: ReversibleTransferStatus.SCHEDULED,
+          scheduledAt: now.add(const Duration(hours: 5)),
+          blockNumber: 1,
+          blockHash: '0xblock',
+        ),
+      ]
+      ..historyPages = [
+        [
+          TransferEvent(
+            id: 'sent',
+            from: 'qzMain',
+            to: 'qzBob4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+            amount: oneToken * BigInt.from(1250),
+            timestamp: now.subtract(const Duration(hours: 2)),
+            fee: FakeSendChain.usualFee,
+            extrinsicHash: '0xsent',
+            blockNumber: 1,
+            blockHash: '0xblock',
+          ),
+        ],
+      ];
+
+    Future<void> openSent(WidgetTester tester) async {
+      await tester.tap(find.byWidgetPredicate((w) => w is ActivityRowView && w.id == 'sent'));
+      await tester.pumpAndSettle();
+    }
+
+    double widthOf(WidgetTester tester, Type panel) => tester.getSize(find.byType(panel)).width;
+
+    testOnMac('in the smallest window, the sidebar narrows to its least, the panel at the right gives the rest', (
+      tester,
+    ) async {
+      await open(tester, window: smallest, chain: history());
+
+      await openSent(tester);
+
+      expect(tester.takeException(), isNull, reason: 'nothing overflows');
+      expect(widthOf(tester, Sidebar), SidebarWidthNotifier.minimum);
+      // 960, less the window's gaps and the two handles (8 each), the
+      // sidebar's 200 and the lists' least.
+      expect(widthOf(tester, ActivityInspector), 960 - 4 * 8 - 200 - listsLeast);
+      expect(widthOf(tester, ActivityPanel), listsLeast);
+    });
+
+    testOnMac('what was made stays: the saved widths are unchanged, and a closed panel gives the sidebar back', (
+      tester,
+    ) async {
+      await open(tester, window: smallest, chain: history());
+      await openSent(tester);
+
+      expect(settings.strings[SidebarWidthNotifier.settingsKey], '${SidebarWidthNotifier.maximum}');
+      expect(settings.strings[InspectorWidthNotifier.settingsKey], '${InspectorWidthNotifier.maximum}');
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(find.byType(ActivityInspector), findsNothing);
+      expect(widthOf(tester, Sidebar), SidebarWidthNotifier.maximum);
+    });
+
+    testOnMac('a sheet hangs centred on the panels beside the sidebar as it is shown', (tester) async {
+      await open(tester, window: smallest, chain: history());
+      await openSent(tester);
+
+      await tester.tap(
+        find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(ToolbarAction, 'Receive')),
+      );
+      await tester.pumpAndSettle();
+
+      final left = tester.getRect(find.byType(Sidebar)).right + 8;
+      expect(tester.getRect(find.byType(ShellSheetView)).center.dx, moreOrLessEquals((left + 960 - 8) / 2));
+    });
+
+    testOnMac('with room, both keep the widths they were made', (tester) async {
+      await open(tester, window: const Size(1600, 900), chain: history());
+
+      await openSent(tester);
+
+      expect(widthOf(tester, Sidebar), SidebarWidthNotifier.maximum);
+      expect(widthOf(tester, ActivityInspector), InspectorWidthNotifier.maximum);
+    });
   });
 }

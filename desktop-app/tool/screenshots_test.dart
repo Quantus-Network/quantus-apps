@@ -19,6 +19,7 @@ import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
@@ -1022,7 +1023,10 @@ void _activityScenes() {
     signerCount: 3,
   );
 
-  _scene('activity_multisig', (tester) async {
+  // A multisig's proposal open; in the smallest window too, with the sidebar
+  // and the panel at the right made their widest, where they give way and
+  // the lists are the narrowest they get.
+  Future<void> openTeamProposal(WidgetTester tester, {Size? window}) async {
     useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
     final team = MultisigAccount(
       name: 'Team',
@@ -1068,13 +1072,26 @@ void _activityScenes() {
     await _openWith(tester, [
       ...shellOverrides(
         accounts: const [_root, _second],
-        settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(team), multisigs: [team]),
+        settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(team), multisigs: [team])
+          ..strings.addAll({
+            if (window != null) ...{
+              SidebarWidthNotifier.settingsKey: '${SidebarWidthNotifier.maximum}',
+              InspectorWidthNotifier.settingsKey: '${InspectorWidthNotifier.maximum}',
+            },
+          }),
         balanceOf: (id) async => oneToken * BigInt.from(id == _activityTeam ? 4800 : 1250),
         chain: chain,
       ),
     ]);
     await tester.pumpAndSettle();
+    if (window != null) {
+      tester.view.physicalSize = window * _pixelRatio;
+      await tester.pumpAndSettle();
+    }
     await tester.tap(find.byType(OpenProposalRowView).first);
     await tester.pumpAndSettle();
-  });
+  }
+
+  _scene('activity_multisig', openTeamProposal);
+  _scene('activity_multisig_smallest_window', (tester) => openTeamProposal(tester, window: const Size(960, 640)));
 }
