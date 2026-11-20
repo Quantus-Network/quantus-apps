@@ -181,6 +181,26 @@ void main() {
     expect(_text('Mainnet'), findsOneWidget);
   });
 
+  testOnMac('a block that can no longer be read is left out, not shown as it last was, until it can be again', (
+    tester,
+  ) async {
+    final chain = FakeSendChain();
+    await _open(tester, chain: chain, balanceOf: (_) async => oneToken);
+    expect(_text('Block 1,250,000'), findsOneWidget);
+
+    chain.currentBlock = () async => throw StateError('the node did not answer');
+    _now = _opened.add(const Duration(minutes: 1));
+    await _sync(tester);
+
+    expect(_inFooter(find.textContaining('Block')), findsNothing);
+
+    chain.currentBlock = () async => 1250020;
+    _now = _opened.add(const Duration(minutes: 2));
+    await _sync(tester);
+
+    expect(_text('Block 1,250,020'), findsOneWidget);
+  });
+
   testOnMac('while it syncs a spinner turns, unless the system asks for less motion', (tester) async {
     final read = Completer<BigInt>();
     await _open(tester, reduceMotion: false, balanceOf: (_) => read.future);

@@ -50,23 +50,28 @@ class SyncStatusNotifier extends Notifier<SyncStatus> {
     return balance == null ? const SyncStatus() : _after(const SyncStatus(), null, balance);
   }
 
-  /// Where [current] stands once the balance is [balance], having been
+  /// Where [current] stands once the balance is [next], having been
   /// [previous].
-  SyncStatus _after(SyncStatus current, AsyncValue<BigInt>? previous, AsyncValue<BigInt> balance) {
+  SyncStatus _after(SyncStatus current, _ActiveBalance? previous, _ActiveBalance next) {
+    final balance = next.balance;
     if (balance.isLoading) {
       return SyncStatus(isSyncing: true, lastSyncedAt: current.lastSyncedAt, hasFailed: current.hasFailed);
     }
     if (balance.hasError) return SyncStatus(lastSyncedAt: current.lastSyncedAt, hasFailed: true);
-    // A balance read before, shown again on a switch to its account, is no
-    // new read.
-    final isNewRead = previous == null || previous.isLoading;
+    // Only the end of this account's own read is a new one: a balance read
+    // before, shown again on a switch to its account, is not, even while the
+    // account switched from was being read.
+    final isNewRead = previous == null || (previous.accountId == next.accountId && previous.balance.isLoading);
     return SyncStatus(lastSyncedAt: isNewRead ? ref.read(currentTimeProvider)() : current.lastSyncedAt);
   }
 }
 
-/// The active account's balance as the window shows it, or null with no
-/// active account.
-final _activeBalanceProvider = Provider<AsyncValue<BigInt>?>((ref) {
+/// The active account's balance as the window shows it, with the account it
+/// is of.
+typedef _ActiveBalance = ({String accountId, AsyncValue<BigInt> balance});
+
+/// The active account's balance, or null with no active account.
+final _activeBalanceProvider = Provider<_ActiveBalance?>((ref) {
   final account = ref.watch(activeAccountProvider).value?.account;
-  return account == null ? null : accountBalanceWith(ref.watch, account);
+  return account == null ? null : (accountId: account.accountId, balance: accountBalanceWith(ref.watch, account));
 });

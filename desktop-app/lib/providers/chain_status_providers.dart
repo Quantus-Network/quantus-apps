@@ -14,5 +14,8 @@ final latestBlockProvider = Provider<int?>((ref) {
     syncStatusProvider.select((status) => status.lastSyncedAt),
     (_, _) => ref.invalidate(multisigCurrentBlockProvider),
   );
-  return ref.watch(multisigCurrentBlockProvider).value;
+  final block = ref.watch(multisigCurrentBlockProvider);
+  // A read that failed keeps the block read before it, which is no longer
+  // the latest.
+  return block.hasError ? null : block.value;
 });
