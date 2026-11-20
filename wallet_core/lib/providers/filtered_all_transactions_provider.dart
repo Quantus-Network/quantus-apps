@@ -23,6 +23,57 @@ final filteredPaginationControllerProviderFamily =
       (ref, params) => UnifiedPaginationController(ref, accountIds: params.accountIds, filter: params.filter),
     );
 
+/// Everything the wallet has pending, every account's: what is being sent,
+/// the multisigs being created, the proposals being proposed, executed or
+/// cancelled, and the reversible transfers being cancelled.
+final pendingActivityProvider = Provider<CombinedTransactionsList>((ref) {
+  return CombinedTransactionsList(
+    pendingCancellationIds: ref.watch(pendingCancellationsProvider),
+    pendingTransactions: ref.watch(pendingTransactionsProvider),
+    pendingMultisigCreations: ref.watch(pendingMultisigCreationsProvider),
+    pendingMultisigProposals: ref.watch(pendingMultisigProposalsProvider),
+    pendingMultisigExecutions: ref.watch(pendingMultisigExecutionsProvider),
+    pendingMultisigCancellations: ref.watch(pendingMultisigCancellationsProvider),
+    scheduledReversibleTransfers: const [],
+    otherTransfers: const [],
+  );
+});
+
+/// What of the wallet's [pending] activity belongs to [accountIds] under
+/// [filter]: what they send or receive, the multisigs they create, the
+/// proposals they propose, execute or cancel (none of it when only what was
+/// received is asked for); with the history's [scheduledReversibleTransfers]
+/// and [otherTransfers] as they are.
+CombinedTransactionsList combinedTransactionsOf(
+  CombinedTransactionsList pending, {
+  required List<String> accountIds,
+  required TransactionFilter filter,
+  required List<ReversibleTransferEvent> scheduledReversibleTransfers,
+  required List<TransactionEvent> otherTransfers,
+}) {
+  final sends = filter != TransactionFilter.receive;
+  return CombinedTransactionsList(
+    pendingCancellationIds: pending.pendingCancellationIds,
+    pendingTransactions: pending.pendingTransactions
+        .where((tx) => sends && (accountIds.contains(tx.from) || accountIds.contains(tx.to)))
+        .toList(),
+    pendingMultisigCreations: pending.pendingMultisigCreations
+        .where((tx) => sends && accountIds.contains(tx.creatorId))
+        .toList(),
+    pendingMultisigProposals: pending.pendingMultisigProposals
+        .where((tx) => sends && accountIds.contains(tx.proposerId))
+        .toList(),
+    pendingMultisigExecutions: pending.pendingMultisigExecutions
+        .where((tx) => sends && accountIds.contains(tx.executorId))
+        .toList(),
+    pendingMultisigCancellations: pending.pendingMultisigCancellations
+        .where((tx) => sends && accountIds.contains(tx.proposerId))
+        .toList(),
+    scheduledReversibleTransfers: scheduledReversibleTransfers,
+    otherTransfers: otherTransfers,
+  );
+}
+
 /// Combined provider for filtered transactions.
 final filteredTransactionsProviderFamily =
     Provider.family<AsyncValue<CombinedTransactionsList>, FilteredTransactionsParams>((ref, params) {
@@ -31,12 +82,7 @@ final filteredTransactionsProviderFamily =
         filter: params.filter,
       );
 
-      final pendingCancellationIds = ref.watch(pendingCancellationsProvider);
-      final pending = ref.watch(pendingTransactionsProvider);
-      final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
-      final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
-      final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
-      final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
+      final pending = ref.watch(pendingActivityProvider);
       final pagination = ref.watch(filteredPaginationControllerProviderFamily(normalizedParams));
 
       if (pagination.error != null && !pagination.hasLoadedChainData) {
@@ -50,35 +96,11 @@ final filteredTransactionsProviderFamily =
         return const AsyncValue.loading();
       }
 
-      final accountIds = params.accountIds;
-      final filteredPending = pending
-          .where(
-            (tx) =>
-                normalizedParams.filter != TransactionFilter.receive &&
-                (accountIds.contains(tx.from) || accountIds.contains(tx.to)),
-          )
-          .toList();
-      final filteredPendingMultisig = pendingMultisigCreations
-          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.creatorId))
-          .toList();
-      final filteredPendingProposals = pendingMultisigProposals
-          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.proposerId))
-          .toList();
-      final filteredPendingExecutions = pendingMultisigExecutions
-          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.executorId))
-          .toList();
-      final filteredPendingCancellations = pendingMultisigCancellations
-          .where((tx) => normalizedParams.filter != TransactionFilter.receive && accountIds.contains(tx.proposerId))
-          .toList();
-
       return AsyncValue.data(
-        CombinedTransactionsList(
-          pendingCancellationIds: pendingCancellationIds,
-          pendingTransactions: filteredPending,
-          pendingMultisigCreations: filteredPendingMultisig,
-          pendingMultisigProposals: filteredPendingProposals,
-          pendingMultisigExecutions: filteredPendingExecutions,
-          pendingMultisigCancellations: filteredPendingCancellations,
+        combinedTransactionsOf(
+          pending,
+          accountIds: params.accountIds,
+          filter: normalizedParams.filter,
           scheduledReversibleTransfers: pagination.scheduledReversibleTransfers,
           otherTransfers: pagination.otherTransfers,
         ),

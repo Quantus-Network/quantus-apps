@@ -118,10 +118,28 @@ class ChainHistoryService {
         ', {scheduledReversibleTransfer: {scheduled_at: {_gt: \$after}}}'
         '${withCursor ? ', $_cursorPredicate' : ''}]}';
 
-    const selection = '''
+    const selection =
+        '''
     id
     timestamp
     scheduledReversibleTransfer {
+$_scheduledTransferFields
+    }''';
+
+    return _accountEventDocument(
+      operationName: 'ScheduledReversibleTransfersByAccounts',
+      extraVariables: ', \$after: timestamptz!',
+      filter: filter,
+      withCursor: withCursor,
+      accountCount: accountCount,
+      whereClause: whereClause,
+      selection: selection,
+    );
+  }
+
+  /// What a scheduled transfer is read with, as [ReversibleTransferEvent.fromJson]
+  /// parses it.
+  static const _scheduledTransferFields = '''
       id
       amount
       timestamp
@@ -139,18 +157,125 @@ class ChainHistoryService {
       }
       extrinsic {
         id
-      }
-    }''';
+      }''';
 
-    return _accountEventDocument(
-      operationName: 'ScheduledReversibleTransfersByAccounts',
-      extraVariables: ', \$after: timestamptz!',
-      filter: filter,
-      withCursor: withCursor,
-      accountCount: accountCount,
-      whereClause: whereClause,
-      selection: selection,
-    );
+  /// How many still-scheduled transfers, or ids asked about, one request
+  /// takes: under the indexer's 1000 rows a selection.
+  static const _stillScheduledPage = 500;
+
+  /// Builds the query for the transfers still scheduled to or from
+  /// [accountCount] accounts (`$account0..N-1`): scheduled from `$after` on,
+  /// `$limit` at a time in order of id, after `$afterId` with [withCursor].
+  ///
+  /// It reads `scheduled_reversible_transfer` itself, on plain columns only,
+  /// so Postgres serves it from the `scheduled_at` index: what is scheduled
+  /// network-wide from that time on, a small set however long any account's
+  /// history. Through the accounts' history (`account_event`), an account with
+  /// nothing scheduled, as most have, would be read whole.
+  @visibleForTesting
+  static String buildStillScheduledQuery({required int accountCount, required bool withCursor}) {
+    final variables =
+        '${_accountVariables(accountCount)}, \$after: timestamptz!, \$limit: Int!'
+        '${withCursor ? ', \$afterId: String!' : ''}';
+    final accounts = '[${[for (var i = 0; i < accountCount; i++) '\$account$i'].join(', ')}]';
+    final where =
+        '{_and: [{scheduled_at: {_gt: \$after}}, {_or: [{from_id: {_in: $accounts}}, {to_id: {_in: $accounts}}]}'
+        '${withCursor ? ', {id: {_gt: \$afterId}}' : ''}]}';
+    return '''
+query StillScheduledTransfers($variables) {
+  scheduled: scheduled_reversible_transfer(limit: \$limit, where: $where, order_by: {id: asc}) {
+$_scheduledTransferFields
+  }
+}
+''';
+  }
+
+  /// Builds the query for which of [idCount] scheduled transfers (`$id0..N-1`)
+  /// were executed and which were cancelled, by the scheduled transfer's id:
+  /// a plain, indexed column of each.
+  @visibleForTesting
+  static String buildSettledScheduledQuery({required int idCount}) {
+    if (idCount < 1) {
+      throw ArgumentError.value(idCount, 'idCount', 'Must ask about at least one scheduled transfer');
+    }
+    final variables = [for (var i = 0; i < idCount; i++) '\$id$i: String!'].join(', ');
+    final ids = '[${[for (var i = 0; i < idCount; i++) '\$id$i'].join(', ')}]';
+    return '''
+query SettledScheduledTransfers($variables) {
+  executed: executed_reversible_transfer(where: {scheduled_transfer_id: {_in: $ids}}) {
+    scheduledTransfer: scheduled_transfer_id
+  }
+  cancelled: cancelled_reversible_transfer(where: {scheduled_transfer_id: {_in: $ids}}) {
+    scheduledTransfer: scheduled_transfer_id
+  }
+}
+''';
+  }
+
+  /// The scheduled transfers among [rows] that [settled] (the answer to
+  /// [buildSettledScheduledQuery]) does not say were executed or cancelled.
+  @visibleForTesting
+  static List<ReversibleTransferEvent> stillScheduledOf(List<dynamic> rows, Map<String, dynamic> settled) {
+    final ended = {
+      for (final kind in const ['executed', 'cancelled'])
+        for (final row in settled[kind] as List<dynamic>) (row as Map<String, dynamic>)['scheduledTransfer'] as String,
+    };
+    return [
+      for (final row in rows.cast<Map<String, dynamic>>())
+        if (!ended.contains(row['id']))
+          ReversibleTransferEvent.fromJson(row, status: ReversibleTransferStatus.SCHEDULED),
+    ];
+  }
+
+  /// The transfers still scheduled to or from [accountIds]: scheduled from two
+  /// minutes ago on, as the history counts them, and neither executed nor
+  /// cancelled. One request reads them; only when there are some does a
+  /// second ask which were executed or cancelled.
+  Future<List<ReversibleTransferEvent>> fetchStillScheduledTransfers({required List<String> accountIds}) async {
+    if (accountIds.isEmpty) {
+      throw ArgumentError.value(accountIds, 'accountIds', 'Must not be empty');
+    }
+    final pendingSince = DateTime.now().subtract(const Duration(minutes: 2)).toUtc().toIso8601String();
+    final accounts = {for (final (i, id) in accountIds.indexed) 'account$i': id};
+    final sw = Stopwatch()..start();
+    try {
+      final rows = <dynamic>[];
+      String? afterId;
+      while (true) {
+        final data = await _graphQlEndpointService.query(
+          document: buildStillScheduledQuery(accountCount: accountIds.length, withCursor: afterId != null),
+          variables: {...accounts, 'after': pendingSince, 'limit': _stillScheduledPage, 'afterId': ?afterId},
+        );
+        final page = data['scheduled'] as List<dynamic>;
+        rows.addAll(page);
+        if (page.length < _stillScheduledPage) break;
+        afterId = (page.last as Map<String, dynamic>)['id'] as String;
+      }
+      if (rows.isEmpty) return const [];
+
+      final ids = [for (final row in rows.cast<Map<String, dynamic>>()) row['id'] as String];
+      final settled = <String, dynamic>{'executed': <dynamic>[], 'cancelled': <dynamic>[]};
+      for (var start = 0; start < ids.length; start += _stillScheduledPage) {
+        final chunk = ids.sublist(
+          start,
+          start + _stillScheduledPage > ids.length ? ids.length : start + _stillScheduledPage,
+        );
+        final data = await _graphQlEndpointService.query(
+          document: buildSettledScheduledQuery(idCount: chunk.length),
+          variables: {for (final (i, id) in chunk.indexed) 'id$i': id},
+        );
+        for (final kind in const ['executed', 'cancelled']) {
+          (settled[kind] as List<dynamic>).addAll(data[kind] as List<dynamic>);
+        }
+      }
+      return stillScheduledOf(rows, settled);
+    } catch (e, stackTrace) {
+      _log('Error fetching still-scheduled transfers: $e', error: e, stackTrace: stackTrace);
+      rethrow;
+    } finally {
+      sw.stop();
+      printTiming('fetchStillScheduledTransfers', sw.elapsedMilliseconds);
+    }
   }
 
   /// One `account_event` selection per account, aliased `events0..N-1`, all

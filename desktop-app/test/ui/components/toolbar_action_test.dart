@@ -289,4 +289,32 @@ void _behaviour(_Kind kind) {
       expect(pressed, [0]);
     });
   });
+
+  testWidgets('icon only: the symbol alone, muted, as a panel\'s header holds it; the label is still read out', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) => MaterialApp(
+          theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
+          home: Scaffold(
+            body: Center(
+              child: ToolbarAction.symbol(
+                symbol: CupertinoIcons.arrow_clockwise,
+                label: 'Refresh',
+                iconOnly: true,
+                onPressed: () {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Refresh'), findsNothing);
+    expect(tester.widget<Icon>(find.byIcon(CupertinoIcons.arrow_clockwise)).color, _colors.textMuted);
+    expect(tester.getSemantics(find.byType(ToolbarAction)), isSemantics(label: 'Refresh', isButton: true));
+    semantics.dispose();
+  });
 }

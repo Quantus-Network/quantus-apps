@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
@@ -98,7 +99,13 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
 /// Reads everything the open wallet shows again from the network, because
 /// the person asked to (View › Refresh).
 Future<void> refreshWallet(WidgetRef ref) {
-  return _reported(ref, ref.read(historyPollingManagerProvider).triggerManualRefresh(), 'The refresh asked for failed');
+  final refresh = _reported(
+    ref,
+    ref.read(historyPollingManagerProvider).triggerManualRefresh(),
+    'The refresh asked for failed',
+  );
+  // Shown while it runs, as a light along the Activity panel's header.
+  return ref.read(walletRefreshingProvider.notifier).track(refresh);
 }
 
 /// Waits for [refresh], reporting what makes it fail rather than raising it:
