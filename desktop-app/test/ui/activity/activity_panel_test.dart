@@ -16,7 +16,6 @@ import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/services/global_history_polling_service.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/models/filtered_transactions_params.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
