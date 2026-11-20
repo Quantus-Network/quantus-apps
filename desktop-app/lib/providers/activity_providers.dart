@@ -189,14 +189,20 @@ class ActivityViewNotifier extends Notifier<AsyncValue<ActivityView>> {
     final pages = ref.watch(activeAccountPaginationProvider(TransactionFilter.all));
     final service = ref.read(transactionServiceProvider);
 
+    // A multisig's past proposals are half of its activity: until they are
+    // read, it is not, and when they cannot be, neither can it. A reload
+    // keeps the ones read before.
+    var past = const <MultisigProposal>[];
+    if (account is MultisigAccount) {
+      final proposals = ref.watch(multisigPastProposalsProvider(account));
+      if (proposals.hasError) return AsyncValue.error(proposals.error!, proposals.stackTrace!);
+      if (!proposals.hasValue) return const AsyncValue.loading();
+      past = proposals.requireValue;
+    }
+
     return transactions.whenData((data) {
       final activity = switch (account) {
-        final MultisigAccount msig => multisigActivityOf(
-          service,
-          data,
-          ref.watch(multisigPastProposalsProvider(msig)).value ?? const [],
-          msig,
-        ),
+        final MultisigAccount msig => multisigActivityOf(service, data, past, msig),
         _ => service.combineAndDeduplicateTransactions(
           pendingCancellationIds: data.pendingCancellationIds,
           pendingTransactions: data.pendingTransactions,

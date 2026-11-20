@@ -424,6 +424,11 @@ class FakeSendChain {
   List<MultisigProposal> openProposals = const [];
   List<MultisigProposal> pastProposals = const [];
 
+  /// When set, a read of past proposals waits for it; and fails with
+  /// [pastProposalsError], when that is set.
+  Completer<void>? holdPastProposals;
+  Object? pastProposalsError;
+
   final _calls = Expando<SendCall>();
 
   SendCall describe(RuntimeCall call) => _calls[call] ?? (throw StateError('A call this chain did not build: $call'));
@@ -470,7 +475,11 @@ class _FakeMultisigService extends Fake implements MultisigService {
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async => chain.openProposals;
 
   @override
-  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async => chain.pastProposals;
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
+    await chain.holdPastProposals?.future;
+    if (chain.pastProposalsError case final error?) throw error;
+    return chain.pastProposals;
+  }
 }
 
 /// The indexer's history, as the [chain] holds it: each page's cursor is the
