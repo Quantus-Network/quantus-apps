@@ -63,6 +63,7 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
     super.initState();
     _scroll.addListener(_fetchNearEnd);
     if (ref.read(activityViewProvider).isLoading) _startWaiting();
+    _fetchNearEndOnceLaidOut();
   }
 
   @override
@@ -92,15 +93,26 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
   bool _showsSkeleton(bool isLoading) => _isRevealed && (isLoading || !_hasShownLongEnough);
 
   void _fetchNearEnd() {
-    final view = ref.read(activityViewProvider).value;
-    if (view == null || !view.hasMore || view.isLoadingMore || !_scroll.hasClients) return;
-    final position = _scroll.position;
-    if (position.pixels < position.maxScrollExtent - ActivityPanel.fetchWithin) return;
-    unawaited(readActiveAccountPaginationNotifier(ref, TransactionFilter.all)?.fetchMore());
+    if (_scroll.hasClients) fetchMoreActivityNear(ref, _scroll.position);
   }
+
+  /// Rows that do not fill the list leave no end to scroll to, as when what
+  /// is in progress came in without anything settled: once laid out, they
+  /// are measured as a scroll would.
+  void _fetchNearEndOnceLaidOut() => WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (mounted) _fetchNearEnd();
+  });
 
   @override
   Widget build(BuildContext context) {
+    // New rows, or more being there, are measured once laid out. A page that
+    // failed changes neither, so it is not asked for again on its own.
+    ref.listen(
+      activityViewProvider.select(
+        (view) => (view.value?.settled.length, view.value?.inProgress.length, view.value?.hasMore),
+      ),
+      (_, _) => _fetchNearEndOnceLaidOut(),
+    );
     ref.listen(activityViewProvider.select((view) => view.isLoading), (wasLoading, isLoading) {
       if (isLoading && wasLoading != true) {
         setState(_startWaiting);
@@ -156,6 +168,17 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
       ),
     );
   }
+}
+
+/// Asks for the next page of the open account's activity when [position] is
+/// within [ActivityPanel.fetchWithin] of its end (as when its rows do not
+/// fill it), there is more, and none is being fetched. Activity and In
+/// progress both show from the same pages, so either asks.
+void fetchMoreActivityNear(WidgetRef ref, ScrollPosition position) {
+  final view = ref.read(activityViewProvider).value;
+  if (view == null || !view.hasMore || view.isLoadingMore) return;
+  if (position.pixels < position.maxScrollExtent - ActivityPanel.fetchWithin) return;
+  unawaited(readActiveAccountPaginationNotifier(ref, TransactionFilter.all)?.fetchMore());
 }
 
 /// The settled activity under its days, with the next page's shapes at the

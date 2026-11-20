@@ -401,6 +401,15 @@ class FakeSendChain {
   /// The reversible transfers waiting to run.
   List<ReversibleTransferEvent> scheduledTransfers = const [];
 
+  /// When set, the reversible transfers waiting to run a page at a time, in
+  /// place of [scheduledTransfers]; there is more while either list has a
+  /// page after the one read.
+  List<List<ReversibleTransferEvent>>? scheduledPages;
+
+  /// The pages of history whose read fails, with [historyError] or a
+  /// [StateError].
+  Set<int> failingHistoryPages = const {};
+
   /// When set, every read of history waits for it.
   Completer<void>? holdHistory;
 
@@ -483,10 +492,14 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
     chain.historyReads.add(page);
     await chain.holdHistory?.future;
     if (chain.historyError case final error?) throw error;
+    if (chain.failingHistoryPages.contains(page)) throw StateError('page $page could not be read');
     final pages = chain.historyPages;
-    final hasMore = page < pages.length - 1;
+    final scheduledPages = chain.scheduledPages;
+    final hasMore = page < pages.length - 1 || (scheduledPages != null && page < scheduledPages.length - 1);
     return SortedTransactionsList(
-      scheduledReversibleTransfers: page == 0 ? chain.scheduledTransfers : const [],
+      scheduledReversibleTransfers: scheduledPages != null
+          ? (page < scheduledPages.length ? scheduledPages[page] : const [])
+          : (page == 0 ? chain.scheduledTransfers : const []),
       otherTransfers: page < pages.length ? pages[page] : const [],
       nextOtherCursor: hasMore ? AccountEventCursor(timestamp: '', id: '${page + 1}') : null,
       hasMore: hasMore,

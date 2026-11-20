@@ -317,6 +317,68 @@ void main() {
     expect(chain.historyReads, [0, 1]);
   });
 
+  group('loading more of what is in progress', () {
+    List<ReversibleTransferEvent> scheduled(String prefix, int count) => [
+      for (var i = 0; i < count; i++)
+        ReversibleTransferEvent(
+          id: '$prefix-$i',
+          from: 'qzBob',
+          to: 'qzMain',
+          amount: oneToken,
+          timestamp: _now,
+          txId: '0x$prefix$i',
+          status: ReversibleTransferStatus.SCHEDULED,
+          scheduledAt: _now.add(Duration(hours: i + 1)),
+          blockNumber: 1,
+          blockHash: '0xblock',
+        ),
+    ];
+
+    int inProgress(WidgetTester tester) => _container(tester).read(activityViewProvider).value!.inProgress.length;
+
+    testOnMac('with nothing settled to scroll, the next page of scheduled transfers is fetched on its own', (
+      tester,
+    ) async {
+      final chain = FakeSendChain()..scheduledPages = [scheduled('first', 20), scheduled('second', 1)];
+
+      await _open(tester, chain: chain);
+
+      expect(chain.historyReads, [0, 1]);
+      expect(inProgress(tester), 21);
+    });
+
+    testOnMac('scrolling In progress near its end fetches the next page', (tester) async {
+      final chain = FakeSendChain()
+        ..scheduledPages = [scheduled('first', 20), scheduled('second', 1)]
+        ..historyPages = [
+          [for (var i = 0; i < 20; i++) _received('settled-$i', Duration(hours: i + 1))],
+          [_received('older', const Duration(days: 30))],
+        ];
+      await _open(tester, chain: chain);
+      expect(chain.historyReads, [0], reason: 'Activity is full: nothing is fetched until asked');
+
+      await tester.drag(find.byType(InProgressPanel), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+
+      expect(chain.historyReads, [0, 1]);
+      expect(inProgress(tester), 21);
+    });
+
+    testOnMac('a page that fails is not asked for again on its own', (tester) async {
+      final chain = FakeSendChain()
+        ..scheduledPages = [scheduled('first', 20), scheduled('second', 1)]
+        ..failingHistoryPages = {1};
+
+      await _open(tester, chain: chain);
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(seconds: 1));
+      }
+
+      expect(chain.historyReads, [0, 1]);
+      expect(inProgress(tester), 20);
+    });
+  });
+
   group('refreshing', () {
     testOnMac('↻ refreshes: a line runs under the header while it does, and the list stays', (tester) async {
       final polling = FakeHistoryPollingManager()..holdRefresh = Completer<void>();
