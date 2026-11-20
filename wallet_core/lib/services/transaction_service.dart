@@ -30,6 +30,9 @@ class TransactionService {
   /// Combines and deduplicates transactions from multiple sources
   /// Priority order: pending -> reversible -> other
   /// Duplicates are removed based on transaction ID
+  ///
+  /// The lists given are left as they were: they are often a provider's own
+  /// state, and may be lists that cannot be changed.
   List<TransactionEvent> combineAndDeduplicateTransactions({
     required Set<String> pendingCancellationIds,
     required List<PendingTransactionEvent> pendingTransactions,
@@ -40,6 +43,9 @@ class TransactionService {
     required List<ReversibleTransferEvent> scheduledReversibleTransfers,
     required List<TransactionEvent> otherTransfers,
   }) {
+    // A send that failed joins the settled ones, which are then put in order:
+    // in a copy, never in the list given.
+    final settled = [...otherTransfers];
     final seenIds = <String>{};
     final seenProposalKeys = <String>{};
     final seenExecutionKeys = <String>{};
@@ -76,7 +82,7 @@ class TransactionService {
     // Add pending transactions that haven't not failed first (highest priority)
     for (final transaction in pendingTransactions) {
       if (transaction.transactionState == TransactionState.failed) {
-        otherTransfers.add(transaction);
+        settled.add(transaction);
       } else if (seenIds.add(transaction.id)) {
         if (transaction.isReversible && pendingCancellationIds.contains(transaction.id)) {
           result.add(transaction.copyWith(status: ReversibleTransferStatus.CANCELLED));
@@ -101,8 +107,8 @@ class TransactionService {
 
     // Add other transfers (lowest priority). Stable, so rows sharing a block
     // (same timestamp) keep the chain order they arrived in.
-    mergeSort(otherTransfers, compare: (a, b) => b.timestamp.compareTo(a.timestamp));
-    for (final transaction in otherTransfers) {
+    mergeSort(settled, compare: (a, b) => b.timestamp.compareTo(a.timestamp));
+    for (final transaction in settled) {
       if (transaction is MultisigProposalCreatedEvent) {
         final key = transaction.activityDedupKey;
         if (seenProposalKeys.contains(key)) {
