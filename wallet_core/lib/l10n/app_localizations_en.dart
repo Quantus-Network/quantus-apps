@@ -2954,4 +2954,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopNotificationOpenAction => 'Open';
+
+  @override
+  String desktopNotificationSentTitle(String amount) {
+    return 'Sent $amount';
+  }
+
+  @override
+  String desktopNotificationSentBody(String account) {
+    return 'From $account';
+  }
+
+  @override
+  String get desktopNotificationSendNotConfirmedTitle => 'Send not confirmed';
+
+  @override
+  String desktopNotificationSendNotConfirmedBody(String amount, String account) {
+    return '$amount from $account wasn’t seen on the chain in time. It may have failed, or only be late.';
+  }
+
+  @override
+  String get desktopNotificationSendFailedTitle => 'Send failed';
+
+  @override
+  String desktopNotificationSendFailedBody(String amount, String account) {
+    return '$amount from $account was not sent.';
+  }
+
+  @override
+  String get desktopNotificationProposalCreatedTitle => 'Proposal created';
+
+  @override
+  String desktopNotificationProposalCreatedBody(String amount, String multisig) {
+    return 'Send $amount from $multisig';
+  }
+
+  @override
+  String get desktopNotificationProposalNotConfirmedTitle => 'Proposal not confirmed';
+
+  @override
+  String desktopNotificationProposalNotConfirmedBody(String amount, String multisig) {
+    return 'The proposal to send $amount from $multisig wasn’t seen on the chain in time.';
+  }
 }
