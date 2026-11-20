@@ -1,0 +1,183 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
+import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+
+import '../fakes.dart';
+
+void main() {
+  final now = DateTime.now();
+  late DateTime clock;
+
+  /// A wallet of Main (open), Savings and the Encrypted account, and
+  /// [multisigs], whose indexer is [chain]; its marks are read until they
+  /// settle.
+  Future<ProviderContainer> wallet(
+    WidgetTester tester,
+    FakeSendChain chain, {
+    List<MultisigAccount> multisigs = const [],
+  }) async {
+    clock = DateTime(2026, 11, 20, 14, 2);
+    final container = ProviderContainer(
+      overrides: [
+        ...shellOverrides(
+          accounts: const [mainAccount, savingsAccount, encryptedAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs),
+          // Read as the chain answers: later, never at once.
+          balanceOf: (_) async => oneToken,
+          encryptedBalances: {0: oneToken},
+          chain: chain,
+        ),
+        currentTimeProvider.overrideWithValue(() => clock),
+      ],
+    );
+    container.listen(accountMarksProvider, (_, _) {});
+    await settle(tester);
+    return container;
+  }
+
+  /// Ends [container] inside the test, so nothing it started is still
+  /// waiting when the test ends.
+  Future<void> close(WidgetTester tester, ProviderContainer container) async {
+    container.dispose();
+    await tester.pump(const Duration(minutes: 1));
+  }
+
+  AccountMark markOf(ProviderContainer container, String accountId) =>
+      container.read(accountMarksProvider)[accountId] ?? const AccountMark();
+
+  MultisigProposal proposal(
+    String id, {
+    MultisigProposalStatus status = MultisigProposalStatus.active,
+    List<String> approvals = const [],
+    int expiryBlock = 1284220,
+  }) => MultisigProposal(
+    entityId: id,
+    id: id.hashCode,
+    multisigAddress: teamMultisig.accountId,
+    proposer: 'qzOther',
+    createdAt: now,
+    updatedAt: now,
+    pallet: '',
+    call: '',
+    recipient: 'qzPayee',
+    amount: oneToken,
+    expiryBlock: expiryBlock,
+    approvals: approvals,
+    deposit: oneToken,
+    status: status,
+    threshold: teamMultisig.threshold,
+    signerCount: teamMultisig.signers.length,
+  );
+
+  testWidgets('a send on its way counts for the account it leaves, and for no other', (tester) async {
+    final container = await wallet(tester, FakeSendChain());
+
+    container
+        .read(pendingTransactionsProvider.notifier)
+        .add(
+          PendingTransactionEvent(
+            tempId: 'sending',
+            from: savingsAccount.accountId,
+            to: 'qzPayee',
+            amount: oneToken,
+            timestamp: now,
+            fee: FakeSendChain.usualFee,
+          ),
+        );
+    await settle(tester);
+
+    expect(markOf(container, savingsAccount.accountId), const AccountMark(inProgress: 1));
+    expect(markOf(container, mainAccount.accountId), const AccountMark());
+    await close(tester, container);
+  });
+
+  testWidgets("a transfer still scheduled counts for an account never opened, all accounts' read at once", (
+    tester,
+  ) async {
+    final chain = FakeSendChain()
+      ..stillScheduled = [
+        ReversibleTransferEvent(
+          id: 'later',
+          from: savingsAccount.accountId,
+          to: 'qzPayee',
+          amount: oneToken,
+          timestamp: now,
+          txId: '0xlater',
+          status: ReversibleTransferStatus.SCHEDULED,
+          scheduledAt: now.add(const Duration(hours: 5)),
+          blockNumber: 1,
+          blockHash: '0xblock',
+        ),
+      ];
+    final container = await wallet(tester, chain, multisigs: [teamMultisig]);
+
+    expect(markOf(container, savingsAccount.accountId), const AccountMark(inProgress: 1));
+    expect(chain.stillScheduledReads, hasLength(1));
+    expect(
+      chain.stillScheduledReads.single,
+      unorderedEquals([mainAccount.accountId, savingsAccount.accountId, teamMultisig.accountId]),
+      reason: 'the Encrypted account has no transfers scheduled at an address of its own',
+    );
+    await close(tester, container);
+  });
+
+  testWidgets('a multisig counts its open proposals waiting for a signature from this wallet', (tester) async {
+    final chain = FakeSendChain()
+      ..openProposals = [
+        proposal('waits'),
+        proposal('signed', approvals: ['qzMain']),
+        proposal('ready', status: MultisigProposalStatus.approved, approvals: ['qzOther', 'qzMain']),
+        proposal('expired', expiryBlock: 1000),
+        proposal('executed', status: MultisigProposalStatus.executed),
+        proposal('approving'),
+      ];
+    final container = await wallet(tester, chain, multisigs: [teamMultisig]);
+    container
+        .read(pendingMultisigApprovalsProvider.notifier)
+        .add(
+          PendingMultisigApprovalEvent(
+            id: 'approving-main',
+            multisigAddress: teamMultisig.accountId,
+            proposalId: 'approving'.hashCode,
+            approverId: 'qzMain',
+            submittedAt: now,
+          ),
+        );
+    await settle(tester);
+
+    expect(markOf(container, teamMultisig.accountId), const AccountMark(waitingForSignature: 1));
+    expect(chain.openProposalReads, contains(teamMultisig.accountId));
+    await close(tester, container);
+  });
+
+  testWidgets('each sync reads them again: what is still scheduled, and each multisig\'s open proposals', (
+    tester,
+  ) async {
+    final chain = FakeSendChain();
+    final container = await wallet(tester, chain, multisigs: [teamMultisig]);
+    final scheduledReads = chain.stillScheduledReads.length;
+    final proposalReads = chain.openProposalReads.where((id) => id == teamMultisig.accountId).length;
+
+    clock = clock.add(const Duration(minutes: 1));
+    container.invalidate(balanceProviderFamily(mainAccount.accountId));
+    await settle(tester);
+
+    expect(chain.stillScheduledReads.length, scheduledReads + 1);
+    expect(chain.openProposalReads.where((id) => id == teamMultisig.accountId).length, proposalReads + 1);
+    await close(tester, container);
+  });
+}
+
+/// Pumps until what was started has answered: a millisecond at a time, as
+/// a provider's rebuild waits for a timer, which a pump of no time does not
+/// run.
+Future<void> settle(WidgetTester tester) async {
+  for (var i = 0; i < 20; i++) {
+    await tester.pump(const Duration(milliseconds: 1));
+  }
+}

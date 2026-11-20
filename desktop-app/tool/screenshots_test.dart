@@ -861,6 +861,8 @@ FakeWalletDevice _activityDevice() {
         ),
       ],
     ];
+  // What the sidebar counts as still scheduled is the same send.
+  device.chain.stillScheduled = device.chain.scheduledTransfers;
   return device;
 }
 

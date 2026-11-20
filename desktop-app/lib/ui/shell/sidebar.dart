@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -184,11 +185,19 @@ class _AccountRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final account = display.account;
+    final l10n = ref.watch(l10nProvider);
+    final mark = ref.watch(accountMarksProvider)[account.accountId] ?? const AccountMark();
+    final marked = [
+      if (mark.inProgress > 0) l10n.desktopMarksInProgress(mark.inProgress),
+      if (mark.waitingForSignature > 0) l10n.desktopMarksWaitingForSignature(mark.waitingForSignature),
+    ];
+    final badge = DesktopAccountBadge(account: account, size: _badgeSize, count: mark.count);
 
     return SidebarRow(
       title: account.name,
       isSelected: isSelected,
-      leading: DesktopAccountBadge(account: account, size: _badgeSize),
+      // The count on the badge, as a screen reader hears it.
+      leading: marked.isEmpty ? badge : Semantics(label: marked.join(', '), child: badge),
       subtitle: AccountBalanceText(
         account: account,
         style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),

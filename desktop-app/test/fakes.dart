@@ -415,6 +415,14 @@ class FakeSendChain {
   List<MultisigProposal> openProposals = const [];
   List<MultisigProposal> pastProposals = const [];
 
+  /// The multisigs whose open proposals were read, in order.
+  final openProposalReads = <String>[];
+
+  /// What is still scheduled to or from the accounts asked about, as the
+  /// indexer gives it, and the accounts asked about each time.
+  List<ReversibleTransferEvent> stillScheduled = const [];
+  final stillScheduledReads = <List<String>>[];
+
   final _calls = Expando<SendCall>();
 
   SendCall describe(RuntimeCall call) => _calls[call] ?? (throw StateError('A call this chain did not build: $call'));
@@ -458,7 +466,10 @@ class _FakeMultisigService extends Fake implements MultisigService {
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
 
   @override
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async => chain.openProposals;
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
+    chain.openProposalReads.add(msig.accountId);
+    return chain.openProposals;
+  }
 
   @override
   Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async => chain.pastProposals;
@@ -491,6 +502,12 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
       nextOtherCursor: hasMore ? AccountEventCursor(timestamp: '', id: '${page + 1}') : null,
       hasMore: hasMore,
     );
+  }
+
+  @override
+  Future<List<ReversibleTransferEvent>> fetchStillScheduledTransfers({required List<String> accountIds}) async {
+    chain.stillScheduledReads.add(accountIds);
+    return chain.stillScheduled;
   }
 }
 

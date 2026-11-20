@@ -4,6 +4,7 @@ import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/activity/activity_progress.dart';
 import 'package:wallet_core/activity/multisig_activity.dart';
+import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
@@ -190,25 +191,10 @@ class ActivityViewNotifier extends Notifier<AsyncValue<ActivityView>> {
     final service = ref.read(transactionServiceProvider);
 
     return transactions.whenData((data) {
-      final activity = switch (account) {
-        final MultisigAccount msig => multisigActivityOf(
-          service,
-          data,
-          ref.watch(multisigPastProposalsProvider(msig)).value ?? const [],
-          msig,
-        ),
-        _ => service.combineAndDeduplicateTransactions(
-          pendingCancellationIds: data.pendingCancellationIds,
-          pendingTransactions: data.pendingTransactions,
-          pendingMultisigCreations: data.pendingMultisigCreations,
-          pendingMultisigProposals: data.pendingMultisigProposals,
-          pendingMultisigExecutions: data.pendingMultisigExecutions,
-          pendingMultisigCancellations: data.pendingMultisigCancellations,
-          scheduledReversibleTransfers: data.scheduledReversibleTransfers,
-          otherTransfers: data.otherTransfers,
-        ),
-      };
-      final parts = partActivityByProgress(activity);
+      final past = account is MultisigAccount
+          ? ref.watch(multisigPastProposalsProvider(account)).value ?? const <MultisigProposal>[]
+          : const <MultisigProposal>[];
+      final parts = partActivityByProgress(activityOf(service, account, data, past));
       return ActivityView(
         inProgress: parts.inProgress,
         settled: parts.settled,
@@ -219,6 +205,27 @@ class ActivityViewNotifier extends Notifier<AsyncValue<ActivityView>> {
     });
   }
 }
+
+/// What of [data] an [account]'s panels list, in order: a multisig's [past]
+/// proposals and what it received, or any other account's transfers.
+List<TransactionEvent> activityOf(
+  TransactionService service,
+  BaseAccount account,
+  CombinedTransactionsList data,
+  List<MultisigProposal> past,
+) => switch (account) {
+  final MultisigAccount msig => multisigActivityOf(service, data, past, msig),
+  _ => service.combineAndDeduplicateTransactions(
+    pendingCancellationIds: data.pendingCancellationIds,
+    pendingTransactions: data.pendingTransactions,
+    pendingMultisigCreations: data.pendingMultisigCreations,
+    pendingMultisigProposals: data.pendingMultisigProposals,
+    pendingMultisigExecutions: data.pendingMultisigExecutions,
+    pendingMultisigCancellations: data.pendingMultisigCancellations,
+    scheduledReversibleTransfers: data.scheduledReversibleTransfers,
+    otherTransfers: data.otherTransfers,
+  ),
+};
 
 /// A multisig's open proposals, in order: the ones this device is still
 /// proposing, then the open ones, last changed first. Null for any other
