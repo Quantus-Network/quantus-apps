@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
+import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
@@ -76,6 +77,8 @@ NotificationData _notification({String id = 'n-1', DateTime? scheduledTime}) => 
 Future<void> _settle() => Future<void>.delayed(Duration.zero);
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('the binding', () {
     test('starting sets up macOS, Windows and Linux without asking for permission', () async {
       final plugin = FakeNotificationPlugin();
@@ -220,6 +223,27 @@ void main() {
         container.read(desktopLocalNotificationsProvider.notifier).showOrScheduleNotification(_notification()),
         throwsStateError,
       );
+    });
+  });
+
+  group('a click', () {
+    test('whose payload cannot be read still brings the window forward, and is reported', () async {
+      final window = <String>[];
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(WindowChrome.channel, (call) async {
+        window.add(call.method);
+        return null;
+      });
+      addTearDown(() => messenger.setMockMethodCallHandler(WindowChrome.channel, null));
+      final plugin = FakeNotificationPlugin();
+      final (:container, :telemetry) = _open(plugin, platform: TargetPlatform.macOS);
+      await container.read(desktopLocalNotificationsProvider.notifier).start();
+
+      plugin.click('not what the app shows');
+      await _settle();
+
+      expect(window, ['bringToFront']);
+      expect(telemetry.errors, ['desktop_notification_click_unreadable']);
     });
   });
 

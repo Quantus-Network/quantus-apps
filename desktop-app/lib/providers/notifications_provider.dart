@@ -7,8 +7,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/notification_status.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
+import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
+import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
@@ -51,7 +53,7 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
       linux: LinuxInitializationSettings(defaultActionName: ref.read(l10nProvider).desktopNotificationOpenAction),
     );
     try {
-      await ref.read(notificationPluginProvider).initialize(settings, onClick: (_) {});
+      await ref.read(notificationPluginProvider).initialize(settings, onClick: _open);
     } catch (e) {
       _unavailable(e);
       return;
@@ -71,6 +73,26 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
       state = allowed ? const NotificationsAllowed() : const NotificationsDenied();
     } catch (e) {
       _unavailable(e);
+    }
+  }
+
+  /// Opens what a clicked notification was about: the window comes to the
+  /// front, on the account the notification named when it is still there.
+  void _open(String? payload) {
+    unawaited(const WindowChrome().bringToFront());
+    final String accountId;
+    try {
+      accountId = (jsonDecode(payload!) as Map<String, dynamic>)['accountId'] as String;
+    } catch (e) {
+      quantusPrint('A clicked notification could not be read: $e');
+      ref.read(telemetryProvider).sendError('desktop_notification_click_unreadable', error: e);
+      return;
+    }
+    for (final account in ref.read(sidebarAccountsProvider)) {
+      if (account.account.accountId == accountId) {
+        unawaited(ref.read(sidebarSelectionProvider.notifier).showAccount(account));
+        return;
+      }
     }
   }
 
