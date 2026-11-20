@@ -2,10 +2,14 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
+import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
+import 'package:quantus_desktop_wallet/ui/settings/settings_caution.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -13,6 +17,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 
 /// The Info sheet ("Get Info"): an account's name, which can be typed over,
@@ -29,6 +34,9 @@ class AccountInfoSheet extends ConsumerStatefulWidget {
   static const copyInnerHashKey = Key('account-info-copy-inner-hash');
   static const recoveryPhraseRowKey = Key('account-info-recovery-phrase');
   static const disconnectRowKey = Key('account-info-disconnect');
+  static const disconnectButtonKey = Key('account-info-disconnect-button');
+  static const disconnectCancelKey = Key('account-info-disconnect-cancel');
+  static const backedUpKey = Key('account-info-backed-up');
 
   static Key signerKey(String accountId) => ValueKey('account-info-signer-$accountId');
 
@@ -36,12 +44,28 @@ class AccountInfoSheet extends ConsumerStatefulWidget {
   ConsumerState<AccountInfoSheet> createState() => _AccountInfoSheetState();
 }
 
+/// The steps of the Info sheet. Each but the info has a way back to it.
+enum _Step { info, disconnect }
+
 class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
   /// Read once: the sheet stays on the account it opened for.
   late final AccountInfoTarget _target =
       ref.read(accountInfoTargetProvider) ?? (throw StateError('The Info sheet opened without an account'));
 
+  late _Step _step = switch (_target.start) {
+    AccountInfoStart.disconnect => _Step.disconnect,
+    AccountInfoStart.info || AccountInfoStart.rename || AccountInfoStart.recoveryPhrase => _Step.info,
+  };
+
   bool _isClosing = false;
+
+  void _go(_Step step) => setState(() => _step = step);
+
+  /// The account was disconnected here: the sheet closes on it.
+  void _disconnected() {
+    _isClosing = true;
+    Navigator.of(context).maybePop();
+  }
 
   /// What the sheet last showed. While the accounts are read again after a
   /// change they are not known, and the sheet keeps to these meanwhile.
@@ -73,30 +97,228 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
       } else {
         _account = account;
         _accounts = accounts;
-        if (account is Account) _wallet = ref.watch(walletLabelProvider(account.walletIndex));
+        if (account is Account) _wallet = ref.watch(walletLabelProvider(account.walletIndex)) ?? _wallet;
       }
     }
     final account = _account;
     if (account == null) return const SizedBox.shrink();
 
-    final body = switch (account) {
-      MultisigAccount() => _MultisigInfo(multisig: account, accounts: _accounts, l10n: l10n),
-      Account(accountType: AccountType.encrypted) => _EncryptedInfo(account: account, l10n: l10n),
-      Account() => _AccountInfo(account: account, accounts: _accounts, wallet: _wallet!, l10n: l10n),
-      _ => throw StateError('${account.accountId} has no Info sheet'),
+    final infoTitle = account is MultisigAccount ? l10n.desktopMultisigInfoTitle : l10n.desktopAccountInfoTitle;
+    void toDisconnect() => _go(_Step.disconnect);
+    void back() => _go(_Step.info);
+
+    final (String title, Widget body) = switch (_step) {
+      _Step.info => (
+        infoTitle,
+        switch (account) {
+          MultisigAccount() => _MultisigInfo(
+            multisig: account,
+            accounts: _accounts,
+            onDisconnect: toDisconnect,
+            l10n: l10n,
+          ),
+          Account(accountType: AccountType.encrypted) => _EncryptedInfo(account: account, l10n: l10n),
+          Account() => _AccountInfo(
+            account: account,
+            accounts: _accounts,
+            wallet: _wallet!,
+            onDisconnect: toDisconnect,
+            l10n: l10n,
+          ),
+          _ => throw StateError('${account.accountId} has no Info sheet'),
+        },
+      ),
+      _Step.disconnect => (
+        l10n.desktopDisconnectTitle,
+        _DisconnectStep(
+          account: account,
+          accounts: _accounts,
+          wallet: account is Account ? _wallet : null,
+          onCancel: back,
+          onDisconnected: _disconnected,
+          l10n: l10n,
+        ),
+      ),
+    };
+    final onBack = _step == _Step.info ? null : back;
+
+    return SheetBackShortcut(
+      onBack: onBack,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ShellSheetHeader(
+            title: title,
+            account: account,
+            parent: onBack == null ? null : (title: infoTitle, onBack: onBack),
+          ),
+          const SizedBox(height: 18),
+          // Longer than the window, it scrolls within the sheet.
+          Flexible(child: SingleChildScrollView(child: body)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Disconnecting: the caution for what goes, then Disconnect. The last
+/// account of a wallet takes the wallet and its recovery phrase: that waits
+/// for a tick that the phrase is backed up, and asks for the system's
+/// approval where the computer can ask, going ahead where it cannot, as the
+/// phone does.
+class _DisconnectStep extends ConsumerStatefulWidget {
+  const _DisconnectStep({
+    required this.account,
+    required this.accounts,
+    required this.wallet,
+    required this.onCancel,
+    required this.onDisconnected,
+    required this.l10n,
+  });
+
+  final BaseAccount account;
+  final List<Account> accounts;
+
+  /// What the account's wallet is called; null for a multisig.
+  final String? wallet;
+  final VoidCallback onCancel;
+  final VoidCallback onDisconnected;
+  final AppLocalizations l10n;
+
+  @override
+  ConsumerState<_DisconnectStep> createState() => _DisconnectStepState();
+}
+
+class _DisconnectStepState extends ConsumerState<_DisconnectStep> {
+  bool _isBackedUp = false;
+  bool _isBusy = false;
+  String? _error;
+
+  /// How the account goes; null for a multisig.
+  late final DisconnectPlan? _plan = switch (widget.account) {
+    final Account account =>
+      disconnectPlanOf(account, widget.accounts) ?? (throw StateError('${account.accountId} cannot be disconnected')),
+    _ => null,
+  };
+
+  bool get _isWallet => _plan is DisconnectWallet;
+
+  /// Null once the deletion may go ahead; otherwise why not.
+  Future<String?> _approveDeletion(String wallet) async {
+    final l10n = widget.l10n;
+    try {
+      return switch (await ref.read(userApprovalProvider).approve(reason: l10n.desktopDisconnectWalletReason(wallet))) {
+        // A computer that cannot ask has nothing to enforce: the phone goes
+        // ahead on a device with no lock screen.
+        ApprovalResult.approved || ApprovalResult.notSetUp => null,
+        ApprovalResult.declined => l10n.desktopDisconnectWalletDeclined(wallet),
+      };
+    } on PamUnexpectedPromptException {
+      return l10n.desktopApprovalLoginAsksMore;
+    } catch (e) {
+      return l10n.desktopApprovalFailed('$e');
+    }
+  }
+
+  Future<void> _disconnect() async {
+    setState(() {
+      _isBusy = true;
+      _error = null;
+    });
+    if (_isWallet) {
+      final refusal = await _approveDeletion(widget.wallet!);
+      if (!mounted) return;
+      if (refusal != null) {
+        setState(() {
+          _isBusy = false;
+          _error = refusal;
+        });
+        return;
+      }
+    }
+    try {
+      await ref.read(accountManagerProvider).disconnect(widget.account);
+    } catch (e) {
+      quantusPrint('Disconnecting ${widget.account.accountId} failed: $e');
+      if (mounted) {
+        setState(() {
+          _isBusy = false;
+          _error = widget.l10n.accountMenuDisconnectError;
+        });
+      }
+      return;
+    }
+    if (mounted) widget.onDisconnected();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = widget.l10n;
+    final name = widget.account.name;
+    final wallet = widget.wallet;
+
+    final caution = switch (_plan) {
+      null => SettingsCaution(
+        eyebrow: l10n.desktopDisconnectMultisigEyebrow,
+        headline: l10n.desktopDisconnectHeadline(name),
+        lines: [l10n.desktopDisconnectMultisigLine1(name), l10n.desktopDisconnectMultisigLine2],
+      ),
+      DisconnectHardware() => SettingsCaution(
+        eyebrow: l10n.desktopDisconnectHardwareEyebrow,
+        headline: l10n.desktopDisconnectHeadline(name),
+        lines: [l10n.desktopDisconnectAccountLine1(name), l10n.desktopDisconnectHardwareLine2],
+      ),
+      DisconnectAccount() => SettingsCaution(
+        eyebrow: l10n.desktopDisconnectAccountEyebrow,
+        headline: l10n.desktopDisconnectHeadline(name),
+        lines: [l10n.desktopDisconnectAccountLine1(name), l10n.desktopDisconnectAccountLine2(name, wallet!)],
+      ),
+      DisconnectWallet() => SettingsCaution(
+        eyebrow: l10n.desktopResetEyebrow,
+        headline: l10n.desktopDisconnectWalletHeadline(wallet!),
+        lines: [
+          l10n.desktopDisconnectWalletLine1(name, wallet),
+          l10n.desktopDisconnectWalletLine2(wallet),
+          l10n.desktopDisconnectWalletLine3,
+        ],
+      ),
     };
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ShellSheetHeader(
-          title: account is MultisigAccount ? l10n.desktopMultisigInfoTitle : l10n.desktopAccountInfoTitle,
-          account: account,
+        caution,
+        if (_isWallet) ...[
+          const SizedBox(height: 6),
+          DesktopCheckbox(
+            key: AccountInfoSheet.backedUpKey,
+            value: _isBackedUp,
+            label: l10n.desktopDisconnectWalletBackedUp(wallet!),
+            onChanged: _isBusy ? (_) {} : (value) => setState(() => _isBackedUp = value),
+          ),
+        ],
+        const SizedBox(height: 22),
+        SettingsStepFooter(
+          error: _error,
+          buttons: [
+            SheetButton(
+              key: AccountInfoSheet.disconnectCancelKey,
+              label: l10n.commonCancel,
+              kind: SheetButtonKind.secondary,
+              onTap: widget.onCancel,
+            ),
+            SheetButton(
+              key: AccountInfoSheet.disconnectButtonKey,
+              label: _isWallet ? l10n.accountMenuDeleteWalletConfirm : l10n.accountMenuDisconnect,
+              kind: SheetButtonKind.destructive,
+              isDisabled: _isWallet && !_isBackedUp,
+              isLoading: _isBusy,
+              onTap: _disconnect,
+            ),
+          ],
         ),
-        const SizedBox(height: 18),
-        // Longer than the window, it scrolls within the sheet.
-        Flexible(child: SingleChildScrollView(child: body)),
       ],
     );
   }
@@ -104,7 +326,13 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
 
 /// A local or a hardware account.
 class _AccountInfo extends StatelessWidget {
-  const _AccountInfo({required this.account, required this.accounts, required this.wallet, required this.l10n});
+  const _AccountInfo({
+    required this.account,
+    required this.accounts,
+    required this.wallet,
+    required this.onDisconnect,
+    required this.l10n,
+  });
 
   final Account account;
 
@@ -113,6 +341,7 @@ class _AccountInfo extends StatelessWidget {
 
   /// What [account]'s wallet is called.
   final String wallet;
+  final VoidCallback onDisconnect;
   final AppLocalizations l10n;
 
   @override
@@ -141,7 +370,7 @@ class _AccountInfo extends StatelessWidget {
             DisconnectWallet() => l10n.desktopAccountInfoDisconnectWalletSubtitle(account.name, wallet),
           },
           isDestructive: true,
-          onPressed: null,
+          onPressed: onDisconnect,
         ),
     ];
 
@@ -162,12 +391,13 @@ class _AccountInfo extends StatelessWidget {
 }
 
 class _MultisigInfo extends StatelessWidget {
-  const _MultisigInfo({required this.multisig, required this.accounts, required this.l10n});
+  const _MultisigInfo({required this.multisig, required this.accounts, required this.onDisconnect, required this.l10n});
 
   final MultisigAccount multisig;
 
   /// This wallet's own accounts, to name the signers that are among them.
   final List<Account> accounts;
+  final VoidCallback onDisconnect;
   final AppLocalizations l10n;
 
   @override
@@ -213,7 +443,7 @@ class _MultisigInfo extends StatelessWidget {
               title: l10n.desktopAccountInfoDisconnectMultisig,
               subtitle: l10n.desktopAccountInfoDisconnectMultisigSubtitle(multisig.name),
               isDestructive: true,
-              onPressed: null,
+              onPressed: onDisconnect,
             ),
           ],
         ),

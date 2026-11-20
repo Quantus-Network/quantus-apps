@@ -77,7 +77,8 @@ class AccountInfoTargetNotifier extends Notifier<AccountInfoTarget?> {
 
 /// What the wallet at [walletIndex] is called where it is named: its own
 /// name, or "Wallet 2" / "Cold Wallet" by its number, as the sidebar's
-/// headings say. Null while the accounts are being read, as after a change.
+/// headings say. Null while the accounts are being read, as after a change,
+/// and once the wallet is gone, as just after it was disconnected.
 final walletLabelProvider = Provider.family<String?, int>((ref, walletIndex) {
   final l10n = ref.watch(l10nProvider);
   final accounts = ref.watch(accountsProvider).value;
@@ -85,7 +86,7 @@ final walletLabelProvider = Provider.family<String?, int>((ref, walletIndex) {
   if (accounts == null || multisigs == null) return null;
   final grouping = groupWallets(accounts: accounts, multisigs: multisigs);
   final wallet = grouping.wallets.where((w) => w.walletIndex == walletIndex).firstOrNull;
-  if (wallet == null) throw StateError('No wallet $walletIndex among the accounts');
+  if (wallet == null) return null;
   return walletDisplayName(l10n, wallet, ref.watch(walletNameProvider(walletIndex)));
 });
 

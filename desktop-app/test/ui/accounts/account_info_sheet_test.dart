@@ -5,13 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
@@ -42,6 +45,7 @@ Future<FakeWalletDevice> _pump(
   WidgetTester tester, {
   List<Account>? accounts,
   Future<String> Function()? innerHash,
+  FakeUserApproval? approval,
 }) async {
   final device = FakeWalletDevice()..store(accounts ?? [mainAccount, savingsAccount, _encrypted]);
   if (accounts == null) {
@@ -53,6 +57,7 @@ Future<FakeWalletDevice> _pump(
     tester,
     overrides: [
       ...device.overrides,
+      systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
       encryptedAccountServiceProvider.overrideWith(
         (ref, walletIndex) =>
             FakeEncryptedAccountService(() async => 'qzDeposit', innerHash: innerHash ?? () async => '0xinner'),
@@ -84,6 +89,26 @@ Future<void> _typeName(WidgetTester tester, String name) async {
   await tester.pump();
   await tester.enterText(_nameField, name);
   await tester.pump();
+}
+
+/// Opens the Info sheet on [account], then its Disconnect step.
+Future<void> _toDisconnect(WidgetTester tester, BaseAccount account) async {
+  await _openInfo(tester, account);
+  await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+  await tester.pumpAndSettle();
+}
+
+/// Whether the step's confirming button can be pressed.
+bool _confirmEnabled(WidgetTester tester) {
+  final button = tester.widget<QuantusButton>(
+    find.descendant(of: find.byKey(AccountInfoSheet.disconnectButtonKey), matching: find.byType(QuantusButton)),
+  );
+  return button.onTap != null && !button.isDisabled && !button.isLoading;
+}
+
+Future<void> _confirm(WidgetTester tester) async {
+  await tester.tap(find.byKey(AccountInfoSheet.disconnectButtonKey));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -294,6 +319,128 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(device.storage.multisigStore.single.name, 'Board');
+    });
+  });
+
+  group('disconnect', () {
+    testOnMac('an account with a sibling: a caution step, then only it goes and the sheet closes', (tester) async {
+      final device = await _pump(tester);
+      await _toDisconnect(tester, savingsAccount);
+
+      expect(find.byKey(ShellSheetHeader.backKey), findsOneWidget);
+      expect(_inSheet(find.text('Disconnect')), findsWidgets);
+      expect(_inSheet(find.text('Stop showing Savings?')), findsOneWidget);
+      await _confirm(tester);
+
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzSavings')));
+      expect(device.storage.mnemonics.containsKey(0), isTrue);
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(find.descendant(of: find.byType(Sidebar), matching: find.text('Savings')), findsNothing);
+    });
+
+    testOnMac('disconnecting the active account makes a non-encrypted account active', (tester) async {
+      await _pump(tester);
+      await _toDisconnect(tester, mainAccount);
+      await _confirm(tester);
+
+      expect(_container(tester).read(activeAccountProvider).value?.account.accountId, 'qzSavings');
+    });
+
+    testOnMac('a hardware account and a multisig have their own cautions, then go', (tester) async {
+      final device = await _pump(tester);
+      await _toDisconnect(tester, _cold);
+      expect(_inSheet(find.text('Stop showing Cold?')), findsOneWidget);
+      expect(_inSheet(find.text('DISCONNECT HARDWARE ACCOUNT')), findsOneWidget);
+      await _confirm(tester);
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzCold')));
+
+      await _toDisconnect(tester, _team);
+      expect(_inSheet(find.text('Stop showing Team?')), findsOneWidget);
+      expect(_inSheet(find.text('DISCONNECT MULTISIG')), findsOneWidget);
+      await _confirm(tester);
+      expect(device.storage.multisigStore, isEmpty);
+    });
+
+    testOnMac('a wallet\'s last account: Delete Wallet waits for the box, asks for approval, then the wallet goes', (
+      tester,
+    ) async {
+      final approval = FakeUserApproval();
+      final device = await _pump(tester, approval: approval);
+      await _toDisconnect(tester, _trading);
+
+      expect(_inSheet(find.text('This removes Wallet 2')), findsOneWidget);
+      expect(_confirmEnabled(tester), isFalse);
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      expect(_confirmEnabled(tester), isTrue);
+      await _confirm(tester);
+
+      expect(approval.reasons, ['Delete Wallet 2 and its recovery phrase']);
+      expect(device.storage.accounts.where((a) => a.walletIndex == 2), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('where this computer cannot ask for approval, the wallet goes without a prompt, as on the phone', (
+      tester,
+    ) async {
+      final approval = FakeUserApproval()..answer = () async => ApprovalResult.notSetUp;
+      final device = await _pump(tester, approval: approval);
+      await _toDisconnect(tester, _trading);
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      await _confirm(tester);
+
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+    });
+
+    testOnMac('a declined or failed approval keeps the step open, says why, and removes nothing', (tester) async {
+      final approval = FakeUserApproval()..answer = () async => ApprovalResult.declined;
+      final device = await _pump(tester, approval: approval);
+      await _toDisconnect(tester, _trading);
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      await _confirm(tester);
+
+      expect(_inSheet(find.text('Deleting Wallet 2 needs your approval')), findsOneWidget);
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
+
+      approval.answer = () async => throw StateError('the prompt broke');
+      await _confirm(tester);
+      expect(_inSheet(find.textContaining('the prompt broke')), findsOneWidget);
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
+    });
+
+    testOnMac('a removal that fails says so, and the step stays', (tester) async {
+      final device = await _pump(tester);
+      await _toDisconnect(tester, savingsAccount);
+      device.storage.writeError = StateError('disk full');
+      await _confirm(tester);
+
+      expect(_inSheet(find.text("Couldn't disconnect. Please try again.")), findsOneWidget);
+      expect(device.storage.accounts.map((a) => a.accountId), contains('qzSavings'));
+    });
+
+    testOnMac('Cancel, the path and Command-[ go back to the info', (tester) async {
+      await _pump(tester);
+      await _toDisconnect(tester, savingsAccount);
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectCancelKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(AccountInfoSheet.nameFieldKey), findsOneWidget);
+
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(ShellSheetHeader.backKey));
+      await tester.pumpAndSettle();
+      expect(find.byKey(AccountInfoSheet.nameFieldKey), findsOneWidget);
+
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+      await tester.pumpAndSettle();
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.bracketLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pumpAndSettle();
+      expect(find.byKey(AccountInfoSheet.nameFieldKey), findsOneWidget);
     });
   });
 }

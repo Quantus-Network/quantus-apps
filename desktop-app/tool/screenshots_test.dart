@@ -496,6 +496,20 @@ void main() {
     await tester.pump();
   });
 
+  _scene('account_disconnect', (tester) async {
+    await _openInfo(tester, _savings);
+    await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('account_disconnect_wallet', (tester) async {
+    await _openInfo(tester, _trading);
+    await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('I’ve backed up Wallet 2’s recovery phrase'));
+    await tester.pumpAndSettle();
+  });
+
   _scene('settings', (tester) async {
     await _openSettings(tester);
   });
