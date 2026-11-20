@@ -3,12 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-Future<void> _pump(WidgetTester tester, ApprovalMarks marks) async {
+/// Draws [marks], in [room] when given: that wide at most.
+Future<void> _pump(WidgetTester tester, ApprovalMarks marks, {double? room}) async {
   await tester.pumpWidget(
     Builder(
       builder: (context) => MaterialApp(
         theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
-        home: Scaffold(body: Center(child: marks)),
+        home: Scaffold(
+          body: Center(
+            child: room == null
+                ? marks
+                : SizedBox(
+                    width: room,
+                    child: Align(alignment: AlignmentDirectional.centerStart, child: marks),
+                  ),
+          ),
+        ),
       ),
     ),
   );
@@ -71,6 +81,44 @@ void main() {
     final bar = tester.getSize(find.byKey(ApprovalMarks.barKey));
     // A hundredth of the bar would be a sliver: it is at least a dot.
     expect(_filledWidth(tester), bar.height);
+  });
+
+  group('in less room than they take', () {
+    testWidgets('circles that fit stay circles', (tester) async {
+      // Ten circles of 10 with 5 between them.
+      await _pump(tester, const ApprovalMarks(approved: 3, needed: 10), room: 145);
+
+      expect(_circles(tester), [...List.filled(3, true), ...List.filled(7, false)]);
+      expect(find.byKey(ApprovalMarks.barKey), findsNothing);
+    });
+
+    testWidgets('circles that do not fit become the bar, as wide as the room, filled by the share given', (
+      tester,
+    ) async {
+      await _pump(tester, const ApprovalMarks(approved: 3, needed: 10), room: 80);
+
+      expect(_circles(tester), isEmpty);
+      expect(_barWidth(tester), 80);
+      expect(_filledWidth(tester), moreOrLessEquals(24, epsilon: 0.01));
+    });
+
+    testWidgets('the bar narrows to the room', (tester) async {
+      await _pump(tester, const ApprovalMarks(approved: 25, needed: 50), room: 60);
+
+      expect(_barWidth(tester), 60);
+      expect(_filledWidth(tester), moreOrLessEquals(30, epsilon: 0.01));
+    });
+
+    testWidgets('below the least bar there are no marks: the count beside them says it alone', (tester) async {
+      await _pump(tester, const ApprovalMarks(approved: 25, needed: 50), room: ApprovalMarks.leastBarWidth - 1);
+
+      expect(_circles(tester), isEmpty);
+      expect(find.byKey(ApprovalMarks.barKey), findsNothing);
+      expect(tester.getSize(find.byType(ApprovalMarks)).width, 0);
+
+      await _pump(tester, const ApprovalMarks(approved: 25, needed: 50), room: ApprovalMarks.leastBarWidth);
+      expect(_barWidth(tester), ApprovalMarks.leastBarWidth);
+    });
   });
 
   testWidgets('a screen reader passes over circles and bar alike: the count is said in words beside them', (

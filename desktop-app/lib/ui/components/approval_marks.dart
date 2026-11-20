@@ -8,6 +8,9 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// them filled. A multisig can need a hundred, more than a line holds: past
 /// that it is one bar, filled by the share approved.
 ///
+/// In less room than the circles take they are the bar too, and the bar is
+/// no wider than the room, down to [leastBarWidth]; in less there are none.
+///
 /// What they count is said in words beside them, so a screen reader passes
 /// them over.
 class ApprovalMarks extends StatelessWidget {
@@ -28,41 +31,52 @@ class ApprovalMarks extends StatelessWidget {
   static const double _barWidth = 96;
   static const double _barHeight = 4;
 
+  /// The narrowest the bar is drawn; in less room there are no marks.
+  static const double leastBarWidth = 24;
+
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-
     return ExcludeSemantics(
-      child: needed > mostCircles
-          ? _bar(context)
-          : Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (var i = 0; i < needed; i++)
-                  Container(
-                    width: _size,
-                    height: _size,
-                    margin: EdgeInsets.only(left: i == 0 ? 0 : _gap),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: i < approved ? colors.semanticSage : null,
-                      border: Border.all(color: i < approved ? colors.semanticSage : colors.borderEmphasis, width: 1.5),
-                    ),
-                  ),
-              ],
-            ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final room = constraints.maxWidth;
+          if (needed <= mostCircles && needed * _size + (needed - 1) * _gap <= room) return _circles(context);
+          if (room < leastBarWidth) return const SizedBox.shrink();
+          return _bar(context, width: math.min(_barWidth, room));
+        },
+      ),
     );
   }
 
-  Widget _bar(BuildContext context) {
+  Widget _circles(BuildContext context) {
+    final colors = context.colorsV3;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < needed; i++)
+          Container(
+            width: _size,
+            height: _size,
+            margin: EdgeInsets.only(left: i == 0 ? 0 : _gap),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: i < approved ? colors.semanticSage : null,
+              border: Border.all(color: i < approved ? colors.semanticSage : colors.borderEmphasis, width: 1.5),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _bar(BuildContext context, {required double width}) {
     final colors = context.colorsV3;
     final radius = BorderRadius.circular(context.radiusV3.pill);
     // One approval of a hundred would be a sliver: it is at least a dot.
-    final filled = approved <= 0 ? 0.0 : math.max(_barHeight, _barWidth * math.min(approved, needed) / needed);
+    final filled = approved <= 0 ? 0.0 : math.max(_barHeight, width * math.min(approved, needed) / needed);
 
     return Container(
       key: barKey,
-      width: _barWidth,
+      width: width,
       height: _barHeight,
       alignment: AlignmentDirectional.centerStart,
       decoration: BoxDecoration(color: colors.borderEmphasis, borderRadius: radius),

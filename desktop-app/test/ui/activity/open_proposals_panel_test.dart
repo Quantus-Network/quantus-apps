@@ -7,9 +7,11 @@ import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/activity/multisig_activity.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 
 import '../../fakes.dart';
 
@@ -139,6 +141,59 @@ void main() {
     expect(find.text(_l10n.activityTxExecuting), findsOne);
     expect(find.text(_l10n.multisigStatusApproved), findsNothing);
   });
+
+  // Two approvals are few circles, ten the most circles, eleven the fewest
+  // drawn as the bar. The widths are the wide and tight forms' least, and a
+  // brief one whose line just holds the rest of the row.
+  for (final needed in [2, ApprovalMarks.mostCircles, ApprovalMarks.mostCircles + 1]) {
+    for (final (form, width) in [
+      (ActivityRowForm.wide, ActivityRowForm.wideFrom),
+      (ActivityRowForm.tight, ActivityRowForm.tightFrom),
+      (ActivityRowForm.brief, 400.0),
+    ]) {
+      testWidgets(
+        '$needed-of-$needed approvals fit a ${form.name} row $width wide: the count whole, the marks beside it',
+        (tester) async {
+          useFakeCheckphrases(fakeCheckphrase);
+          await tester.pumpWidget(
+            ProviderScope(
+              overrides: [settingsServiceProvider.overrideWithValue(FakeSettingsService())],
+              child: Builder(
+                builder: (context) => MaterialApp(
+                  theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
+                  home: Scaffold(
+                    body: Align(
+                      alignment: Alignment.topLeft,
+                      child: SizedBox(
+                        width: width,
+                        child: OpenProposalRowView(
+                          id: 'proposal',
+                          amount: oneToken * BigInt.from(1250),
+                          recipient: _bob,
+                          wait: ProposalWait.signed,
+                          approved: needed,
+                          needed: needed,
+                          form: form,
+                          l10n: _l10n,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(tester.takeException(), isNull, reason: 'nothing overflows');
+          final row = tester.getRect(find.byType(OpenProposalRowView));
+          final count = tester.getRect(find.text(_l10n.desktopProposeCountOf(needed, needed)));
+          final marks = tester.getRect(find.byType(ApprovalMarks));
+          expect(row.left <= marks.left && marks.right <= count.left && count.right <= row.right, isTrue);
+        },
+      );
+    }
+  }
 
   testOnMac('its Activity is its past proposals, named by how they ended, and what it received', (tester) async {
     final chain = FakeSendChain()
