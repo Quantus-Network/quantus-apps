@@ -71,11 +71,11 @@ class ActivityRowView extends StatefulWidget {
   final VoidCallback? onTap;
 
   /// The space the label and its time take on a wide row.
-  static const double _whatWidth = 150;
+  static const double whatWidth = 150;
 
   /// The space before who on a wide row, and on a tight one.
-  static const double _prefixWidth = 58;
-  static const double _tightPrefixWidth = 52;
+  static const double prefixWidth = 58;
+  static const double tightPrefixWidth = 52;
 
   @override
   State<ActivityRowView> createState() => _ActivityRowViewState();
@@ -183,7 +183,7 @@ class _ActivityRowViewState extends State<ActivityRowView> {
             _icon(colors),
             const SizedBox(width: 12),
             SizedBox(
-              width: ActivityRowView._whatWidth,
+              width: ActivityRowView.whatWidth,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +198,7 @@ class _ActivityRowViewState extends State<ActivityRowView> {
             Expanded(
               child: Row(
                 children: [
-                  _prefix(text.body.copyWith(color: colors.textMuted), ActivityRowView._prefixWidth),
+                  _prefix(text.body.copyWith(color: colors.textMuted), ActivityRowView.prefixWidth),
                   Flexible(child: _who(colors)),
                 ],
               ),
@@ -248,7 +248,7 @@ class _ActivityRowViewState extends State<ActivityRowView> {
                         ? CrossAxisAlignment.start
                         : CrossAxisAlignment.center,
                     children: [
-                      _prefix(text.caption.copyWith(color: colors.textMuted), ActivityRowView._tightPrefixWidth),
+                      _prefix(text.caption.copyWith(color: colors.textMuted), ActivityRowView.tightPrefixWidth),
                       Flexible(child: _who(colors)),
                     ],
                   ),

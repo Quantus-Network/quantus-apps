@@ -247,6 +247,26 @@ void main() {
       expect(_rowsIn(tester, ActivityPanel), ['settled']);
     });
 
+    testOnMac("a first load's skeleton fills the panel with days of rows, as real activity would", (tester) async {
+      final chain = FakeSendChain()..holdHistory = Completer<void>();
+      await _open(tester, chain: chain, settle: false);
+      await tester.pump(const Duration(milliseconds: 450));
+
+      var rows = 0;
+      while (find.byKey(ActivitySkeleton.rowKey(rows)).evaluate().isNotEmpty) {
+        rows++;
+      }
+      expect(rows, greaterThan(1));
+      final last = tester.getRect(find.byKey(ActivitySkeleton.rowKey(rows - 1)));
+      final panel = tester.getRect(find.byType(ActivityPanel));
+      expect(last.bottom, lessThanOrEqualTo(panel.bottom));
+      expect(last.bottom, greaterThan(panel.bottom - 1 - last.height), reason: 'within one row of the bottom');
+      expect(find.byKey(ActivitySkeleton.headingKey(1)), findsOne, reason: 'more than one day');
+
+      chain.holdHistory!.complete();
+      await tester.pumpAndSettle(const Duration(milliseconds: 100));
+    });
+
     testOnMac('the skeleton breathes, and holds still when the system asks for less motion', (tester) async {
       final chain = FakeSendChain()..holdHistory = Completer<void>();
       await _open(tester, chain: chain, settle: false);

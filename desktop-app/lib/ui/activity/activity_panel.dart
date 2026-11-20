@@ -195,8 +195,7 @@ class _List extends StatelessWidget {
               for (final tx in day.transactions)
                 ActivityEntry(key: ValueKey(tx.id), tx: tx, form: form, hasFocus: rowsHaveKeys),
             ],
-            if (view.isLoadingMore)
-              const ActivitySkeleton(key: ActivityPanel.loadingMoreKey, rows: 2, fades: false, hasHeading: false),
+            if (view.isLoadingMore) const ActivitySkeleton(key: ActivityPanel.loadingMoreKey, rows: 2),
           ],
         );
       },

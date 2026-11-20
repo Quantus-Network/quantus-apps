@@ -933,6 +933,19 @@ void _activityScenes() {
     await tester.pumpAndSettle();
   });
 
+  // The skeleton's rows take the tight form there, as the real ones do.
+  _scene('activity_loading_smallest_window', (tester) async {
+    final device = FakeWalletDevice()..store([_root, _second, _encrypted]);
+    device.chain.holdHistory = Completer<void>();
+    await _open(tester, device, reduceMotion: true);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pump(const Duration(milliseconds: 450));
+    await _showImages(tester);
+    await _snap(tester, 'activity_loading_smallest_window');
+    device.chain.holdHistory!.complete();
+    await tester.pumpAndSettle();
+  });
+
   _scene('activity_failed', (tester) async {
     final device = FakeWalletDevice()..store([_root, _second, _encrypted]);
     device.chain.historyError = StateError('Connection closed before full header was received');
