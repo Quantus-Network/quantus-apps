@@ -16,11 +16,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
@@ -466,6 +468,34 @@ void main() {
     });
   }
 
+  _scene('account_info', (tester) async {
+    await _openInfo(tester, _savings);
+  });
+
+  _scene('account_info_keystone', (tester) async {
+    await _openInfo(tester, _cold);
+  });
+
+  _scene('account_info_wallet_last_account', (tester) async {
+    await _openInfo(tester, _trading);
+  });
+
+  _scene('account_info_multisig', (tester) async {
+    await _openInfo(tester, _infoTeam);
+  });
+
+  _scene('account_info_encrypted', (tester) async {
+    await _openInfo(tester, _encrypted);
+  });
+
+  _scene('account_info_renaming', (tester) async {
+    await _openInfo(tester, _savings);
+    final field = find.descendant(of: find.byKey(AccountInfoSheet.nameFieldKey), matching: find.byType(EditableText));
+    await tester.tap(field);
+    await tester.enterText(field, 'Rainy day');
+    await tester.pump();
+  });
+
   _scene('settings', (tester) async {
     await _openSettings(tester);
   });
@@ -595,6 +625,62 @@ Future<void> _typePassword(WidgetTester tester, String password) async {
 /// Opens the wallet, then Settings, which the app menu opens. With a
 /// [loginPassword] the app's own approval asks for that password, as on
 /// Linux.
+/// The accounts the Info sheet scenes are drawn on: the first wallet's, a
+/// Keystone account, a second wallet's only account, and a multisig.
+const _cold = Account(
+  walletIndex: 1,
+  index: 0,
+  name: 'Vault',
+  accountId: 'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+  accountType: AccountType.keystone,
+);
+const _trading = Account(
+  walletIndex: 2,
+  index: 0,
+  name: 'Trading',
+  accountId: 'qzW6mKe1RtZ8pLc3YhNv5DxQa9SgFb2UoJi7Vn4kTw3sHd',
+);
+const _savingsAddress = 'qzpX4cLm8VbN2tRw6KsYh9DqF3jEa7UoZi1Gn5WkTe8rQy';
+const _savings = Account(walletIndex: 0, index: 1, name: 'Savings', accountId: _savingsAddress);
+const _otherSigner = 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa';
+final _infoTeam = MultisigAccount(
+  name: 'Team',
+  accountId: 'qzR2dJx8NbV5tLq1WcK7mYh4PsGa9FeZo3UiBn6Ek8rTw',
+  signers: const [_otherSigner, 'qzmN7RfQ2k8VtXc4hW9yLp3sD6aJ1bEuG5oZr8TnKw2xYv', _savingsAddress],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'qzmN7RfQ2k8VtXc4hW9yLp3sD6aJ1bEuG5oZr8TnKw2xYv',
+  creator: _otherSigner,
+);
+
+/// Opens the Info sheet on [account] over the window of a wallet with every
+/// kind of account.
+Future<void> _openInfo(WidgetTester tester, BaseAccount account) async {
+  final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
+  device.storage.accounts.addAll([_cold, _trading]);
+  device.storage.mnemonics[2] = _phrase;
+  device.storage.multisigStore.add(_infoTeam);
+  await _open(
+    tester,
+    device,
+    reduceMotion: true,
+    overrides: [
+      encryptedAccountServiceProvider.overrideWith(
+        (ref, walletIndex) => FakeEncryptedAccountService(
+          () async => _depositAddress,
+          innerHash: () async => '0x7c3f9a1e5b2d8c4f6a0e9b3d7f1c5a8e2b6d0f4a9c3e7b1d5f8a2c6e0b4d9f3a',
+        ),
+      ),
+    ],
+  );
+  useFakeCheckphrases((address) async => 'Harbor-Velvet-Signal-Mirror-Canyon');
+  await tester.pumpAndSettle();
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openInfo(account);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _openSettings(WidgetTester tester, {FakeLoginPassword? loginPassword}) async {
   await _open(
     tester,

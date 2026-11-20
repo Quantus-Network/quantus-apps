@@ -7,7 +7,11 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
+import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// What can be copied from an account's menu.
 enum CopiedValue { address, innerHash }
@@ -45,6 +49,46 @@ class AccountNoteNotifier extends Notifier<AccountNote?> {
   }
 }
 
+/// Where the Info sheet opens: on the account's details, with its name ready
+/// to be typed over, or straight on its recovery phrase or on disconnecting.
+enum AccountInfoStart { info, rename, recoveryPhrase, disconnect }
+
+/// The account the Info sheet is about, which need not be the active one,
+/// and where it opens.
+class AccountInfoTarget {
+  const AccountInfoTarget(this.accountId, {this.start = AccountInfoStart.info});
+
+  final String accountId;
+  final AccountInfoStart start;
+}
+
+/// What the Info sheet opens on. It is set before the sheet opens, and the
+/// sheet reads it once.
+final accountInfoTargetProvider = NotifierProvider<AccountInfoTargetNotifier, AccountInfoTarget?>(
+  AccountInfoTargetNotifier.new,
+);
+
+class AccountInfoTargetNotifier extends Notifier<AccountInfoTarget?> {
+  @override
+  AccountInfoTarget? build() => null;
+
+  void set(AccountInfoTarget target) => state = target;
+}
+
+/// What the wallet at [walletIndex] is called where it is named: its own
+/// name, or "Wallet 2" / "Cold Wallet" by its number, as the sidebar's
+/// headings say. Null while the accounts are being read, as after a change.
+final walletLabelProvider = Provider.family<String?, int>((ref, walletIndex) {
+  final l10n = ref.watch(l10nProvider);
+  final accounts = ref.watch(accountsProvider).value;
+  final multisigs = ref.watch(multisigAccountsProvider).value;
+  if (accounts == null || multisigs == null) return null;
+  final grouping = groupWallets(accounts: accounts, multisigs: multisigs);
+  final wallet = grouping.wallets.where((w) => w.walletIndex == walletIndex).firstOrNull;
+  if (wallet == null) throw StateError('No wallet $walletIndex among the accounts');
+  return walletDisplayName(l10n, wallet, ref.watch(walletNameProvider(walletIndex)));
+});
+
 /// What the account menus and the Info sheet do to an account: copy from it,
 /// rename it, disconnect it. The rules for what each account allows are
 /// wallet_core's ([accountMenuOf], [disconnectPlanOf], [nameEditOf]); this
@@ -55,6 +99,13 @@ class AccountManager {
   AccountManager(this._ref);
 
   final Ref _ref;
+
+  /// Opens the Info sheet on [account], at [start]. Like any sheet, it does
+  /// not open over another.
+  Future<void> openInfo(BaseAccount account, {AccountInfoStart start = AccountInfoStart.info}) {
+    _ref.read(accountInfoTargetProvider.notifier).set(AccountInfoTarget(account.accountId, start: start));
+    return _ref.read(shellSheetProvider.notifier).open(ShellSheet.accountInfo);
+  }
 
   /// Copies [value] of [account] and notes it on the account's row. A copy
   /// that fails is noted as a failure, and the clipboard is left as it was.

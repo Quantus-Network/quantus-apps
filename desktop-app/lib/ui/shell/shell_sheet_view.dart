@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/receive/receive_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
@@ -31,12 +32,17 @@ class ShellSheetView extends ConsumerWidget {
 
   bool get _actsOnAccount => switch (sheet) {
     ShellSheet.receive || ShellSheet.send || ShellSheet.propose || ShellSheet.swap => true,
-    ShellSheet.addAccount || ShellSheet.settings => false,
+    ShellSheet.addAccount || ShellSheet.settings || ShellSheet.accountInfo => false,
   };
 
   Widget? get _content => switch (sheet) {
     ShellSheet.receive => const ReceiveSheet(),
-    ShellSheet.send || ShellSheet.propose || ShellSheet.swap || ShellSheet.addAccount || ShellSheet.settings => null,
+    ShellSheet.send ||
+    ShellSheet.propose ||
+    ShellSheet.swap ||
+    ShellSheet.addAccount ||
+    ShellSheet.settings ||
+    ShellSheet.accountInfo => null,
   };
 
   @override
@@ -60,6 +66,7 @@ class ShellSheetView extends ConsumerWidget {
           padding: const EdgeInsets.all(padding),
           child: switch (sheet) {
             ShellSheet.settings => const SettingsSheet(),
+            ShellSheet.accountInfo => const AccountInfoSheet(),
             ShellSheet.send || ShellSheet.propose => const SendSheet(),
             _ => _TitledSheet(
               title: sheetTitle(ref.watch(l10nProvider), sheet),

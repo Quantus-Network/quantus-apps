@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart'
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
+import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -143,13 +144,7 @@ class _WalletHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final custom = ref.watch(walletNameProvider(wallet.walletIndex));
-    final name = custom != null && custom.isNotEmpty
-        ? custom
-        : switch (wallet.kind) {
-            WalletKind.software => l10n.accountsSheetWallet(wallet.number),
-            WalletKind.keystone => l10n.accountsSheetKeystoneWallet(wallet.number),
-          };
+    final name = walletDisplayName(l10n, wallet, ref.watch(walletNameProvider(wallet.walletIndex)));
 
     // Drawn in capitals, which is a look and not the name: a screen reader
     // gets the name as it is written.

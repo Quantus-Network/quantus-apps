@@ -18,4 +18,5 @@ String sheetTitle(AppLocalizations l10n, ShellSheet sheet) => switch (sheet) {
   ShellSheet.swap => l10n.homeSwap,
   ShellSheet.addAccount => l10n.accountsSheetAddAccount,
   ShellSheet.settings => l10n.settingsTitle,
+  ShellSheet.accountInfo => l10n.desktopAccountInfoTitle,
 };
