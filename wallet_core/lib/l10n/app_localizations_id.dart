@@ -2491,6 +2491,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopMenuPreviousSidebarItem => 'Item Bar Samping Sebelumnya';
 
   @override
+  String get desktopMenuRefresh => 'Segarkan';
+
+  @override
   String get desktopMenuWindow => 'Jendela';
 
   @override

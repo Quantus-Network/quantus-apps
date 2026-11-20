@@ -15,6 +15,9 @@ class HistoryPollingManager {
   bool _initialized = false;
   bool _isRefreshing = false;
 
+  /// The refresh the person asked for, while it runs.
+  Future<void>? _manualRefresh;
+
   HistoryPollingManager(this._ref) {
     _globalPoller = _ref.read(globalHistoryPollingServiceProvider);
     _reversibleMonitor = _ref.read(reversibleTransferMonitoringServiceProvider);
@@ -60,6 +63,7 @@ class HistoryPollingManager {
     try {
       quantusPrint('History polling manager: Silent Refresh!');
 
+      invalidateShownAccountBalances(_ref);
       await Future.wait([
         refreshActiveAccountBalance(_ref),
         silentRefreshActiveAccount(_ref),
@@ -68,6 +72,14 @@ class HistoryPollingManager {
     } finally {
       _isRefreshing = false;
     }
+  }
+
+  /// Refreshes everything because the person asked to (pull-to-refresh, a
+  /// Refresh command). Asked again while that is under way, it joins the
+  /// refresh already running: for an encrypted account each one is a scan
+  /// from the start.
+  Future<void> triggerManualRefresh() {
+    return _manualRefresh ??= _globalPoller.triggerManualRefresh().whenComplete(() => _manualRefresh = null);
   }
 
   void dispose() {

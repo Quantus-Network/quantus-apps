@@ -664,6 +664,7 @@
   "desktopMenuShowSidebar": "Tampilkan Bar Samping",
   "desktopMenuNextSidebarItem": "Item Bar Samping Berikutnya",
   "desktopMenuPreviousSidebarItem": "Item Bar Samping Sebelumnya",
+  "desktopMenuRefresh": "Segarkan",
   "desktopMenuWindow": "Jendela",
   "desktopBootProtocol": "> PROTOKOL QUANTUS v1.0.0-gm",
   "desktopBootNistModule": "> MODUL NIST FIPS 204 DIMUAT {status}",

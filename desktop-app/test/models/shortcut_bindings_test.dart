@@ -10,6 +10,8 @@ const _cmd = KeyModifiers(meta: true);
 const _ctrl = KeyModifiers(control: true);
 const _optCmd = KeyModifiers(meta: true, alt: true);
 const _ctrlAlt = KeyModifiers(control: true, alt: true);
+const _shiftCmd = KeyModifiers(meta: true, shift: true);
+const _ctrlShift = KeyModifiers(control: true, shift: true);
 
 KeyCombo _combo(LogicalKeyboardKey key, KeyModifiers modifiers) => KeyCombo(key, modifiers);
 
@@ -30,6 +32,7 @@ void main() {
       expect(mac[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _cmd));
       expect(mac[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _optCmd));
       expect(mac[AppCommand.previousSidebarItem], _combo(LogicalKeyboardKey.arrowUp, _optCmd));
+      expect(mac[AppCommand.refresh], _combo(LogicalKeyboardKey.keyR, _shiftCmd));
       expect(mac.accountModifiers, _cmd);
       expect(mac.account(0), _combo(LogicalKeyboardKey.digit1, _cmd));
       expect(mac.account(8), _combo(LogicalKeyboardKey.digit9, _cmd));
@@ -44,6 +47,7 @@ void main() {
       expect(pc[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _ctrl));
       expect(pc[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _ctrlAlt));
       expect(pc[AppCommand.previousSidebarItem], _combo(LogicalKeyboardKey.arrowUp, _ctrlAlt));
+      expect(pc[AppCommand.refresh], _combo(LogicalKeyboardKey.keyR, _ctrlShift));
       expect(pc.accountModifiers, _ctrl);
       expect(pc.account(2), _combo(LogicalKeyboardKey.digit3, _ctrl));
     });
@@ -305,6 +309,32 @@ void main() {
         final freed = read.withShortcut(AppCommand.send, bindings[AppCommand.send]);
         expect(freed.refusal(AppCommand.propose, _combo(LogicalKeyboardKey.keyP, command)), isNull);
       }
+    });
+
+    test('from before Refresh had its keys keep a command on them, and Refresh has none', () {
+      for (final (bindings, keys) in [(mac, _shiftCmd), (pc, _ctrlShift)]) {
+        // Saved when no command shipped with Shift and R: Send moved there.
+        final json = {
+          'commands': {'send': _combo(LogicalKeyboardKey.keyR, keys).toJson()},
+        };
+
+        final read = ShortcutBindings.fromJson(json, isMac: bindings.isMac);
+
+        expect(read[AppCommand.send], _combo(LogicalKeyboardKey.keyR, keys));
+        expect(read[AppCommand.refresh], isNull);
+        expect(read[AppCommand.receive], bindings[AppCommand.receive]);
+        expect(ShortcutBindings.fromJson(_stored(read), isMac: bindings.isMac), read);
+      }
+    });
+
+    test('saved before Refresh existed, with nothing on its keys, give Refresh its own', () {
+      final json = {
+        'commands': {'send': _combo(LogicalKeyboardKey.keyJ, _cmd).toJson()},
+      };
+
+      final read = ShortcutBindings.fromJson(json, isMac: true);
+
+      expect(read[AppCommand.refresh], mac[AppCommand.refresh]);
     });
 
     test('a command saved without a shortcut does not hold the keys it ships with', () {

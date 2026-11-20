@@ -18,6 +18,7 @@ import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_flow.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu_bar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/live_data_scope.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -186,7 +187,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
         resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar),
         child: switch (presence) {
           AsyncError(:final error) => _StartFailure(error: error),
-          AsyncValue(value: WalletPresence.present) => _wallet(isSidebarVisible),
+          AsyncValue(value: WalletPresence.present) => LiveDataScope(child: _wallet(isSidebarVisible)),
           AsyncValue(value: WalletPresence.none) => AnimatedSwitcher(
             duration: _introFade,
             child: _isIntroPlaying
@@ -232,6 +233,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       onShowAccount: canNavigate ? (account) => unawaited(sidebar.showAccount(account)) : null,
       onMoveInSidebar: canNavigate ? (rows) => unawaited(sidebar.move(rows)) : null,
       onToggleSidebar: hasWallet ? () => ref.read(sidebarVisibleProvider.notifier).toggle() : null,
+      onRefresh: hasWallet ? () => unawaited(refreshWallet(ref)) : null,
       onCloseWindow: () => ref.read(requestAppExitProvider)(),
     );
   }

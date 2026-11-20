@@ -3604,6 +3604,10 @@
     "@desktopMenuPreviousSidebarItem": {
       "description": "Desktop View menu item that selects the row above the selected one in the sidebar, the last before the first"
     },
+    "desktopMenuRefresh": "Refresh",
+    "@desktopMenuRefresh": {
+      "description": "Desktop View menu item, and its name in Settings › Keyboard Shortcuts, that reads the balances, activity and proposals again from the network"
+    },
     "desktopMenuWindow": "Window",
     "@desktopMenuWindow": {
       "description": "Desktop menu bar: Window menu title"
