@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
 import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// One item of a context menu.
 class ContextMenuItem {
@@ -29,14 +30,16 @@ class ContextMenuItem {
 /// the menu opens, so they are what holds at that moment.
 ///
 /// A Control-click is also a click to [child]'s own tap handler, which must
-/// ignore it while [isControlClick] is true.
-class ContextMenuRegion extends StatelessWidget {
+/// ignore it while [isControlClick] is true. While the menu is open, [child]
+/// is ringed in the accent, as macOS rings the item a menu acts on.
+class ContextMenuRegion extends StatefulWidget {
   const ContextMenuRegion({super.key, required this.items, required this.child});
 
   final List<ContextMenuItem?> Function() items;
   final Widget child;
 
   static const menuKey = Key('context-menu');
+  static const ringKey = Key('context-menu-ring');
 
   /// The closest the menu comes to the window's edges.
   static const double windowMargin = 6;
@@ -47,25 +50,34 @@ class ContextMenuRegion extends StatelessWidget {
   /// on the Mac) rather than being a click.
   static bool get isControlClick => _isControlClick;
 
-  void _onPointerDown(BuildContext context, PointerDownEvent event) {
+  @override
+  State<ContextMenuRegion> createState() => _ContextMenuRegionState();
+}
+
+class _ContextMenuRegionState extends State<ContextMenuRegion> {
+  bool _isOpen = false;
+
+  void _onPointerDown(PointerDownEvent event) {
     final isMacControlClick =
         defaultTargetPlatform == TargetPlatform.macOS &&
         event.buttons == kPrimaryButton &&
         HardwareKeyboard.instance.isControlPressed;
-    _isControlClick = isMacControlClick;
-    if (event.buttons == kSecondaryButton || isMacControlClick) unawaited(_open(context, event.position));
+    ContextMenuRegion._isControlClick = isMacControlClick;
+    if (event.buttons == kSecondaryButton || isMacControlClick) unawaited(_open(event.position));
   }
 
   /// The click's own tap is answered after this, in the same event, so the
   /// mark is cleared once the event is done.
   void _onPointerEnd() {
-    if (_isControlClick) scheduleMicrotask(() => _isControlClick = false);
+    if (ContextMenuRegion._isControlClick) scheduleMicrotask(() => ContextMenuRegion._isControlClick = false);
   }
 
-  Future<void> _open(BuildContext context, Offset position) async {
-    final entries = items();
+  Future<void> _open(Offset position) async {
+    if (_isOpen) return;
+    final entries = widget.items();
     final navigator = Navigator.of(context);
     final overlay = navigator.overlay!.context.findRenderObject()! as RenderBox;
+    setState(() => _isOpen = true);
     final chosen = await navigator.push<ContextMenuItem>(
       _ContextMenuRoute(
         entries: entries,
@@ -74,16 +86,33 @@ class ContextMenuRegion extends StatelessWidget {
         barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       ),
     );
+    if (mounted) setState(() => _isOpen = false);
     chosen?.onSelected();
   }
 
   @override
   Widget build(BuildContext context) {
     return Listener(
-      onPointerDown: (event) => _onPointerDown(context, event),
+      onPointerDown: _onPointerDown,
       onPointerUp: (_) => _onPointerEnd(),
       onPointerCancel: (_) => _onPointerEnd(),
-      child: child,
+      child: Stack(
+        children: [
+          widget.child,
+          if (_isOpen)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  key: ContextMenuRegion.ringKey,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: context.colorsV3.accentFlare, width: 2),
+                    borderRadius: context.radiusV3.smBorder,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

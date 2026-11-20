@@ -6,12 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
@@ -229,6 +231,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       l10n: read(l10nProvider),
       useNativeMenuBar: useNativeMenuBar,
       accountActions: read(menuAccountActionsProvider),
+      accountItems: hasWallet ? _accountItems(read) : const [],
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),
@@ -240,6 +243,15 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       onRefresh: hasWallet ? () => unawaited(refreshWallet(ref)) : null,
       onCloseWindow: () => ref.read(requestAppExitProvider)(),
     );
+  }
+
+  /// The active account's own items for the Account menu, once the
+  /// accounts are known; an entrusted account has none.
+  List<AccountMenuEntry?> _accountItems(ProviderReader read) {
+    final active = read(activeAccountProvider).value?.account;
+    final accounts = read(accountsProvider).value;
+    if (active == null || accounts == null || (active is! Account && active is! MultisigAccount)) return const [];
+    return accountMenuEntries(read(l10nProvider), active, accounts, ref.read(accountManagerProvider));
   }
 
   Widget _wallet(bool isSidebarVisible) {

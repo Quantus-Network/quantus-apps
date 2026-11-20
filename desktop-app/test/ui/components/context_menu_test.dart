@@ -95,6 +95,19 @@ void main() {
     expect(taps, isEmpty);
   });
 
+  testWidgets('while its menu is open the region is ringed, as the item a menu acts on is', (tester) async {
+    await _pump(tester, chosen: []);
+    expect(find.byKey(ContextMenuRegion.ringKey), findsNothing);
+
+    await _rightClick(tester, tester.getCenter(find.text('Savings')));
+    expect(find.byKey(ContextMenuRegion.ringKey), findsOneWidget);
+    expect(tester.getRect(find.byKey(ContextMenuRegion.ringKey)), tester.getRect(find.byType(ContextMenuRegion)));
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    expect(find.byKey(ContextMenuRegion.ringKey), findsNothing);
+  });
+
   testWidgets('the arrow keys walk the items, past the separator, and Return chooses one', (tester) async {
     final chosen = <String>[];
     await _pump(tester, chosen: chosen);

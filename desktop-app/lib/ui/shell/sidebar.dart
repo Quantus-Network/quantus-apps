@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_context_menus.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_note_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
@@ -148,7 +152,7 @@ class _WalletHeader extends ConsumerWidget {
 
     // Drawn in capitals, which is a look and not the name: a screen reader
     // gets the name as it is written.
-    return Semantics(
+    final heading = Semantics(
       label: name,
       excludeSemantics: true,
       child: Padding(
@@ -165,6 +169,7 @@ class _WalletHeader extends ConsumerWidget {
         ),
       ),
     );
+    return WalletContextMenu(wallet: wallet, child: heading);
   }
 }
 
@@ -179,17 +184,26 @@ class _AccountRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final account = display.account;
+    // A note about the account ("Address copied") shows in its balance's place.
+    final note = ref.watch(accountNoteProvider);
 
-    return SidebarRow(
+    final row = SidebarRow(
       title: account.name,
       isSelected: isSelected,
       leading: DesktopAccountBadge(account: account, size: _badgeSize),
-      subtitle: AccountBalanceText(
-        account: account,
-        style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),
-      ),
+      subtitle: note != null && note.accountId == account.accountId
+          ? AccountNoteText(note: note)
+          : AccountBalanceText(
+              account: account,
+              style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),
+            ),
       trailing: display is MultisigDisplayAccount ? QuantusBadge(label: ref.watch(l10nProvider).multisigTag) : null,
-      onTap: () => ref.read(sidebarSelectionProvider.notifier).showAccount(display),
+      // A Control-click opens the menu instead.
+      onTap: () {
+        if (ContextMenuRegion.isControlClick) return;
+        ref.read(sidebarSelectionProvider.notifier).showAccount(display);
+      },
     );
+    return AccountContextMenu(account: account, child: row);
   }
 }

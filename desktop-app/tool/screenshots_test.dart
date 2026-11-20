@@ -109,6 +109,7 @@ void _scene(
   String name,
   Future<void> Function(WidgetTester tester) body, {
   TargetPlatform platform = TargetPlatform.macOS,
+  Duration settleAfter = Duration.zero,
 }) {
   testWidgets(name, (tester) async {
     debugDisableShadows = false;
@@ -116,6 +117,9 @@ void _scene(
     try {
       await body(tester);
       await _snap(tester, name);
+      // What runs on a timer after the picture (a note about an account)
+      // ends before the scene does.
+      if (settleAfter > Duration.zero) await tester.pump(settleAfter);
     } finally {
       debugDisableShadows = true;
       WidgetsApp.debugAllowBannerOverride = true;
@@ -522,6 +526,49 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  _scene('account_menu', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Savings');
+  });
+
+  _scene('account_menu_encrypted', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Encrypted Account');
+  });
+
+  _scene('account_menu_keystone', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Vault');
+  });
+
+  _scene('account_menu_multisig', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Team');
+  });
+
+  _scene('wallet_menu', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'WALLET 2');
+  });
+
+  _scene('account_note_copied', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Savings');
+    await tester.tap(find.text('Copy Address'));
+    await tester.pump();
+    // The menu fades out first.
+    await tester.pump(const Duration(milliseconds: 200));
+  }, settleAfter: AccountNoteNotifier.failureShownFor);
+
+  _scene('account_note_top_bar', (tester) async {
+    await _openAccounts(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    container.read(sidebarVisibleProvider.notifier).toggle();
+    await tester.pumpAndSettle();
+    await container.read(accountManagerProvider).copy(_root, CopiedValue.address);
+    await tester.pump();
+  }, settleAfter: AccountNoteNotifier.failureShownFor);
+
   _scene('settings', (tester) async {
     await _openSettings(tester);
   });
@@ -682,6 +729,19 @@ final _infoTeam = MultisigAccount(
 /// Opens the Info sheet on [account] over the window of a wallet with every
 /// kind of account.
 Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallets = 0}) async {
+  await _openAccounts(tester, moreWallets: moreWallets);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openInfo(account);
+  await tester.pumpAndSettle();
+}
+
+/// Opens the window of a wallet with every kind of account. Its clipboard
+/// takes whatever is copied.
+Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0}) async {
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+  addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
   device.storage.accounts.addAll([
     _cold,
@@ -707,9 +767,18 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallet
   );
   useFakeCheckphrases((address) async => 'Harbor-Velvet-Signal-Mirror-Canyon');
   await tester.pumpAndSettle();
-  await ProviderScope.containerOf(
-    tester.element(find.byType(DesktopShell)),
-  ).read(accountManagerProvider).openInfo(account);
+}
+
+/// Right-clicks the sidebar's [text] (an account's name, or a wallet's
+/// heading in capitals), towards its right.
+Future<void> _rightClickInSidebar(WidgetTester tester, String text) async {
+  final target = find.descendant(of: find.byType(Sidebar), matching: find.text(text)).first;
+  final gesture = await tester.startGesture(
+    tester.getCenter(target) + const Offset(30, 0),
+    kind: PointerDeviceKind.mouse,
+    buttons: kSecondaryButton,
+  );
+  await gesture.up();
   await tester.pumpAndSettle();
 }
 

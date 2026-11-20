@@ -62,6 +62,9 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
   /// The recovery phrase's words, held only while they are on screen.
   List<String>? _words;
 
+  /// Opened by Rename…: the name is ready to be typed over.
+  late final bool _focusName = _target.start == AccountInfoStart.rename;
+
   bool _isClosing = false;
 
   void _go(_Step step) => setState(() {
@@ -124,6 +127,7 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
           MultisigAccount() => _MultisigInfo(
             multisig: account,
             accounts: _accounts,
+            focusName: _focusName,
             onDisconnect: toDisconnect,
             l10n: l10n,
           ),
@@ -132,6 +136,7 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
             account: account,
             accounts: _accounts,
             wallet: _wallet!,
+            focusName: _focusName,
             onRecoveryPhrase: toPhrase,
             onDisconnect: toDisconnect,
             l10n: l10n,
@@ -361,6 +366,7 @@ class _AccountInfo extends StatelessWidget {
     required this.account,
     required this.accounts,
     required this.wallet,
+    required this.focusName,
     required this.onRecoveryPhrase,
     required this.onDisconnect,
     required this.l10n,
@@ -373,6 +379,9 @@ class _AccountInfo extends StatelessWidget {
 
   /// What [account]'s wallet is called.
   final String wallet;
+
+  /// Whether the name field takes the focus as the sheet opens.
+  final bool focusName;
   final VoidCallback onRecoveryPhrase;
   final VoidCallback onDisconnect;
   final AppLocalizations l10n;
@@ -413,7 +422,7 @@ class _AccountInfo extends StatelessWidget {
         SettingsGroup(
           label: l10n.desktopAccountInfoAccount,
           rows: [
-            _NameRow(account: account, l10n: l10n),
+            _NameRow(account: account, autofocus: focusName, l10n: l10n),
             _AddressRow(address: account.accountId, l10n: l10n),
           ],
         ),
@@ -424,12 +433,21 @@ class _AccountInfo extends StatelessWidget {
 }
 
 class _MultisigInfo extends StatelessWidget {
-  const _MultisigInfo({required this.multisig, required this.accounts, required this.onDisconnect, required this.l10n});
+  const _MultisigInfo({
+    required this.multisig,
+    required this.accounts,
+    required this.focusName,
+    required this.onDisconnect,
+    required this.l10n,
+  });
 
   final MultisigAccount multisig;
 
   /// This wallet's own accounts, to name the signers that are among them.
   final List<Account> accounts;
+
+  /// Whether the name field takes the focus as the sheet opens.
+  final bool focusName;
   final VoidCallback onDisconnect;
   final AppLocalizations l10n;
 
@@ -443,7 +461,7 @@ class _MultisigInfo extends StatelessWidget {
         SettingsGroup(
           label: l10n.desktopAccountInfoMultisig,
           rows: [
-            _NameRow(account: multisig, l10n: l10n),
+            _NameRow(account: multisig, autofocus: focusName, l10n: l10n),
             _AddressRow(address: multisig.accountId, l10n: l10n),
             _ValueRow(
               title: l10n.desktopAccountInfoThreshold,
@@ -564,9 +582,12 @@ class _EncryptedInfoState extends ConsumerState<_EncryptedInfo> {
 /// was typed, trimmed; Escape puts the name back. A blank name, or a write
 /// that fails, says why under the title.
 class _NameRow extends ConsumerStatefulWidget {
-  const _NameRow({required this.account, required this.l10n});
+  const _NameRow({required this.account, required this.autofocus, required this.l10n});
 
   final BaseAccount account;
+
+  /// Takes the focus, with the name selected to be typed over.
+  final bool autofocus;
   final AppLocalizations l10n;
 
   @override
@@ -584,6 +605,13 @@ class _NameRowState extends ConsumerState<_NameRow> {
   void initState() {
     super.initState();
     _focus.addListener(_onFocusChange);
+    if (widget.autofocus) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _focus.requestFocus();
+        _controller.selection = TextSelection(baseOffset: 0, extentOffset: _controller.text.length);
+      });
+    }
   }
 
   @override

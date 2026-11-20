@@ -960,7 +960,10 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(of: find.byKey(SettingsSheet.phraseWalletKey(3)), matching: find.text('Trading, Encrypted Account')),
+        find.descendant(
+          of: find.byKey(SettingsSheet.phraseWalletKey(3)),
+          matching: find.text('Trading, Encrypted Account'),
+        ),
         findsOneWidget,
       );
     });

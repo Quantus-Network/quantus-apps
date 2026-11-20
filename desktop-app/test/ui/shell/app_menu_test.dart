@@ -60,16 +60,22 @@ Matcher _isShortcut(
 }
 
 /// The Account menu's groups in order: the active account's actions (absent
-/// when there is no active account), Add Account…, then the accounts.
+/// when there is no active account), its own items (Get Info and the rest,
+/// tested with the account menus), Add Account…, then the accounts.
 List<List<PlatformMenuItem>> _accountMenuGroups(WidgetTester tester) => [
   for (final entry in _nativeMenu(tester, 'Account').menus) (entry as PlatformMenuItemGroup).members,
 ];
 
-/// The Account menu's items that act on the active account or add one: all
-/// of it but the list of accounts at its end.
+/// The Account menu's items that act on the active account or add one, as
+/// the toolbar offers them: all of it but the account's own items and the
+/// list of accounts at its end.
 List<PlatformMenuItem> _accountMenuActions(WidgetTester tester) {
   final groups = _accountMenuGroups(tester);
-  return groups.take(groups.length - 1).expand((group) => group).toList();
+  return groups
+      .take(groups.length - 1)
+      .where((group) => !group.any((item) => item.label == 'Get Info'))
+      .expand((group) => group)
+      .toList();
 }
 
 /// The accounts the Account menu lists, at its end.
@@ -594,6 +600,10 @@ void main() {
           ('Receive', true),
           ('Send', false),
           ('Swap', false),
+          ('Get Info', true),
+          ('Copy Address', true),
+          ('Rename…', true),
+          ('Disconnect Hardware Account…', true),
           ('Add Account…', true),
           ('Main', true),
           ('Team', true),

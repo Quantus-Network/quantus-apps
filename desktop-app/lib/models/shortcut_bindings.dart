@@ -208,6 +208,9 @@ class ShortcutBindings {
     AppCommand.send => KeyCombo(LogicalKeyboardKey.keyS, _command),
     AppCommand.propose => KeyCombo(LogicalKeyboardKey.keyP, _command),
     AppCommand.addAccount => KeyCombo(LogicalKeyboardKey.keyN, _command),
+    AppCommand.getInfo => KeyCombo(LogicalKeyboardKey.keyI, _command),
+    // ⌘C is the system's Copy; Copy Address keeps beside it.
+    AppCommand.copyAddress => KeyCombo(LogicalKeyboardKey.keyC, _commandShift),
     AppCommand.toggleSidebar => KeyCombo(LogicalKeyboardKey.keyB, _command),
     AppCommand.nextSidebarItem => KeyCombo(LogicalKeyboardKey.arrowDown, _commandAlt),
     AppCommand.previousSidebarItem => KeyCombo(LogicalKeyboardKey.arrowUp, _commandAlt),
