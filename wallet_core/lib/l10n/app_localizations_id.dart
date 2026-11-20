@@ -2909,4 +2909,36 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopFooterVersion(String version) {
     return 'Quantus Wallet $version';
   }
+
+  @override
+  String get desktopActivityInProgress => 'Sedang berlangsung';
+
+  @override
+  String get desktopActivityLoadFailed => 'Tidak dapat memuat aktivitas';
+
+  @override
+  String get desktopActivityRefreshFailed => 'Tidak dapat memperbarui aktivitas';
+
+  @override
+  String desktopActivityRunsIn(String time) {
+    return 'dalam $time';
+  }
+
+  @override
+  String get desktopActivityTransaction => 'Transaksi';
+
+  @override
+  String get desktopActivityAmount => 'Jumlah';
+
+  @override
+  String get desktopActivityThreshold => 'Ambang batas';
+
+  @override
+  String get desktopActivitySigners => 'Penanda tangan';
+
+  @override
+  String get desktopActivityCreatedBy => 'Dibuat oleh';
+
+  @override
+  String get desktopActivityCreationFee => 'Biaya multisig';
 }

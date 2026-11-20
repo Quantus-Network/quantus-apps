@@ -4228,5 +4228,50 @@
           "type": "String"
         }
       }
+    },
+    "desktopActivityInProgress": "In progress",
+    "@desktopActivityInProgress": {
+      "description": "Desktop: title of the panel listing the open account's transfers still under way, above Activity"
+    },
+    "desktopActivityLoadFailed": "Couldn't load the activity",
+    "@desktopActivityLoadFailed": {
+      "description": "Desktop: shown in the Activity panel when the account's history could not be loaded, above the error"
+    },
+    "desktopActivityRefreshFailed": "Couldn't refresh the activity",
+    "@desktopActivityRefreshFailed": {
+      "description": "Desktop: a note at the top of the Activity panel when a refresh failed; the rows already shown stay under it, with Try Again beside it"
+    },
+    "desktopActivityRunsIn": "in {time}",
+    "@desktopActivityRunsIn": {
+      "description": "Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopActivityTransaction": "Transaction",
+    "@desktopActivityTransaction": {
+      "description": "Desktop: title of the panel showing one transaction, and the label over its hash"
+    },
+    "desktopActivityAmount": "Amount",
+    "@desktopActivityAmount": {
+      "description": "Desktop transaction panel: the amount a multisig proposal moves"
+    },
+    "desktopActivityThreshold": "Threshold",
+    "@desktopActivityThreshold": {
+      "description": "Desktop transaction panel: how many of a new multisig's signers must approve, of how many"
+    },
+    "desktopActivitySigners": "Signers",
+    "@desktopActivitySigners": {
+      "description": "Desktop transaction panel: how many signers a new multisig has"
+    },
+    "desktopActivityCreatedBy": "Created by",
+    "@desktopActivityCreatedBy": {
+      "description": "Desktop transaction panel: the account that made a multisig"
+    },
+    "desktopActivityCreationFee": "Multisig fee",
+    "@desktopActivityCreationFee": {
+      "description": "Desktop transaction panel: the fee the chain charges for making a multisig"
     }
 }

@@ -393,6 +393,42 @@ class FakeSendChain {
   /// The addresses paid before, the latest first.
   List<String> recents = [];
 
+  /// An account's history as the indexer gives it, a page at a time: the
+  /// first page also holds [scheduledTransfers]. Every account reads the
+  /// same history.
+  List<List<TransactionEvent>> historyPages = const [];
+
+  /// The reversible transfers waiting to run.
+  List<ReversibleTransferEvent> scheduledTransfers = const [];
+
+  /// When set, the reversible transfers waiting to run a page at a time, in
+  /// place of [scheduledTransfers]; there is more while either list has a
+  /// page after the one read.
+  List<List<ReversibleTransferEvent>>? scheduledPages;
+
+  /// The pages of history whose read fails, with [historyError] or a
+  /// [StateError].
+  Set<int> failingHistoryPages = const {};
+
+  /// When set, every read of history waits for it.
+  Completer<void>? holdHistory;
+
+  /// When set, a read of history fails with this.
+  Object? historyError;
+
+  /// The pages of history read, by their number, in order.
+  final historyReads = <int>[];
+
+  /// A multisig's open proposals, and its past ones, as the indexer gives
+  /// them.
+  List<MultisigProposal> openProposals = const [];
+  List<MultisigProposal> pastProposals = const [];
+
+  /// When set, a read of past proposals waits for it; and fails with
+  /// [pastProposalsError], when that is set.
+  Completer<void>? holdPastProposals;
+  Object? pastProposalsError;
+
   final _calls = Expando<SendCall>();
 
   SendCall describe(RuntimeCall call) => _calls[call] ?? (throw StateError('A call this chain did not build: $call'));
@@ -404,6 +440,7 @@ class FakeSendChain {
     transactionSubmissionServiceProvider.overrideWithValue(_FakeTransactionSubmissionService(this)),
     recentAddressesServiceProvider.overrideWithValue(_FakeRecentAddressesService(this)),
     multisigServiceProvider.overrideWithValue(_FakeMultisigService(this)),
+    chainHistoryServiceProvider.overrideWithValue(_FakeChainHistoryService(this)),
   ];
 }
 
@@ -433,6 +470,50 @@ class _FakeMultisigService extends Fake implements MultisigService {
 
   @override
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
+
+  @override
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async => chain.openProposals;
+
+  @override
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
+    await chain.holdPastProposals?.future;
+    if (chain.pastProposalsError case final error?) throw error;
+    return chain.pastProposals;
+  }
+}
+
+/// The indexer's history, as the [chain] holds it: each page's cursor is the
+/// number of the page after it.
+class _FakeChainHistoryService extends Fake implements ChainHistoryService {
+  _FakeChainHistoryService(this.chain);
+
+  final FakeSendChain chain;
+
+  @override
+  Future<SortedTransactionsList> fetchAllTransactionTypes({
+    required List<String> accountIds,
+    int limit = 20,
+    AccountEventCursor? otherAfter,
+    AccountEventCursor? scheduledAfter,
+    required TransactionFilter filter,
+  }) async {
+    final page = otherAfter == null ? 0 : int.parse(otherAfter.id);
+    chain.historyReads.add(page);
+    await chain.holdHistory?.future;
+    if (chain.historyError case final error?) throw error;
+    if (chain.failingHistoryPages.contains(page)) throw StateError('page $page could not be read');
+    final pages = chain.historyPages;
+    final scheduledPages = chain.scheduledPages;
+    final hasMore = page < pages.length - 1 || (scheduledPages != null && page < scheduledPages.length - 1);
+    return SortedTransactionsList(
+      scheduledReversibleTransfers: scheduledPages != null
+          ? (page < scheduledPages.length ? scheduledPages[page] : const [])
+          : (page == 0 ? chain.scheduledTransfers : const []),
+      otherTransfers: page < pages.length ? pages[page] : const [],
+      nextOtherCursor: hasMore ? AccountEventCursor(timestamp: '', id: '${page + 1}') : null,
+      hasMore: hasMore,
+    );
+  }
 }
 
 /// Builds the transfer calls without the chain's address decoding, and tells
@@ -625,6 +706,9 @@ class FakeHistoryPollingManager extends Fake implements HistoryPollingManager {
   /// When set, a refresh fails with this.
   Object? refreshError;
 
+  /// When set, a refresh waits for it.
+  Completer<void>? holdRefresh;
+
   @override
   void pausePolling() => calls.add('pause');
 
@@ -639,6 +723,7 @@ class FakeHistoryPollingManager extends Fake implements HistoryPollingManager {
 
   Future<void> _refresh(String call) async {
     calls.add(call);
+    await holdRefresh?.future;
     if (refreshError case final error?) throw error;
   }
 }
@@ -839,7 +924,10 @@ List<Override> shellOverrides({
         final state = encryptedStates[walletIndex];
         if (state == null) throw StateError('no encrypted state set for wallet $walletIndex');
         return state;
-      }),
+      })
+    else
+      // Read for the Encrypted account's activity: it has none.
+      encryptedStateProvider.overrideWith((ref, walletIndex) => emptyEncryptedState(walletIndex)),
     settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService()),
     accountsServiceProvider.overrideWithValue(FakeAccountsService(loadAccounts ?? () async => accounts)),
     remoteConfigProvider.overrideWith(
@@ -1078,3 +1166,15 @@ final orphanMultisig = MultisigAccount(
 final Map<String, BigInt> oneTokenEach = {
   for (final id in ['qzMain', 'qzSavings', 'qzTrading', 'qzVault', 'qzTeam', 'qzOrphan']) id: oneToken,
 };
+
+/// An Encrypted account of wallet [walletIndex] that has received nothing.
+EncryptedAccountState emptyEncryptedState(int walletIndex) => EncryptedAccountState(
+  accountId: 'qzEncrypted$walletIndex',
+  ownAddresses: const {},
+  received: const [],
+  spends: const {},
+  utxos: const [],
+  pendingChangeToken: BigInt.zero,
+  nextIndex: 0,
+  nextChangeIndex: 0,
+);

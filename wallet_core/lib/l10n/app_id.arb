@@ -785,5 +785,15 @@
   "desktopFooterSyncedDaysAgo": "Disinkronkan {days} hari lalu",
   "desktopFooterSyncFailed": "Gagal menyinkronkan",
   "desktopFooterBlock": "Blok {number}",
-  "desktopFooterVersion": "Quantus Wallet {version}"
+  "desktopFooterVersion": "Quantus Wallet {version}",
+  "desktopActivityInProgress": "Sedang berlangsung",
+  "desktopActivityLoadFailed": "Tidak dapat memuat aktivitas",
+  "desktopActivityRefreshFailed": "Tidak dapat memperbarui aktivitas",
+  "desktopActivityRunsIn": "dalam {time}",
+  "desktopActivityTransaction": "Transaksi",
+  "desktopActivityAmount": "Jumlah",
+  "desktopActivityThreshold": "Ambang batas",
+  "desktopActivitySigners": "Penanda tangan",
+  "desktopActivityCreatedBy": "Dibuat oleh",
+  "desktopActivityCreationFee": "Biaya multisig"
 }
