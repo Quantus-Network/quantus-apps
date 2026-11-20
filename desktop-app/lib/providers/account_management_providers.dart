@@ -1,0 +1,152 @@
+import 'dart:async';
+
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/account_menu.dart';
+
+/// What can be copied from an account's menu.
+enum CopiedValue { address, innerHash }
+
+/// A short note about an account, shown on its own row, as the HIG has
+/// status shown by what it is about: "Address copied", or why a copy failed.
+class AccountNote {
+  const AccountNote({required this.accountId, required this.message, required this.isError});
+
+  final String accountId;
+  final String message;
+  final bool isError;
+}
+
+/// The note showing, if any. One shows at a time: a new one replaces it.
+final accountNoteProvider = NotifierProvider<AccountNoteNotifier, AccountNote?>(AccountNoteNotifier.new);
+
+class AccountNoteNotifier extends Notifier<AccountNote?> {
+  /// How long a note shows; a failure shows longer, to be read.
+  static const shownFor = Duration(milliseconds: 1500);
+  static const failureShownFor = Duration(seconds: 4);
+
+  Timer? _clear;
+
+  @override
+  AccountNote? build() {
+    ref.onDispose(() => _clear?.cancel());
+    return null;
+  }
+
+  void show(AccountNote note) {
+    _clear?.cancel();
+    state = note;
+    _clear = Timer(note.isError ? failureShownFor : shownFor, () => state = null);
+  }
+}
+
+/// What the account menus and the Info sheet do to an account: copy from it,
+/// rename it, disconnect it. The rules for what each account allows are
+/// wallet_core's ([accountMenuOf], [disconnectPlanOf], [nameEditOf]); this
+/// carries them out on the device's storage and refreshes what shows it.
+final accountManagerProvider = Provider<AccountManager>(AccountManager.new);
+
+class AccountManager {
+  AccountManager(this._ref);
+
+  final Ref _ref;
+
+  /// Copies [value] of [account] and notes it on the account's row. A copy
+  /// that fails is noted as a failure, and the clipboard is left as it was.
+  Future<void> copy(BaseAccount account, CopiedValue value) async {
+    final l10n = _ref.read(l10nProvider);
+    final notes = _ref.read(accountNoteProvider.notifier);
+    try {
+      final text = switch (value) {
+        CopiedValue.address => account.accountId,
+        CopiedValue.innerHash => await _innerHashOf(account),
+      };
+      await Clipboard.setData(ClipboardData(text: text));
+    } catch (e) {
+      quantusPrint('Copying from ${account.accountId} failed: $e');
+      notes.show(
+        AccountNote(accountId: account.accountId, message: l10n.desktopAccountCopyFailed(_reason(e)), isError: true),
+      );
+      return;
+    }
+    notes.show(
+      AccountNote(
+        accountId: account.accountId,
+        message: switch (value) {
+          CopiedValue.address => l10n.desktopAccountAddressCopied,
+          CopiedValue.innerHash => l10n.desktopAccountInnerHashCopied,
+        },
+        isError: false,
+      ),
+    );
+  }
+
+  Future<String> _innerHashOf(BaseAccount account) async {
+    if (account is! Account || account.accountType != AccountType.encrypted) {
+      throw StateError('${account.accountId} has no inner hash');
+    }
+    final keyPair = await _ref.read(encryptedAccountServiceProvider(account.walletIndex)).receiveKeyPair();
+    return keyPair.rewardsPreimageHex;
+  }
+
+  /// Renames [account] to [entered], trimmed. A blank or unchanged name is
+  /// not written; what [entered] came to is returned either way. A write
+  /// that fails is thrown.
+  Future<NameEdit> rename(BaseAccount account, String entered) async {
+    final edit = nameEditOf(account.name, entered);
+    if (edit case NameChanged(:final name)) {
+      switch (account) {
+        case Account():
+          await _ref.read(accountsServiceProvider).updateAccountName(account, name);
+          _refreshAccounts();
+        case MultisigAccount():
+          await _ref.read(multisigAccountsProvider.notifier).updateName(account, name);
+          _ref.invalidate(activeAccountProvider);
+        default:
+          throw StateError('${account.accountId} cannot be renamed');
+      }
+    }
+    return edit;
+  }
+
+  /// Disconnects [account] as [disconnectPlanOf] has it, or a multisig.
+  /// Asking first, and asking for approval to delete a wallet, is the
+  /// caller's. A removal that fails is thrown, and nothing changes.
+  Future<void> disconnect(BaseAccount account) async {
+    switch (account) {
+      case MultisigAccount():
+        await _ref.read(multisigAccountsProvider.notifier).remove(account.accountId);
+        _ref.invalidate(activeAccountProvider);
+      case Account():
+        final service = _ref.read(accountsServiceProvider);
+        switch (disconnectPlanOf(account, _ref.read(accountsProvider).requireValue)) {
+          case DisconnectAccount() || DisconnectHardware():
+            await service.removeAccount(account);
+          case DisconnectWallet(:final walletIndex):
+            await service.removeWallet(walletIndex);
+          case null:
+            throw StateError('${account.accountId} cannot be disconnected');
+        }
+        _refreshAccounts();
+      default:
+        throw StateError('${account.accountId} cannot be disconnected');
+    }
+  }
+
+  /// The accounts and the active one are read again, as after any change to
+  /// them ([invalidateAccountProviders]).
+  void _refreshAccounts() {
+    _ref.invalidate(accountsProvider);
+    _ref.invalidate(activeAccountProvider);
+  }
+
+  static String _reason(Object error) => switch (error) {
+    PlatformException(:final message?) => message,
+    _ => '$error',
+  };
+}
