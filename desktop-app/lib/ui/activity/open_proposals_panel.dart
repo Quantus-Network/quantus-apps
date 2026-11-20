@@ -190,22 +190,35 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
     );
   }
 
+  /// How far the approvals are: the count, whole, and the marks in the room
+  /// it leaves them.
   Widget? _approvals(AppColorsV3 colors) {
     final approved = widget.approved;
     if (approved == null) return null;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ApprovalMarks(approved: approved, needed: widget.needed),
-        const SizedBox(width: 6),
-        Text(
-          widget.l10n.desktopProposeCountOf(approved, widget.needed),
-          style: context.themeTextV3.caption.copyWith(
-            color: colors.textMuted,
-            fontFeatures: const [FontFeature.tabularFigures()],
+    return LayoutBuilder(
+      builder: (context, constraints) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.only(end: 6),
+              child: ApprovalMarks(approved: approved, needed: widget.needed),
+            ),
           ),
-        ),
-      ],
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+            child: Text(
+              widget.l10n.desktopProposeCountOf(approved, widget.needed),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.themeTextV3.caption.copyWith(
+                color: colors.textMuted,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

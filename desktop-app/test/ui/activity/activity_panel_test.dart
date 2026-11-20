@@ -656,6 +656,33 @@ void main() {
       expect(_rowsIn(tester, ActivityPanel), ['settled']);
     });
 
+    testOnMac('a refresh of no activity that fails keeps saying there is none, with the note and Try Again', (
+      tester,
+    ) async {
+      final chain = FakeSendChain();
+      await _open(tester, chain: chain, realPolling: true);
+      chain.historyError = StateError('indexer down');
+
+      await tester.tap(find.byKey(ActivityPanel.refreshKey));
+      await tester.pumpAndSettle();
+
+      Finder inPanel(String text) => find.descendant(of: find.byType(ActivityPanel), matching: find.text(text));
+      expect(inPanel(_l10n.activityEmpty), findsOne);
+      expect(inPanel(_l10n.desktopActivityRefreshFailed), findsOne);
+      expect(inPanel(_l10n.desktopActivityLoadFailed), findsNothing);
+      expect(
+        tester.getTopLeft(inPanel(_l10n.desktopActivityRefreshFailed)).dy,
+        lessThan(tester.getTopLeft(inPanel(_l10n.activityEmpty)).dy),
+      );
+
+      chain.historyError = null;
+      await tester.tap(inPanel(_l10n.commonTryAgain));
+      await tester.pumpAndSettle();
+
+      expect(inPanel(_l10n.desktopActivityRefreshFailed), findsNothing);
+      expect(inPanel(_l10n.activityEmpty), findsOne);
+    });
+
     testOnMac('while kept rows show over a reload, no older page is asked for at the list\'s end', (tester) async {
       final chain = FakeSendChain()
         ..historyPages = [
