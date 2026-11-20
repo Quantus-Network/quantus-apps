@@ -779,10 +779,12 @@ void main() {
         return http.Response(jsonEncode(body), 200, headers: {'etag': version});
       });
       expect((await service.getListedQuantusToken())!.usdPrice, 1.5);
-      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 1.5);
+      await service.getFromTokens(forceRefresh: true);
+      expect((await service.getListedQuantusToken())!.usdPrice, 1.5);
       price = 2;
       version = 'W/"v2"';
-      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 2);
+      await service.getFromTokens(forceRefresh: true);
+      expect((await service.getListedQuantusToken())!.usdPrice, 2);
       expect(sent, [null, 'W/"v1"', 'W/"v1"']);
     });
 

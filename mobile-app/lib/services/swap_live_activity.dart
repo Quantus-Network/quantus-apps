@@ -249,6 +249,8 @@ class SwapLiveDecision {
 /// drop it. A swap that is still waiting for the user to send the deposit
 /// stays off the lock screen. A failure stays up only while the app is not
 /// in front. A finished swap stays up only while its progress screen is open.
+/// An overdue swap leaves it: nothing polls it any more, so the card could
+/// not move.
 SwapLiveDecision decideSwapLiveActivity({
   required ActiveSwap? swap,
   required AppLocalizations l10n,
@@ -257,7 +259,7 @@ SwapLiveDecision decideSwapLiveActivity({
   required bool progressVisible,
   required bool appInForeground,
 }) {
-  if (swap == null) return const SwapLiveDecision.end();
+  if (swap == null || swap.overdue(now)) return const SwapLiveDecision.end();
   final waitingToSend = swap.order.status == SwapStatus.pendingDeposit && !swap.depositUnderway;
   if (waitingToSend) return const SwapLiveDecision.end();
   final failure = swapLiveFailure(swap);

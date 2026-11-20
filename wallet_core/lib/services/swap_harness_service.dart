@@ -101,7 +101,7 @@ class SwapHarnessService extends SwapService {
   }
 
   @override
-  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async => qtc;
+  Future<SwapToken?> getListedQuantusToken() async => qtc;
 
   @override
   Future<SwapQuote> getQuote({
