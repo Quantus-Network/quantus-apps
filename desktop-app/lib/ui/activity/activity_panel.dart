@@ -133,9 +133,24 @@ class _ActivityPanelState extends ConsumerState<ActivityPanel> {
       body = switch (view) {
         AsyncValue(isLoading: true) => const SizedBox.shrink(key: ValueKey('waiting')),
         AsyncValue(:final error?) => _Failed(key: const ValueKey('failed'), error: error, l10n: l10n),
-        AsyncValue(:final value?) when value.settled.isEmpty && value.inProgress.isEmpty => Center(
+        AsyncValue(:final value?) when value.settled.isEmpty && value.inProgress.isEmpty => Column(
           key: const ValueKey('empty'),
-          child: Text(l10n.activityEmpty, style: context.themeTextV3.body.copyWith(color: context.colorsV3.textMuted)),
+          children: [
+            // Where the list holds it, over the rows.
+            if (value.reloadFailure != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: _RefreshFailed(l10n: l10n),
+              ),
+            Expanded(
+              child: Center(
+                child: Text(
+                  l10n.activityEmpty,
+                  style: context.themeTextV3.body.copyWith(color: context.colorsV3.textMuted),
+                ),
+              ),
+            ),
+          ],
         ),
         AsyncValue(:final value?) => _List(
           key: const ValueKey('list'),
@@ -226,7 +241,8 @@ class _List extends StatelessWidget {
   }
 }
 
-/// Over rows kept on screen: their refresh failed, and a way to try again.
+/// Over the rows kept on screen, or the word that there are none: their
+/// refresh failed, and a way to try again.
 class _RefreshFailed extends ConsumerWidget {
   const _RefreshFailed({required this.l10n});
 
