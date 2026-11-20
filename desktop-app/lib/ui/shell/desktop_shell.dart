@@ -24,6 +24,7 @@ import 'package:quantus_desktop_wallet/ui/shell/app_menu.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu_bar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/live_data_scope.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
+import 'package:quantus_desktop_wallet/ui/shell/panel_widths.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_footer.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -255,7 +256,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   Widget _wallet(bool isSidebarVisible) {
-    final sidebarWidth = ref.watch(sidebarWidthProvider);
+    // As shown: it gives way to what is open beside it in a narrow window.
+    final sidebarWidth = shownSidebarWidthOf(context, ref);
     final sidebar = ref.read(sidebarWidthProvider.notifier);
 
     return Column(
@@ -311,7 +313,7 @@ class _SheetPlacement extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final panelsLeft = ref.watch(sidebarVisibleProvider)
-        ? Panel.gap + ref.watch(sidebarWidthProvider) + Panel.gap
+        ? Panel.gap + shownSidebarWidthOf(context, ref) + Panel.gap
         : Panel.gap;
 
     return Padding(

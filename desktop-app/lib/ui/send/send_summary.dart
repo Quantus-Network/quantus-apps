@@ -3,6 +3,7 @@ import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
+import 'package:quantus_desktop_wallet/ui/components/summary_row.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -75,7 +76,7 @@ class SendSummary extends StatelessWidget {
     switch (row) {
       case SendReviewThreshold(:final threshold, :final signers):
         final approved = approvals;
-        return _SummaryRow(
+        return SummaryRow(
           label: Text(
             approved == null ? l10n.desktopProposeApprovalsNeeded : l10n.desktopProposeApprovals,
             style: context.sendBody(),
@@ -85,7 +86,7 @@ class SendSummary extends StatelessWidget {
             children: [
               ApprovalMarks(approved: approved ?? 0, needed: threshold),
               const SizedBox(width: 9),
-              _FigureText(
+              FigureText(
                 approved == null
                     ? l10n.desktopProposeCountOf(threshold, signers)
                     : l10n.desktopProposeCountOf(approved, threshold),
@@ -95,13 +96,13 @@ class SendSummary extends StatelessWidget {
         );
       case SendReviewExpiry(:final expiry):
         final date = expiry.estimatedDateTime;
-        return _SummaryRow(
+        return SummaryRow(
           label: Text(l10n.desktopProposeExpires, style: context.sendBody()),
           // The date it stands for leads; until it is known the block does.
           value: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (date != null) ...[Flexible(child: _FigureText(date)), const SizedBox(width: 10)],
+              if (date != null) ...[Flexible(child: FigureText(date)), const SizedBox(width: 10)],
               Text(
                 expiry.blockLabel,
                 style: context.sendBody(color: date == null ? colors.textContent : colors.textMuted2),
@@ -118,16 +119,16 @@ class SendSummary extends StatelessWidget {
         return null;
       case SendReviewRowKind.signer:
         if (_isProposalReceipt) return null;
-        return _SummaryRow(
+        return SummaryRow(
           label: Text(l10n.desktopProposeProposedBy, style: context.sendBody()),
-          value: AccountLabel(account: _signer),
+          value: AccountLabel(account: _signer, revealsAddress: true),
         );
       case SendReviewRowKind.fee:
         if (_isProposalReceipt) return null;
-        return _FigureRow(label: feeLabel, value: _figure(row));
+        return FigureRow(label: feeLabel, value: _figure(row));
       case SendReviewRowKind.deposit:
         if (_isProposalReceipt) return null;
-        return _SummaryRow(
+        return SummaryRow(
           label: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -136,13 +137,13 @@ class SendSummary extends StatelessWidget {
               QuantusBadge(label: l10n.multisigProposeDepositRefundableNote, tone: BadgeTone.sage),
             ],
           ),
-          value: _FigureText(_figure(row)),
+          value: FigureText(_figure(row)),
         );
       case SendReviewRowKind.charge:
         if (_isProposalReceipt) return null;
-        return _FigureRow(label: l10n.desktopProposeFee, value: _figure(row));
+        return FigureRow(label: l10n.desktopProposeFee, value: _figure(row));
       case SendReviewRowKind.detail:
-        return _FigureRow(label: row.label, value: _figure(row));
+        return FigureRow(label: row.label, value: _figure(row));
     }
   }
 
@@ -161,9 +162,9 @@ class SendSummary extends StatelessWidget {
         const SizedBox(height: 20),
         const MenuDivider(),
         const SizedBox(height: 4),
-        _SummaryRow(
+        SummaryRow(
           label: Text(l10n.activityTxFrom, style: context.sendBody()),
-          value: AccountLabel(account: from),
+          value: AccountLabel(account: from, revealsAddress: true),
         ),
         for (final row in rows)
           if (_line(context, row) case final line?) ...[
@@ -200,12 +201,12 @@ class SendTotal extends StatelessWidget {
         const SizedBox(height: 4),
         for (final row in totals)
           if (signer == null)
-            _FigureRow(label: label, value: SendSummary._figure(row), isStrong: true)
+            FigureRow(label: label, value: SendSummary._figure(row), isStrong: true)
           else
             // The figure is whole whatever the account is called: the name
             // takes what is left of the line, and is cut short there.
             Padding(
-              padding: _SummaryRow.padding,
+              padding: SummaryRow.padding,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -217,6 +218,7 @@ class SendTotal extends StatelessWidget {
                           child: AccountLabel(
                             account: signer,
                             style: text.bodyEmphasis.copyWith(color: colors.textContent),
+                            revealsAddress: true,
                           ),
                         ),
                         // A word's space after the name.
@@ -225,85 +227,12 @@ class SendTotal extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: _SummaryRow.gap),
-                  _FigureText(SendSummary._figure(row), isStrong: true),
+                  const SizedBox(width: SummaryRow.gap),
+                  FigureText(SendSummary._figure(row), isStrong: true),
                 ],
               ),
             ),
       ],
-    );
-  }
-}
-
-/// A label and what stands for it, at the two ends of a line.
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.label, required this.value});
-
-  final Widget label;
-  final Widget value;
-
-  static const padding = EdgeInsets.symmetric(vertical: 9);
-
-  /// How tall a row is, whether it holds a line of text or an account's
-  /// badge, so the rows step down evenly. One that needs more grows.
-  static const double height = 34;
-
-  /// The least space between the label and what stands for it.
-  static const double gap = 16;
-
-  @override
-  Widget build(BuildContext context) {
-    return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: height),
-      child: Row(
-        children: [
-          label,
-          const SizedBox(width: gap),
-          Expanded(
-            child: Align(alignment: AlignmentDirectional.centerEnd, child: value),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// A label and its figure at the two ends of a line.
-class _FigureRow extends StatelessWidget {
-  const _FigureRow({required this.label, required this.value, this.isStrong = false});
-
-  final String label;
-  final String value;
-  final bool isStrong;
-
-  @override
-  Widget build(BuildContext context) {
-    return _SummaryRow(
-      label: Text(label, style: context.sendBody(color: isStrong ? context.colorsV3.textContent : null)),
-      value: _FigureText(value, isStrong: isStrong),
-    );
-  }
-}
-
-/// A figure, or other short text, at the end of its line.
-class _FigureText extends StatelessWidget {
-  const _FigureText(this.value, {this.isStrong = false});
-
-  final String value;
-  final bool isStrong;
-
-  @override
-  Widget build(BuildContext context) {
-    final text = context.themeTextV3;
-
-    return Text(
-      value,
-      textAlign: TextAlign.end,
-      overflow: TextOverflow.ellipsis,
-      style: (isStrong ? text.bodyEmphasis : text.body).copyWith(
-        color: context.colorsV3.textContent,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      ),
     );
   }
 }

@@ -12,11 +12,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
-import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
+import 'package:flutter_riverpod/flutter_riverpod.dart' show AsyncValue, ProviderContainer, ProviderScope;
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
+import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
+import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
@@ -24,6 +28,8 @@ import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
+import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
@@ -33,6 +39,7 @@ import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -150,6 +157,12 @@ void main() {
   setUpAll(() async {
     TestWidgetsFlutterBinding.ensureInitialized();
     await loadRealFonts();
+    // What reads the device's preferences itself (pending cancellations)
+    // reads an empty store: the pictures run in real time, where the
+    // plugin's channel has no one to answer.
+    // This is a test (flutter test runs it), only outside test/.
+    // ignore: invalid_use_of_visible_for_testing_member
+    SharedPreferences.setMockInitialValues({});
   });
 
   _scene('boot_intro', (tester) async {
@@ -654,6 +667,8 @@ void main() {
     tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
     await tester.pumpAndSettle();
   }, platform: TargetPlatform.windows);
+
+  _activityScenes();
 }
 
 /// Opens Settings › Keyboard Shortcuts.
@@ -961,4 +976,341 @@ Future<void> _openReceive(WidgetTester tester, String name) async {
   await tester.pumpAndSettle();
   await tester.tap(find.widgetWithText(ToolbarAction, 'Receive'));
   await tester.pumpAndSettle();
+}
+
+// ---------------------------------------------------------------- Activity
+
+final _activityNow = DateTime.now();
+const _activityTeam = 'qzT3amVa8uLt9XkQ2mNc7RfWs4HdJy6PbEo1ZiGn5UwKx2';
+
+TransferEvent _activityTransfer(
+  String id, {
+  required String from,
+  required String to,
+  required Duration ago,
+  int tokens = 75,
+}) => TransferEvent(
+  id: id,
+  from: from,
+  to: to,
+  amount: oneToken * BigInt.from(tokens),
+  timestamp: _activityNow.subtract(ago),
+  fee: FakeSendChain.usualFee,
+  extrinsicHash: '0x7f3c9a1e5b2d48c6a0f19e3b7d5c2a8e4f6b1d9c3a7e5f2b8d4c6a1e9f3b$id',
+  blockNumber: 1,
+  blockHash: '0xblock',
+);
+
+/// Account 1's history: settled transfers, one from its own Savings, and a
+/// mining reward; a scheduled send in progress.
+FakeWalletDevice _activityDevice() {
+  final device = FakeWalletDevice()
+    ..store([_root, _second, _encrypted])
+    ..balance = oneToken * BigInt.from(1250);
+  device.chain
+    ..scheduledTransfers = [
+      ReversibleTransferEvent(
+        id: 'scheduled',
+        from: _root.accountId,
+        to: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+        amount: oneToken * BigInt.from(120),
+        timestamp: _activityNow,
+        txId: '0xtxid',
+        status: ReversibleTransferStatus.SCHEDULED,
+        scheduledAt: _activityNow.add(const Duration(hours: 23, minutes: 41, seconds: 30)),
+        blockNumber: 1,
+        blockHash: '0xblock',
+      ),
+    ]
+    ..historyPages = [
+      [
+        MinerRewardEvent(
+          id: 'reward',
+          miner: _root.accountId,
+          reward: oneToken * BigInt.from(12),
+          timestamp: _activityNow.subtract(const Duration(minutes: 12)),
+          blockNumber: 1,
+          blockHash: '0xreward',
+        ),
+        _activityTransfer(
+          'savings',
+          from: _second.accountId,
+          to: _root.accountId,
+          ago: const Duration(hours: 2),
+          tokens: 1000,
+        ),
+        _activityTransfer(
+          'sent',
+          from: _root.accountId,
+          to: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+          ago: const Duration(days: 1),
+        ),
+        _activityTransfer(
+          'received',
+          from: 'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+          to: _root.accountId,
+          ago: const Duration(days: 1, hours: 3),
+          tokens: 40,
+        ),
+        _activityTransfer(
+          'older',
+          from: 'qzW6mKe1RtZ8pLc3YhNv5DxQa9SgFb2UoJi7Vn4kTw3sHd',
+          to: _root.accountId,
+          ago: const Duration(days: 6),
+          tokens: 12,
+        ),
+      ],
+    ];
+  // What the sidebar counts as still scheduled is the same send.
+  device.chain.stillScheduled = device.chain.scheduledTransfers;
+  return device;
+}
+
+/// Opens Account 1's activity, with a send on its way as well.
+Future<ProviderContainer> _openActivity(WidgetTester tester, {FakeWalletDevice? device}) async {
+  useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+  await _open(tester, device ?? _activityDevice(), reduceMotion: true);
+  await tester.pumpAndSettle();
+  final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+  container
+      .read(pendingTransactionsProvider.notifier)
+      .add(
+        PendingTransactionEvent(
+          tempId: 'sending',
+          from: _root.accountId,
+          to: _depositAddress,
+          amount: oneToken * BigInt.from(250),
+          timestamp: _activityNow,
+          fee: FakeSendChain.usualFee,
+          extrinsicHash: '0x7f3c9a1e5b2d48c6a0f19e3b7d5c2a8e4f6b1d9c3a7e5f2b8d4c6a1e9f3b7d50',
+        ),
+      );
+  await tester.pumpAndSettle();
+  return container;
+}
+
+Future<void> _openActivityRow(WidgetTester tester, String id) async {
+  await tester.tap(find.byWidgetPredicate((widget) => widget is ActivityRowView && widget.id == id));
+  await tester.pumpAndSettle();
+}
+
+void _activityScenes() {
+  _scene('activity_list', (tester) async {
+    await _openActivity(tester);
+  });
+
+  // The pointer resting on Savings, one of the wallet's own accounts, in its
+  // row: its address shows.
+  _scene('activity_own_account_address', (tester) async {
+    await _openActivity(tester);
+    final label = find.descendant(
+      of: find.byWidgetPredicate((widget) => widget is ActivityRowView && widget.id == 'savings'),
+      matching: find.byType(AccountLabel),
+    );
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    addTearDown(mouse.removePointer);
+    await mouse.moveTo(tester.getCenter(label));
+    await tester.pump(HoverPopover.openAfter);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('activity_open_send', (tester) async {
+    await _openActivity(tester);
+    await _openActivityRow(tester, 'sent');
+  });
+
+  _scene('activity_open_scheduled', (tester) async {
+    await _openActivity(tester);
+    await _openActivityRow(tester, 'scheduled');
+  });
+
+  _scene('activity_open_sending', (tester) async {
+    await _openActivity(tester);
+    await _openActivityRow(tester, 'sending');
+  });
+
+  _scene('activity_smallest_window', (tester) async {
+    await _openActivity(tester);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    await _openActivityRow(tester, 'reward');
+  });
+
+  _scene('activity_empty', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _second, _encrypted]), reduceMotion: true);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('activity_loading', (tester) async {
+    final device = FakeWalletDevice()..store([_root, _second, _encrypted]);
+    device.chain.holdHistory = Completer<void>();
+    await _open(tester, device, reduceMotion: true);
+    await tester.pump(const Duration(milliseconds: 450));
+    await _showImages(tester);
+    await _snap(tester, 'activity_loading');
+    device.chain.holdHistory!.complete();
+    await tester.pumpAndSettle();
+  });
+
+  // The skeleton's rows take the tight form there, as the real ones do.
+  _scene('activity_loading_smallest_window', (tester) async {
+    final device = FakeWalletDevice()..store([_root, _second, _encrypted]);
+    device.chain.holdHistory = Completer<void>();
+    await _open(tester, device, reduceMotion: true);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pump(const Duration(milliseconds: 450));
+    await _showImages(tester);
+    await _snap(tester, 'activity_loading_smallest_window');
+    device.chain.holdHistory!.complete();
+    await tester.pumpAndSettle();
+  });
+
+  _scene('activity_failed', (tester) async {
+    final device = FakeWalletDevice()..store([_root, _second, _encrypted]);
+    device.chain.historyError = StateError('Connection closed before full header was received');
+    await _open(tester, device, reduceMotion: true);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('activity_encrypted', (tester) async {
+    useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+    WormholeTransferEvent private(String id, {required String from, required String to, required Duration ago}) =>
+        WormholeTransferEvent(
+          id: id,
+          from: from,
+          to: to,
+          amount: oneToken * BigInt.from(40),
+          timestamp: _activityNow.subtract(ago),
+          fee: FakeSendChain.usualFee,
+          extrinsicHash: '0x$id',
+          blockNumber: 1,
+        );
+    await _open(
+      tester,
+      FakeWalletDevice()..store([_root, _second, _encrypted]),
+      reduceMotion: true,
+      overrides: [
+        encryptedHistoryProvider.overrideWith(
+          (ref, walletIndex) => AsyncValue.data([
+            private(
+              'in',
+              from: 'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+              to: _encrypted.accountId,
+              ago: const Duration(hours: 3),
+            ),
+            private(
+              'out',
+              from: _encrypted.accountId,
+              to: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+              ago: const Duration(days: 1),
+            ),
+            private('batch', from: _encrypted.accountId, to: '', ago: const Duration(days: 1, hours: 2)),
+          ]),
+        ),
+      ],
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Encrypted Account')));
+    await tester.pumpAndSettle();
+    await _openActivityRow(tester, 'in');
+  });
+
+  MultisigProposal proposal(
+    int id, {
+    required int tokens,
+    required String to,
+    required Duration ago,
+    List<String> approvals = const [],
+    MultisigProposalStatus status = MultisigProposalStatus.active,
+  }) => MultisigProposal(
+    entityId: 'proposal-$id',
+    id: id,
+    multisigAddress: _activityTeam,
+    proposer: 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr',
+    createdAt: _activityNow.subtract(ago),
+    updatedAt: _activityNow.subtract(ago),
+    pallet: '',
+    call: '',
+    recipient: to,
+    amount: oneToken * BigInt.from(tokens),
+    expiryBlock: 1284220,
+    approvals: approvals,
+    deposit: oneToken,
+    status: status,
+    threshold: 2,
+    signerCount: 3,
+  );
+
+  // A multisig's proposal open; in the smallest window too, with the sidebar
+  // and the panel at the right made their widest, where they give way and
+  // the lists are the narrowest they get.
+  Future<void> openTeamProposal(WidgetTester tester, {Size? window}) async {
+    useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+    final team = MultisigAccount(
+      name: 'Team',
+      accountId: _activityTeam,
+      signers: [_root.accountId, 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr', 'qzOther'],
+      threshold: 2,
+      nonce: BigInt.zero,
+      myMemberAccountId: _root.accountId,
+    );
+    final chain = FakeSendChain()
+      ..openProposals = [
+        proposal(
+          1,
+          tokens: 250,
+          to: 'qzW6mKe1RtZ8pLc3YhNv5DxQa9SgFb2UoJi7Vn4kTw3sHd',
+          ago: const Duration(hours: 3),
+          approvals: ['qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr'],
+        ),
+        proposal(
+          2,
+          tokens: 40,
+          to: 'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+          ago: const Duration(hours: 5),
+          approvals: [_root.accountId],
+        ),
+      ]
+      ..pastProposals = [
+        proposal(
+          3,
+          tokens: 75,
+          to: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+          ago: const Duration(days: 1),
+          status: MultisigProposalStatus.executed,
+        ),
+        proposal(
+          4,
+          tokens: 30,
+          to: 'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+          ago: const Duration(days: 2),
+          status: MultisigProposalStatus.cancelled,
+        ),
+      ];
+    await _openWith(tester, [
+      ...shellOverrides(
+        accounts: const [_root, _second],
+        settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(team), multisigs: [team])
+          ..strings.addAll({
+            if (window != null) ...{
+              SidebarWidthNotifier.settingsKey: '${SidebarWidthNotifier.maximum}',
+              InspectorWidthNotifier.settingsKey: '${InspectorWidthNotifier.maximum}',
+            },
+          }),
+        balanceOf: (id) async => oneToken * BigInt.from(id == _activityTeam ? 4800 : 1250),
+        chain: chain,
+      ),
+    ]);
+    await tester.pumpAndSettle();
+    if (window != null) {
+      tester.view.physicalSize = window * _pixelRatio;
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byType(OpenProposalRowView).first);
+    await tester.pumpAndSettle();
+  }
+
+  _scene('activity_multisig', openTeamProposal);
+  _scene('activity_multisig_smallest_window', (tester) => openTeamProposal(tester, window: const Size(960, 640)));
 }

@@ -1,8 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart' show Size;
+import 'package:flutter/widgets.dart' show Rect, Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
@@ -325,5 +326,66 @@ void main() {
     await pumpShell(tester, overrides: shellOverrides());
 
     expect(_inSidebar(find.text('No accounts found.')), findsOneWidget);
+  });
+
+  group('what an account has in progress', () {
+    /// Main, Savings, and two multisigs; Savings has a transfer on its way and
+    /// Team two proposals waiting for this wallet's signature.
+    Future<void> open(WidgetTester tester) => pumpShell(
+      tester,
+      overrides: [
+        ...shellOverrides(
+          accounts: const [mainAccount, savingsAccount],
+          settings: FakeSettingsService(
+            activeAccount: const RegularAccount(mainAccount),
+            multisigs: [teamMultisig, orphanMultisig],
+          ),
+          balances: oneTokenEach,
+        ),
+        accountMarksProvider.overrideWithValue({
+          savingsAccount.accountId: const AccountMark(inProgress: 1),
+          teamMultisig.accountId: const AccountMark(waitingForSignature: 2),
+        }),
+      ],
+    );
+
+    Finder countIn(String row) => find.descendant(of: _row(row), matching: find.byKey(DesktopAccountBadge.countKey));
+
+    testOnMac("an account with some shows how many on its badge's corner; one without shows none", (tester) async {
+      await open(tester);
+
+      expect(find.descendant(of: countIn('Savings'), matching: find.text('1')), findsOne);
+      expect(find.descendant(of: countIn('Team'), matching: find.text('2')), findsOne);
+      expect(countIn('Main'), findsNothing);
+      expect(countIn('Orphan'), findsNothing);
+
+      final badge = tester.getRect(find.descendant(of: _row('Savings'), matching: find.byType(DesktopAccountBadge)));
+      final count = tester.getRect(countIn('Savings'));
+      expect(count.center.dx, greaterThan(badge.center.dx));
+      expect(count.center.dy, lessThan(badge.center.dy));
+      expect(count.right, greaterThan(badge.right - 4), reason: 'on the corner, not inside the badge');
+    });
+
+    testOnMac('the count moves nothing in its row: MULTISIG and the balance stay where they are', (tester) async {
+      await open(tester);
+
+      Rect within(String row, Finder part) {
+        final rowRect = tester.getRect(_row(row));
+        return tester.getRect(find.descendant(of: _row(row), matching: part)).shift(-rowRect.topLeft);
+      }
+
+      // Team has a count, Orphan none; both are multisigs alike.
+      expect(within('Team', find.text('MULTISIG')), within('Orphan', find.text('MULTISIG')));
+      expect(within('Team', find.text('1 QTC')), within('Orphan', find.text('1 QTC')));
+    });
+
+    testOnMac('a screen reader hears how many, and of what', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await open(tester);
+
+      expect(find.bySemanticsLabel(RegExp('1 in progress')), findsOne);
+      expect(find.bySemanticsLabel(RegExp('2 waiting for your signature')), findsOne);
+      semantics.dispose();
+    });
   });
 }

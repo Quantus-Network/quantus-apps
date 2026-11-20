@@ -4,8 +4,20 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// A part of the window: a rounded, bordered box on the window's darker
 /// ground, under a header line when it has a [title]. Panels stand [gap]
 /// apart, and [gap] in from the window's edges.
+///
+/// While what it shows is being fetched again ([isBusy]) a light runs along
+/// the hairline under its header. The panel the keys are in ([isFocused])
+/// has a lighter border.
 class Panel extends StatelessWidget {
-  const Panel({super.key, this.title, this.trailing, required this.child, this.fillsHeight = true});
+  const Panel({
+    super.key,
+    this.title,
+    this.trailing,
+    required this.child,
+    this.fillsHeight = true,
+    this.isBusy = false,
+    this.isFocused = false,
+  });
 
   /// The space between panels, and between a panel and the window's edge.
   static const double gap = 8;
@@ -15,6 +27,9 @@ class Panel extends StatelessWidget {
 
   /// The space between the header's ends and what it holds.
   static const double headerPadding = 16;
+
+  /// The light that runs under the header while the panel is busy.
+  static const busyLineKey = Key('panel-busy-line');
 
   /// What the panel holds, named in its header line.
   final String? title;
@@ -28,6 +43,9 @@ class Panel extends StatelessWidget {
   /// panel is as tall as [child].
   final bool fillsHeight;
 
+  final bool isBusy;
+  final bool isFocused;
+
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
@@ -37,7 +55,7 @@ class Panel extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.bgSurface,
         borderRadius: context.radiusV3.smBorder,
-        border: Border.all(color: colors.borderHairline),
+        border: Border.all(color: isFocused ? colors.textContent.useOpacity(0.28) : colors.borderHairline),
       ),
       child: ClipRRect(
         borderRadius: context.radiusV3.smBorder,
@@ -68,11 +86,91 @@ class Panel extends StatelessWidget {
                   ),
                 ),
               ),
-              const MenuDivider(),
+              if (isBusy) const _BusyLine(key: busyLineKey) else const MenuDivider(),
             ],
             if (fillsHeight) Expanded(child: child) else child,
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// A short glacier light running along the hairline under a panel's header,
+/// over and over. With the system asking for less motion it is lit along
+/// the whole line and still.
+class _BusyLine extends StatefulWidget {
+  const _BusyLine({super.key});
+
+  /// One run from the line's start to its end.
+  static const run = Duration(milliseconds: 1500);
+
+  /// How much of the line the light covers.
+  static const double share = 0.3;
+
+  @override
+  State<_BusyLine> createState() => _BusyLineState();
+}
+
+class _BusyLineState extends State<_BusyLine> with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(vsync: this, duration: _BusyLine.run);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final glacier = context.colorsV3.semanticGlacier;
+    final isStill = MediaQuery.disableAnimationsOf(context);
+    return SizedBox(
+      height: 1,
+      child: ColoredBox(
+        color: isStill ? glacier.useOpacity(0.6) : context.colorsV3.borderHairline,
+        child: isStill
+            ? null
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  final light = width * _BusyLine.share;
+                  return AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, _) {
+                      final at = Curves.easeInOut.transform(_controller.value);
+                      return Stack(
+                        clipBehavior: Clip.hardEdge,
+                        children: [
+                          Positioned(
+                            left: -light + (width + light) * at,
+                            width: light,
+                            top: 0,
+                            bottom: 0,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [glacier.useOpacity(0), glacier, glacier.useOpacity(0)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
       ),
     );
   }

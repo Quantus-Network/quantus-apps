@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
@@ -186,11 +187,19 @@ class _AccountRow extends ConsumerWidget {
     final account = display.account;
     // A note about the account ("Address copied") shows in its balance's place.
     final note = ref.watch(accountNoteProvider);
+    final l10n = ref.watch(l10nProvider);
+    final mark = ref.watch(accountMarksProvider)[account.accountId] ?? const AccountMark();
+    final marked = [
+      if (mark.inProgress > 0) l10n.desktopMarksInProgress(mark.inProgress),
+      if (mark.waitingForSignature > 0) l10n.desktopMarksWaitingForSignature(mark.waitingForSignature),
+    ];
+    final badge = DesktopAccountBadge(account: account, size: _badgeSize, count: mark.count);
 
     final row = SidebarRow(
       title: account.name,
       isSelected: isSelected,
-      leading: DesktopAccountBadge(account: account, size: _badgeSize),
+      // The count on the badge, as a screen reader hears it.
+      leading: marked.isEmpty ? badge : Semantics(label: marked.join(', '), child: badge),
       subtitle: note != null && note.accountId == account.accountId
           ? AccountNoteText(note: note)
           : AccountBalanceText(

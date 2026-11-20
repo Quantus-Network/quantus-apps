@@ -611,6 +611,21 @@ void main() {
       expect(fee - from, moreOrLessEquals(34, epsilon: 0.5));
     });
 
+    testOnMac('in the review, the account the send leaves shows its address on hover; the header names it plainly', (
+      tester,
+    ) async {
+      await _openSend(tester);
+      await _toReview(tester);
+
+      Iterable<bool> reveal(Type within) => tester
+          .widgetList<AccountLabel>(find.descendant(of: find.byType(within), matching: find.byType(AccountLabel)))
+          .map((label) => label.revealsAddress);
+      expect(reveal(ShellSheetHeader), [false]);
+      expect(reveal(SendSummary), isNotEmpty);
+      expect(reveal(SendSummary), everyElement(isTrue));
+      expect(reveal(SendTotal), everyElement(isTrue));
+    });
+
     testOnMac('names the account the send leaves by its badge and its name', (tester) async {
       await _openSend(tester);
 

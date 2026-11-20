@@ -5294,6 +5294,84 @@ abstract class AppLocalizations {
   /// **'Quantus Wallet {version}'**
   String desktopFooterVersion(String version);
 
+  /// Desktop: title of the panel listing the open account's transfers still under way, above Activity
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get desktopActivityInProgress;
+
+  /// Desktop: shown in the Activity panel when the account's history could not be loaded, above the error
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the activity'**
+  String get desktopActivityLoadFailed;
+
+  /// Desktop: a note at the top of the Activity panel when a refresh failed; the rows already shown stay under it, with Try Again beside it
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh the activity'**
+  String get desktopActivityRefreshFailed;
+
+  /// Desktop: heading of the popover shown on hovering one of the wallet's own accounts named as a sender or receiver; the account's whole address and its checkphrase are under it, with Copy beside it
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get desktopMarksAddress;
+
+  /// Desktop, read by screen readers: how many of an account's transfers are still in progress, as the count on its badge in the sidebar says
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in progress'**
+  String desktopMarksInProgress(int count);
+
+  /// Desktop, read by screen readers: how many of a multisig's open proposals wait for a signature from this wallet, as the count on its badge in the sidebar says
+  ///
+  /// In en, this message translates to:
+  /// **'{count} waiting for your signature'**
+  String desktopMarksWaitingForSignature(int count);
+
+  /// Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m
+  ///
+  /// In en, this message translates to:
+  /// **'in {time}'**
+  String desktopActivityRunsIn(String time);
+
+  /// Desktop: title of the panel showing one transaction, and the label over its hash
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction'**
+  String get desktopActivityTransaction;
+
+  /// Desktop transaction panel: the amount a multisig proposal moves
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get desktopActivityAmount;
+
+  /// Desktop transaction panel: how many of a new multisig's signers must approve, of how many
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get desktopActivityThreshold;
+
+  /// Desktop transaction panel: how many signers a new multisig has
+  ///
+  /// In en, this message translates to:
+  /// **'Signers'**
+  String get desktopActivitySigners;
+
+  /// Desktop transaction panel: the account that made a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Created by'**
+  String get desktopActivityCreatedBy;
+
+  /// Desktop transaction panel: the fee the chain charges for making a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig fee'**
+  String get desktopActivityCreationFee;
+
   /// Desktop account menu: opens the account’s Info sheet
   ///
   /// In en, this message translates to:
