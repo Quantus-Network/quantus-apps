@@ -79,7 +79,7 @@ List<AccountMenuEntry?> accountMenuEntries(
       AccountMenuEntry(
         l10n.desktopAccountRename,
         action: AccountAction.rename,
-        onSelected: () => manager.openInfo(account, start: AccountInfoStart.rename),
+        onSelected: () => manager.startRename(account),
       ),
     if (items.contains(AccountMenuItem.recoveryPhrase))
       AccountMenuEntry(
@@ -116,9 +116,14 @@ List<AccountMenuEntry?> accountMenuEntries(
   ];
 }
 
-/// What a wallet heading's menu offers: a software wallet's recovery phrase.
-/// A Keystone wallet's phrase is not on this computer: it has none.
+/// What a wallet heading's menu offers: Rename, and a software wallet's
+/// recovery phrase. A Keystone wallet's phrase is not on this computer.
 List<AccountMenuEntry> walletMenuEntries(AppLocalizations l10n, WalletGroup wallet, AccountManager manager) => [
+  AccountMenuEntry(
+    l10n.desktopAccountRename,
+    action: AccountAction.rename,
+    onSelected: () => manager.startRenameWallet(wallet.walletIndex),
+  ),
   if (wallet.kind == WalletKind.software)
     AccountMenuEntry(
       l10n.desktopAccountShowRecoveryPhrase,

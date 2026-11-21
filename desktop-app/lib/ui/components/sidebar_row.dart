@@ -16,6 +16,7 @@ class SidebarRow extends StatelessWidget {
     this.subtitle,
     this.leading,
     this.trailing,
+    this.titleEditor,
   });
 
   final String title;
@@ -25,6 +26,30 @@ class SidebarRow extends StatelessWidget {
   final Widget? subtitle;
   final Widget? leading;
   final Widget? trailing;
+
+  /// Shown in the title's place while the title is being typed over.
+  final Widget? titleEditor;
+
+  /// How far the editor reaches above and below the title's line.
+  static const double _editorOutset = 3;
+
+  /// The title, or its editor over the line the title takes, so the row
+  /// keeps its height and the rows below stay where they are.
+  Widget _titleOrEditor(TextStyle titleStyle) {
+    final title = Text(this.title, style: titleStyle, maxLines: 1, overflow: TextOverflow.ellipsis);
+    final editor = titleEditor;
+    if (editor == null) return title;
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: Visibility.maintain(visible: false, child: title),
+        ),
+        Positioned(left: 0, right: 0, top: -_editorOutset, bottom: -_editorOutset, child: editor),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +79,7 @@ class SidebarRow extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 3,
-                    children: [
-                      Text(title, style: titleStyle, maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ?subtitle,
-                    ],
+                    children: [_titleOrEditor(titleStyle), ?subtitle],
                   ),
                 ),
                 ?trailing,

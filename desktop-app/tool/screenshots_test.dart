@@ -564,6 +564,20 @@ void main() {
     await _rightClickInSidebar(tester, 'WALLET 2');
   });
 
+  _scene('account_rename_inline', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Savings');
+    await tester.tap(find.text('Rename…'));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('wallet_rename_inline', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'WALLET 2');
+    await tester.tap(find.text('Rename…'));
+    await tester.pumpAndSettle();
+  });
+
   _scene('account_note_copied', (tester) async {
     await _openAccounts(tester);
     await _rightClickInSidebar(tester, 'Savings');

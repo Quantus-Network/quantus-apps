@@ -5695,6 +5695,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose a wallet'**
   String get desktopRecoveryPhraseChooseWallet;
+
+  /// Desktop sidebar: under a wallet heading for a few seconds when the name typed over it could not be saved; the heading keeps its name
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t rename the wallet'**
+  String get desktopWalletRenameFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
