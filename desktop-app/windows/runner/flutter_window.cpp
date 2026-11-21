@@ -29,6 +29,7 @@ bool FlutterWindow::OnCreate() {
   RegisterPlugins(flutter_controller_->engine());
   sensitive_clipboard_ =
       std::make_unique<SensitiveClipboard>(flutter_controller_->engine()->messenger(), GetHandle());
+  window_focus_ = std::make_unique<WindowFocus>(flutter_controller_->engine()->messenger(), GetHandle());
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {
@@ -54,6 +55,8 @@ void FlutterWindow::OnDestroy() {
     }
     sensitive_clipboard_ = nullptr;
   }
+  // Its channel answers on the engine's messenger, which goes with the engine.
+  window_focus_ = nullptr;
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
   }
