@@ -122,6 +122,18 @@ void main() {
       expect(decide(swap(SwapStatus.pendingDeposit)).content!.phase, SwapLivePhase.submitted);
     });
 
+    test('an overdue swap leaves the lock screen', () {
+      final graceEnds = quote.deadline.add(ActiveSwap.finishGrace);
+      for (final status in [SwapStatus.pendingDeposit, SwapStatus.processing]) {
+        expect(decide(swap(status), now: graceEnds).command, SwapLiveCommand.show, reason: '$status');
+        expect(
+          decide(swap(status), now: graceEnds.add(const Duration(seconds: 1))).command,
+          SwapLiveCommand.end,
+          reason: '$status',
+        );
+      }
+    });
+
     test('known and processing deposits advance the headline and the bar', () {
       final confirming = decide(swap(SwapStatus.knownDepositTx)).content!;
       expect(confirming.headline, 'Confirming on Ethereum');
@@ -177,7 +189,7 @@ void main() {
       });
 
       test('no countdown is never overdue', () {
-        final later = seen.add(const Duration(hours: 1));
+        final later = seen.add(const Duration(minutes: 30));
         expect(decide(swap(SwapStatus.pendingDeposit), now: later).content!.toPayload()['overdue'], isFalse);
         expect(decide(swap(SwapStatus.knownDepositTx), now: later).content!.toPayload()['overdue'], isFalse);
       });
@@ -806,8 +818,8 @@ void main() {
       final key = stored!['key'] as String;
       await deliverSwapLiveActivityPush(swappedPush(key));
 
-      current = swap(SwapStatus.processing, startedAt: started.add(const Duration(hours: 2)));
-      now = started.add(const Duration(hours: 2));
+      current = swap(SwapStatus.processing, startedAt: started.add(const Duration(minutes: 30)));
+      now = started.add(const Duration(minutes: 30));
       await controller.sync();
 
       expect(stored!['phase'], 'settling');
@@ -851,8 +863,8 @@ void main() {
       await controller.sync();
       expect(writes, isEmpty);
 
-      current = swap(SwapStatus.processing, startedAt: started.add(const Duration(hours: 2)));
-      now = started.add(const Duration(hours: 2));
+      current = swap(SwapStatus.processing, startedAt: started.add(const Duration(minutes: 30)));
+      now = started.add(const Duration(minutes: 30));
       await controller.sync();
 
       expect(writes, ['show:settling']);

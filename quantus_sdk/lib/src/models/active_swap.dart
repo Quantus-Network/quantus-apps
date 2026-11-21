@@ -63,17 +63,15 @@ class ActiveSwap {
 
   Duration elapsedAt(DateTime now) => (settledAt ?? now).difference(startedAt);
 
-  /// The deposit window closed with 1Click still waiting for the deposit.
-  /// How long past its deposit deadline a swap whose deposit 1Click has seen
-  /// may take to settle before it counts as overdue.
-  static const finishGrace = Duration(hours: 1);
+  /// How long past its deposit deadline a swap may take to settle before it
+  /// counts as overdue: a deposit sent near the deadline can be seen late,
+  /// and 1Click starts a refund at the deadline. Senoti stops polling at the
+  /// same point.
+  static const finishGrace = Duration(minutes: 10);
 
-  /// Whether the swap should have settled by now: its deposit was not seen
-  /// by the deadline, or it was seen and the swap is not settled an hour
-  /// past that.
-  bool overdue(DateTime now) =>
-      !isFinal &&
-      now.isAfter(order.quote.deadline.add(order.status == SwapStatus.pendingDeposit ? Duration.zero : finishGrace));
+  /// Whether the swap should have settled by now: it is not settled
+  /// [finishGrace] past its deadline. Its status is no longer polled then.
+  bool overdue(DateTime now) => !isFinal && now.isAfter(order.quote.deadline.add(finishGrace));
 
   ActiveSwap withOrder(SwapOrder order, {required DateTime now}) => _copy(
     order: order,

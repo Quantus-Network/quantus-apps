@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/fiat_currency.dart';
+import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/exchange_rate_service.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
@@ -119,31 +120,27 @@ final exchangeRatesProvider = FutureProvider<Map<String, Decimal>>((ref) async {
 // Token price provider
 // ---------------------------------------------------------------------------
 
-/// How often 1Click is asked for QTC's price; an unchanged listing costs a 304.
-const tokenPriceRefreshInterval = Duration(minutes: 5);
-
-/// QTC's USD price as 1Click lists it, refreshed every
-/// [tokenPriceRefreshInterval]. A failed refresh is logged and the last price
-/// stands; there is none until the first lands.
+/// QTC's USD price as 1Click lists it, read whenever the app comes to the
+/// foreground; the swap service's listing cache answers a quick return. A
+/// failed read is logged and the last price stands; there is none until the
+/// first lands.
 final tokenUsdPriceProvider = StreamProvider<Decimal>((ref) {
   final swap = ref.watch(swapServiceProvider);
   final prices = StreamController<Decimal>();
 
   Future<void> refresh() async {
     try {
-      final listed = await swap.getListedQuantusToken(forceRefresh: true);
+      final listed = await swap.getListedQuantusToken();
       if (listed != null && !prices.isClosed) prices.add(Decimal.parse(listed.usdPrice.toString()));
     } catch (e) {
       quantusPrint('QTC price refresh failed: $e');
     }
   }
 
-  final timer = Timer.periodic(tokenPriceRefreshInterval, (_) => refresh());
-  ref.onDispose(() {
-    timer.cancel();
-    prices.close();
-  });
-  unawaited(refresh());
+  ref.onDispose(prices.close);
+  ref.listen(appInForegroundProvider, (_, foreground) {
+    if (foreground) unawaited(refresh());
+  }, fireImmediately: true);
   return prices.stream;
 });
 
