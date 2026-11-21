@@ -37,25 +37,55 @@ class _RecordingTelemetry implements Telemetry {
 final _amount = oneToken * BigInt.from(25) ~/ BigInt.two;
 final _broadcastAt = DateTime(2026, 11, 21, 12);
 const _sendId = 'tx-1';
+const _sendHash = '0xsend';
 const _proposalId = 'proposal-1';
 const _proposalHash = '0xproposal';
 
+/// The transfer the indexer holds for Main's send to Bob, of [amount].
+TransferEvent _indexedSend(BigInt amount) => TransferEvent(
+  id: 'indexed-send',
+  from: mainAccount.accountId,
+  to: 'qzBob',
+  amount: amount,
+  timestamp: _broadcastAt,
+  fee: BigInt.zero,
+  extrinsicHash: _sendHash,
+  blockNumber: 10,
+  blockHash: '0xblock',
+);
+
+/// The chain, its indexer holding Main's send to Bob as having moved
+/// [sentAmount], or not holding it when that is null.
+FakeSendChain _chain({required BigInt? sentAmount}) {
+  final chain = FakeSendChain();
+  if (sentAmount != null) chain.indexedTransfers[_sendHash] = _indexedSend(sentAmount);
+  return chain;
+}
+
 /// A wallet of Main and Savings, with the Team multisig, whose notifications
-/// are started on [platform] in the language [locale].
-Future<({ProviderContainer container, FakeNotificationPlugin notifications})> _open({
+/// are started on [platform] in the language [locale]. The indexer holds
+/// Main's send to Bob as having moved [sentAmount], 12.5 unless said.
+Future<({ProviderContainer container, FakeNotificationPlugin notifications, _RecordingTelemetry telemetry})> _open({
   TargetPlatform platform = TargetPlatform.windows,
   String locale = 'en',
+  BigInt? sentAmount,
+  bool indexed = true,
 }) async {
   debugDefaultTargetPlatformOverride = platform;
   addTearDown(() => debugDefaultTargetPlatformOverride = null);
   final notifications = FakeNotificationPlugin();
+  final telemetry = _RecordingTelemetry();
   final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: [teamMultisig])
     ..locale = locale;
   final container = ProviderContainer(
     overrides: [
-      ...shellOverrides(accounts: const [mainAccount, savingsAccount], settings: settings),
+      ...shellOverrides(
+        accounts: const [mainAccount, savingsAccount],
+        settings: settings,
+        chain: _chain(sentAmount: indexed ? sentAmount ?? _amount : null),
+      ),
       notificationPluginProvider.overrideWithValue(notifications),
-      telemetryProvider.overrideWithValue(_RecordingTelemetry()),
+      telemetryProvider.overrideWithValue(telemetry),
     ],
   );
   addTearDown(container.dispose);
@@ -65,23 +95,24 @@ Future<({ProviderContainer container, FakeNotificationPlugin notifications})> _o
     if (container.read(accountsProvider).hasValue && container.read(multisigAccountsProvider).hasValue) break;
     await Future<void>.delayed(Duration.zero);
   }
-  return (container: container, notifications: notifications);
+  return (container: container, notifications: notifications, telemetry: telemetry);
 }
 
-/// Main sends 12.5 to Bob and the send is broadcast, as the send sheet does.
-void _broadcast(ProviderContainer container) => withClock(Clock.fixed(_broadcastAt), () {
+/// Main sends [amount], 12.5 unless said, to Bob and the send is broadcast,
+/// as the send sheet does.
+void _broadcast(ProviderContainer container, {BigInt? amount}) => withClock(Clock.fixed(_broadcastAt), () {
   final sends = container.read(pendingTransactionsProvider.notifier);
   sends.add(
     PendingTransactionEvent(
       tempId: _sendId,
       from: mainAccount.accountId,
       to: 'qzBob',
-      amount: _amount,
+      amount: amount ?? _amount,
       fee: BigInt.zero,
       timestamp: _broadcastAt,
     ),
   );
-  sends.updateState(_sendId, TransactionState.pending, extrinsicHash: '0xsend');
+  sends.updateState(_sendId, TransactionState.pending, extrinsicHash: _sendHash);
 });
 
 /// What the wallet does once it has found the send on the chain.
@@ -145,7 +176,7 @@ void main() {
 
   group('a Transparent send from this computer', () {
     test('that the chain confirms notifies that it was sent, with the amount and the account it came from', () async {
-      final (:container, :notifications) = await _open();
+      final (:container, :notifications, telemetry: _) = await _open();
 
       _broadcast(container);
       await _settleDown();
@@ -160,8 +191,31 @@ void main() {
       expect(jsonDecode(notifications.shown.single.payload), {'accountId': mainAccount.accountId});
     });
 
+    test('sent as Max notifies the amount the chain moved, not the estimate it was recorded with', () async {
+      // Max sends everything there is at inclusion, which can be less than
+      // what the send sheet estimated.
+      final (:container, :notifications, telemetry: _) = await _open(sentAmount: oneToken * BigInt.from(9));
+
+      _broadcast(container, amount: oneToken * BigInt.from(10));
+      _found(container);
+      await _settleDown();
+
+      expect(_shown(notifications), [('Sent 9 QTC', 'From Main')]);
+    });
+
+    test('found, but not in the indexer when its amount is read, notifies nothing and is reported', () async {
+      final (:container, :notifications, :telemetry) = await _open(indexed: false);
+
+      _broadcast(container);
+      _found(container);
+      await _settleDown();
+
+      expect(notifications.shown, isEmpty);
+      expect(telemetry.errors, ['desktop_notification_sent_amount_unread']);
+    });
+
     test('that the wallet stops watching for unfound notifies that it was not confirmed', () async {
-      final (:container, :notifications) = await _open();
+      final (:container, :notifications, telemetry: _) = await _open();
 
       _broadcast(container);
       _givenUp(container);
@@ -176,7 +230,7 @@ void main() {
     });
 
     test('that is marked failed notifies that it failed', () async {
-      final (:container, :notifications) = await _open();
+      final (:container, :notifications, telemetry: _) = await _open();
 
       _broadcast(container);
       container.read(pendingTransactionsProvider.notifier).updateState(_sendId, TransactionState.failed);
@@ -187,7 +241,7 @@ void main() {
     });
 
     test('whose broadcast failed notifies nothing: the send sheet says so', () async {
-      final (:container, :notifications) = await _open();
+      final (:container, :notifications, telemetry: _) = await _open();
       final sends = container.read(pendingTransactionsProvider.notifier);
 
       sends.add(
@@ -207,7 +261,7 @@ void main() {
     });
 
     test('still watched for when the wallet is wiped notifies nothing about it', () async {
-      final (:container, :notifications) = await _open();
+      final (:container, :notifications, telemetry: _) = await _open();
 
       _broadcast(container);
       // The wipe empties the pending sends at once.
@@ -223,7 +277,7 @@ void main() {
 
   group('a proposal made on this computer', () {
     test('that the chain creates notifies that it was created, with what it sends and from which multisig', () async {
-      final (:container, :notifications) = await _open();
+      final (:container, :notifications, telemetry: _) = await _open();
 
       _propose(container);
       _settle(container, SendConfirmation.confirmed);
@@ -234,7 +288,7 @@ void main() {
     });
 
     test('not seen in time notifies that it was not confirmed', () async {
-      final (:container, :notifications) = await _open();
+      final (:container, :notifications, telemetry: _) = await _open();
 
       _propose(container);
       _settle(container, SendConfirmation.unconfirmed);
@@ -247,7 +301,7 @@ void main() {
   });
 
   test('with notifications turned off in Settings, nothing is shown', () async {
-    final (:container, :notifications) = await _open();
+    final (:container, :notifications, telemetry: _) = await _open();
     final config = container.read(notificationConfigProvider.notifier);
     await config.updateConfig(container.read(notificationConfigProvider).copyWith(enabled: false));
 
@@ -262,7 +316,7 @@ void main() {
 
   test('while the system does not allow notifications, nothing is shown and nothing fails', () async {
     // macOS, not asked yet.
-    final (:container, :notifications) = await _open(platform: TargetPlatform.macOS);
+    final (:container, :notifications, telemetry: _) = await _open(platform: TargetPlatform.macOS);
 
     _broadcast(container);
     _found(container);
@@ -279,6 +333,7 @@ void main() {
       overrides: shellOverrides(
         accounts: const [mainAccount, savingsAccount],
         settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        chain: _chain(sentAmount: _amount),
       ),
     );
     final container = ProviderScope.containerOf(tester.element(find.byType(MaterialApp)));
@@ -291,7 +346,7 @@ void main() {
   });
 
   test('the text follows the app language', () async {
-    final (:container, :notifications) = await _open(locale: 'id');
+    final (:container, :notifications, telemetry: _) = await _open(locale: 'id');
 
     _broadcast(container);
     _found(container);

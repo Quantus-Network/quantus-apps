@@ -54,15 +54,13 @@ class OwnActivityNotifications {
           _sends[send.id] = (send: send, broadcastAt: now);
         case TransactionState.inHistory when watched != null:
           _sends.remove(send.id);
-          _notifySend(
-            send,
-            title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
-            body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
-          );
+          unawaited(_notifySent(send));
         case TransactionState.failed when watched != null:
           _sends.remove(send.id);
+          // The amount it was recorded with: what it set out to send.
           _notifySend(
             send,
+            amount: send.amount,
             title: (l10n, _) => l10n.desktopNotificationSendFailedTitle,
             body: (l10n, amount, account) => l10n.desktopNotificationSendFailedBody(amount, account),
           );
@@ -78,10 +76,37 @@ class OwnActivityNotifications {
       if (now.difference(broadcastAt) < PendingTransactionPollingService.timeout) continue;
       _notifySend(
         send,
+        amount: send.amount,
         title: (l10n, _) => l10n.desktopNotificationSendNotConfirmedTitle,
         body: (l10n, amount, account) => l10n.desktopNotificationSendNotConfirmedBody(amount, account),
       );
     }
+  }
+
+  /// Notifies [send] as sent, with the amount the chain moved: a Max send
+  /// is recorded with an estimate, as the chain sizes it at inclusion, and
+  /// its record is not corrected when it is found.
+  Future<void> _notifySent(PendingTransactionEvent send) async {
+    final TransactionEvent? indexed;
+    try {
+      final hash = send.extrinsicHash;
+      if (hash == null) throw StateError('A broadcast send has no transaction hash: ${send.id}');
+      indexed = await _ref
+          .read(chainHistoryServiceProvider)
+          .searchByExtrinsicHash(extrinsicHash: hash, isReversible: send.isReversible);
+      if (indexed == null) throw StateError('The indexer does not hold the send it was found in: ${send.id}');
+    } catch (e) {
+      // Without the amount the chain moved there is nothing true to say.
+      quantusPrint('Not notifying a confirmed send whose amount could not be read: $e');
+      _ref.read(telemetryProvider).sendError('desktop_notification_sent_amount_unread', error: e);
+      return;
+    }
+    _notifySend(
+      send,
+      amount: indexed.amount,
+      title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
+      body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
+    );
   }
 
   void _onProposals(List<PendingMultisigProposalEvent> proposals) {
@@ -135,8 +160,10 @@ class OwnActivityNotifications {
     }
   }
 
+  /// Notifies about [send], of [amount].
   void _notifySend(
     PendingTransactionEvent send, {
+    required BigInt amount,
     required String Function(AppLocalizations l10n, String amount) title,
     required String Function(AppLocalizations l10n, String amount, String account) body,
   }) {
@@ -146,14 +173,14 @@ class OwnActivityNotifications {
       return;
     }
     final l10n = _ref.read(l10nProvider);
-    final amount = _amountText(send.amount);
+    final amountText = _amountText(amount);
     _show(
       id: 'send_${send.id}',
       accountId: account.accountId,
       accountName: account.name,
       intent: NotificationIntent.sentTokens,
-      title: title(l10n, amount),
-      body: body(l10n, amount, account.name),
+      title: title(l10n, amountText),
+      body: body(l10n, amountText, account.name),
     );
   }
 
