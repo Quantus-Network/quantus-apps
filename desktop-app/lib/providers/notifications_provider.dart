@@ -13,6 +13,7 @@ import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/telemetry.dart';
@@ -61,6 +62,22 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     state = defaultTargetPlatform == TargetPlatform.macOS
         ? const NotificationsNotAsked()
         : const NotificationsAllowed();
+    await _openLaunchClick();
+  }
+
+  /// Opens what the click that launched the app was about, if one did: such
+  /// a click comes before the notifications were started, so not through
+  /// [_open] as a click on the running app does.
+  Future<void> _openLaunchClick() async {
+    final String? payload;
+    try {
+      payload = await ref.read(notificationPluginProvider).launchPayload();
+    } catch (e) {
+      quantusPrint('The click that launched the app could not be read: $e');
+      ref.read(telemetryProvider).sendError('desktop_notification_launch_unreadable', error: e);
+      return;
+    }
+    if (payload != null) _open(payload);
   }
 
   /// Asks macOS whether the app may show notifications. Windows and Linux do
@@ -76,6 +93,11 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     }
   }
 
+  /// The account a click asked for, until the wallet's accounts and its
+  /// active account have loaded, as at launch.
+  String? _clickedAccountId;
+  final _untilLoaded = <ProviderSubscription<Object?>>[];
+
   /// Opens what a clicked notification was about: the window comes to the
   /// front, on the account the notification named when it is still there.
   void _open(String? payload) {
@@ -88,12 +110,29 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
       ref.read(telemetryProvider).sendError('desktop_notification_click_unreadable', error: e);
       return;
     }
-    for (final account in ref.read(sidebarAccountsProvider)) {
-      if (account.account.accountId == accountId) {
-        unawaited(ref.read(sidebarSelectionProvider.notifier).showAccount(account));
-        return;
-      }
+    _clickedAccountId = accountId;
+    if (_openClickedAccount() || _untilLoaded.isNotEmpty) return;
+    _untilLoaded
+      ..add(ref.listen(sidebarAccountsProvider, (_, _) => _openClickedAccount()))
+      ..add(ref.listen(activeAccountProvider, (_, _) => _openClickedAccount()));
+  }
+
+  /// Selects the clicked account once the accounts and the active account
+  /// have loaded: before that, restoring the saved active account would undo
+  /// it. Returns whether the click is done with.
+  bool _openClickedAccount() {
+    final accountId = _clickedAccountId;
+    if (accountId == null) return true;
+    final accounts = ref.read(sidebarAccountsProvider);
+    if (accounts.isEmpty || !ref.read(activeAccountProvider).hasValue) return false;
+    _clickedAccountId = null;
+    for (final subscription in _untilLoaded) {
+      subscription.close();
     }
+    _untilLoaded.clear();
+    final account = accounts.where((display) => display.account.accountId == accountId).firstOrNull;
+    if (account != null) unawaited(ref.read(sidebarSelectionProvider.notifier).showAccount(account));
+    return true;
   }
 
   void _unavailable(Object error) {

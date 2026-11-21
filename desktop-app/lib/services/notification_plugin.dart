@@ -10,6 +10,11 @@ abstract interface class NotificationPlugin {
   /// system's notification service does not start.
   Future<void> initialize(InitializationSettings settings, {required void Function(String? payload) onClick});
 
+  /// The payload of the notification whose click launched the app, if one
+  /// did. Such a click comes before the app has started its notifications,
+  /// so it never reaches [initialize]'s `onClick`.
+  Future<String?> launchPayload();
+
   /// Asks macOS whether the app may show notifications, with sounds and a
   /// badge. Returns whether it may. macOS asks the person only the first
   /// time; after that it answers with what they chose.
@@ -36,6 +41,17 @@ class SystemNotificationPlugin implements NotificationPlugin {
     if (!started && defaultTargetPlatform != TargetPlatform.macOS) {
       throw StateError("The system's notification service did not start");
     }
+  }
+
+  /// Asked of macOS only. Linux has no launch details, and Windows cannot
+  /// launch this app for a click: the plugin registers the app's activator
+  /// with Windows only while the app is running.
+  @override
+  Future<String?> launchPayload() async {
+    if (defaultTargetPlatform != TargetPlatform.macOS) return null;
+    final details = await _plugin.getNotificationAppLaunchDetails();
+    if (details == null || !details.didNotificationLaunchApp) return null;
+    return details.notificationResponse?.payload;
   }
 
   @override

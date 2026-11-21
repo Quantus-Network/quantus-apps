@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,13 +10,21 @@ import 'package:wallet_core/providers/account_providers.dart';
 import '../../fakes.dart';
 import '../../services/fake_notification_plugin.dart';
 
-/// Opens the window on a wallet whose active account is Main.
-Future<ProviderContainer> _openWallet(WidgetTester tester, FakeNotificationPlugin notifications) async {
+/// Opens the window on a wallet whose active account is Main, its accounts
+/// loaded by [loadAccounts] when given.
+Future<ProviderContainer> _openWallet(
+  WidgetTester tester,
+  FakeNotificationPlugin notifications, {
+  Future<List<Account>> Function()? loadAccounts,
+  bool settle = true,
+}) async {
   await pumpShell(
     tester,
     notifications: notifications,
+    settle: settle,
     overrides: shellOverrides(
       accounts: const [mainAccount, savingsAccount],
+      loadAccounts: loadAccounts,
       settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
     ),
   );
@@ -60,5 +69,26 @@ void main() {
 
     expect(window, ['bringToFront']);
     expect(_activeAccountId(container), mainAccount.accountId);
+  });
+
+  testOnMac('a click that launched the app opens the account it was about', (tester) async {
+    final notifications = FakeNotificationPlugin(launchedBy: _about(savingsAccount.accountId));
+    final window = recordWindowRequests(tester);
+    final container = await _openWallet(tester, notifications);
+
+    expect(window, ['bringToFront']);
+    expect(_activeAccountId(container), savingsAccount.accountId);
+  });
+
+  testOnMac("a click that launched the app waits for the wallet's accounts to load", (tester) async {
+    final accounts = Completer<List<Account>>();
+    final notifications = FakeNotificationPlugin(launchedBy: _about(savingsAccount.accountId));
+    final container = await _openWallet(tester, notifications, loadAccounts: () => accounts.future, settle: false);
+    await tester.pump(const Duration(milliseconds: 100));
+
+    accounts.complete(const [mainAccount, savingsAccount]);
+    await tester.pumpAndSettle();
+
+    expect(_activeAccountId(container), savingsAccount.accountId);
   });
 }

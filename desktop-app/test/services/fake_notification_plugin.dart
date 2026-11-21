@@ -7,13 +7,17 @@ typedef ShownNotification = ({int id, String title, String body, String payload}
 /// Stands in for the system's notifications: records what the app asks of
 /// them, and answers as [startError] and [grants] say.
 class FakeNotificationPlugin implements NotificationPlugin {
-  FakeNotificationPlugin({this.startError, this.grants = true});
+  FakeNotificationPlugin({this.startError, this.grants = true, this.launchedBy});
 
   /// What starting throws, as a system without a notification service would.
   Object? startError;
 
   /// Whether macOS lets the app show notifications when asked.
   bool grants;
+
+  /// The payload of the notification whose click launched the app, if one did.
+  final String? launchedBy;
+  var launchPayloadReads = 0;
 
   final initializations = <InitializationSettings>[];
   var permissionRequests = 0;
@@ -26,6 +30,12 @@ class FakeNotificationPlugin implements NotificationPlugin {
     final error = startError;
     if (error != null) throw error;
     _onClick = onClick;
+  }
+
+  @override
+  Future<String?> launchPayload() async {
+    launchPayloadReads++;
+    return launchedBy;
   }
 
   @override
