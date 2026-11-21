@@ -255,6 +255,95 @@ class FakeWalletStorage extends FakeSettingsService {
   @override
   void setExistingUserSeenPromoVideo() {}
 
+  /// When set, removing or renaming an account, a wallet or a multisig fails
+  /// with this, and nothing is changed.
+  Object? writeError;
+
+  void _checkWrite() {
+    if (writeError case final error?) throw error;
+  }
+
+  /// Makes a non-encrypted account of [remaining] active when the active one
+  /// is not among them, as the device's storage does.
+  void _keepActiveIn(List<Account> remaining) {
+    final activeId = activeAccount?.account.accountId;
+    if (activeId == null || remaining.any((a) => a.accountId == activeId)) return;
+    if (multisigStore.any((m) => m.accountId == activeId)) return;
+    final replacement = remaining.firstWhere(
+      (a) => a.accountType != AccountType.encrypted,
+      orElse: () => remaining.first,
+    );
+    activeAccount = RegularAccount(replacement);
+  }
+
+  @override
+  Future<void> removeAccount(Account account) async {
+    _checkWrite();
+    final remaining = accounts.where((a) => a.accountId != account.accountId).toList();
+    _keepActiveIn(remaining);
+    accounts
+      ..clear()
+      ..addAll(remaining);
+  }
+
+  @override
+  Future<void> removeWallet(int walletIndex) async {
+    _checkWrite();
+    final remaining = accounts.where((a) => a.walletIndex != walletIndex).toList();
+    _keepActiveIn(remaining);
+    accounts
+      ..clear()
+      ..addAll(remaining);
+    mnemonics.remove(walletIndex);
+    names.remove(walletIndex);
+  }
+
+  @override
+  Future<void> updateAccount(Account account) async {
+    _checkWrite();
+    final index = accounts.indexWhere((a) => a.accountId == account.accountId);
+    if (index < 0) throw StateError('${account.accountId} is not stored');
+    accounts[index] = account;
+    if (activeAccount?.account.accountId == account.accountId) activeAccount = RegularAccount(account);
+  }
+
+  /// The wallets' names, by wallet index.
+  final Map<int, String> names = {};
+
+  @override
+  String? getWalletName(int walletIndex) => names[walletIndex];
+
+  @override
+  Future<void> setWalletName(int walletIndex, String? name) async {
+    _checkWrite();
+    if (name == null || name.isEmpty) {
+      names.remove(walletIndex);
+    } else {
+      names[walletIndex] = name;
+    }
+  }
+
+  /// The multisigs on the device.
+  final List<MultisigAccount> multisigStore = [];
+
+  @override
+  Future<List<MultisigAccount>> getMultisigAccounts() async => List.of(multisigStore);
+
+  @override
+  Future<void> updateMultisigAccount(MultisigAccount account) async {
+    _checkWrite();
+    final index = multisigStore.indexWhere((m) => m.accountId == account.accountId);
+    if (index < 0) throw StateError('${account.accountId} is not stored');
+    multisigStore[index] = account;
+  }
+
+  @override
+  Future<void> removeMultisigAccount(String accountId) async {
+    _checkWrite();
+    multisigStore.removeWhere((m) => m.accountId == accountId);
+    if (activeAccount?.account.accountId == accountId) activeAccount = RegularAccount(accounts.first);
+  }
+
   /// The wallets whose recovery phrase has been shown or copied.
   final Set<int> viewedPhrases = {};
 
@@ -275,6 +364,15 @@ class _StoredAccountsService extends Fake implements AccountsService {
 
   @override
   Future<void> addAccount(Account newAccount) => storage.addAccount(newAccount);
+
+  @override
+  Future<void> removeAccount(Account account) => storage.removeAccount(account);
+
+  @override
+  Future<void> removeWallet(int walletIndex) => storage.removeWallet(walletIndex);
+
+  @override
+  Future<void> updateAccountName(Account account, String name) => storage.updateAccount(account.copyWith(name: name));
 
   @override
   Future<bool> ensureEncryptedAccountsForSoftwareWallets({required String name}) async {
@@ -980,17 +1078,25 @@ Future<String?> fakeCheckphrase(String address) async => 'Phrase-$address';
 /// An encrypted account whose next unused deposit address comes from
 /// [nextAddress], and whose own addresses are [ownAddresses].
 class FakeEncryptedAccountService extends Fake implements EncryptedAccountService {
-  FakeEncryptedAccountService(this.nextAddress, {this.ownAddresses = const {}});
+  FakeEncryptedAccountService(this.nextAddress, {this.ownAddresses = const {}, this.innerHash});
 
   final Future<String> Function() nextAddress;
   final Set<String> ownAddresses;
+
+  /// The account's inner hash; reading it waits for, or fails with, what this
+  /// returns. Without it the inner hash is empty.
+  final Future<String> Function()? innerHash;
 
   @override
   Future<bool> ownsAddress(String address) async => ownAddresses.contains(address);
 
   @override
-  Future<WormholeKeyPair> receiveKeyPair() async =>
-      WormholeKeyPair(address: await nextAddress(), addressHex: '', rewardsPreimageHex: '', secretHex: '');
+  Future<WormholeKeyPair> receiveKeyPair() async => WormholeKeyPair(
+    address: await nextAddress(),
+    addressHex: '',
+    rewardsPreimageHex: await (innerHash ?? () async => '')(),
+    secretHex: '',
+  );
 }
 
 /// 1Click's word on which addresses are its single-use deposit addresses:

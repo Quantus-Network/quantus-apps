@@ -3,6 +3,7 @@ import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_titles.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -21,12 +22,17 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// while [onShowAccount] and [onMoveInSidebar] are, and Refresh while
 /// [onRefresh] is.
 ///
+/// The Account menu offers [accountItems], the active account's own items
+/// ([accountMenuEntries]), after its actions; they are disabled with the
+/// items that open a sheet.
+///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
 /// the first nine have a number to be reached by ([ShortcutBindings.account]).
 List<PlatformMenu> buildAppMenus({
   required AppLocalizations l10n,
   required bool useNativeMenuBar,
   required List<AccountAction> accountActions,
+  required List<AccountMenuEntry?> accountItems,
   required List<DisplayAccount> accounts,
   required ShortcutBindings? shortcuts,
   required bool isSidebarVisible,
@@ -100,6 +106,20 @@ List<PlatformMenu> buildAppMenus({
                   label: sheetTitle(l10n, sheetForAction(action.kind)),
                   shortcut: shortcutOf(action.kind),
                   onSelected: opens(sheetForAction(action.kind), isEnabled: action.isEnabled),
+                ),
+            ],
+          ),
+        if (accountItems.nonNulls.isNotEmpty)
+          PlatformMenuItemGroup(
+            members: [
+              for (final item in accountItems.nonNulls)
+                PlatformMenuItem(
+                  label: item.label,
+                  shortcut: switch (item.command) {
+                    final command? => keysOf(command),
+                    null => null,
+                  },
+                  onSelected: canOpenSheet ? item.onSelected : null,
                 ),
             ],
           ),

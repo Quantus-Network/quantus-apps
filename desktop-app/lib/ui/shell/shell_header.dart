@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_note_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/window_header_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -33,6 +35,8 @@ class ShellTopBar extends ConsumerWidget {
     final active = ref.watch(activeAccountProvider).value;
     final showsAccount = ref.watch(sidebarSelectionProvider) == SidebarSelection.account;
     final titleStyle = context.themeTextV3.headingRow.copyWith(color: context.colorsV3.textContent);
+    // With the sidebar hidden, a note about the account shows beside its name.
+    final note = ref.watch(accountNoteProvider);
 
     return WindowHeaderRow(
       leadsTheWindow: true,
@@ -54,9 +58,16 @@ class ShellTopBar extends ConsumerWidget {
                   child: showsAccount
                       ? active == null
                             ? const SizedBox.shrink()
-                            : Align(
-                                alignment: Alignment.centerLeft,
-                                child: AccountLabel(account: active.account, style: titleStyle),
+                            : Row(
+                                children: [
+                                  Flexible(
+                                    child: AccountLabel(account: active.account, style: titleStyle),
+                                  ),
+                                  if (note != null && note.accountId == active.account.accountId) ...[
+                                    const SizedBox(width: 14),
+                                    Flexible(child: AccountNoteText(note: note)),
+                                  ],
+                                ],
                               )
                       : Text(
                           ref.watch(l10nProvider).settingsMiningRewards,

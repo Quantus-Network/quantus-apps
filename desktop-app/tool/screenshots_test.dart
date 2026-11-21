@@ -19,12 +19,14 @@ import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
@@ -114,6 +116,7 @@ void _scene(
   String name,
   Future<void> Function(WidgetTester tester) body, {
   TargetPlatform platform = TargetPlatform.macOS,
+  Duration settleAfter = Duration.zero,
 }) {
   testWidgets(name, (tester) async {
     debugDisableShadows = false;
@@ -121,6 +124,9 @@ void _scene(
     try {
       await body(tester);
       await _snap(tester, name);
+      // What runs on a timer after the picture (a note about an account)
+      // ends before the scene does.
+      if (settleAfter > Duration.zero) await tester.pump(settleAfter);
     } finally {
       debugDisableShadows = true;
       WidgetsApp.debugAllowBannerOverride = true;
@@ -479,6 +485,103 @@ void main() {
     });
   }
 
+  _scene('account_info', (tester) async {
+    await _openInfo(tester, _savings);
+  });
+
+  _scene('account_info_keystone', (tester) async {
+    await _openInfo(tester, _cold);
+  });
+
+  _scene('account_info_wallet_last_account', (tester) async {
+    await _openInfo(tester, _trading);
+  });
+
+  _scene('account_info_multisig', (tester) async {
+    await _openInfo(tester, _infoTeam);
+  });
+
+  _scene('account_info_encrypted', (tester) async {
+    await _openInfo(tester, _encrypted);
+  });
+
+  _scene('account_info_renaming', (tester) async {
+    await _openInfo(tester, _savings);
+    final field = find.descendant(of: find.byKey(AccountInfoSheet.nameFieldKey), matching: find.byType(EditableText));
+    await tester.tap(field);
+    await tester.enterText(field, 'Rainy day');
+    await tester.pump();
+  });
+
+  _scene('account_disconnect', (tester) async {
+    await _openInfo(tester, _savings);
+    await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('account_disconnect_wallet', (tester) async {
+    await _openInfo(tester, _trading);
+    await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('I’ve backed up Wallet 2’s recovery phrase'));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('settings_phrase_wallets', (tester) async {
+    await _openInfo(tester, _savings);
+    await _openPhraseWallets(tester);
+  });
+
+  _scene('settings_phrase_wallets_smallest_window', (tester) async {
+    await _openInfo(tester, _savings, moreWallets: 8);
+    await _openPhraseWallets(tester);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('account_menu', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Savings');
+  });
+
+  _scene('account_menu_encrypted', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Encrypted Account');
+  });
+
+  _scene('account_menu_keystone', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Vault');
+  });
+
+  _scene('account_menu_multisig', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Team');
+  });
+
+  _scene('wallet_menu', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'WALLET 2');
+  });
+
+  _scene('account_note_copied', (tester) async {
+    await _openAccounts(tester);
+    await _rightClickInSidebar(tester, 'Savings');
+    await tester.tap(find.text('Copy Address'));
+    await tester.pump();
+    // The menu fades out first.
+    await tester.pump(const Duration(milliseconds: 200));
+  }, settleAfter: AccountNoteNotifier.failureShownFor);
+
+  _scene('account_note_top_bar', (tester) async {
+    await _openAccounts(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    container.read(sidebarVisibleProvider.notifier).toggle();
+    await tester.pumpAndSettle();
+    await container.read(accountManagerProvider).copy(_root, CopiedValue.address);
+    await tester.pump();
+  }, settleAfter: AccountNoteNotifier.failureShownFor);
+
   _scene('settings', (tester) async {
     await _openSettings(tester);
   });
@@ -610,6 +713,102 @@ Future<void> _typePassword(WidgetTester tester, String password) async {
 /// Opens the wallet, then Settings, which the app menu opens. With a
 /// [loginPassword] the app's own approval asks for that password, as on
 /// Linux.
+/// The accounts the Info sheet scenes are drawn on: the first wallet's, a
+/// Keystone account, a second wallet's only account, and a multisig.
+const _cold = Account(
+  walletIndex: 1,
+  index: 0,
+  name: 'Vault',
+  accountId: 'qzB4hGy7UwE2nXk9VcMp3QsLd6TfRa8ZoJi1Wb5eNt9cPu',
+  accountType: AccountType.keystone,
+);
+const _trading = Account(
+  walletIndex: 2,
+  index: 0,
+  name: 'Trading',
+  accountId: 'qzW6mKe1RtZ8pLc3YhNv5DxQa9SgFb2UoJi7Vn4kTw3sHd',
+);
+const _savingsAddress = 'qzpX4cLm8VbN2tRw6KsYh9DqF3jEa7UoZi1Gn5WkTe8rQy';
+const _savings = Account(walletIndex: 0, index: 1, name: 'Savings', accountId: _savingsAddress);
+const _otherSigner = 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa';
+final _infoTeam = MultisigAccount(
+  name: 'Team',
+  accountId: 'qzR2dJx8NbV5tLq1WcK7mYh4PsGa9FeZo3UiBn6Ek8rTw',
+  signers: const [_otherSigner, 'qzmN7RfQ2k8VtXc4hW9yLp3sD6aJ1bEuG5oZr8TnKw2xYv', _savingsAddress],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'qzmN7RfQ2k8VtXc4hW9yLp3sD6aJ1bEuG5oZr8TnKw2xYv',
+  creator: _otherSigner,
+);
+
+/// Opens the Info sheet on [account] over the window of a wallet with every
+/// kind of account.
+Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallets = 0}) async {
+  await _openAccounts(tester, moreWallets: moreWallets);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openInfo(account);
+  await tester.pumpAndSettle();
+}
+
+/// Opens the window of a wallet with every kind of account. Its clipboard
+/// takes whatever is copied.
+Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0}) async {
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
+  addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+  final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
+  device.storage.accounts.addAll([
+    _cold,
+    _trading,
+    for (var i = 0; i < moreWallets; i++)
+      Account(walletIndex: 3 + i, index: 0, name: 'Spare ${i + 1}', accountId: 'qzSpare$i'),
+  ]);
+  device.storage.mnemonics[2] = _phrase;
+  device.storage.multisigStore.add(_infoTeam);
+  await _open(
+    tester,
+    device,
+    reduceMotion: true,
+    overrides: [
+      systemApprovalProvider.overrideWithValue(FakeUserApproval()),
+      encryptedAccountServiceProvider.overrideWith(
+        (ref, walletIndex) => FakeEncryptedAccountService(
+          () async => _depositAddress,
+          innerHash: () async => '0x7c3f9a1e5b2d8c4f6a0e9b3d7f1c5a8e2b6d0f4a9c3e7b1d5f8a2c6e0b4d9f3a',
+        ),
+      ),
+    ],
+  );
+  useFakeCheckphrases((address) async => 'Harbor-Velvet-Signal-Mirror-Canyon');
+  await tester.pumpAndSettle();
+}
+
+/// Right-clicks the sidebar's [text] (an account's name, or a wallet's
+/// heading in capitals), towards its right.
+Future<void> _rightClickInSidebar(WidgetTester tester, String text) async {
+  final target = find.descendant(of: find.byType(Sidebar), matching: find.text(text)).first;
+  final gesture = await tester.startGesture(
+    tester.getCenter(target) + const Offset(30, 0),
+    kind: PointerDeviceKind.mouse,
+    buttons: kSecondaryButton,
+  );
+  await gesture.up();
+  await tester.pumpAndSettle();
+}
+
+/// Closes whatever sheet is open, then opens Settings on its list of
+/// wallets' recovery phrases.
+Future<void> _openPhraseWallets(WidgetTester tester) async {
+  final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+  Navigator.of(tester.element(find.byType(ShellSheetView))).pop();
+  await tester.pumpAndSettle();
+  container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(SettingsSheet.recoveryPhraseRowKey));
+  await tester.pumpAndSettle();
+}
+
 Future<void> _openSettings(WidgetTester tester, {FakeLoginPassword? loginPassword}) async {
   await _open(
     tester,

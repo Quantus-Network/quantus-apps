@@ -1,0 +1,289 @@
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/account_menu.dart';
+
+import '../fakes.dart';
+
+const _cold = Account(walletIndex: 1, index: 0, name: 'Cold', accountId: 'qzCold', accountType: AccountType.keystone);
+const _trading = Account(walletIndex: 2, index: 0, name: 'Trading', accountId: 'qzTrading');
+const _encrypted = Account(
+  walletIndex: 0,
+  index: 0,
+  name: 'Encrypted Account',
+  accountId: 'qzEncrypted',
+  accountType: AccountType.encrypted,
+);
+final _team = MultisigAccount(
+  name: 'Team',
+  accountId: 'qzTeam',
+  signers: const ['qzMain', 'qzOther'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'qzMain',
+);
+
+/// What the clipboard holds, or what writing it fails with.
+String? _clipboard;
+Object? _clipboardError;
+
+void _recordClipboard(WidgetTester tester) {
+  _clipboard = null;
+  _clipboardError = null;
+  final messenger = tester.binding.defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+    if (call.method != 'Clipboard.setData') return null;
+    if (_clipboardError case final error?) throw error;
+    _clipboard = (call.arguments as Map)['text'] as String?;
+    return null;
+  });
+  addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+}
+
+/// A device with Main and Savings in wallet 0 (Main active), their encrypted
+/// account, a Keystone account, Trading alone in wallet 2, and Team.
+Future<(FakeWalletDevice, ProviderContainer)> _device(WidgetTester tester, {String innerHash = '0xinner'}) async {
+  final device = FakeWalletDevice()..store([mainAccount, savingsAccount, _encrypted]);
+  device.storage.accounts.addAll([_cold, _trading]);
+  device.storage.mnemonics[2] = 'trading words';
+  device.storage.multisigStore.add(_team);
+  final container = ProviderContainer(
+    overrides: [
+      ...device.overrides,
+      encryptedAccountServiceProvider.overrideWith(
+        (ref, walletIndex) => FakeEncryptedAccountService(() async => 'qzDeposit', innerHash: () async => innerHash),
+      ),
+    ],
+  );
+  // Listened to, as the sidebar does, so they load and reload at once.
+  for (final provider in [accountsProvider, activeAccountProvider, multisigAccountsProvider]) {
+    container.listen(provider, (_, _) {});
+  }
+  await tester.pump();
+  return (device, container);
+}
+
+/// Lets a change's reload finish. In the app the widgets read the providers
+/// each frame, which rebuilds those a change invalidated; here they are read
+/// between the frames, then storage answers.
+Future<void> _settle(WidgetTester tester, ProviderContainer container) async {
+  for (var i = 0; i < 3; i++) {
+    container
+      ..read(accountsProvider)
+      ..read(activeAccountProvider)
+      ..read(multisigAccountsProvider);
+    await tester.pump();
+  }
+}
+
+Future<List<Account>> _accountsOf(WidgetTester tester, ProviderContainer container) async {
+  await _settle(tester, container);
+  return container.read(accountsProvider).requireValue;
+}
+
+AccountManager _manager(ProviderContainer container) => container.read(accountManagerProvider);
+
+/// Closes [container] as the app does when it quits, before the test ends:
+/// a note's timer, and what the providers keep running, stop with it.
+Future<void> _close(WidgetTester tester, ProviderContainer container) async {
+  container.dispose();
+  await tester.pump();
+}
+
+void main() {
+  group('copy', () {
+    testWidgets('copies the address and notes it on the account for a moment', (tester) async {
+      _recordClipboard(tester);
+      final (_, container) = await _device(tester);
+
+      await _manager(container).copy(savingsAccount, CopiedValue.address);
+
+      expect(_clipboard, 'qzSavings');
+      final note = container.read(accountNoteProvider);
+      expect(note?.accountId, 'qzSavings');
+      expect(note?.message, 'Address copied');
+      expect(note?.isError, isFalse);
+
+      await tester.pump(AccountNoteNotifier.shownFor - const Duration(milliseconds: 10));
+      expect(container.read(accountNoteProvider), isNotNull);
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(container.read(accountNoteProvider), isNull);
+      await _close(tester, container);
+    });
+
+    testWidgets('copies a multisig\'s address', (tester) async {
+      _recordClipboard(tester);
+      final (_, container) = await _device(tester);
+
+      await _manager(container).copy(_team, CopiedValue.address);
+
+      expect(_clipboard, 'qzTeam');
+      expect(container.read(accountNoteProvider)?.accountId, 'qzTeam');
+      await _close(tester, container);
+    });
+
+    testWidgets('copies the encrypted account\'s inner hash', (tester) async {
+      _recordClipboard(tester);
+      final (_, container) = await _device(tester, innerHash: '0xabc');
+
+      await _manager(container).copy(_encrypted, CopiedValue.innerHash);
+
+      expect(_clipboard, '0xabc');
+      expect(container.read(accountNoteProvider)?.message, 'Inner hash copied');
+      await _close(tester, container);
+    });
+
+    testWidgets('a copy that fails is noted as a failure, for longer, and leaves the clipboard', (tester) async {
+      _recordClipboard(tester);
+      final (_, container) = await _device(tester);
+      _clipboardError = PlatformException(code: 'busy', message: 'the clipboard is busy');
+
+      await _manager(container).copy(savingsAccount, CopiedValue.address);
+
+      expect(_clipboard, isNull);
+      final note = container.read(accountNoteProvider);
+      expect(note?.isError, isTrue);
+      expect(note?.message, contains('the clipboard is busy'));
+
+      await tester.pump(AccountNoteNotifier.shownFor + const Duration(milliseconds: 10));
+      expect(container.read(accountNoteProvider), isNotNull);
+      await tester.pump(AccountNoteNotifier.failureShownFor);
+      expect(container.read(accountNoteProvider), isNull);
+      await _close(tester, container);
+    });
+
+    testWidgets('a new note replaces the one showing, and keeps its own time', (tester) async {
+      _recordClipboard(tester);
+      final (_, container) = await _device(tester);
+
+      await _manager(container).copy(savingsAccount, CopiedValue.address);
+      await tester.pump(AccountNoteNotifier.shownFor - const Duration(milliseconds: 100));
+      await _manager(container).copy(mainAccount, CopiedValue.address);
+
+      expect(container.read(accountNoteProvider)?.accountId, 'qzMain');
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(container.read(accountNoteProvider)?.accountId, 'qzMain');
+      await _close(tester, container);
+    });
+  });
+
+  group('rename', () {
+    testWidgets('stores the name trimmed and reloads the accounts', (tester) async {
+      final (device, container) = await _device(tester);
+
+      final edit = await _manager(container).rename(savingsAccount, '  Rainy day  ');
+
+      expect(edit, const NameChanged('Rainy day'));
+      expect(device.storage.accounts.firstWhere((a) => a.accountId == 'qzSavings').name, 'Rainy day');
+      expect((await _accountsOf(tester, container)).firstWhere((a) => a.accountId == 'qzSavings').name, 'Rainy day');
+      await _close(tester, container);
+    });
+
+    testWidgets('renaming the active account renames it where it is shown as active', (tester) async {
+      final (_, container) = await _device(tester);
+
+      await _manager(container).rename(mainAccount, 'Everyday');
+      await _settle(tester, container);
+
+      expect(container.read(activeAccountProvider).value?.account.name, 'Everyday');
+      await _close(tester, container);
+    });
+
+    testWidgets('a blank or unchanged name writes nothing', (tester) async {
+      final (device, container) = await _device(tester);
+      device.storage.writeError = StateError('nothing should be written');
+
+      expect(await _manager(container).rename(savingsAccount, '   '), const NameBlank());
+      expect(await _manager(container).rename(savingsAccount, ' Savings '), const NameUnchanged());
+      await _close(tester, container);
+    });
+
+    testWidgets('a write that fails is thrown, and the name stays', (tester) async {
+      final (device, container) = await _device(tester);
+      device.storage.writeError = StateError('disk full');
+
+      await expectLater(_manager(container).rename(savingsAccount, 'Rainy day'), throwsStateError);
+      expect(device.storage.accounts.firstWhere((a) => a.accountId == 'qzSavings').name, 'Savings');
+      await _close(tester, container);
+    });
+
+    testWidgets('renames a multisig through the multisigs', (tester) async {
+      final (device, container) = await _device(tester);
+
+      await _manager(container).rename(_team, ' Board ');
+
+      expect(device.storage.multisigStore.single.name, 'Board');
+      expect(container.read(multisigAccountsProvider).value?.single.name, 'Board');
+      await _close(tester, container);
+    });
+  });
+
+  group('disconnect', () {
+    testWidgets('an account with a sibling goes alone; the active one is replaced by a non-encrypted account', (
+      tester,
+    ) async {
+      final (device, container) = await _device(tester);
+
+      await _manager(container).disconnect(mainAccount);
+      await _settle(tester, container);
+
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzMain')));
+      expect(device.storage.mnemonics.containsKey(0), isTrue);
+      expect((await _accountsOf(tester, container)).map((a) => a.accountId), isNot(contains('qzMain')));
+      expect(container.read(activeAccountProvider).value?.account.accountId, 'qzSavings');
+      await _close(tester, container);
+    });
+
+    testWidgets('a hardware account is removed', (tester) async {
+      final (device, container) = await _device(tester);
+
+      await _manager(container).disconnect(_cold);
+
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzCold')));
+      await _close(tester, container);
+    });
+
+    testWidgets('a wallet\'s last account takes the wallet and its recovery phrase', (tester) async {
+      final (device, container) = await _device(tester);
+
+      await _manager(container).disconnect(_trading);
+
+      expect(device.storage.accounts.where((a) => a.walletIndex == 2), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+      expect(device.storage.mnemonics.containsKey(0), isTrue);
+      await _close(tester, container);
+    });
+
+    testWidgets('a multisig leaves the multisigs', (tester) async {
+      final (device, container) = await _device(tester);
+
+      await _manager(container).disconnect(_team);
+
+      expect(device.storage.multisigStore, isEmpty);
+      expect(container.read(multisigAccountsProvider).value, isEmpty);
+      await _close(tester, container);
+    });
+
+    testWidgets('an account that cannot be disconnected is an error', (tester) async {
+      final (_, container) = await _device(tester);
+
+      await expectLater(_manager(container).disconnect(_encrypted), throwsStateError);
+      await _close(tester, container);
+    });
+
+    testWidgets('a removal that fails is thrown, and nothing changes', (tester) async {
+      final (device, container) = await _device(tester);
+      device.storage.writeError = StateError('disk full');
+
+      await expectLater(_manager(container).disconnect(_trading), throwsStateError);
+      expect(device.storage.accounts.where((a) => a.walletIndex == 2), hasLength(1));
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
+      await _close(tester, container);
+    });
+  });
+}
