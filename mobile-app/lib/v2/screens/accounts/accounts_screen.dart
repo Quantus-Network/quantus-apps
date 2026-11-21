@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -87,74 +88,68 @@ class _AccountsScreenState extends ConsumerState<AccountsScreen> {
 
   void _openAccountMenu(BuildContext anchor, Account account) {
     final l10n = ref.read(l10nProvider);
-    final isEncrypted = account.accountType == AccountType.encrypted;
-    showAnchoredMenu(
-      context,
-      anchor: anchor,
-      width: _menuWidth,
-      groups: [
-        [
-          if (isEncrypted)
-            AnchoredMenuItem(
-              label: l10n.accountMenuInnerHash,
-              onTap: () => AccountMenuScreen.openInnerHash(context, account),
-            )
-          else ...[
-            AnchoredMenuItem(
-              label: l10n.accountMenuShowAddress,
-              onTap: () => AccountMenuScreen.openAddressDetails(context, account),
-            ),
-            AnchoredMenuItem(
-              label: l10n.accountMenuRename,
-              onTap: () => AccountMenuScreen.openNameEditor(context, ref, account),
-            ),
-          ],
-          if (account.accountType == AccountType.local)
-            AnchoredMenuItem(
-              label: l10n.accountMenuShowRecoveryPhrase,
-              onTap: () => AccountMenuScreen.openRecoveryPhrase(context, account),
-            ),
-        ],
-        if (AccountMenuScreen.canDisconnect(ref, account))
-          [
-            AnchoredMenuItem(
-              label: l10n.accountMenuDisconnectAccount,
-              isDestructive: true,
-              onTap: () => AccountMenuScreen.disconnect(context, ref, account),
-            ),
-          ],
-      ],
-    );
+    AnchoredMenuItem itemOf(AccountMenuItem item) => switch (item) {
+      AccountMenuItem.innerHash => AnchoredMenuItem(
+        label: l10n.accountMenuInnerHash,
+        onTap: () => AccountMenuScreen.openInnerHash(context, account),
+      ),
+      AccountMenuItem.showAddress => AnchoredMenuItem(
+        label: l10n.accountMenuShowAddress,
+        onTap: () => AccountMenuScreen.openAddressDetails(context, account),
+      ),
+      AccountMenuItem.rename => AnchoredMenuItem(
+        label: l10n.accountMenuRename,
+        onTap: () => AccountMenuScreen.openNameEditor(context, ref, account),
+      ),
+      AccountMenuItem.recoveryPhrase => AnchoredMenuItem(
+        label: l10n.accountMenuShowRecoveryPhrase,
+        onTap: () => AccountMenuScreen.openRecoveryPhrase(context, account),
+      ),
+      AccountMenuItem.disconnect => AnchoredMenuItem(
+        label: l10n.accountMenuDisconnectAccount,
+        isDestructive: true,
+        onTap: () => AccountMenuScreen.disconnect(context, ref, account),
+      ),
+      AccountMenuItem.multisigDetails => throw StateError('An account has no multisig details'),
+    };
+    _showMenu(anchor, accountMenuOf(account, ref.read(accountsProvider).requireValue), itemOf);
   }
 
   void _openMultisigAccountMenu(BuildContext anchor, MultisigAccount account) {
     final l10n = ref.read(l10nProvider);
+    AnchoredMenuItem itemOf(AccountMenuItem item) => switch (item) {
+      AccountMenuItem.showAddress => AnchoredMenuItem(
+        label: l10n.accountMenuShowAddress,
+        onTap: () => MultisigAccountMenuScreen.openAddressDetails(context, account),
+      ),
+      AccountMenuItem.rename => AnchoredMenuItem(
+        label: l10n.accountMenuRename,
+        onTap: () => MultisigAccountMenuScreen.openNameEditor(context, ref, account),
+      ),
+      AccountMenuItem.multisigDetails => AnchoredMenuItem(
+        label: l10n.multisigAccountMenuDetails,
+        onTap: () => MultisigAccountMenuScreen.openDetails(context, account),
+      ),
+      AccountMenuItem.disconnect => AnchoredMenuItem(
+        label: l10n.accountMenuDisconnectAccount,
+        isDestructive: true,
+        onTap: () => MultisigAccountMenuScreen.disconnect(context, ref, account),
+      ),
+      AccountMenuItem.innerHash || AccountMenuItem.recoveryPhrase => throw StateError('A multisig has no $item'),
+    };
+    _showMenu(anchor, multisigMenu, itemOf);
+  }
+
+  /// Shows [items] with Disconnect in a group of its own at the end.
+  void _showMenu(BuildContext anchor, List<AccountMenuItem> items, AnchoredMenuItem Function(AccountMenuItem) itemOf) {
+    final main = items.where((i) => i != AccountMenuItem.disconnect).map(itemOf).toList();
     showAnchoredMenu(
       context,
       anchor: anchor,
       width: _menuWidth,
       groups: [
-        [
-          AnchoredMenuItem(
-            label: l10n.accountMenuShowAddress,
-            onTap: () => MultisigAccountMenuScreen.openAddressDetails(context, account),
-          ),
-          AnchoredMenuItem(
-            label: l10n.accountMenuRename,
-            onTap: () => MultisigAccountMenuScreen.openNameEditor(context, ref, account),
-          ),
-          AnchoredMenuItem(
-            label: l10n.multisigAccountMenuDetails,
-            onTap: () => MultisigAccountMenuScreen.openDetails(context, account),
-          ),
-        ],
-        [
-          AnchoredMenuItem(
-            label: l10n.accountMenuDisconnectAccount,
-            isDestructive: true,
-            onTap: () => MultisigAccountMenuScreen.disconnect(context, ref, account),
-          ),
-        ],
+        main,
+        if (items.contains(AccountMenuItem.disconnect)) [itemOf(AccountMenuItem.disconnect)],
       ],
     );
   }
