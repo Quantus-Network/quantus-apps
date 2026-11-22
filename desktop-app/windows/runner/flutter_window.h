@@ -8,6 +8,7 @@
 
 #include "sensitive_clipboard.h"
 #include "win32_window.h"
+#include "window_focus.h"
 
 // A window that does nothing but host a Flutter view.
 class FlutterWindow : public Win32Window {
@@ -32,6 +33,9 @@ class FlutterWindow : public Win32Window {
 
   // Copies secrets for the app, kept out of clipboard history.
   std::unique_ptr<SensitiveClipboard> sensitive_clipboard_;
+
+  // Brings the window to the front for the app.
+  std::unique_ptr<WindowFocus> window_focus_;
 };
 
 #endif  // RUNNER_FLUTTER_WINDOW_H_

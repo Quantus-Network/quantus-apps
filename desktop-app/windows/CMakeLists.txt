@@ -70,6 +70,16 @@ endif()
 target_compile_definitions(local_auth_windows_plugin PRIVATE
   _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
 
+# flutter_local_notifications_windows 3.0.0, the phone's plugin version, builds
+# as C++17, where the C++/WinRT headers it includes pull in the same header.
+# Remove this once the app is on its 4.x, which builds as C++20.
+if(NOT TARGET flutter_local_notifications_windows)
+  message(FATAL_ERROR "flutter_local_notifications_windows is no longer built; "
+    "delete its STL1011 workaround in windows/CMakeLists.txt.")
+endif()
+target_compile_definitions(flutter_local_notifications_windows PRIVATE
+  _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can

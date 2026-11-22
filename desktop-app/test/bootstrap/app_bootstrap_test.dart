@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
-import 'package:quantus_desktop_wallet/services/desktop_local_notifications.dart';
+import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/services/desktop_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/desktop_telemetry.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
@@ -19,7 +19,11 @@ void main() {
 
     expect(container.read(telemetryProvider), isA<DesktopTelemetry>());
     expect(container.read(pushRegistrationProvider), isA<DesktopPushRegistration>());
-    expect(container.read(localNotificationsProvider), isA<DesktopLocalNotifications>());
+    // The very one whose status the app shows.
+    expect(
+      container.read(localNotificationsProvider),
+      same(container.read(desktopLocalNotificationsProvider.notifier)),
+    );
   });
 
   test('buildApp binds the approval that wallet_core asks for to the system\'s own', () {

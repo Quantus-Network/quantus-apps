@@ -9,13 +9,14 @@ import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
-/// Keeps what the open wallet shows current, as the phone does: the shared
-/// polling ([HistoryPollingManager]) runs while the window is on screen and
-/// the computer is online, and catches up at once when either comes back.
+/// Keeps what the open wallet shows current: the shared polling
+/// ([HistoryPollingManager]) runs while the computer is online, and catches
+/// up at once when it comes back.
 ///
-/// A window behind another app's is still on screen, and still being looked
-/// at, so it keeps polling. Only a minimized or hidden window pauses, as a
-/// phone's app does in the background.
+/// Unlike the phone's, it keeps polling while the window is minimized or
+/// hidden: what the wallet watches for, such as a send that never lands, is
+/// noticed and notified then too. What only matters on screen still pauses
+/// with a window no one can see ([appLifecycleStateProvider]).
 class LiveDataScope extends ConsumerStatefulWidget {
   const LiveDataScope({super.key, required this.child});
 
@@ -69,7 +70,6 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
   void _onWindowChanged(AppLifecycleState state) {
     _isOnScreen = _onScreen(state);
     _publish(state);
-    _update();
   }
 
   /// Tells what else pauses in the background ([appLifecycleStateProvider])
@@ -78,12 +78,11 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
     ref.read(appLifecycleStateProvider.notifier).state = _isOnScreen ? AppLifecycleState.resumed : state;
   }
 
-  /// Pauses the polling when there is no one to show it to or no network to
-  /// poll, and resumes it, caught up, once there are both.
+  /// Pauses the polling when there is no network to poll, and resumes it,
+  /// caught up, once there is.
   void _update() {
-    final shouldRun = _isOnScreen && _isOnline;
-    if (shouldRun == !_isPaused) return;
-    _isPaused = !shouldRun;
+    if (_isOnline == !_isPaused) return;
+    _isPaused = !_isOnline;
     if (_isPaused) {
       _polling.pausePolling();
       return;
