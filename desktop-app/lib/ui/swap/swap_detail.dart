@@ -4,7 +4,9 @@ import 'package:clock/clock.dart';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/ui/activity/inspector_parts.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
@@ -18,11 +20,14 @@ import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/swap/swap_progress.dart';
+import 'package:wallet_core/utils/account_actions.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
 
 /// The swap being followed, in the panel at the window's right: where to
@@ -38,6 +43,7 @@ class SwapDetail extends ConsumerStatefulWidget {
 
   /// The button that confirms Stop tracking.
   static const confirmStopKey = Key('swap-confirm-stop');
+  static const startNewKey = Key('swap-start-new');
 
   @override
   ConsumerState<SwapDetail> createState() => _SwapDetailState();
@@ -51,6 +57,27 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
   void _putAway() {
     ref.read(openedActivityProvider.notifier).close();
     unawaited(ref.read(activeSwapProvider.notifier).clear());
+  }
+
+  /// Puts the swap away and opens the Swap sheet on the active account, for
+  /// the swap to be tried again.
+  Future<void> _startNew() async {
+    final sheets = ref.read(shellSheetProvider.notifier);
+    ref.read(openedActivityProvider.notifier).close();
+    await ref.read(activeSwapProvider.notifier).clear();
+    await sheets.open(ShellSheet.swap);
+  }
+
+  /// Whether the active account could start a swap once this one is put
+  /// away: the sheet opens on that account, whichever the swap was from.
+  bool _canStartNew() {
+    final active = ref.watch(activeAccountProvider).value;
+    if (active == null) return false;
+    return accountActions(
+      active,
+      swapAvailable: ref.watch(remoteConfigProvider.select((config) => config.swapAvailable)),
+      hasActiveSwap: false,
+    ).any((action) => action.kind == AccountActionKind.swap && action.isEnabled);
   }
 
   @override
@@ -411,6 +438,13 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
       const SizedBox(height: 16),
       _buttons([
         SheetButton(label: l10n.commonDone, onTap: _putAway),
+        if (_canStartNew())
+          SheetButton(
+            key: SwapDetail.startNewKey,
+            label: l10n.swapStartNew,
+            kind: SheetButtonKind.secondary,
+            onTap: () => unawaited(_startNew()),
+          ),
         ToolbarAction.symbol(
           symbol: CupertinoIcons.envelope,
           label: l10n.commonContactSupport,
