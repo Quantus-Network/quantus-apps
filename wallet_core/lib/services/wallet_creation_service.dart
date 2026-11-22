@@ -35,11 +35,9 @@ class WalletCreationService {
   /// Saves [mnemonic] for [walletIndex], inserts its root account and makes
   /// that the active account.
   ///
-  /// The root insert is the commit point: a failure up to and including it
-  /// leaves nothing behind (the mnemonic is deleted again), so the caller may
-  /// retry. After it the wallet exists, so the remaining writes are best-effort
-  /// and only logged — surfacing them would prompt a retry that creates a
-  /// second wallet.
+  /// Storing the root is the commit point (see [_saveRoot]). After it the
+  /// wallet exists, so the remaining writes are best-effort and only logged —
+  /// surfacing them would prompt a retry that creates a second wallet.
   Future<Account> createNewWallet({
     required String name,
     required String mnemonic,
@@ -56,13 +54,7 @@ class WalletCreationService {
       scheme: scheme,
       derivationPath: derivationPath,
     );
-    await _settings.setMnemonic(mnemonic, walletIndex);
-    try {
-      await _accounts.addAccount(account);
-    } catch (_) {
-      await _settings.deleteMnemonic(walletIndex);
-      rethrow;
-    }
+    await _saveRoot(mnemonic: mnemonic, root: account, scanPending: false);
 
     try {
       _settings.setWalletOrigin(walletIndex, WalletOrigin.created);
@@ -78,24 +70,32 @@ class WalletCreationService {
   /// Saves [mnemonic] and inserts [root]. The account scan is marked pending
   /// first, so an app stopped before the scan finishes it on the next start.
   ///
-  /// The root insert is the commit point: a failure up to and including it
-  /// puts the wallet's slot back as it was, so the caller may retry and a
-  /// phrase the slot already held is not lost.
-  Future<void> importWallet({required String mnemonic, required Account root}) async {
+  /// Storing the root is the commit point (see [_saveRoot]).
+  Future<void> importWallet({required String mnemonic, required Account root}) =>
+      _saveRoot(mnemonic: mnemonic, root: root, scanPending: !HdWalletService.isDevAccount(mnemonic));
+
+  /// Saves [mnemonic] in the wallet's slot and stores [root].
+  ///
+  /// If [root] is not stored, the slot is put back as it was and the error
+  /// rethrown, so the caller may retry and a phrase the slot held is not lost.
+  /// Once [root] is stored its phrase stays: a failure to make it active is
+  /// only logged, because an account must never outlive its secret.
+  Future<void> _saveRoot({required String mnemonic, required Account root, required bool scanPending}) async {
     final walletIndex = root.walletIndex;
-    final isDevAccount = HdWalletService.isDevAccount(mnemonic);
     final previous = await _settings.getMnemonic(walletIndex);
     await _settings.setMnemonic(mnemonic, walletIndex);
     try {
-      if (!isDevAccount) await _settings.setPendingAccountScan(walletIndex, root.accountId);
+      if (scanPending) await _settings.setPendingAccountScan(walletIndex, root.accountId);
       await _accounts.addAccount(root);
+    } on AccountNotActivatedException catch (e) {
+      quantusPrint('Wallet $walletIndex was stored but activating its root failed: ${e.cause}');
     } catch (_) {
       if (previous == null) {
         await _settings.deleteMnemonic(walletIndex);
       } else {
         await _settings.setMnemonic(previous, walletIndex);
       }
-      if (!isDevAccount) await _settings.setPendingAccountScan(walletIndex, null);
+      if (scanPending) await _settings.setPendingAccountScan(walletIndex, null);
       rethrow;
     }
   }
