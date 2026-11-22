@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
+import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -100,6 +103,16 @@ Future<void> _press(WidgetTester tester, Key key) async {
   await tester.pumpAndSettle();
 }
 
+/// Presses the box of the checkbox [key]: the checkbox is as wide as its
+/// line, and its middle may be past the end of its label.
+Future<void> _tick(WidgetTester tester, Key key) async {
+  final box = find.descendant(of: find.byKey(key), matching: find.byType(Checkbox));
+  await tester.ensureVisible(box);
+  await tester.pump();
+  await tester.tap(box);
+  await tester.pumpAndSettle();
+}
+
 Future<void> _typeAmount(WidgetTester tester, String amount) async {
   await tester.enterText(_key(SwapSheet.amountFieldKey), amount);
   await tester.pump();
@@ -118,9 +131,9 @@ Future<void> _rest(WidgetTester tester) async {
 
 /// Fills in a swap of [amount] to or from [swapRecipient] and opens its
 /// review.
-Future<void> _openReview(WidgetTester tester, {String amount = '250'}) async {
+Future<void> _openReview(WidgetTester tester, {String amount = '250', String address = swapRecipient}) async {
   await _typeAmount(tester, amount);
-  await _typeAddress(tester, swapRecipient);
+  await _typeAddress(tester, address);
   await _rest(tester);
   await _press(tester, SwapSheet.reviewKey);
 }
@@ -884,6 +897,195 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(find.byType(SwapSheet), findsNothing);
+    });
+  });
+
+  group('saved addresses', () {
+    const older = '0x1111111111111111111111111111111111111111';
+    const onEthereum = '0x2222222222222222222222222222222222222222';
+
+    /// 1Click with two addresses saved on Arbitrum, [swapRecipient] the more
+    /// recent, and one on Ethereum.
+    FakeSwapService withSaved() => FakeSwapService()
+      ..saved['ARB'] = [swapRecipient, older]
+      ..saved['ETH'] = [onEthereum];
+
+    String addressTyped(WidgetTester tester) =>
+        tester.widget<EditableText>(_in(SwapSheet.addressFieldKey, find.byType(EditableText))).controller.text;
+
+    testOnMac("an empty address field offers the chain's saved addresses, the most recent first", (tester) async {
+      await _openSheet(tester, swaps: withSaved());
+
+      expect(_caps(_l10n.swapSavedAddressesTitle), findsOneWidget);
+      final recent = tester.getTopLeft(_key(SwapSheet.savedRowKey(swapRecipient))).dy;
+      expect(recent, lessThan(tester.getTopLeft(_key(SwapSheet.savedRowKey(older))).dy));
+      expect(_key(SwapSheet.savedRowKey(onEthereum)), findsNothing);
+    });
+
+    testOnMac('a chain with nothing saved shows no list, and no heading for one', (tester) async {
+      await _openSheet(tester);
+
+      expect(_caps(_l10n.swapSavedAddressesTitle), findsNothing);
+      expect(_key(SwapSheet.savedListKey), findsNothing);
+    });
+
+    testOnMac('a press on a saved address fills the field, and the list gives way', (tester) async {
+      await _openSheet(tester, swaps: withSaved());
+
+      await _press(tester, SwapSheet.savedRowKey(older));
+
+      expect(addressTyped(tester), older);
+      expect(_key(SwapSheet.savedListKey), findsNothing);
+    });
+
+    testOnMac("a token on another chain brings that chain's saved addresses", (tester) async {
+      await _openSheet(tester, swaps: withSaved());
+
+      await _pickToken(tester, usdcOnEthereum);
+
+      expect(_key(SwapSheet.savedRowKey(onEthereum)), findsOneWidget);
+      expect(_key(SwapSheet.savedRowKey(swapRecipient)), findsNothing);
+    });
+
+    testOnMac('saving is offered for an address that is not saved yet, and only for one', (tester) async {
+      await _openSheet(tester, swaps: withSaved());
+      expect(_key(SwapSheet.saveAddressKey), findsNothing);
+
+      await _typeAddress(tester, _otherAddress);
+      expect(_key(SwapSheet.saveAddressKey), findsOneWidget);
+
+      await _typeAddress(tester, older);
+      expect(_key(SwapSheet.saveAddressKey), findsNothing);
+    });
+
+    testOnMac('ticked, the address is saved for its chain as the review opens; unticked, nothing is', (tester) async {
+      final swaps = withSaved();
+      await _openSheet(tester, swaps: swaps);
+      await _openReview(tester, address: _otherAddress);
+      expect(swaps.saved['ARB'], [swapRecipient, older]);
+
+      await _press(tester, SwapSheet.backKey);
+      await _tick(tester, SwapSheet.saveAddressKey);
+      // Not before the swap is reviewed.
+      expect(swaps.saved['ARB'], [swapRecipient, older]);
+      await _press(tester, SwapSheet.reviewKey);
+
+      expect(_key(SwapSheet.confirmKey), findsOneWidget);
+      expect(swaps.saved['ARB'], [_otherAddress, swapRecipient, older]);
+      expect(swaps.saved['ETH'], [onEthereum]);
+    });
+
+    testOnMac('a review that does not open saves nothing', (tester) async {
+      final swaps = withSaved()..quote = (_) async => throw const SwapApiException(400, 'Amount is too low');
+      await _openSheet(tester, swaps: swaps);
+      await _typeAmount(tester, '250');
+      await _typeAddress(tester, _otherAddress);
+      await _tick(tester, SwapSheet.saveAddressKey);
+      await _rest(tester);
+
+      await _press(tester, SwapSheet.reviewKey);
+      await _rest(tester);
+
+      expect(_key(SwapSheet.confirmKey), findsNothing);
+      expect(swaps.saved['ARB'], [swapRecipient, older]);
+    });
+
+    testOnMac('a save that fails is said and the review stays shut; unticked, the swap goes on', (tester) async {
+      final swaps = withSaved()..saveError = StateError('disk full');
+      await _openSheet(tester, swaps: swaps);
+      await _typeAmount(tester, '250');
+      await _typeAddress(tester, _otherAddress);
+      await _tick(tester, SwapSheet.saveAddressKey);
+      await _rest(tester);
+
+      await _press(tester, SwapSheet.reviewKey);
+
+      expect(
+        _text(tester, SwapSheet.savedProblemKey),
+        _l10n.desktopSwapSavedAddressesUnavailable('Bad state: disk full'),
+      );
+      expect(_key(SwapSheet.confirmKey), findsNothing);
+
+      await _tick(tester, SwapSheet.saveAddressKey);
+      expect(_key(SwapSheet.savedProblemKey), findsNothing);
+      await _press(tester, SwapSheet.reviewKey);
+
+      expect(_key(SwapSheet.confirmKey), findsOneWidget);
+    });
+
+    testOnMac('turning the swap around keeps the list, and the tick', (tester) async {
+      await _openSheet(tester, swaps: withSaved());
+
+      await _press(tester, SwapSheet.flipKey);
+      expect(_key(SwapSheet.savedRowKey(swapRecipient)), findsOneWidget);
+
+      await _typeAddress(tester, _otherAddress);
+      await _tick(tester, SwapSheet.saveAddressKey);
+      await _press(tester, SwapSheet.flipKey);
+
+      expect(tester.widget<DesktopCheckbox>(_key(SwapSheet.saveAddressKey)).value, isTrue);
+    });
+
+    testOnMac('Remove in a saved address\'s menu forgets it', (tester) async {
+      final swaps = withSaved();
+      await _openSheet(tester, swaps: swaps);
+
+      await tester.tap(_key(SwapSheet.savedRowKey(older)), buttons: kSecondaryButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(ContextMenuRegion.menuKey),
+          matching: find.text(_l10n.desktopSwapRemoveSavedAddress),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(swaps.saved['ARB'], [swapRecipient]);
+      expect(_key(SwapSheet.savedRowKey(older)), findsNothing);
+      expect(_key(SwapSheet.savedRowKey(swapRecipient)), findsOneWidget);
+      // Opening its menu did not pick it.
+      expect(addressTyped(tester), isEmpty);
+    });
+
+    testOnMac('a removal that fails is said, and the address stays', (tester) async {
+      final swaps = withSaved()..removeError = StateError('disk full');
+      await _openSheet(tester, swaps: swaps);
+
+      await tester.tap(_key(SwapSheet.savedRowKey(older)), buttons: kSecondaryButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(ContextMenuRegion.menuKey),
+          matching: find.text(_l10n.desktopSwapRemoveSavedAddress),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        _text(tester, SwapSheet.savedProblemKey),
+        _l10n.desktopSwapSavedAddressesUnavailable('Bad state: disk full'),
+      );
+      expect(_key(SwapSheet.savedRowKey(older)), findsOneWidget);
+    });
+
+    testOnMac('saved addresses that cannot be read are said, and the form works without them', (tester) async {
+      final swaps = withSaved()..savedReadError = StateError('unreadable');
+      await _openSheet(tester, swaps: swaps);
+
+      expect(
+        _text(tester, SwapSheet.savedProblemKey),
+        _l10n.desktopSwapSavedAddressesUnavailable('Bad state: unreadable'),
+      );
+      expect(_key(SwapSheet.savedListKey), findsNothing);
+      expect(_key(SwapSheet.amountFieldKey), findsOneWidget);
+    });
+
+    testOnMac('a long list does not overflow the smallest window', (tester) async {
+      final swaps = FakeSwapService()..saved['ARB'] = [for (var i = 10; i < 30; i++) '0x${'$i' * 20}'];
+      await _openSheet(tester, swaps: swaps, window: const Size(960, 640));
+
+      expect(_key(SwapSheet.savedListKey), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 

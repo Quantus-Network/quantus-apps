@@ -1202,6 +1202,33 @@ class FakeSwapService extends Fake implements SwapService {
     return create(quote);
   }
 
+  /// The addresses saved for each network, most recent first.
+  final saved = <String, List<String>>{};
+
+  /// When set, reading the saved addresses, saving one or removing one fails
+  /// with it.
+  Object? savedReadError;
+  Object? saveError;
+  Object? removeError;
+
+  @override
+  Future<List<String>> getSavedAddresses(String network) async {
+    if (savedReadError case final error?) throw error;
+    return [...?saved[network]];
+  }
+
+  @override
+  Future<void> saveAddress(String network, String address) async {
+    if (saveError case final error?) throw error;
+    saved[network] = [address, ...?saved[network]?.where((a) => a != address)];
+  }
+
+  @override
+  Future<void> removeSavedAddress(String network, String address) async {
+    if (removeError case final error?) throw error;
+    saved[network] = [...?saved[network]?.where((a) => a != address)];
+  }
+
   /// Every deposit 1Click was told of: the order and the transaction's hash.
   final deposits = <({SwapOrder order, String hash})>[];
 

@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/ui/activity/inspector_parts.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/notice_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
@@ -72,9 +73,15 @@ class SwapSheet extends ConsumerStatefulWidget {
   static const backKey = Key('swap-back');
   static const confirmKey = Key('swap-confirm');
   static const closeKey = Key('swap-close');
+  static const savedListKey = Key('swap-saved');
+  static const saveAddressKey = Key('swap-save-address');
+  static const savedProblemKey = Key('swap-saved-problem');
 
   /// A token's row in the list.
   static Key tokenRowKey(String assetId) => ValueKey('swap-token-$assetId');
+
+  /// A saved address's row.
+  static Key savedRowKey(String address) => ValueKey('swap-saved-$address');
 
   @override
   ConsumerState<SwapSheet> createState() => _SwapSheetState();
@@ -135,6 +142,18 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
 
   /// The read of the clipboard that Paste is waiting on, if any.
   Object? _pendingPaste;
+
+  /// The addresses saved on the other chain's network, most recent first,
+  /// and what kept them from being read, added to or removed from.
+  List<String> _saved = const [];
+  String? _savedProblem;
+
+  /// Counts the reads of the saved addresses, so one for a chain the form
+  /// has left is dropped.
+  int _savedLoads = 0;
+
+  /// Whether the address typed is to be saved once its swap is reviewed.
+  bool _savesAddress = false;
 
   /// The quote under review; the live one's terms replace it when they are
   /// worse.
@@ -201,6 +220,7 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
         _foreign ??= tokens.firstWhere((token) => !token.isQuantus);
         _quantus = quantus;
       });
+      unawaited(_loadSaved(_foreign!.network));
     } catch (e) {
       quantusPrint('Swap tokens failed to load: $e');
       if (mounted && load == _loads) setState(() => _loadFailed = true);
@@ -208,6 +228,45 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
       if (mounted && load == _loads) setState(() => _loadingTokens = false);
     }
   }
+
+  /// Reads the addresses saved on [network]. What cannot be read is said,
+  /// and the form goes on without them.
+  Future<void> _loadSaved(String network) async {
+    final load = ++_savedLoads;
+    try {
+      final saved = await ref.read(swapServiceProvider).getSavedAddresses(network);
+      if (!mounted || load != _savedLoads) return;
+      setState(() => _saved = saved);
+    } catch (e) {
+      quantusPrint('Saved swap addresses failed to load: $e');
+      if (!mounted || load != _savedLoads) return;
+      setState(() {
+        _saved = const [];
+        _savedProblem = ref.read(l10nProvider).desktopSwapSavedAddressesUnavailable('$e');
+      });
+    }
+  }
+
+  /// Forgets [address] on [network]. One that cannot be removed is said, and
+  /// stays.
+  Future<void> _removeSaved(String network, String address) async {
+    try {
+      await ref.read(swapServiceProvider).removeSavedAddress(network, address);
+    } catch (e) {
+      quantusPrint('Saved swap address failed to be removed: $e');
+      if (mounted) setState(() => _savedProblem = ref.read(l10nProvider).desktopSwapSavedAddressesUnavailable('$e'));
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _savedProblem = null);
+    await _loadSaved(network);
+  }
+
+  void _setSavesAddress(bool saves) => setState(() {
+    _savesAddress = saves;
+    // What a save could not do no longer stands in the way.
+    if (!saves) _savedProblem = null;
+  });
 
   // ------------------------------------------------------- what the form says
 
@@ -337,11 +396,19 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
     if (pick == null) return;
     final foreign = pick.foreign;
     if (foreign != null) {
+      final movesChain = foreign.network != _foreign?.network;
       setState(() {
         _foreign = foreign;
         _edits++;
+        // Another chain has its own saved addresses.
+        if (movesChain) {
+          _saved = const [];
+          _savedProblem = null;
+          _savesAddress = false;
+        }
       });
       if (pick.clearsAddress) _address.clear();
+      if (movesChain) unawaited(_loadSaved(foreign.network));
     }
     if (pick.flips) _flip();
   }
@@ -383,8 +450,10 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
 
   /// Opens the review of the form's quote for [request], waiting for it
   /// while it is out, and asking again for one that failed. The form takes
-  /// no input meanwhile. A quote that fails is said on the form.
-  Future<void> _openReview(SwapQuoteRequest request) async {
+  /// no input meanwhile. A quote that fails is said on the form. An address
+  /// to be saved is saved first, on [network]: where that fails it is said,
+  /// and the review stays shut.
+  Future<void> _openReview(SwapQuoteRequest request, {required String network}) async {
     if (_quoting) return;
     final provider = swapFormQuoteProvider(request);
     if (ref.read(provider).hasError) ref.invalidate(provider);
@@ -394,6 +463,22 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
     try {
       final quote = await quoted.read();
       if (!mounted || edits != _edits) return;
+      final external = _externalAddress;
+      if (_savesAddress && external != null && !_saved.contains(external)) {
+        try {
+          await ref.read(swapServiceProvider).saveAddress(network, external);
+        } catch (e) {
+          quantusPrint('Swap address failed to be saved: $e');
+          if (mounted) {
+            setState(() => _savedProblem = ref.read(l10nProvider).desktopSwapSavedAddressesUnavailable('$e'));
+          }
+          return;
+        }
+        if (!mounted || edits != _edits) return;
+        _savesAddress = false;
+        _savedProblem = null;
+        unawaited(_loadSaved(network));
+      }
       setState(() {
         _reviewed = quote;
         _confirmation = SwapConfirmation(account: _account);
@@ -774,8 +859,9 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
                   focusNode: _addressFocus,
                   hint: l10n.swapAddressHint(foreign.networkName),
                   style: context.sendMono(colors.textWhite),
-                  onSubmitted: (_) => _pressReview(action, request),
+                  onSubmitted: (_) => _pressReview(action, request, foreign),
                 ),
+                ..._savedAddresses(l10n, foreign),
                 const SizedBox(height: 8),
                 Text(
                   _swapOut
@@ -821,7 +907,7 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
             label: l10n.desktopSendReview,
             isLoading: _quoting,
             isDisabled: !action.isEnabled || !canApprove,
-            onTap: () => _pressReview(action, request),
+            onTap: () => _pressReview(action, request, foreign),
           ),
         ],
       ),
@@ -830,7 +916,7 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
 
   /// What Review does: asks for the address while there is none, else opens
   /// the review.
-  void _pressReview(SwapFormAction action, SwapQuoteRequest? request) {
+  void _pressReview(SwapFormAction action, SwapQuoteRequest? request, SwapToken foreign) {
     if (!action.isEnabled) return;
     switch (action.step) {
       case SwapFormStep.insufficient:
@@ -838,8 +924,79 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
       case SwapFormStep.addAddress:
         _addressFocus.requestFocus();
       case SwapFormStep.review:
-        if (request != null) unawaited(_openReview(request));
+        if (request != null) unawaited(_openReview(request, network: foreign.network));
     }
+  }
+
+  /// Under the address field: what kept the saved addresses from being used;
+  /// while the field is empty, the addresses saved on [foreign]'s chain, a
+  /// press picking one and its menu forgetting it; and for an address typed
+  /// that is not among them, whether to save it.
+  List<Widget> _savedAddresses(AppLocalizations l10n, SwapToken foreign) {
+    final colors = context.colorsV3;
+    final external = _externalAddress;
+    final problem = _savedProblem;
+
+    return [
+      if (problem != null) ...[
+        const SizedBox(height: 6),
+        Text(
+          problem,
+          key: SwapSheet.savedProblemKey,
+          style: context.themeTextV3.caption.copyWith(color: colors.semanticEmber),
+        ),
+      ],
+      if (external == null && _saved.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        CapsText(l10n.swapSavedAddressesTitle, style: context.sendCaps()),
+        const SizedBox(height: 6),
+        // A few are in sight; the rest scroll within the list.
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 116),
+          child: ListView(
+            key: SwapSheet.savedListKey,
+            shrinkWrap: true,
+            padding: EdgeInsets.zero,
+            children: [
+              for (final address in _saved)
+                ContextMenuRegion(
+                  items: () => [
+                    ContextMenuItem(
+                      l10n.desktopSwapRemoveSavedAddress,
+                      isDestructive: true,
+                      onSelected: () => unawaited(_removeSaved(foreign.network, address)),
+                    ),
+                  ],
+                  child: SendRecentRow(
+                    key: SwapSheet.savedRowKey(address),
+                    address: address,
+                    showsCheckphrase: false,
+                    onPressed: () {
+                      // A Control-click opened the menu; it picks nothing.
+                      if (ContextMenuRegion.isControlClick) return;
+                      _address.text = address;
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ] else if (external != null && !_saved.contains(external)) ...[
+        const SizedBox(height: 10 - DesktopCheckbox.boxInset),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Transform.translate(
+            offset: const Offset(-DesktopCheckbox.boxInset, 0),
+            child: DesktopCheckbox(
+              key: SwapSheet.saveAddressKey,
+              value: _savesAddress,
+              label: l10n.swapSaveAddress,
+              onChanged: _setSavesAddress,
+            ),
+          ),
+        ),
+      ],
+    ];
   }
 
   String _usd(BigInt amount, SwapToken token) => '\$${swapUsdValue(amount, token).toStringAsFixed(2)}';
