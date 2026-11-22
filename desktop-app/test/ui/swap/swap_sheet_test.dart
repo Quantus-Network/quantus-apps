@@ -887,6 +887,39 @@ void main() {
     });
   });
 
+  group('confirming, with the deposit going out', () {
+    testOnMac("the way back in the sheet's title does nothing: the review stays until the deposit has landed, and "
+        'its swap is followed', (tester) async {
+      final landing = Completer<String>();
+      final chain = FakeSendChain()..submit = () => landing.future;
+      final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount));
+      final swaps = await _openSheet(tester, chain: chain, settings: settings);
+      await _openReview(tester);
+
+      await tester.tap(_key(SwapSheet.confirmKey));
+      // Approved, and handed to the chain, which has not answered.
+      await tester.pump();
+      await tester.pump();
+      expect(_button(tester, SwapSheet.confirmKey).isLoading, isTrue);
+
+      await tester.tap(find.byKey(ShellSheetHeader.backKey));
+      await tester.pump();
+
+      // Still the review: no form to cancel from, or to start another swap on.
+      expect(_key(SwapSheet.confirmKey), findsOneWidget);
+      expect(_key(SwapSheet.amountFieldKey), findsNothing);
+      expect(_key(SwapSheet.cancelKey), findsNothing);
+
+      landing.complete('0xhash');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SwapSheet), findsNothing);
+      expect(swaps.created, hasLength(1));
+      expect(settings.activeSwap?.depositTxHash, '0xhash');
+      expect(find.byType(SwapRowView), findsOneWidget);
+    });
+  });
+
   group('room', () {
     testOnMac('nothing overflows in the smallest window: the form, the token list, the review', (tester) async {
       final swaps = FakeSwapService();
