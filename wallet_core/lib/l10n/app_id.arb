@@ -870,5 +870,10 @@
   "desktopMenuImportWallet": "Impor Dompet…",
   "desktopImportFinding": "Mencari akun dompet ini",
   "desktopImportFailed": "Tidak dapat mengimpor dompet",
-  "desktopImportDone": "Dompet diimpor"
+  "desktopImportDone": "Dompet diimpor",
+  "desktopMenuManageMultisigs": "Kelola Multisig…",
+  "desktopManageMultisigsTitle": "Kelola Multisig",
+  "desktopManageMultisigsLead": "Multisig di chain dengan salah satu akun Anda sebagai penanda tangan. Mematikannya hanya menghapusnya dari aplikasi ini.",
+  "desktopManageMultisigsFinding": "Mencari multisig Anda di chain",
+  "desktopManageMultisigsSignsAs": "{approvals} · Anda menandatangani sebagai {name}"
 }

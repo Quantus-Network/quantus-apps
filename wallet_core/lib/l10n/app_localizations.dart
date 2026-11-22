@@ -5803,6 +5803,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Wallet imported'**
   String get desktopImportDone;
+
+  /// Desktop: menu item in Add Account and the Account menu; opens the list that adds and removes multisigs
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs…'**
+  String get desktopMenuManageMultisigs;
+
+  /// Desktop Manage Multisigs sheet: its title
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs'**
+  String get desktopManageMultisigsTitle;
+
+  /// Desktop Manage Multisigs sheet: the sentence under the title
+  ///
+  /// In en, this message translates to:
+  /// **'Multisigs on chain where one of your accounts is a signer. Switching one off removes it from this app only.'**
+  String get desktopManageMultisigsLead;
+
+  /// Desktop Manage Multisigs sheet: a moving line while the chain is read
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your multisigs on chain'**
+  String get desktopManageMultisigsFinding;
+
+  /// Desktop Manage Multisigs sheet: a row's detail line, e.g. '2 of 3 · you sign as Savings'
+  ///
+  /// In en, this message translates to:
+  /// **'{approvals} · you sign as {name}'**
+  String desktopManageMultisigsSignsAs(String approvals, String name);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
