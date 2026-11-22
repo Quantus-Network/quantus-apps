@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -103,6 +105,19 @@ Future<void> _pressWithCommand(WidgetTester tester, List<LogicalKeyboardKey> key
 }
 
 String? _activeId(WidgetTester tester) => _container(tester).read(activeAccountProvider).value?.account.accountId;
+
+/// Leaves a switch to [account] waiting in the navigation queue, as while it
+/// is being saved. The function returned lets it run.
+Future<void> Function() _holdSwitchTo(WidgetTester tester, Account account) {
+  final container = _container(tester);
+  final gate = Completer<void>();
+  unawaited(container.read(shellNavigationProvider.notifier).run(() => gate.future));
+  unawaited(container.read(sidebarSelectionProvider.notifier).showAccount(RegularAccount(account)));
+  return () async {
+    gate.complete();
+    await tester.pumpAndSettle();
+  };
+}
 
 void main() {
   group('the Add Account menu', () {
@@ -226,6 +241,44 @@ void main() {
       await _pressWithCommand(tester, [LogicalKeyboardKey.digit1, LogicalKeyboardKey.keyN]);
 
       expect(device.storage.accounts.map((a) => a.accountId), contains('qzNew0-2'));
+    });
+
+    group('during a switch to another wallet', () {
+      testOnMac('the wallet chosen in the menu bar gets the account, even the one showing ⌘N', (tester) async {
+        final device = await _pump(tester);
+        final release = _holdSwitchTo(tester, tradingAccount);
+
+        final chosen = _submenuItems(tester)[0];
+        expect(chosen.shortcut, isNotNull);
+        chosen.onSelected!();
+        await release();
+
+        expect(device.storage.accounts.singleWhere((a) => a.accountId == 'qzNew0-2').walletIndex, 0);
+      });
+
+      testOnMac('the wallet chosen in the sidebar\'s menu gets the account', (tester) async {
+        final device = await _pump(tester);
+        await _openSubmenu(tester);
+        final release = _holdSwitchTo(tester, tradingAccount);
+
+        await tester.tap(find.descendant(of: _submenu, matching: find.text('Wallet 1')));
+        await tester.pump();
+        await release();
+
+        expect(device.storage.accounts.singleWhere((a) => a.accountId == 'qzNew0-2').walletIndex, 0);
+      });
+
+      testOnMac('⌘N adds to the wallet switched to', (tester) async {
+        final device = await _pump(tester);
+        final release = _holdSwitchTo(tester, tradingAccount);
+
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyN);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+        await release();
+
+        expect(device.storage.accounts.singleWhere((a) => a.accountId == 'qzNew2-1').walletIndex, 2);
+      });
     });
 
     testOnMac('while a sheet is open, New Account is disabled', (tester) async {

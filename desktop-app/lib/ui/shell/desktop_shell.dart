@@ -191,8 +191,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     return Scaffold(
       body: AppMenuBar(
         useNativeMenuBar: useNativeMenuBar,
-        menus: _menus(ref.watch, useNativeMenuBar: useNativeMenuBar),
-        resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar),
+        menus: _menus(ref.watch, useNativeMenuBar: useNativeMenuBar, answersKeys: false),
+        resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar, answersKeys: true),
         child: switch (presence) {
           AsyncError(:final error) => _StartFailure(error: error),
           AsyncValue(value: WalletPresence.present) => LiveDataScope(child: _wallet(isSidebarVisible)),
@@ -220,8 +220,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   /// The app's menus for what [read] finds: watched, as they are drawn; read
-  /// at a key press, as they are at that moment.
-  List<PlatformMenu> _menus(ProviderReader read, {required bool useNativeMenuBar}) {
+  /// at a key press, as they are at that moment. With [answersKeys], New
+  /// Account's shortcut follows a switch still being saved; an item chosen
+  /// from the drawn menus keeps the wallet it names.
+  List<PlatformMenu> _menus(ProviderReader read, {required bool useNativeMenuBar, required bool answersKeys}) {
     // The Account and View menus act on the wallet, so they wait for one.
     final hasWallet = read(walletPresenceProvider).value == WalletPresence.present;
     final hasSheet = read(shellSheetProvider) != null;
@@ -246,7 +248,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           ? newAccountWallets.firstOrNull?.walletIndex
           : null,
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
-      onNewAccountInActiveWallet: () => unawaited(manager.createInActiveWallet()),
+      onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),
