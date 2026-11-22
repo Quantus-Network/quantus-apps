@@ -200,6 +200,49 @@ void main() {
     await _close(tester, container);
   });
 
+  testWidgets('the last hardware account going forgets its wallet: the next one on its index starts closed', (
+    tester,
+  ) async {
+    final device = _walletDevice();
+    final (container, _) = await _open(tester, device);
+    _kept(container).toggle(1);
+    await tester.pump();
+
+    await container.read(accountManagerProvider).disconnect(vaultAccount);
+    await _settle(tester, container);
+    expect(container.read(keptOpenWalletsProvider), isEmpty);
+    expect(_saved(device), '');
+
+    device.storage.accounts.add(const Account(walletIndex: 1, index: 0, name: 'Imported', accountId: 'qzImported'));
+    container.invalidate(accountsProvider);
+    await _settle(tester, container);
+    expect(container.read(openWalletsProvider), {0});
+    await _close(tester, container);
+  });
+
+  testWidgets('a hardware account going while another stays keeps its wallet open', (tester) async {
+    final device = _walletDevice();
+    device.storage.accounts.add(
+      const Account(
+        walletIndex: 1,
+        index: 1,
+        name: 'Vault Two',
+        accountId: 'qzVaultTwo',
+        accountType: AccountType.keystone,
+      ),
+    );
+    final (container, _) = await _open(tester, device);
+    _kept(container).toggle(1);
+    await tester.pump();
+
+    await container.read(accountManagerProvider).disconnect(vaultAccount);
+    await _settle(tester, container);
+
+    expect(container.read(keptOpenWalletsProvider), {1});
+    expect(_saved(device), '1');
+    await _close(tester, container);
+  });
+
   testWidgets('wiping the wallet forgets what was open', (tester) async {
     final device = _walletDevice();
     final (container, _) = await _open(tester, device);
