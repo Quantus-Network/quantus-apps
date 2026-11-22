@@ -278,7 +278,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       ShellSheet.send => AccountActionKind.send,
       ShellSheet.propose => AccountActionKind.propose,
       ShellSheet.swap => AccountActionKind.swap,
-      ShellSheet.addAccount || ShellSheet.settings || ShellSheet.accountInfo => null,
+      ShellSheet.settings || ShellSheet.accountInfo => null,
     };
     if (kind == null) return true;
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);

@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
@@ -227,12 +228,25 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     // A sheet is for the account it opened on, so nothing moves under it.
     final canNavigate = hasWallet && !hasSheet;
     final sidebar = ref.read(sidebarSelectionProvider.notifier);
+    final manager = ref.read(accountManagerProvider);
+    final newAccountWallets = hasWallet ? read(softwareWalletsProvider) : const <SoftwareWallet>[];
+    final activeWallet = read(activeWalletIndexProvider);
 
     return buildAppMenus(
       l10n: read(l10nProvider),
       useNativeMenuBar: useNativeMenuBar,
       accountActions: read(menuAccountActionsProvider),
       accountItems: hasWallet ? _accountItems(read) : const [],
+      newAccountWallets: newAccountWallets,
+      // While a switch is being saved, ⌘N is meant for the account it ends
+      // on, which may be in a software wallet even if the active one is not.
+      newAccountShortcutWallet: newAccountWallets.any((wallet) => wallet.walletIndex == activeWallet)
+          ? activeWallet
+          : read(shellNavigationProvider)
+          ? newAccountWallets.firstOrNull?.walletIndex
+          : null,
+      onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
+      onNewAccountInActiveWallet: () => unawaited(manager.createInActiveWallet()),
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),

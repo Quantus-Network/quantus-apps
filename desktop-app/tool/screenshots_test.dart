@@ -30,6 +30,7 @@ import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
@@ -572,6 +573,30 @@ void main() {
   _scene('wallets_one_opened', (tester) async {
     await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
     await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('WALLET 2')));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('add_account_menu', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('add_account_submenu', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New Account'));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('account_created', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New Account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byKey(ContextMenuRegion.submenuKey), matching: find.text('Wallet 2')));
     await tester.pumpAndSettle();
   });
 

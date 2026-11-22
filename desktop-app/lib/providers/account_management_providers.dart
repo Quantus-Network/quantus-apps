@@ -144,9 +144,12 @@ class RecoveryPhraseTargetNotifier extends Notifier<int?> {
   void clear() => state = null;
 }
 
+/// A software wallet: what it is called, and its accounts' names.
+typedef SoftwareWallet = ({int walletIndex, String name, List<String> accounts});
+
 /// The software wallets, whose recovery phrases this app holds, in the
 /// sidebar's order: what each is called, and its accounts' names.
-final softwareWalletsProvider = Provider<List<({int walletIndex, String name, List<String> accounts})>>((ref) {
+final softwareWalletsProvider = Provider<List<SoftwareWallet>>((ref) {
   final l10n = ref.watch(l10nProvider);
   final grouping = groupWallets(
     accounts: ref.watch(accountsProvider).value ?? const [],

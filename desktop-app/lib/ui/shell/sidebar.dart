@@ -11,6 +11,7 @@ import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_context_menus.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_note_text.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/add_account_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
@@ -83,11 +84,13 @@ class Sidebar extends ConsumerWidget {
                   leading: Icon(CupertinoIcons.gear, size: _iconSize, color: colors.textMuted),
                   onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.settings),
                 ),
-                SidebarRow(
-                  title: l10n.accountsSheetAddAccount,
-                  isSecondary: true,
-                  leading: const QuantusIcon(QuantusIcons.plus, size: _iconSize),
-                  onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.addAccount),
+                Builder(
+                  builder: (row) => SidebarRow(
+                    title: l10n.accountsSheetAddAccount,
+                    isSecondary: true,
+                    leading: const QuantusIcon(QuantusIcons.plus, size: _iconSize),
+                    onTap: () => _openAddMenu(row, ref),
+                  ),
                 ),
               ],
             ),
@@ -95,6 +98,18 @@ class Sidebar extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Pulls down what can be added from the Add Account row at [row].
+  void _openAddMenu(BuildContext row, WidgetRef ref) {
+    final items = addAccountMenuItems(
+      ref.read(l10nProvider),
+      ref.read(softwareWalletsProvider),
+      ref.read(accountManagerProvider),
+    );
+    if (items.isEmpty) return;
+    final box = row.findRenderObject()! as RenderBox;
+    unawaited(showPullDownMenu(row, anchor: box.localToGlobal(Offset.zero) & box.size, items: items));
   }
 
   List<Widget> _accounts(BuildContext context, WidgetRef ref, AppLocalizations l10n, SidebarSelection selection) {

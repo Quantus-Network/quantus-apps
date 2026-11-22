@@ -523,13 +523,13 @@ void main() {
     ) async {
       final polling = FakeHistoryPollingManager();
       await pumpShell(tester, polling: polling, overrides: _withActive(const RegularAccount(mainAccount)));
-      _nativeItem(tester, 'Account', 'New Account').onSelected!();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
       await tester.pumpAndSettle();
 
       _nativeItem(tester, 'View', 'Refresh').onSelected!();
       await tester.pumpAndSettle();
 
-      expect(_sheetTitled('Add Account'), findsOneWidget);
+      expect(_sheetTitled('Receive'), findsOneWidget);
       expect(polling.calls, ['manualRefresh']);
     });
 
@@ -548,10 +548,10 @@ void main() {
     testOnMac('while a sheet is open, the items that open sheets are disabled', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
-      _nativeItem(tester, 'Account', 'New Account').onSelected!();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
       await tester.pumpAndSettle();
 
-      expect(_sheetTitled('Add Account'), findsOneWidget);
+      expect(_sheetTitled('Receive'), findsOneWidget);
       expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
       // The accounts it lists among them: a sheet is for the account it opened on.
       expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), contains('Vault'));
@@ -877,7 +877,6 @@ void main() {
     for (final (key, name, title) in [
       (LogicalKeyboardKey.keyR, 'Ctrl+R', 'Receive'),
       (LogicalKeyboardKey.keyS, 'Ctrl+S', 'Send'),
-      (LogicalKeyboardKey.keyN, 'Ctrl+N', 'Add Account'),
     ]) {
       testOnWindowsAndLinux('$name opens $title', (tester) async {
         await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
