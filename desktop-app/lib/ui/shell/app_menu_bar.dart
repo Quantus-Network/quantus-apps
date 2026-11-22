@@ -77,13 +77,15 @@ class AppMenuBar extends StatelessWidget {
     return KeyEventResult.ignored;
   }
 
-  /// The selectable items of [menu], with its groups opened up.
+  /// The selectable items of [menu], with its groups and submenus opened up.
   static Iterable<PlatformMenuItem> _leavesOf(PlatformMenu menu) sync* {
     for (final entry in menu.menus) {
-      if (entry is PlatformMenuItemGroup) {
-        yield* entry.members;
-      } else {
-        yield entry;
+      for (final item in entry is PlatformMenuItemGroup ? entry.members : [entry]) {
+        if (item is PlatformMenu) {
+          yield* _leavesOf(item);
+        } else {
+          yield item;
+        }
       }
     }
   }
@@ -103,7 +105,8 @@ class AppMenuBar extends StatelessWidget {
   }
 
   static Widget _buttonFor(PlatformMenuItem item) {
-    if (item is PlatformProvidedMenuItem || item is PlatformMenu) {
+    if (item is PlatformMenu) return SubmenuButton(menuChildren: _buttonsOf(item), child: Text(item.label));
+    if (item is PlatformProvidedMenuItem) {
       throw UnsupportedError('The in-window menu bar cannot show "${item.label}" (${item.runtimeType}).');
     }
     return MenuItemButton(onPressed: item.onSelected, shortcut: item.shortcut, child: Text(item.label));
