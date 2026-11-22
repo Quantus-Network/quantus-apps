@@ -305,6 +305,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   @override
   void dispose() {
+    unawaited(cancelAllNotifications());
     _cleanupTimer?.cancel();
     _localAlertController.close();
     _localPushController.close();

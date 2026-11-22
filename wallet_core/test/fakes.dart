@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_core_overrides.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -93,6 +94,24 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   String? getSelectedAppLocale() => 'en';
+
+  @override
+  Future<void> clearSelectedAppLocale() async {}
+
+  @override
+  String? getSelectedFiatCurrency() => null;
+
+  @override
+  Future<void> clearSelectedFiatCurrency() async {}
+
+  @override
+  ActiveSwap? getActiveSwap() => null;
+
+  @override
+  Future<void> clearActiveSwap() async {}
+
+  @override
+  Future<List<MultisigAccount>> getMultisigAccounts() async => const [];
 }
 
 /// The accounts of [settings], plus the encrypted account the real service
@@ -159,8 +178,18 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   /// What [generateMnemonic] answers.
   String mnemonic;
 
+  /// When set, wiping the wallet fails with this.
+  Object? logoutError;
+
   @override
   Future<String> generateMnemonic() async => mnemonic;
+
+  /// Clears the saved preferences, as the real wipe does.
+  @override
+  Future<void> logout() async {
+    if (logoutError case final error?) throw error;
+    await (await SharedPreferences.getInstance()).clear();
+  }
 }
 
 /// The chain scan for a wallet's accounts. Each call takes the next entry of

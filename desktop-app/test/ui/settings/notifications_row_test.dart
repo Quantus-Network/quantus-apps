@@ -211,7 +211,9 @@ void main() {
   });
 
   testOnMac('resetting the wallet puts the switch back on', (tester) async {
-    final device = FakeWalletDevice()..store(const [mainAccount]);
+    final device = FakeWalletDevice()
+      ..realLogout = true
+      ..store(const [mainAccount]);
     await pumpShell(tester, notifications: FakeNotificationPlugin(), overrides: device.overrides);
     final container = _container(tester);
     container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
