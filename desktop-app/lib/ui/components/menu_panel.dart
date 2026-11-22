@@ -5,12 +5,15 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// The surface every menu the app draws itself sits on (a pop-up button's
 /// menu, a context menu): a raised, bordered panel holding its rows.
 class MenuPanel extends StatelessWidget {
-  const MenuPanel({super.key, required this.children, this.minWidth = 0});
+  const MenuPanel({super.key, required this.children, this.minWidth = 0, this.scrolls = false});
 
   final List<Widget> children;
 
   /// The narrowest the panel is; it is as wide as its widest row otherwise.
   final double minWidth;
+
+  /// Whether the rows scroll when there are more than the panel can show.
+  final bool scrolls;
 
   /// The space above the first row and below the last.
   static const double padding = 5;
@@ -22,6 +25,11 @@ class MenuPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final radius = context.radiusV3.smBorder;
+    final rows = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: children,
+    );
 
     return ConstrainedBox(
       constraints: BoxConstraints(minWidth: minWidth),
@@ -40,11 +48,7 @@ class MenuPanel extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: padding),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: children,
-              ),
+              child: scrolls ? SingleChildScrollView(child: rows) : rows,
             ),
           ),
         ),
@@ -53,7 +57,8 @@ class MenuPanel extends StatelessWidget {
   }
 }
 
-/// One row of a [MenuPanel]: a check mark's place and the label. The
+/// One row of a [MenuPanel]: a check mark's place, the label, and a chevron
+/// when it opens a submenu. The
 /// highlighted row is filled with the accent; a destructive item's label is
 /// ember.
 class MenuPanelRow extends StatelessWidget {
@@ -63,12 +68,16 @@ class MenuPanelRow extends StatelessWidget {
     this.isHighlighted = false,
     this.isChecked = false,
     this.isDestructive = false,
+    this.hasSubmenu = false,
   });
 
   final String label;
   final bool isHighlighted;
   final bool isChecked;
   final bool isDestructive;
+
+  /// Shows the chevron of an item that opens a submenu.
+  final bool hasSubmenu;
 
   static const double height = 22;
 
@@ -118,6 +127,10 @@ class MenuPanelRow extends StatelessWidget {
                 Expanded(
                   child: Text(label, style: text.body.copyWith(height: 1, color: color)),
                 ),
+                if (hasSubmenu) ...[
+                  const SizedBox(width: 20),
+                  Icon(CupertinoIcons.chevron_right, size: 11, color: color),
+                ],
               ],
             ),
           ),
