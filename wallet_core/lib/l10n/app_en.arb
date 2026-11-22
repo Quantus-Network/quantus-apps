@@ -4755,5 +4755,84 @@
           "type": "String"
         }
       }
+    },
+    "desktopMenuCreateMultisig": "Create Multisig…",
+    "@desktopMenuCreateMultisig": {
+      "description": "Desktop: menu item in Add Account and the Account menu; opens the form that creates a multisig"
+    },
+    "desktopCreateMultisigSigners": "Signers",
+    "@desktopCreateMultisigSigners": {
+      "description": "Desktop Create Multisig sheet: label of the list of signers"
+    },
+    "desktopCreateMultisigApprovalsNeeded": "Approvals needed",
+    "@desktopCreateMultisigApprovalsNeeded": {
+      "description": "Desktop Create Multisig form: label of the choice of how many signers must approve"
+    },
+    "desktopCreateMultisigApprovals": "Approvals",
+    "@desktopCreateMultisigApprovals": {
+      "description": "Desktop Create Multisig review: label of how many signers must approve"
+    },
+    "desktopCreateMultisigApprovalsValue": "{count} of {total} signers",
+    "@desktopCreateMultisigApprovalsValue": {
+      "description": "Desktop Create Multisig review: how many signers must approve, e.g. '2 of 3 signers'",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopCreateMultisigAddress": "Address",
+    "@desktopCreateMultisigAddress": {
+      "description": "Desktop Create Multisig review: label of the address the new multisig will have"
+    },
+    "desktopCreateMultisigPaidBy": "Paid by",
+    "@desktopCreateMultisigPaidBy": {
+      "description": "Desktop Create Multisig review: label of the account that signs and pays for the creation"
+    },
+    "desktopCreateMultisigCreationFee": "Creation fee",
+    "@desktopCreateMultisigCreationFee": {
+      "description": "Desktop Create Multisig review: label of the chain's fixed fee for creating a multisig"
+    },
+    "desktopCreateMultisigRemoveSigner": "Remove signer",
+    "@desktopCreateMultisigRemoveSigner": {
+      "description": "Desktop Create Multisig form: what a screen reader and the tooltip call the cross on a signer's row"
+    },
+    "desktopCreateMultisigPreviewFailed": "Could not work out the new address: {error}",
+    "@desktopCreateMultisigPreviewFailed": {
+      "description": "Desktop Create Multisig form: the new multisig's address could not be worked out",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopCreateMultisigCantAfford": "{name} can’t cover what this costs",
+    "@desktopCreateMultisigCantAfford": {
+      "description": "Desktop Create Multisig: the account that pays does not hold enough for the fees",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopCreateMultisigDeclined": "Creating this multisig needs your approval",
+    "@desktopCreateMultisigDeclined": {
+      "description": "Desktop Create Multisig review: the system's approval was declined, so nothing was submitted"
+    },
+    "desktopCreateMultisigFailed": "Could not create this multisig: {error}",
+    "@desktopCreateMultisigFailed": {
+      "description": "Desktop Create Multisig: the check or the submission failed",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopCreateMultisigTimedOut": "Multisig not confirmed",
+    "@desktopCreateMultisigTimedOut": {
+      "description": "Desktop: short note on the active account's sidebar row when a multisig being created was not confirmed in time"
     }
 }

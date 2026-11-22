@@ -3235,4 +3235,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopManageMultisigsSignsAs(String approvals, String name) {
     return '$approvals · you sign as $name';
   }
+
+  @override
+  String get desktopMenuCreateMultisig => 'Create Multisig…';
+
+  @override
+  String get desktopCreateMultisigSigners => 'Signers';
+
+  @override
+  String get desktopCreateMultisigApprovalsNeeded => 'Approvals needed';
+
+  @override
+  String get desktopCreateMultisigApprovals => 'Approvals';
+
+  @override
+  String desktopCreateMultisigApprovalsValue(int count, int total) {
+    return '$count of $total signers';
+  }
+
+  @override
+  String get desktopCreateMultisigAddress => 'Address';
+
+  @override
+  String get desktopCreateMultisigPaidBy => 'Paid by';
+
+  @override
+  String get desktopCreateMultisigCreationFee => 'Creation fee';
+
+  @override
+  String get desktopCreateMultisigRemoveSigner => 'Remove signer';
+
+  @override
+  String desktopCreateMultisigPreviewFailed(String error) {
+    return 'Could not work out the new address: $error';
+  }
+
+  @override
+  String desktopCreateMultisigCantAfford(String name) {
+    return '$name can’t cover what this costs';
+  }
+
+  @override
+  String get desktopCreateMultisigDeclined => 'Creating this multisig needs your approval';
+
+  @override
+  String desktopCreateMultisigFailed(String error) {
+    return 'Could not create this multisig: $error';
+  }
+
+  @override
+  String get desktopCreateMultisigTimedOut => 'Multisig not confirmed';
 }

@@ -3240,4 +3240,54 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopManageMultisigsSignsAs(String approvals, String name) {
     return '$approvals · Anda menandatangani sebagai $name';
   }
+
+  @override
+  String get desktopMenuCreateMultisig => 'Buat Multisig…';
+
+  @override
+  String get desktopCreateMultisigSigners => 'Penanda tangan';
+
+  @override
+  String get desktopCreateMultisigApprovalsNeeded => 'Persetujuan diperlukan';
+
+  @override
+  String get desktopCreateMultisigApprovals => 'Persetujuan';
+
+  @override
+  String desktopCreateMultisigApprovalsValue(int count, int total) {
+    return '$count dari $total penanda tangan';
+  }
+
+  @override
+  String get desktopCreateMultisigAddress => 'Alamat';
+
+  @override
+  String get desktopCreateMultisigPaidBy => 'Dibayar oleh';
+
+  @override
+  String get desktopCreateMultisigCreationFee => 'Biaya pembuatan';
+
+  @override
+  String get desktopCreateMultisigRemoveSigner => 'Hapus penanda tangan';
+
+  @override
+  String desktopCreateMultisigPreviewFailed(String error) {
+    return 'Tidak dapat menentukan alamat baru: $error';
+  }
+
+  @override
+  String desktopCreateMultisigCantAfford(String name) {
+    return '$name tidak dapat menutup biayanya';
+  }
+
+  @override
+  String get desktopCreateMultisigDeclined => 'Membuat multisig ini memerlukan persetujuan Anda';
+
+  @override
+  String desktopCreateMultisigFailed(String error) {
+    return 'Tidak dapat membuat multisig ini: $error';
+  }
+
+  @override
+  String get desktopCreateMultisigTimedOut => 'Multisig belum terkonfirmasi';
 }

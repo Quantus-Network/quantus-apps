@@ -875,5 +875,19 @@
   "desktopManageMultisigsTitle": "Kelola Multisig",
   "desktopManageMultisigsLead": "Multisig di chain dengan salah satu akun Anda sebagai penanda tangan. Mematikannya hanya menghapusnya dari aplikasi ini.",
   "desktopManageMultisigsFinding": "Mencari multisig Anda di chain",
-  "desktopManageMultisigsSignsAs": "{approvals} · Anda menandatangani sebagai {name}"
+  "desktopManageMultisigsSignsAs": "{approvals} · Anda menandatangani sebagai {name}",
+  "desktopMenuCreateMultisig": "Buat Multisig…",
+  "desktopCreateMultisigSigners": "Penanda tangan",
+  "desktopCreateMultisigApprovalsNeeded": "Persetujuan diperlukan",
+  "desktopCreateMultisigApprovals": "Persetujuan",
+  "desktopCreateMultisigApprovalsValue": "{count} dari {total} penanda tangan",
+  "desktopCreateMultisigAddress": "Alamat",
+  "desktopCreateMultisigPaidBy": "Dibayar oleh",
+  "desktopCreateMultisigCreationFee": "Biaya pembuatan",
+  "desktopCreateMultisigRemoveSigner": "Hapus penanda tangan",
+  "desktopCreateMultisigPreviewFailed": "Tidak dapat menentukan alamat baru: {error}",
+  "desktopCreateMultisigCantAfford": "{name} tidak dapat menutup biayanya",
+  "desktopCreateMultisigDeclined": "Membuat multisig ini memerlukan persetujuan Anda",
+  "desktopCreateMultisigFailed": "Tidak dapat membuat multisig ini: {error}",
+  "desktopCreateMultisigTimedOut": "Multisig belum terkonfirmasi"
 }
