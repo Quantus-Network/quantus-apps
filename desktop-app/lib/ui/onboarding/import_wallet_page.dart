@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
-import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/components/recovery_phrase_input.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_button.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_page.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/onboarding_text.dart';
@@ -11,7 +11,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
-import 'package:wallet_core/utils/recovery_phrase.dart';
 
 /// Imports the wallet of [mnemonic]. [onScanFailed] is asked whether to scan
 /// the chain for its accounts again when that scan fails.
@@ -28,7 +27,7 @@ class ImportWalletPage extends ConsumerStatefulWidget {
   final VoidCallback onBack;
 
   /// The count of the words typed so far.
-  static const wordCountKey = Key('import-wallet-word-count');
+  static const wordCountKey = RecoveryPhraseInput.wordCountKey;
 
   @override
   ConsumerState<ImportWalletPage> createState() => _ImportWalletPageState();
@@ -66,19 +65,6 @@ class _ImportWalletPageState extends ConsumerState<ImportWalletPage> {
     } finally {
       if (mounted) setState(() => _isImporting = false);
     }
-  }
-
-  /// Puts the clipboard's text in the field, in place of what was there. With
-  /// no text on the clipboard there is nothing to paste.
-  Future<void> _paste() async {
-    final text = (await Clipboard.getData(Clipboard.kTextPlain))?.text;
-    if (text == null || !mounted) return;
-    setState(() {
-      _controller.value = TextEditingValue(
-        text: text,
-        selection: TextSelection.collapsed(offset: text.length),
-      );
-    });
   }
 
   Future<bool> _askToScanAgain(Object error) async {
@@ -133,22 +119,11 @@ class _ImportWalletPageState extends ConsumerState<ImportWalletPage> {
                   children: [
                     CapsText(l10n.desktopImportPhraseLabel, style: _label(context, colors.textMuted2)),
                     const SizedBox(height: 12),
-                    QuantusSeedPhraseField(
+                    RecoveryPhraseInput(
                       controller: _controller,
-                      hint: l10n.importWalletHint,
                       height: 180,
-                      onChanged: (_) => setState(() {}),
-                      footer: Row(
-                        children: [
-                          _WordCount(count: recoveryPhraseWords(_controller.text).length, l10n: l10n),
-                          const Spacer(),
-                          ToolbarAction.symbol(
-                            symbol: CupertinoIcons.doc_on_clipboard,
-                            label: l10n.desktopImportPaste,
-                            onPressed: _isImporting ? null : _paste,
-                          ),
-                        ],
-                      ),
+                      canPaste: !_isImporting,
+                      onChanged: () => setState(() {}),
                     ),
                     if (_error case final error?) ...[
                       const SizedBox(height: 12),
@@ -175,9 +150,8 @@ class _ImportWalletPageState extends ConsumerState<ImportWalletPage> {
   }
 }
 
-/// The small monospace capitals of the labels, tips and count.
-TextStyle _label(BuildContext context, Color color) =>
-    context.themeTextV3.dataAddress.copyWith(height: 1, letterSpacing: 1.4, color: color);
+/// The small monospace capitals of the labels and tips.
+TextStyle _label(BuildContext context, Color color) => RecoveryPhraseInput.labelStyle(context, color);
 
 /// The left side: what this page is for, and how to type the phrase.
 class _Words extends StatelessWidget {
@@ -217,27 +191,6 @@ class _Words extends StatelessWidget {
         tip(l10n.desktopImportTipSpaces),
         tip(l10n.desktopImportTipPaste),
       ],
-    );
-  }
-}
-
-/// How many words have been typed: sage once there are as many as a phrase
-/// has, 12 or 24, muted otherwise.
-class _WordCount extends StatelessWidget {
-  const _WordCount({required this.count, required this.l10n});
-
-  final int count;
-  final AppLocalizations l10n;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final isWhole = count == 12 || count == 24;
-
-    return CapsText(
-      key: ImportWalletPage.wordCountKey,
-      l10n.desktopImportWordCount(count),
-      style: _label(context, isWhole ? colors.semanticSage : colors.textMuted2),
     );
   }
 }
