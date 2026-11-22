@@ -5851,6 +5851,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Powered by NEAR Intents'**
   String get desktopSwapPoweredByNearIntents;
+
+  /// Desktop swap sheet: label of the address field for a swap out of QTC; network is the chain the token is paid out on
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient address on {network}'**
+  String desktopSwapRecipientAddressOn(String network);
+
+  /// Desktop swap sheet: label of the address field for a swap into QTC, and of that address on the review; network is the chain a refund returns on
+  ///
+  /// In en, this message translates to:
+  /// **'Refund address on {network}'**
+  String desktopSwapRefundAddressOn(String network);
+
+  /// Desktop swap sheet: checkbox that puts in the most QTC the account can swap
+  ///
+  /// In en, this message translates to:
+  /// **'Swap the maximum amount'**
+  String get desktopSwapMaximum;
+
+  /// Desktop swap sheet: who pays and the most they can put in; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{account} · {amount} available'**
+  String desktopSwapAccountAvailable(String account, String amount);
+
+  /// Desktop swap sheet: shown while the list of tokens is fetched
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tokens'**
+  String get desktopSwapLoadingTokens;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

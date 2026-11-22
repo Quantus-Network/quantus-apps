@@ -878,5 +878,10 @@
   "desktopSwapViewDeposit": "Lihat Deposit",
   "desktopSwapReceived": "{amount} diterima",
   "desktopSwapCompleteBody": "Swap {amount} Anda selesai.",
-  "desktopSwapPoweredByNearIntents": "Didukung oleh NEAR Intents"
+  "desktopSwapPoweredByNearIntents": "Didukung oleh NEAR Intents",
+  "desktopSwapRecipientAddressOn": "Alamat penerima di {network}",
+  "desktopSwapRefundAddressOn": "Alamat refund di {network}",
+  "desktopSwapMaximum": "Swap jumlah maksimum",
+  "desktopSwapAccountAvailable": "{account} · {amount} tersedia",
+  "desktopSwapLoadingTokens": "Memuat token"
 }

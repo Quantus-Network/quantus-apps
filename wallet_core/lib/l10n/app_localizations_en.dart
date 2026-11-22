@@ -3252,4 +3252,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopSwapPoweredByNearIntents => 'Powered by NEAR Intents';
+
+  @override
+  String desktopSwapRecipientAddressOn(String network) {
+    return 'Recipient address on $network';
+  }
+
+  @override
+  String desktopSwapRefundAddressOn(String network) {
+    return 'Refund address on $network';
+  }
+
+  @override
+  String get desktopSwapMaximum => 'Swap the maximum amount';
+
+  @override
+  String desktopSwapAccountAvailable(String account, String amount) {
+    return '$account · $amount available';
+  }
+
+  @override
+  String get desktopSwapLoadingTokens => 'Loading tokens';
 }
