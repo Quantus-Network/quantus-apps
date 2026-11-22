@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
@@ -11,6 +12,7 @@ import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
+import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
@@ -576,6 +578,85 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_opened(container), OpenedTransaction(row));
+    });
+
+    group('during a proposal lookup', () {
+      /// Clicks a notification about a proposal of Team whose lookup waits
+      /// for the completer handed back.
+      Future<({ProviderContainer container, Completer<void> lookup, MultisigProposal proposal})> clicked(
+        WidgetTester tester,
+      ) async {
+        final proposal = _proposal();
+        final lookup = Completer<void>();
+        final chain = FakeSendChain()
+          ..openProposals = [proposal]
+          ..indexedProposals[_hash] = _created(proposal)
+          ..holdProposalLookup = lookup;
+        final notifications = FakeNotificationPlugin();
+        final container = await _openWallet(tester, notifications, chain: chain, multisigs: [teamMultisig]);
+        notifications.click(_aboutTransaction(teamMultisig.accountId));
+        await tester.pumpAndSettle();
+        expect(_activeAccountId(container), teamMultisig.accountId);
+        return (container: container, lookup: lookup, proposal: proposal);
+      }
+
+      /// Back on Team, the lookup answers: what the click did is what is open.
+      Future<void> lookupAnswersWithNothingOpened(
+        WidgetTester tester,
+        ProviderContainer container,
+        Completer<void> lookup,
+      ) async {
+        expect(_activeAccountId(container), teamMultisig.accountId);
+        expect(container.read(sidebarSelectionProvider), SidebarSelection.account);
+        lookup.complete();
+        await tester.pumpAndSettle();
+        expect(container.read(openedActivityProvider), isNull);
+      }
+
+      testOnMac('a person who stays still gets the proposal, however slow the answer', (tester) async {
+        final (:container, :lookup, :proposal) = await clicked(tester);
+
+        lookup.complete();
+        await tester.pumpAndSettle();
+
+        expect(_opened(container), OpenedProposal(proposal));
+      });
+
+      testOnMac('going to Mining Rewards and back drops the click', (tester) async {
+        final (:container, :lookup, proposal: _) = await clicked(tester);
+        final selection = container.read(sidebarSelectionProvider.notifier);
+
+        await selection.select(SidebarSelection.miningRewards);
+        await tester.pumpAndSettle();
+        await selection.select(SidebarSelection.account);
+        await tester.pumpAndSettle();
+
+        await lookupAnswersWithNothingOpened(tester, container, lookup);
+      });
+
+      testOnMac('going to another account and back drops the click', (tester) async {
+        final (:container, :lookup, proposal: _) = await clicked(tester);
+        final selection = container.read(sidebarSelectionProvider.notifier);
+
+        await selection.showAccount(const RegularAccount(mainAccount));
+        await tester.pumpAndSettle();
+        await selection.showAccount(MultisigDisplayAccount(teamMultisig));
+        await tester.pumpAndSettle();
+
+        await lookupAnswersWithNothingOpened(tester, container, lookup);
+      });
+
+      testOnMac('opening a sheet and closing it drops the click', (tester) async {
+        final (:container, :lookup, proposal: _) = await clicked(tester);
+
+        await container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
+        await tester.pumpAndSettle();
+        Navigator.of(tester.element(find.byType(ShellSheetView))).pop();
+        await tester.pumpAndSettle();
+        expect(container.read(shellSheetProvider), isNull);
+
+        await lookupAnswersWithNothingOpened(tester, container, lookup);
+      });
     });
 
     testOnMac('a second click replaces a first one still waiting', (tester) async {

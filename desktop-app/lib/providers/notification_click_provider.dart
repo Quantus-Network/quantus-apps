@@ -77,20 +77,46 @@ class NotificationClick {
     await _ref.read(sidebarSelectionProvider.notifier).showAccount(account);
     if (hash == null || !_isShowing(click, accountId)) return;
 
-    final String? proposalId;
-    if (account.account is MultisigAccount) {
+    final leaving = _dropWhenLeft(click, accountId);
+    try {
+      await _openListed(click, accountId, hash, isMultisig: account.account is MultisigAccount);
+    } finally {
+      for (final subscription in leaving) {
+        subscription.close();
+      }
+    }
+  }
+
+  /// Drops [click] for good once its account is no longer in front: coming
+  /// back before a slow answer arrives does not bring the click back.
+  List<ProviderSubscription<Object?>> _dropWhenLeft(Object click, String accountId) {
+    void check() {
+      if (!identical(_current, click) || _isShowing(click, accountId)) return;
+      _current = null;
+      _cancelWait?.call();
+    }
+
+    return [
+      for (final provider in <ProviderListenable<Object?>>[
+        activeAccountProvider,
+        sidebarSelectionProvider,
+        shellSheetProvider,
+      ])
+        _ref.listen(provider, (_, _) => check()),
+    ];
+  }
+
+  /// Opens what the transaction [hash] was, once the lists hold it.
+  Future<void> _openListed(Object click, String accountId, String hash, {required bool isMultisig}) async {
+    String? proposalId;
+    if (isMultisig) {
       proposalId = await _proposalCreatedIn(hash);
       if (proposalId == null || !_isShowing(click, accountId)) return;
-    } else {
-      proposalId = null;
     }
 
     final listsLoaded = await _until(click, [
       activityViewProvider,
       openProposalsViewProvider,
-      activeAccountProvider,
-      sidebarSelectionProvider,
-      shellSheetProvider,
     ], () => _isShowing(click, accountId) ? _listsLoaded() : false);
     if (!listsLoaded) return;
 
