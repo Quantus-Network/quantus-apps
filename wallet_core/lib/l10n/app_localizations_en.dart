@@ -1721,6 +1721,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapSaveAddress => 'Save for future swaps';
 
   @override
+  String get swapSaveAddressFailed => 'Could not save the address.';
+
+  @override
   String get swapContinue => 'Continue to Swap';
 
   @override

@@ -1724,6 +1724,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapSaveAddress => 'Simpan untuk swap berikutnya';
 
   @override
+  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
+
+  @override
   String get swapContinue => 'Lanjutkan ke Swap';
 
   @override

@@ -3230,6 +3230,12 @@ abstract class AppLocalizations {
   /// **'Save for future swaps'**
   String get swapSaveAddress;
 
+  /// Error toast when the entered swap address could not be saved for future swaps
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the address.'**
+  String get swapSaveAddressFailed;
+
   /// Button that quotes the swap with the entered address
   ///
   /// In en, this message translates to:

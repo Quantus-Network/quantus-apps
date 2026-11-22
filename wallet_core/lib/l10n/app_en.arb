@@ -2507,6 +2507,10 @@
     "@swapSaveAddress": {
       "description": "Checkbox that saves the entered address"
     },
+    "swapSaveAddressFailed": "Could not save the address.",
+    "@swapSaveAddressFailed": {
+      "description": "Error toast when the entered swap address could not be saved for future swaps"
+    },
     "swapContinue": "Continue to Swap",
     "@swapContinue": {
       "description": "Button that quotes the swap with the entered address"
