@@ -3156,4 +3156,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopWalletRenameFailed => 'Tidak dapat mengganti nama dompet';
+
+  @override
+  String desktopWalletAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count akun');
+    return '$_temp0';
+  }
 }

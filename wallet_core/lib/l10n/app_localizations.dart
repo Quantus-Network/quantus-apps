@@ -5701,6 +5701,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t rename the wallet'**
   String get desktopWalletRenameFailed;
+
+  /// Desktop sidebar, read by screen readers: how many accounts a closed wallet holds, as the number on its heading says
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 account} other{{count} accounts}}'**
+  String desktopWalletAccountCount(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

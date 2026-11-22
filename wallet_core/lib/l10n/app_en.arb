@@ -4612,5 +4612,14 @@
     "desktopWalletRenameFailed": "Couldn't rename the wallet",
     "@desktopWalletRenameFailed": {
       "description": "Desktop sidebar: under a wallet heading for a few seconds when the name typed over it could not be saved; the heading keeps its name"
+    },
+    "desktopWalletAccountCount": "{count, plural, =1{1 account} other{{count} accounts}}",
+    "@desktopWalletAccountCount": {
+      "description": "Desktop sidebar, read by screen readers: how many accounts a closed wallet holds, as the number on its heading says",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
     }
 }

@@ -3151,4 +3151,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopWalletRenameFailed => 'Couldn\'t rename the wallet';
+
+  @override
+  String desktopWalletAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count accounts', one: '1 account');
+    return '$_temp0';
+  }
 }
