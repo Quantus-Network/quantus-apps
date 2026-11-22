@@ -2473,7 +2473,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopMenuAccount => 'Akun';
 
   @override
-  String get desktopMenuAddAccount => 'Tambah Akun…';
+  String get desktopMenuNewAccount => 'Akun Baru';
 
   @override
   String get desktopMenuView => 'Tampilan';

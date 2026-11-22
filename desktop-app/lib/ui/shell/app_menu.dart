@@ -126,7 +126,7 @@ List<PlatformMenu> buildAppMenus({
         PlatformMenuItemGroup(
           members: [
             PlatformMenuItem(
-              label: l10n.desktopMenuAddAccount,
+              label: l10n.desktopMenuNewAccount,
               shortcut: keysOf(AppCommand.addAccount),
               onSelected: opens(ShellSheet.addAccount),
             ),
