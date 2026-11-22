@@ -3158,6 +3158,51 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopWalletRenameFailed => 'Tidak dapat mengganti nama dompet';
 
   @override
+  String get desktopNotificationOpenAction => 'Buka';
+
+  @override
+  String desktopNotificationSentTitle(String amount) {
+    return '$amount terkirim';
+  }
+
+  @override
+  String desktopNotificationSentBody(String account) {
+    return 'Dari $account';
+  }
+
+  @override
+  String get desktopNotificationSendNotConfirmedTitle => 'Pengiriman belum terkonfirmasi';
+
+  @override
+  String desktopNotificationSendNotConfirmedBody(String amount, String account) {
+    return '$amount dari $account tidak terlihat di rantai tepat waktu. Mungkin gagal, atau hanya terlambat.';
+  }
+
+  @override
+  String get desktopNotificationSendFailedTitle => 'Pengiriman gagal';
+
+  @override
+  String desktopNotificationSendFailedBody(String amount, String account) {
+    return '$amount dari $account tidak terkirim.';
+  }
+
+  @override
+  String get desktopNotificationProposalCreatedTitle => 'Proposal dibuat';
+
+  @override
+  String desktopNotificationProposalCreatedBody(String amount, String multisig) {
+    return 'Kirim $amount dari $multisig';
+  }
+
+  @override
+  String get desktopNotificationProposalNotConfirmedTitle => 'Proposal belum terkonfirmasi';
+
+  @override
+  String desktopNotificationProposalNotConfirmedBody(String amount, String multisig) {
+    return 'Proposal untuk mengirim $amount dari $multisig tidak terlihat di rantai tepat waktu.';
+  }
+
+  @override
   String desktopWalletAccountCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count akun');
     return '$_temp0';
