@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_address_sheet.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
+import 'package:wallet_core/swap/swap_form.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_slippage_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
@@ -113,37 +114,31 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   }
 
   /// The amount typed, in base units of the side it is typed on.
-  BigInt _typed(SwapToken from, SwapToken to) =>
-      ref
-          .read(numberFormattingServiceProvider)
-          .parseAmount(_amountController.text, decimals: (_exactOutput ? to : from).decimals) ??
-      BigInt.zero;
+  BigInt _typed(SwapToken from, SwapToken to) => swapTypedAmount(
+    ref.read(numberFormattingServiceProvider),
+    _amountController.text,
+    from: from,
+    to: to,
+    exactOutput: _exactOutput,
+  );
 
   /// What [from] pays and [to] receives: as [quote] prices the amount typed,
   /// or until there is one the amount typed and the other at listed prices.
-  (BigInt, BigInt) _amounts(SwapToken from, SwapToken to, SwapQuote? quote) {
-    if (quote != null) return (quote.amountIn, quote.amountOut);
-    final typed = _typed(from, to);
-    return _exactOutput ? (swapEstimateOut(typed, to, from), typed) : (typed, swapEstimateOut(typed, from, to));
-  }
+  (BigInt, BigInt) _amounts(SwapToken from, SwapToken to, SwapQuote? quote) =>
+      swapFormAmountsOf(typed: _typed(from, to), from: from, to: to, exactOutput: _exactOutput, quote: quote);
 
   /// The swap the form describes once it has an amount and the external
   /// address; null until then.
-  SwapQuoteRequest? _request(SwapToken from, SwapToken to) {
-    final address = _address;
-    final typed = _typed(from, to);
-    if (address == null || typed == BigInt.zero) return null;
-    final own = ref.read(swapPreflightProvider)?.address ?? widget.account.accountId;
-    return (
-      from: from,
-      to: to,
-      amount: typed,
-      swapType: _exactOutput ? SwapType.exactOutput : SwapType.exactInput,
-      refundAddress: _swapOut ? own : address,
-      recipient: _swapOut ? address : own,
-      slippageBps: ref.read(swapSlippageBpsProvider),
-    );
-  }
+  SwapQuoteRequest? _request(SwapToken from, SwapToken to) => swapQuoteRequestOf(
+    from: from,
+    to: to,
+    swapOut: _swapOut,
+    typed: _typed(from, to),
+    exactOutput: _exactOutput,
+    address: _address,
+    own: ref.read(swapPreflightProvider)?.address ?? widget.account.accountId,
+    slippageBps: ref.read(swapSlippageBpsProvider),
+  );
 
   void _setDirection({required bool swapOut}) {
     if (swapOut == _swapOut) return;
@@ -207,15 +202,18 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       loadTokens: service.getFromTokens,
       paying: tapped.isQuantus == _swapOut,
     );
-    if (token == null || !mounted || token == tapped) return;
-    if (!token.isQuantus) {
+    if (token == null || !mounted) return;
+    final pick = swapTokenPickOf(tapped: tapped, picked: token, foreign: _foreign);
+    if (pick == null) return;
+    final foreign = pick.foreign;
+    if (foreign != null) {
       setState(() {
-        if (token.network != _foreign?.network) _address = null;
-        _foreign = token;
+        if (pick.clearsAddress) _address = null;
+        _foreign = foreign;
         _edits++;
       });
     }
-    if (token.isQuantus != tapped.isQuantus) _setDirection(swapOut: !_swapOut);
+    if (pick.flips) _setDirection(swapOut: !_swapOut);
   }
 
   /// Asks for the external address on [foreign]'s network, then reviews the
@@ -369,9 +367,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final max = funds?.max;
     final canPay = max ?? funds?.balance.value;
     final (amountIn, amountOut) = _amounts(from, to, quote);
-    final insufficient = canPay != null && amountIn > canPay;
     final address = _address;
     final request = _request(from, to);
+    final action = swapFormActionOf(
+      amountIn: amountIn,
+      amountOut: amountOut,
+      canPay: canPay,
+      hasAddress: address != null,
+    );
     return ScaffoldBaseBottomContent(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -398,20 +401,18 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
             const SizedBox(height: 24),
           ],
           QuantusButton.simple(
-            label: insufficient
-                ? l10n.sendLogicInsufficientBalance
-                : address != null
-                ? l10n.swapReviewTitle
-                : _swapOut
-                ? l10n.swapAddRecipientAddress
-                : l10n.swapAddRefundAddress,
+            label: switch (action.step) {
+              SwapFormStep.insufficient => l10n.sendLogicInsufficientBalance,
+              SwapFormStep.review => l10n.swapReviewTitle,
+              SwapFormStep.addAddress => _swapOut ? l10n.swapAddRecipientAddress : l10n.swapAddRefundAddress,
+            },
             onTap: address == null
                 ? () => _addAddress(from, to, foreign)
                 : request == null
                 ? null
                 : () => _review(request),
             isLoading: _quoting,
-            isDisabled: insufficient || address != null && (amountIn == BigInt.zero || amountOut == BigInt.zero),
+            isDisabled: !action.isEnabled,
           ),
         ],
       ),
