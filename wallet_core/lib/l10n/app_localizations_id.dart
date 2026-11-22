@@ -3162,4 +3162,19 @@ class AppLocalizationsId extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count akun');
     return '$_temp0';
   }
+
+  @override
+  String get importWalletAlreadyAdded => 'Dompet ini sudah ada di aplikasi';
+
+  @override
+  String get desktopMenuImportWallet => 'Impor Dompet…';
+
+  @override
+  String get desktopImportFinding => 'Mencari akun dompet ini';
+
+  @override
+  String get desktopImportFailed => 'Tidak dapat mengimpor dompet';
+
+  @override
+  String get desktopImportDone => 'Dompet diimpor';
 }

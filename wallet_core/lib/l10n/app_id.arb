@@ -854,5 +854,10 @@
   "desktopRecoveryPhraseWalletsSubtitle": "Lihat 24 kata dari setiap {count} dompet Anda",
   "desktopRecoveryPhraseChooseWallet": "Pilih dompet",
   "desktopWalletRenameFailed": "Tidak dapat mengganti nama dompet",
-  "desktopWalletAccountCount": "{count, plural, other{{count} akun}}"
+  "desktopWalletAccountCount": "{count, plural, other{{count} akun}}",
+  "importWalletAlreadyAdded": "Dompet ini sudah ada di aplikasi",
+  "desktopMenuImportWallet": "Impor Dompet…",
+  "desktopImportFinding": "Mencari akun dompet ini",
+  "desktopImportFailed": "Tidak dapat mengimpor dompet",
+  "desktopImportDone": "Dompet diimpor"
 }

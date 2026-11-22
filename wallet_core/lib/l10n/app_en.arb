@@ -4621,5 +4621,25 @@
           "type": "int"
         }
       }
+    },
+    "importWalletAlreadyAdded": "This wallet is already in the app",
+    "@importWalletAlreadyAdded": {
+      "description": "Import: the recovery phrase typed is that of a wallet already in the app; nothing was stored"
+    },
+    "desktopMenuImportWallet": "Import Wallet…",
+    "@desktopMenuImportWallet": {
+      "description": "Desktop: the item that opens the Import Wallet sheet, in the Account menu and the sidebar's Add Account menu"
+    },
+    "desktopImportFinding": "Finding this wallet's accounts",
+    "@desktopImportFinding": {
+      "description": "Desktop Import Wallet sheet: a line with a spinner while the wallet is saved and its accounts are found on the chain"
+    },
+    "desktopImportFailed": "Couldn't import the wallet",
+    "@desktopImportFailed": {
+      "description": "Desktop Import Wallet sheet: under the phrase when saving the wallet failed; the phrase stays to try again"
+    },
+    "desktopImportDone": "Wallet imported",
+    "@desktopImportDone": {
+      "description": "Desktop: a short note by the account name in the top bar after importing a wallet with the sidebar hidden"
     }
 }
