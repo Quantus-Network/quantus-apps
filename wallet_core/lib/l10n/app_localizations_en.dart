@@ -3273,4 +3273,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopSwapLoadingTokens => 'Loading tokens';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Remove Saved Address';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Saved addresses are unavailable: $error';
+  }
 }

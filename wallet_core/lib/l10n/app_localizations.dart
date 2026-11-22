@@ -5881,6 +5881,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading tokens'**
   String get desktopSwapLoadingTokens;
+
+  /// Desktop swap sheet: context menu item on a saved address that forgets it
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Saved Address'**
+  String get desktopSwapRemoveSavedAddress;
+
+  /// Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from
+  ///
+  /// In en, this message translates to:
+  /// **'Saved addresses are unavailable: {error}'**
+  String desktopSwapSavedAddressesUnavailable(String error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

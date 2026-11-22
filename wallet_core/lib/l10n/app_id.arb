@@ -883,5 +883,7 @@
   "desktopSwapRefundAddressOn": "Alamat refund di {network}",
   "desktopSwapMaximum": "Swap jumlah maksimum",
   "desktopSwapAccountAvailable": "{account} · {amount} tersedia",
-  "desktopSwapLoadingTokens": "Memuat token"
+  "desktopSwapLoadingTokens": "Memuat token",
+  "desktopSwapRemoveSavedAddress": "Hapus Alamat Tersimpan",
+  "desktopSwapSavedAddressesUnavailable": "Alamat tersimpan tidak tersedia: {error}"
 }

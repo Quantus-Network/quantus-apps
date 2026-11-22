@@ -3278,4 +3278,12 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopSwapLoadingTokens => 'Memuat token';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Hapus Alamat Tersimpan';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Alamat tersimpan tidak tersedia: $error';
+  }
 }

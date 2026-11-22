@@ -4833,5 +4833,18 @@
     "desktopSwapLoadingTokens": "Loading tokens",
     "@desktopSwapLoadingTokens": {
       "description": "Desktop swap sheet: shown while the list of tokens is fetched"
+    },
+    "desktopSwapRemoveSavedAddress": "Remove Saved Address",
+    "@desktopSwapRemoveSavedAddress": {
+      "description": "Desktop swap sheet: context menu item on a saved address that forgets it"
+    },
+    "desktopSwapSavedAddressesUnavailable": "Saved addresses are unavailable: {error}",
+    "@desktopSwapSavedAddressesUnavailable": {
+      "description": "Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
     }
 }
