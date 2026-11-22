@@ -13,6 +13,8 @@ import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
@@ -479,6 +481,101 @@ void main() {
 
       expect(_activeAccountId(container), mainAccount.accountId);
       expect(container.read(openedActivityProvider), isNull);
+    });
+
+    testOnMac('going to Mining Rewards while it loads: the click does not pull back', (tester) async {
+      final history = Completer<void>();
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_transfer()],
+        ];
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(tester, notifications, chain: chain);
+      chain.holdHistory = history;
+
+      notifications.click(_aboutTransaction(savingsAccount.accountId));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_activeAccountId(container), savingsAccount.accountId);
+
+      await container.read(sidebarSelectionProvider.notifier).select(SidebarSelection.miningRewards);
+      history.complete();
+      await tester.pumpAndSettle();
+
+      expect(container.read(sidebarSelectionProvider), SidebarSelection.miningRewards);
+      expect(container.read(openedActivityProvider), isNull);
+    });
+
+    testOnMac('a second click on the same account drops what the first was about', (tester) async {
+      final history = Completer<void>();
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_transfer()],
+        ];
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(tester, notifications, chain: chain);
+      chain.holdHistory = history;
+
+      notifications.click(_aboutTransaction(savingsAccount.accountId));
+      await tester.pump(const Duration(milliseconds: 100));
+      notifications.click(_aboutTransaction(savingsAccount.accountId, hash: '0xnotListed'));
+      await tester.pump(const Duration(milliseconds: 100));
+      history.complete();
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), savingsAccount.accountId);
+      expect(container.read(openedActivityProvider), isNull);
+    });
+
+    testOnMac('a proposal waits for the open proposals as well as the activity', (tester) async {
+      final proposal = _proposal();
+      final held = Completer<void>();
+      final chain = FakeSendChain()
+        ..holdOpenProposals = held
+        ..openProposals = [proposal]
+        ..indexedProposals[_hash] = _created(proposal);
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(tester, notifications, chain: chain, multisigs: [teamMultisig]);
+
+      notifications.click(_aboutTransaction(teamMultisig.accountId));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(_activeAccountId(container), teamMultisig.accountId);
+      expect(container.read(activityViewProvider).hasValue, isTrue);
+      expect(container.read(openedActivityProvider), isNull);
+
+      held.complete();
+      await tester.pumpAndSettle();
+
+      expect(_opened(container), OpenedProposal(proposal));
+    });
+
+    testOnMac('a click during a reload waits for the new rows', (tester) async {
+      final row = _transfer();
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_transfer(hash: '0xolder', id: 'older')],
+        ];
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(tester, notifications, chain: chain);
+      final history = Completer<void>();
+      chain
+        ..holdHistory = history
+        ..historyPages = [
+          [row],
+        ];
+      final params = activeAccountFilteredParams(container.read(activeAccountProvider).value, TransactionFilter.all)!;
+      unawaited(container.read(filteredPaginationControllerProviderFamily(params).notifier).loadingRefresh());
+      await tester.pump();
+      expect(container.read(activityViewProvider).value?.isReloading, isTrue);
+
+      notifications.click(_aboutTransaction(mainAccount.accountId));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(container.read(openedActivityProvider), isNull);
+
+      history.complete();
+      await tester.pumpAndSettle();
+
+      expect(_opened(container), OpenedTransaction(row));
     });
 
     testOnMac('a second click replaces a first one still waiting', (tester) async {

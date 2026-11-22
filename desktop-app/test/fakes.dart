@@ -554,6 +554,9 @@ class FakeSendChain {
   List<MultisigProposal> openProposals = const [];
   List<MultisigProposal> pastProposals = const [];
 
+  /// When set, a read of open proposals waits for it.
+  Completer<void>? holdOpenProposals;
+
   /// The multisigs whose open proposals were read, in order.
   final openProposalReads = <String>[];
 
@@ -612,6 +615,7 @@ class _FakeMultisigService extends Fake implements MultisigService {
   @override
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
     chain.openProposalReads.add(msig.accountId);
+    await chain.holdOpenProposals?.future;
     return chain.openProposals;
   }
 
