@@ -521,6 +521,14 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  _scene('import_wallet_opened', (tester) async {
+    await _openAccounts(tester);
+    await ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(accountManagerProvider).openImportWallet();
+    await tester.pumpAndSettle();
+  });
+
   _scene('import_wallet_phrase', (tester) async {
     await _openImport(tester, phrase: _newPhrase);
   });

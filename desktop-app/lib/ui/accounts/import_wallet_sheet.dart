@@ -87,6 +87,7 @@ class _ImportWalletSheetState extends ConsumerState<ImportWalletSheet> {
           RecoveryPhraseInput(
             controller: _controller,
             height: _fieldHeight,
+            autofocus: true,
             canPaste: !_isImporting,
             onChanged: () => setState(() {}),
           ),

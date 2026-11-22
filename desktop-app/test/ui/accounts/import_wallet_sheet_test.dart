@@ -189,6 +189,37 @@ void main() {
       expect(_canImport(tester), isTrue);
     });
 
+    testOnMac('the phrase field has the focus as soon as the sheet opens', (tester) async {
+      await _pump(tester);
+
+      await _openSheet(tester);
+
+      expect(tester.widget<EditableText>(_field).focusNode.hasFocus, isTrue);
+    });
+
+    testOnMac('what is typed right after it opens goes into the field', (tester) async {
+      await _pump(tester);
+      await _openSheet(tester);
+
+      tester.testTextInput.enterText(_phrase);
+      await tester.pump();
+
+      expect(tester.widget<EditableText>(_field).controller.text, _phrase);
+      expect(find.text('12 WORDS'), findsOneWidget);
+    });
+
+    testOnMac('Esc from the focused field closes it and nothing is stored', (tester) async {
+      final device = await _pump(tester);
+      await _openSheet(tester);
+      expect(tester.widget<EditableText>(_field).focusNode.hasFocus, isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      expect(_sheet, findsNothing);
+      expect(device.storage.mnemonics.containsKey(3), isFalse);
+    });
+
     testOnMac('Cancel closes it and nothing is stored', (tester) async {
       final device = await _pump(tester);
       await _openSheet(tester);

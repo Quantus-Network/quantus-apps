@@ -29,6 +29,7 @@ class RecoveryPhraseInput extends ConsumerWidget {
     required this.onChanged,
     required this.canPaste,
     required this.height,
+    this.autofocus = false,
   });
 
   final ObscuringTextEditingController controller;
@@ -38,6 +39,9 @@ class RecoveryPhraseInput extends ConsumerWidget {
 
   final bool canPaste;
   final double height;
+
+  /// Whether the field takes the focus when it first appears.
+  final bool autofocus;
 
   /// The count of the words typed so far.
   static const wordCountKey = Key('import-wallet-word-count');
@@ -69,6 +73,7 @@ class RecoveryPhraseInput extends ConsumerWidget {
       controller: controller,
       hint: l10n.importWalletHint,
       height: height,
+      autofocus: autofocus,
       onChanged: (_) => onChanged(),
       footer: Row(
         children: [
