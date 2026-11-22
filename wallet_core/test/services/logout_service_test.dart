@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,7 +10,9 @@ import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/providers/notification_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
+import 'package:wallet_core/services/transaction_submission_service.dart';
 
 import '../fakes.dart';
 
@@ -39,6 +43,64 @@ NotificationData _shown(String id) => NotificationData(
   message: 'From Account',
   accountName: 'Account',
   timestamp: DateTime.now(),
+);
+
+/// The indexer: it holds [holds], and each search waits for [held] when set.
+class _Indexer extends Fake implements ChainHistoryService {
+  TransactionEvent? holds;
+  Completer<void>? held;
+  int reads = 0;
+
+  @override
+  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
+    reads++;
+    await held?.future;
+    return holds;
+  }
+}
+
+typedef _Watched = ({WalletTestBed bed, _Indexer indexer, ProviderContainer container});
+
+/// Submits a send through the real submission service, which then watches
+/// the indexer for it.
+Future<void> _submit(ProviderContainer container, {String id = 'tx-1'}) async {
+  final pending = PendingTransactionEvent(
+    tempId: id,
+    from: 'qzFrom',
+    to: 'qzTo',
+    amount: BigInt.one,
+    fee: BigInt.zero,
+    timestamp: DateTime(2026),
+    blockNumber: 1,
+  );
+  container.read(pendingTransactionsProvider.notifier).add(pending);
+  await container
+      .read(transactionSubmissionServiceProvider)
+      .submitAndTrackTransaction(() async => Uint8List.fromList([1]), pending);
+}
+
+ReversibleTransferEvent _reversibleFound() => ReversibleTransferEvent(
+  id: 'found',
+  from: 'qzFrom',
+  to: 'qzTo',
+  amount: BigInt.one,
+  timestamp: DateTime(2026),
+  txId: 'tx',
+  status: ReversibleTransferStatus.SCHEDULED,
+  scheduledAt: DateTime.now().add(const Duration(hours: 3)),
+  blockNumber: 2,
+  blockHash: '0xblock',
+);
+
+TransferEvent _transferFound() => TransferEvent(
+  id: 'found',
+  from: 'qzFrom',
+  to: 'qzTo',
+  amount: BigInt.one,
+  timestamp: DateTime(2026),
+  fee: BigInt.zero,
+  blockNumber: 2,
+  blockHash: '0xblock',
 );
 
 void main() {
@@ -200,6 +262,90 @@ void main() {
       // What comes after it in the reset still ran.
       expect(container.read(pendingTransactionsProvider), isEmpty);
       container.dispose();
+    });
+  });
+
+  group('a send still being watched at a reset', () {
+    /// A wallet that has just submitted a send, which the indexer does not
+    /// hold yet. A first search has run, or is held by [held].
+    Future<_Watched> watching(WidgetTester tester, {Completer<void>? held}) async {
+      final bed = WalletTestBed();
+      final indexer = _Indexer()..held = held;
+      final container = ProviderContainer(
+        overrides: [...bed.overrides, chainHistoryServiceProvider.overrideWithValue(indexer)],
+      );
+      container.read(notificationProvider);
+      await tester.pump();
+      await _submit(container);
+      await tester.pump();
+      return (bed: bed, indexer: indexer, container: container);
+    }
+
+    void expectNothingNotified(_Watched watched) {
+      expect(watched.bed.localNotifications.shown, isEmpty);
+      expect(watched.container.read(notificationProvider), isEmpty);
+      expect(watched.container.read(notificationProvider.notifier).getScheduledNotificationIds(), isEmpty);
+    }
+
+    for (final (kind, found) in [('reversible', _reversibleFound), ('plain', _transferFound)]) {
+      testWidgets('a $kind send found by the next poll after it notifies nothing', (tester) async {
+        final watched = await watching(tester);
+
+        await watched.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        final readsAtTheReset = watched.indexer.reads;
+        watched.indexer.holds = found();
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pump();
+
+        expect(watched.indexer.reads, readsAtTheReset);
+        expectNothingNotified(watched);
+        await tester.pump();
+        watched.container.dispose();
+      });
+
+      testWidgets('a $kind send whose search was in flight notifies nothing', (tester) async {
+        final held = Completer<void>();
+        final watched = await watching(tester, held: held);
+
+        await watched.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        watched.indexer.holds = found();
+        held.complete();
+        await tester.pump();
+
+        expectNothingNotified(watched);
+        await tester.pump();
+        watched.container.dispose();
+      });
+    }
+
+    testWidgets('without a reset, a send found by a later poll still notifies', (tester) async {
+      final watched = await watching(tester);
+
+      watched.indexer.holds = _reversibleFound();
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump();
+
+      expect(watched.bed.localNotifications.shown, hasLength(1));
+      expect(watched.container.read(notificationProvider.notifier).getScheduledNotificationIds(), hasLength(1));
+      watched.container.dispose();
+    });
+
+    testWidgets('a new send after the reset is watched and notifies', (tester) async {
+      final watched = await watching(tester);
+      await watched.container.read(logoutServiceProvider).logout();
+      watched.container.read(notificationProvider);
+      await tester.pump();
+
+      await _submit(watched.container, id: 'tx-after');
+      await tester.pump();
+      watched.indexer.holds = _reversibleFound();
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump();
+
+      expect(watched.bed.localNotifications.shown, hasLength(1));
+      watched.container.dispose();
     });
   });
 }

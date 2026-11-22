@@ -254,14 +254,15 @@ class FakeUserApproval implements UserApproval {
   }
 }
 
-/// The system's notifications: counts what is cancelled, and fails to when
-/// told to.
+/// The system's notifications: notes what is shown or scheduled and what is
+/// cancelled, and fails to cancel when told to.
 class FakeLocalNotifications implements LocalNotifications {
+  final shown = <NotificationData>[];
   int cancelAllCalls = 0;
   Object? cancelAllError;
 
   @override
-  Future<void> showOrScheduleNotification(NotificationData notification) async {}
+  Future<void> showOrScheduleNotification(NotificationData notification) async => shown.add(notification);
 
   @override
   Future<void> cancelAll() async {

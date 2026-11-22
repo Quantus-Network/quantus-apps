@@ -16,6 +16,10 @@ class PendingTransactionPollingService {
   /// from the pending sends without being marked found or failed.
   static const timeout = Duration(minutes: 5);
 
+  /// Moves on with [stopAll]: a search already running then answers for a
+  /// session that has ended, and what it finds is dropped.
+  int _session = 0;
+
   PendingTransactionPollingService(this._ref);
 
   /// Polls the indexer until [pendingTx] is found on-chain. Uses
@@ -60,6 +64,7 @@ class PendingTransactionPollingService {
   }
 
   Future<void> _search(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) async {
+    final session = _session;
     try {
       final historyService = _ref.read(chainHistoryServiceProvider);
       final hash = pendingTx.extrinsicHash;
@@ -80,6 +85,8 @@ class PendingTransactionPollingService {
           blockHeightAfter: pendingTx.blockNumber,
         );
       }
+
+      if (session != _session) return;
 
       if (result != null) {
         quantusPrint('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
@@ -103,8 +110,10 @@ class PendingTransactionPollingService {
     }
   }
 
-  /// Cancels all active polling timers (e.g. on logout).
+  /// Cancels all active polling timers and drops what a search still running
+  /// finds (e.g. on logout).
   void stopAll() {
+    _session++;
     for (final timer in _timers.values) {
       timer.cancel();
     }

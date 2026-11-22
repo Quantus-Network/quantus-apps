@@ -22,9 +22,11 @@ import 'package:wallet_core/services/telemetry.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
-  final PendingTransactionPollingService _poller;
 
-  TransactionSubmissionService(this._ref) : _poller = PendingTransactionPollingService(_ref);
+  TransactionSubmissionService(this._ref);
+
+  /// The shared poller, which a wallet reset stops.
+  PendingTransactionPollingService get _poller => _ref.read(pendingTransactionPollingServiceProvider);
 
   /// Signs first so the pending record carries the extrinsic's own block
   /// number (the poller's search floor), then broadcasts the signed bytes.
@@ -579,16 +581,7 @@ class TransactionSubmissionService {
       },
     );
   }
-
-  void dispose() => _poller.dispose();
 }
 
 // Provider for the service
-final transactionSubmissionServiceProvider = Provider<TransactionSubmissionService>((ref) {
-  final service = TransactionSubmissionService(ref);
-
-  // Clean up when provider is disposed
-  ref.onDispose(() => service.dispose());
-
-  return service;
-});
+final transactionSubmissionServiceProvider = Provider<TransactionSubmissionService>(TransactionSubmissionService.new);
