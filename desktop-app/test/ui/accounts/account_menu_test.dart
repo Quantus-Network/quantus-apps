@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton, PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -151,6 +152,17 @@ void main() {
         'Disconnect Account…',
       ]);
       expect(_activeId(tester), 'qzMain');
+    });
+
+    testOnMac('a row\'s menu shows no shortcuts, which the menu bar keeps', (tester) async {
+      await _pump(tester);
+      await _rightClick(tester, _sidebarRow('Savings'));
+
+      expect(find.descendant(of: _menu, matching: find.byIcon(CupertinoIcons.command)), findsNothing);
+      expect(find.descendant(of: _menu, matching: find.byIcon(CupertinoIcons.shift)), findsNothing);
+      final items = _accountMenuItems(tester);
+      expect(items.singleWhere((item) => item.label == 'Get Info').shortcut, isNotNull);
+      expect(items.singleWhere((item) => item.label == 'Copy Address').shortcut, isNotNull);
     });
 
     testOnMac('a Control-click opens the menu and does not switch account', (tester) async {

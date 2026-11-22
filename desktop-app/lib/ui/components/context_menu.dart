@@ -5,26 +5,23 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
 import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// One item of a context menu.
 class ContextMenuItem {
-  const ContextMenuItem(this.label, {required this.onSelected, this.keys, this.isDestructive = false});
+  const ContextMenuItem(this.label, {required this.onSelected, this.isDestructive = false});
 
   final String label;
   final VoidCallback onSelected;
-
-  /// The item's shortcut, shown at its end; the menu bar answers it.
-  final KeyCombo? keys;
 
   /// Drawn in ember: the item removes or ends something.
   final bool isDestructive;
 }
 
 /// Opens a context menu of [items] where [child] is right-clicked, or, on
-/// the Mac, Control-clicked, as the HIG has every app do.
+/// the Mac, Control-clicked, as the HIG has every app do. Its items show no
+/// shortcuts: the HIG keeps those to the app's main menus.
 ///
 /// A null item is a separator between groups. The items are asked for when
 /// the menu opens, so they are what holds at that moment.
@@ -253,12 +250,7 @@ class _ContextMenuState extends State<_ContextMenu> {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => _choose(index),
-        child: MenuPanelRow(
-          label: item.label,
-          keys: item.keys,
-          isDestructive: item.isDestructive,
-          isHighlighted: index == _highlighted,
-        ),
+        child: MenuPanelRow(label: item.label, isDestructive: item.isDestructive, isHighlighted: index == _highlighted),
       ),
     );
   }
