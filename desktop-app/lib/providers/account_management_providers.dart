@@ -456,9 +456,18 @@ class AccountManager {
         _ref.invalidate(activeAccountProvider);
       case Account():
         final service = _ref.read(accountsServiceProvider);
-        switch (disconnectPlanOf(account, _ref.read(accountsProvider).requireValue)) {
-          case DisconnectAccount() || DisconnectHardware():
+        final accounts = _ref.read(accountsProvider).requireValue;
+        switch (disconnectPlanOf(account, accounts)) {
+          case DisconnectAccount():
             await service.removeAccount(account);
+          case DisconnectHardware():
+            await service.removeAccount(account);
+            // A hardware wallet goes with its last account, and its index
+            // goes to the next wallet added.
+            final walletRemains = accounts.any(
+              (a) => a.walletIndex == account.walletIndex && a.accountId != account.accountId,
+            );
+            if (!walletRemains) _ref.read(keptOpenWalletsProvider.notifier).forget(account.walletIndex);
           case DisconnectWallet(:final walletIndex):
             await service.removeWallet(walletIndex);
             _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
