@@ -14,6 +14,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
+import 'package:wallet_core/swap/swap_review.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
 /// Shows a dry quote's terms. Confirming takes a live quote; when it
@@ -179,21 +180,11 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final quote = _quote;
     final from = quote.fromToken;
-    final to = quote.toToken;
-    final quantus = from.isQuantus ? from : to;
-    final foreign = from.isQuantus ? to : from;
-    final exactOutput = quote.swapType == SwapType.exactOutput;
-    String amount(BigInt value, SwapToken token) => formatSwapAmount(l10n, fmt, value, token);
-    Widget row(String label, String value, {bool mono = false}) =>
-        SwapDetailRow(label: label, value: value, monoLabel: true, monoValue: mono);
-
     final sendsDeposit = _sendsDeposit(ref.watch(swapPreflightProvider));
     final fee = sendsDeposit ? ref.watch(swapDepositFeeProvider(_feeKey)) : null;
     final spendable = sendsDeposit ? ref.watch(effectiveBalanceProviderFamily(widget.account.accountId)).value : null;
-    final feeValue = fee?.value;
-    final insufficient = feeValue != null && spendable != null && quote.amountIn > swapMaxIn(spendable, feeValue);
     final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
-    final blocked = !available || sendsDeposit && (feeValue == null || spendable == null || insufficient);
+    final review = swapReviewOf(l10n, fmt, quote, available: available, fee: fee, spendable: spendable);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.swapReviewTitle),
@@ -204,44 +195,25 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
             const SizedBox(height: 24),
             SwapAmountsCard(quote: quote, payLabel: l10n.swapYouPay, receiveLabel: l10n.swapYouReceive),
             const SizedBox(height: 32),
-            row(
-              l10n.swapRate,
-              l10n.swapRateLabel(
-                quantus.symbol,
-                fmt.formatAmount(swapQuoteRate(quote), decimals: foreign.decimals),
-                foreign.symbol,
-              ),
-            ),
-            SwapQuoteFeeRows(quote: quote),
-            if (_swapOut)
-              row(l10n.swapReviewRecipient, AddressFormattingService.formatAddress(quote.recipient), mono: true)
-            else
-              row(l10n.swapRefundTo, AddressFormattingService.formatAddress(quote.refundAddress), mono: true),
-            if (fee != null)
-              row(
-                l10n.swapReviewNetworkFee,
-                fee.hasError ? l10n.swapReviewFeeUnavailable : (feeValue == null ? '…' : amount(feeValue, from)),
-              ),
-            row(
-              l10n.swapReviewSlippage,
-              l10n.swapReviewSlippageValue(
-                exactOutput
-                    ? amount(quote.amountIn - quote.minAmountIn, from)
-                    : amount(quote.amountOut - quote.minAmountOut, to),
-                slippagePercentLabel(quote.slippageBps),
-              ),
-            ),
-            row(l10n.swapReviewGuaranteedMinimum, amount(quote.minAmountOut, to)),
-            if (quote.refundFee > BigInt.zero) row(l10n.swapReviewRefundFee, amount(quote.refundFee, from)),
-            if (exactOutput) ...[
+            for (final row in review.rows)
+              switch (row) {
+                SwapRowText(:final label, :final value) => SwapDetailRow(label: label, value: value, monoLabel: true),
+                SwapRowAddress(:final label, :final address) => SwapDetailRow(
+                  label: label,
+                  value: AddressFormattingService.formatAddress(address),
+                  monoLabel: true,
+                  monoValue: true,
+                ),
+              },
+            if (review.unusedRefunded) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewUnusedRefunded, style: text.caption.copyWith(color: colors.textMuted)),
             ],
-            if (fee != null && fee.hasError) ...[
+            if (review.feeFailed) ...[
               const SizedBox(height: 16),
               SwapFeeFailedRow(onRetry: () => ref.invalidate(swapDepositFeeProvider(_feeKey))),
             ],
-            if (insufficient) ...[
+            if (review.insufficient) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewInsufficient(from.symbol), style: text.caption.copyWith(color: colors.semanticEmber)),
             ],
@@ -260,7 +232,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
               label: _swapOut ? l10n.swapReviewConfirm : l10n.swapContinue,
               onTap: _confirm,
               isLoading: _confirming,
-              isDisabled: blocked,
+              isDisabled: review.blocked,
             ),
             const SizedBox(height: 4),
             QuantusButton.simple(
