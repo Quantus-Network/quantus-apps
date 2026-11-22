@@ -497,6 +497,9 @@ class FakeSendChain {
   /// When set, looking a proposal up by its hash fails with this.
   Object? proposalLookupError;
 
+  /// When set, looking a proposal up by its hash waits for it.
+  Completer<void>? holdProposalLookup;
+
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
   /// proposal, expiring at block 1284220.
@@ -649,6 +652,7 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
 
   @override
   Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
+    await chain.holdProposalLookup?.future;
     if (chain.proposalLookupError case final error?) throw error;
     return chain.indexedProposals[extrinsicHash];
   }
