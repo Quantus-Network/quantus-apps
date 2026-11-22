@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 
@@ -14,6 +16,10 @@ class FakeNotificationPlugin implements NotificationPlugin {
 
   /// Whether macOS lets the app show notifications, when asked or read.
   bool grants;
+
+  /// Holds macOS's answer to the prompt until completed, as a person who has
+  /// not answered yet does.
+  Completer<bool>? heldAnswer;
 
   /// What reading the permission throws, when it fails.
   Object? permissionCheckError;
@@ -45,6 +51,8 @@ class FakeNotificationPlugin implements NotificationPlugin {
   @override
   Future<bool> requestMacOSPermission() async {
     permissionRequests++;
+    final held = heldAnswer;
+    if (held != null) return held.future;
     return grants;
   }
 

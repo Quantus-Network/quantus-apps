@@ -159,7 +159,7 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
   void _unavailable(Object error) {
     quantusPrint('Desktop notifications are unavailable: $error');
     ref.read(telemetryProvider).sendError('desktop_notifications_unavailable', error: error);
-    state = NotificationsUnavailable('$error');
+    state = NotificationsUnavailable(error is StateError ? error.message : '$error');
   }
 
   /// Shows [notification] now. Callers check [state] first: showing one the
