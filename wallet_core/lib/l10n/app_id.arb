@@ -853,5 +853,16 @@
   "desktopDisconnectWalletDeclined": "Menghapus {wallet} memerlukan persetujuan Anda",
   "desktopRecoveryPhraseWalletsSubtitle": "Lihat 24 kata dari setiap {count} dompet Anda",
   "desktopRecoveryPhraseChooseWallet": "Pilih dompet",
-  "desktopWalletRenameFailed": "Tidak dapat mengganti nama dompet"
+  "desktopWalletRenameFailed": "Tidak dapat mengganti nama dompet",
+  "desktopNotificationOpenAction": "Buka",
+  "desktopNotificationSentTitle": "{amount} terkirim",
+  "desktopNotificationSentBody": "Dari {account}",
+  "desktopNotificationSendNotConfirmedTitle": "Pengiriman belum terkonfirmasi",
+  "desktopNotificationSendNotConfirmedBody": "{amount} dari {account} tidak terlihat di rantai tepat waktu. Mungkin gagal, atau hanya terlambat.",
+  "desktopNotificationSendFailedTitle": "Pengiriman gagal",
+  "desktopNotificationSendFailedBody": "{amount} dari {account} tidak terkirim.",
+  "desktopNotificationProposalCreatedTitle": "Proposal dibuat",
+  "desktopNotificationProposalCreatedBody": "Kirim {amount} dari {multisig}",
+  "desktopNotificationProposalNotConfirmedTitle": "Proposal belum terkonfirmasi",
+  "desktopNotificationProposalNotConfirmedBody": "Proposal untuk mengirim {amount} dari {multisig} tidak terlihat di rantai tepat waktu."
 }

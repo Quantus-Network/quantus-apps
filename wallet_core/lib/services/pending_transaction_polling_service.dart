@@ -11,7 +11,10 @@ class PendingTransactionPollingService {
   final Ref _ref;
   final Map<String, Timer> _timers = {};
   static const _searchInterval = Duration(seconds: 5);
-  static const _timeout = Duration(minutes: 5);
+
+  /// How long a send is watched for. Not found by then, it is removed
+  /// from the pending sends without being marked found or failed.
+  static const timeout = Duration(minutes: 5);
 
   PendingTransactionPollingService(this._ref);
 
@@ -39,7 +42,7 @@ class PendingTransactionPollingService {
     final startTime = DateTime.now();
 
     final timer = Timer.periodic(_searchInterval, (_) {
-      if (DateTime.now().difference(startTime) > _timeout) {
+      if (DateTime.now().difference(startTime) > timeout) {
         quantusPrint('[PendingTxPoller] Timeout for ${pendingTx.id}, deferring to reconciliation');
         stopPolling(pendingTx.id);
         _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);

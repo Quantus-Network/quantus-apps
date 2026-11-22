@@ -15,8 +15,11 @@ const double trafficLightsInset = 84;
 /// lights in a strip of this height, so the two must change together.
 const double shellHeaderHeight = 52;
 
-/// Asks the macOS window to do what its title bar would have done, now that
-/// the app's header covers it. Served by `MainFlutterWindow.swift`.
+/// Asks the window for what Flutter cannot do itself: on macOS, what its title
+/// bar would have done, now that the app's header covers it; on every
+/// platform, coming to the front. Served by `MainFlutterWindow.swift`, and on
+/// Windows and Linux by the runner (`window_focus.cpp`, `my_application.cc`),
+/// which serve [bringToFront] only.
 class WindowChrome {
   const WindowChrome();
 
@@ -28,4 +31,8 @@ class WindowChrome {
   /// Zooms or minimises the window, whichever the system is set to do for a
   /// double-click on a title bar.
   Future<void> titleBarDoubleClick() => channel.invokeMethod<void>('titleBarDoubleClick');
+
+  /// Shows the window, minimized or hidden as it may be, in front of the
+  /// other apps' windows.
+  Future<void> bringToFront() => channel.invokeMethod<void>('bringToFront');
 }

@@ -5701,6 +5701,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t rename the wallet'**
   String get desktopWalletRenameFailed;
+
+  /// Desktop notification on Linux: the action that opens the wallet when the notification is clicked
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get desktopNotificationOpenAction;
+
+  /// Desktop notification title: a send from this computer was confirmed by the chain; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Sent {amount}'**
+  String desktopNotificationSentTitle(String amount);
+
+  /// Desktop notification body: the account the confirmed send came from
+  ///
+  /// In en, this message translates to:
+  /// **'From {account}'**
+  String desktopNotificationSentBody(String account);
+
+  /// Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it
+  ///
+  /// In en, this message translates to:
+  /// **'Send not confirmed'**
+  String get desktopNotificationSendNotConfirmedTitle;
+
+  /// Desktop notification body: a send not seen on the chain in time; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} from {account} wasn’t seen on the chain in time. It may have failed, or only be late.'**
+  String desktopNotificationSendNotConfirmedBody(String amount, String account);
+
+  /// Desktop notification title: a send from this computer failed
+  ///
+  /// In en, this message translates to:
+  /// **'Send failed'**
+  String get desktopNotificationSendFailedTitle;
+
+  /// Desktop notification body: a send that failed; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} from {account} was not sent.'**
+  String desktopNotificationSendFailedBody(String amount, String account);
+
+  /// Desktop notification title: a multisig proposal made on this computer was created on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal created'**
+  String get desktopNotificationProposalCreatedTitle;
+
+  /// Desktop notification body: what the created proposal sends, and from which multisig; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Send {amount} from {multisig}'**
+  String desktopNotificationProposalCreatedBody(String amount, String multisig);
+
+  /// Desktop notification title: a multisig proposal made on this computer was not seen on the chain in time
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal not confirmed'**
+  String get desktopNotificationProposalNotConfirmedTitle;
+
+  /// Desktop notification body: a proposal not seen on the chain in time; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'The proposal to send {amount} from {multisig} wasn’t seen on the chain in time.'**
+  String desktopNotificationProposalNotConfirmedBody(String amount, String multisig);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

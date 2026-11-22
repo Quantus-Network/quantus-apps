@@ -81,24 +81,19 @@ void main() {
     expect(polling.starts, 0);
   });
 
-  testOnMac('a window that is minimized or hidden pauses the polling; shown again, it resumes and catches up at once', (
-    tester,
-  ) async {
+  testOnMac('a window that is minimized or hidden keeps polling, so that what the wallet watches for is still '
+      'noticed', (tester) async {
     final polling = FakeHistoryPollingManager();
     await _openWallet(tester, polling: polling);
 
     await _window(tester, AppLifecycleState.hidden);
 
-    expect(polling.calls, ['pause']);
+    expect(polling.calls, isEmpty);
 
     await _window(tester, AppLifecycleState.inactive);
-
-    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
-
-    // Taking the focus as well changes nothing more.
     await _window(tester, AppLifecycleState.resumed);
 
-    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+    expect(polling.calls, isEmpty);
   });
 
   testOnMac('a window that only loses the focus keeps polling', (tester) async {
@@ -146,7 +141,7 @@ void main() {
     expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
   });
 
-  testOnMac('the network coming back while the window is hidden resumes nothing until it is shown', (tester) async {
+  testOnMac('the network coming back while the window is hidden resumes the polling at once', (tester) async {
     final polling = FakeHistoryPollingManager();
     final network = FakeNetwork();
     await _openWallet(tester, polling: polling, network: network);
@@ -157,9 +152,9 @@ void main() {
     network.goOnline();
     await tester.pumpAndSettle();
 
-    // Paused once, however many reasons there are to be.
-    expect(polling.calls, ['pause']);
+    expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
 
+    // Shown again, it is already caught up.
     await _window(tester, AppLifecycleState.inactive);
 
     expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
@@ -201,10 +196,13 @@ void main() {
 
   testOnMac('a catch-up that fails leaves the app running, the polling resumed', (tester) async {
     final polling = FakeHistoryPollingManager()..refreshError = StateError('the node did not answer');
-    await _openWallet(tester, polling: polling);
+    final network = FakeNetwork();
+    await _openWallet(tester, polling: polling, network: network);
 
-    await _window(tester, AppLifecycleState.hidden);
-    await _window(tester, AppLifecycleState.inactive);
+    network.goOffline();
+    await tester.pumpAndSettle();
+    network.goOnline();
+    await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
     expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
