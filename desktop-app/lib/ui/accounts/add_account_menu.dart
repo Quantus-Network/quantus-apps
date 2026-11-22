@@ -8,12 +8,14 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 /// several software [wallets] opens a submenu of them, so no screen has to
 /// list every wallet just to add an account (a Cold Wallet is not among
 /// them), then Import Wallet… after a separator, then, when
-/// [offersMultisigs], Manage Multisigs… after another.
+/// [offersMultisigs], Create Multisig…, disabled unless [canCreateMultisig],
+/// and Manage Multisigs… after another.
 List<ContextMenuItem?> addAccountMenuItems(
   AppLocalizations l10n,
   List<SoftwareWallet> wallets,
   AccountManager manager, {
   required bool offersMultisigs,
+  required bool canCreateMultisig,
 }) {
   void create(SoftwareWallet wallet) => unawaited(manager.createAccount(wallet.walletIndex));
 
@@ -32,6 +34,10 @@ List<ContextMenuItem?> addAccountMenuItems(
     ContextMenuItem(l10n.desktopMenuImportWallet, onSelected: () => unawaited(manager.openImportWallet())),
     if (offersMultisigs) ...[
       null,
+      if (canCreateMultisig)
+        ContextMenuItem(l10n.desktopMenuCreateMultisig, onSelected: () => unawaited(manager.openCreateMultisig()))
+      else
+        ContextMenuItem.disabled(l10n.desktopMenuCreateMultisig),
       ContextMenuItem(l10n.desktopMenuManageMultisigs, onSelected: () => unawaited(manager.openManageMultisigs())),
     ],
   ];

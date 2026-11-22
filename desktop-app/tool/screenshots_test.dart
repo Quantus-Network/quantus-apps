@@ -28,6 +28,7 @@ import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
@@ -42,6 +43,7 @@ import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -569,6 +571,49 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  _scene('create_multisig', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+  });
+
+  _scene('create_multisig_signer_error', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(1));
+    await _typeMultisigSigner(tester, _root.accountId);
+    await tester.tap(find.byKey(CreateMultisigSheet.addSignerKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_many_smallest_window', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_review', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+    await tester.tap(find.byKey(CreateMultisigSheet.reviewKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_creating', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+    await tester.tap(find.byKey(CreateMultisigSheet.reviewKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(CreateMultisigSheet.createKey));
+    await tester.pumpAndSettle();
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+    await tester.pump();
+    await tester.pump(TerminalLine.busyTurn);
+  });
+
+  _scene('create_multisig_unavailable_menu', (tester) async {
+    await _openAccounts(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    await container.read(activeAccountProvider.notifier).switchActiveAccount(const RegularAccount(_encrypted));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add Account'));
+    await tester.pumpAndSettle();
+  });
+
   _scene('account_disconnect', (tester) async {
     await _openInfo(tester, _savings);
     await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
@@ -893,6 +938,37 @@ Future<void> _openManageMultisigs(
     tester.element(find.byType(DesktopShell)),
   ).read(accountManagerProvider).openManageMultisigs();
   await tester.pumpAndSettle();
+}
+
+/// Signers of a real address's length, for Create Multisig.
+const _multisigSigners = [
+  'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+  'qzH3tYc6MpW9kLn2XsVb8QrJd5FaZe7UoGi1Tn4BwK6mRe',
+  'qzF5kVn2QxT9mLc7WbR3yHs6JdPa8ZeUo1GiNt4EwK2rXv',
+  'qzL9sRd4YpV2nKx8TcW5mHq7JbGa3ZeUo6FiBt1NwE8kPy',
+  'qzM4bKw7ZtR2nHc9VxQ5sLd8JfGa3YeUo6TiPn1EwB7kSu',
+];
+
+Future<void> _typeMultisigSigner(WidgetTester tester, String address) async {
+  await tester.enterText(
+    find.descendant(of: find.byKey(CreateMultisigSheet.signerFieldKey), matching: find.byType(EditableText)),
+    address,
+  );
+  await tester.pump();
+}
+
+/// Opens Create Multisig on the first account, with [signers] added.
+Future<void> _openCreateMultisig(WidgetTester tester, {required Iterable<String> signers}) async {
+  await _openAccounts(tester);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openCreateMultisig();
+  await tester.pumpAndSettle();
+  for (final signer in signers) {
+    await _typeMultisigSigner(tester, signer);
+    await tester.tap(find.byKey(CreateMultisigSheet.addSignerKey));
+    await tester.pumpAndSettle();
+  }
 }
 
 /// Opens the window of a wallet with every kind of account. Its clipboard

@@ -15,6 +15,7 @@ import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
@@ -485,6 +486,9 @@ class _FakeSubstrateService extends Fake implements SubstrateService {
     chain.quotes.add(chain.describe(call));
     return ExtrinsicFeeData(fee: await chain.fee(), blockHash: '0x', blockNumber: 1);
   }
+
+  @override
+  Future<BigInt> queryBalance(String address) async => device!.balance;
 }
 
 /// A transfer as Send builds it: who is paid and how much. An [amount] of
@@ -581,6 +585,31 @@ class FakeSendChain {
   Future<List<MultisigAccount>> Function() discoverMultisigs = () async => const [];
   int discoverReads = 0;
 
+  /// The address a new multisig of [signerCount] signers needing [threshold]
+  /// approvals gets at [nonce].
+  static String newMultisigAddress(int signerCount, int threshold, BigInt nonce) =>
+      'qzNew${signerCount}of$threshold#$nonce';
+
+  /// What working out a new multisig's address answers; it may throw.
+  Future<MultisigCreationParams> Function(List<String> signers, int threshold) resolveMultisig =
+      (signers, threshold) async => MultisigCreationParams(
+        nonce: BigInt.zero,
+        address: newMultisigAddress(signers.length, threshold, BigInt.zero),
+      );
+
+  /// The addresses set aside each time a new multisig's address was worked
+  /// out.
+  final reservedMultisigReads = <Set<String>>[];
+
+  /// The multisigs the indexer holds.
+  final indexedMultisigs = <String>{};
+
+  /// What handing a new multisig over answers; it may throw.
+  Future<Uint8List> Function() submitMultisig = () async => Uint8List.fromList(const [1, 2, 3]);
+
+  /// Every new multisig handed over.
+  final createdMultisigs = <({String creator, List<String> signers, int threshold, BigInt? nonce})>[];
+
   /// A multisig's open proposals, and its past ones, as the indexer gives
   /// them.
   List<MultisigProposal> openProposals = const [];
@@ -625,6 +654,47 @@ class _FakeMultisigService extends Fake implements MultisigService {
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) {
     chain.discoverReads++;
     return chain.discoverMultisigs();
+  }
+
+  @override
+  Future<MultisigCreationParams> resolveMultisigCreationParams({
+    required List<String> signers,
+    required int threshold,
+    Set<String> reservedAddresses = const {},
+    BigInt? startNonce,
+    Future<bool> Function(String address)? isAddressTaken,
+    Future<String> Function({required List<String> signers, required int threshold, required BigInt nonce})?
+    predictAddress,
+    int maxAttempts = 64,
+  }) {
+    chain.reservedMultisigReads.add(reservedAddresses);
+    return chain.resolveMultisig(signers, threshold);
+  }
+
+  @override
+  Future<String> predictMultisigAddress({required List<String> signers, required int threshold, BigInt? nonce}) async =>
+      FakeSendChain.newMultisigAddress(signers.length, threshold, nonce ?? BigInt.zero);
+
+  @override
+  Future<bool> isMultisigIndexed(String address) async => chain.indexedMultisigs.contains(address);
+
+  @override
+  Multisig buildCreateMultisigCall({required List<String> signers, required int threshold, required BigInt nonce}) {
+    final call = const multisig_pallet.Txs().createMultisig(signers: const [], threshold: threshold, nonce: nonce);
+    chain._calls[call] = (recipient: 'a new multisig', amount: null);
+    return call;
+  }
+
+  @override
+  Future<Uint8List> submitCreateMultisigExtrinsic({
+    required Account creator,
+    required List<String> signers,
+    required int threshold,
+    BigInt? nonce,
+  }) async {
+    final hash = await chain.submitMultisig();
+    chain.createdMultisigs.add((creator: creator.accountId, signers: signers, threshold: threshold, nonce: nonce));
+    return hash;
   }
 
   @override
