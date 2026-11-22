@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -17,7 +19,9 @@ class _Balances extends FakeBalancesService {
   }
 }
 
-/// The chain pricing every call at [fee], or unable to when there is none.
+/// The chain pricing every call at [fee], or not answering when there is
+/// none: the kind of failure a provider retries on its own unless told not
+/// to, which an [Error] is not.
 class _Substrate extends Fake implements SubstrateService {
   _Substrate(this.fee);
 
@@ -28,7 +32,7 @@ class _Substrate extends Fake implements SubstrateService {
   Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
     asked.add(account);
     final fee = this.fee;
-    if (fee == null) throw StateError('chain down');
+    if (fee == null) throw TimeoutException('the chain did not answer');
     return ExtrinsicFeeData(fee: fee, blockHash: '0x00', blockNumber: 1);
   }
 }
@@ -64,16 +68,18 @@ void main() {
     },
   );
 
-  test('a fee the chain cannot give is an error, asked for once', () async {
+  test('a fee the chain cannot give is an error, asked for once: it is not retried on its own', () async {
     final balances = _Balances();
-    final container = containerWith(_Substrate(null), balances);
+    final substrate = _Substrate(null);
+    final container = containerWith(substrate, balances);
     final key = swapDepositFeeProvider((account, amount));
     final kept = container.listen(key, (_, _) {}, onError: (_, _) {});
     addTearDown(kept.close);
 
-    await expectLater(container.read(key.future), throwsStateError);
+    await expectLater(container.read(key.future), throwsA(isA<TimeoutException>()));
     await Future<void>.delayed(const Duration(milliseconds: 600));
     expect(container.read(key).hasError, isTrue);
     expect(balances.transfers, hasLength(1));
+    expect(substrate.asked, hasLength(1));
   });
 }
