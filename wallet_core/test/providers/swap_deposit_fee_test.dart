@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
 import '../fakes.dart';
@@ -17,10 +17,20 @@ class _Balances extends FakeBalancesService {
   }
 }
 
-/// The chain unable to price a call.
-class _SubstrateDown extends FakeSubstrateService {
+/// The chain pricing every call at [fee], or unable to when there is none.
+class _Substrate extends Fake implements SubstrateService {
+  _Substrate(this.fee);
+
+  final BigInt? fee;
+  final asked = <Account>[];
+
   @override
-  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async => throw StateError('chain down');
+  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
+    asked.add(account);
+    final fee = this.fee;
+    if (fee == null) throw StateError('chain down');
+    return ExtrinsicFeeData(fee: fee, blockHash: '0x00', blockNumber: 1);
+  }
 }
 
 void main() {
@@ -41,7 +51,7 @@ void main() {
   test(
     "the deposit's fee is the chain's for sending the amount from the account, its own address standing in",
     () async {
-      final substrate = FakeSubstrateService(fee: BigInt.from(1200000000));
+      final substrate = _Substrate(BigInt.from(1200000000));
       final balances = _Balances();
       final container = containerWith(substrate, balances);
       final key = swapDepositFeeProvider((account, amount));
@@ -50,14 +60,13 @@ void main() {
 
       expect(await container.read(key.future), BigInt.from(1200000000));
       expect(balances.transfers, [(account.accountId, amount)]);
-      expect(substrate.lastFeeAccount, account);
-      expect(substrate.feeCalls, 1);
+      expect(substrate.asked, [account]);
     },
   );
 
   test('a fee the chain cannot give is an error, asked for once', () async {
     final balances = _Balances();
-    final container = containerWith(_SubstrateDown(), balances);
+    final container = containerWith(_Substrate(null), balances);
     final key = swapDepositFeeProvider((account, amount));
     final kept = container.listen(key, (_, _) {}, onError: (_, _) {});
     addTearDown(kept.close);
