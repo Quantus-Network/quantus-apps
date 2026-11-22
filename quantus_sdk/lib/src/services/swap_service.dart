@@ -465,6 +465,15 @@ class SwapService {
     await prefs.setStringList(key, addresses.take(_maxSavedAddresses).toList());
   }
 
+  /// Forgets [address] on [network]; nothing changes when it was not saved.
+  Future<void> removeSavedAddress(String network, String address) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _savedAddressesStorageKey(network);
+    final saved = prefs.getStringList(key);
+    if (saved == null || !saved.contains(address)) return;
+    await prefs.setStringList(key, saved.where((a) => a != address).toList());
+  }
+
   Future<List<String>> getSavedAddresses(String network) async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getStringList(_savedAddressesStorageKey(network)) ?? [];

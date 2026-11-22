@@ -572,6 +572,31 @@ void main() {
       expect(await service.getSavedAddresses('SOL'), ['sol1']);
       expect(await service.getSavedAddresses('BTC'), isEmpty);
     });
+
+    test('removes one address from its network, leaving the others and the other networks as they were', () async {
+      SharedPreferences.setMockInitialValues({});
+      final service = _service((_) async => throw StateError('no HTTP expected'));
+      await service.saveAddress('ETH', '0xa');
+      await service.saveAddress('ETH', '0xb');
+      await service.saveAddress('SOL', '0xa');
+
+      await service.removeSavedAddress('ETH', '0xa');
+
+      expect(await service.getSavedAddresses('ETH'), ['0xb']);
+      expect(await service.getSavedAddresses('SOL'), ['0xa']);
+    });
+
+    test('removing an address that is not saved changes nothing', () async {
+      SharedPreferences.setMockInitialValues({});
+      final service = _service((_) async => throw StateError('no HTTP expected'));
+      await service.saveAddress('ETH', '0xa');
+
+      await service.removeSavedAddress('ETH', '0xzz');
+      await service.removeSavedAddress('BTC', '0xa');
+
+      expect(await service.getSavedAddresses('ETH'), ['0xa']);
+      expect(await service.getSavedAddresses('BTC'), isEmpty);
+    });
   });
 
   group('SwapToken', () {
