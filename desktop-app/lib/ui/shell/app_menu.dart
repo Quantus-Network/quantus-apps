@@ -28,10 +28,12 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// items that open a sheet.
 ///
 /// New Account adds an account to one of [newAccountWallets]: a plain item
-/// with one, a submenu with several. Its shortcut sits on
-/// [newAccountShortcutWallet], and acts on the wallet of the account active
-/// when its turn comes ([onNewAccountInActiveWallet]); with none, no item has
-/// it. It is disabled with the items that open a sheet.
+/// with one, a submenu with several. A chosen item adds to the wallet it names
+/// ([onNewAccount]). Its shortcut sits on [newAccountShortcutWallet]; with
+/// none, no item has it. In the menus that answer a key press,
+/// [onNewAccountByKey] is given and that item acts on it instead, for the
+/// wallet of the account active when its turn comes. It is disabled with the
+/// items that open a sheet.
 ///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
 /// the first nine have a number to be reached by ([ShortcutBindings.account]).
@@ -43,7 +45,7 @@ List<PlatformMenu> buildAppMenus({
   required List<SoftwareWallet> newAccountWallets,
   required int? newAccountShortcutWallet,
   required ValueChanged<int> onNewAccount,
-  required VoidCallback onNewAccountInActiveWallet,
+  required VoidCallback? onNewAccountByKey,
   required List<DisplayAccount> accounts,
   required ShortcutBindings? shortcuts,
   required bool isSidebarVisible,
@@ -73,11 +75,7 @@ List<PlatformMenu> buildAppMenus({
     return PlatformMenuItem(
       label: label,
       shortcut: hasShortcut ? keysOf(AppCommand.addAccount) : null,
-      onSelected: !canOpenSheet
-          ? null
-          : hasShortcut
-          ? onNewAccountInActiveWallet
-          : () => onNewAccount(walletIndex),
+      onSelected: !canOpenSheet ? null : (hasShortcut ? onNewAccountByKey : null) ?? () => onNewAccount(walletIndex),
     );
   }
 
