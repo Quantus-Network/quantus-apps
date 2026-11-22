@@ -3187,6 +3187,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
+  }
+
+  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal dibuat';
 
   @override

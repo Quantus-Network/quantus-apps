@@ -3182,6 +3182,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount from $account didn’t finish sending. Part of it may have gone through.';
+  }
+
+  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal created';
 
   @override
