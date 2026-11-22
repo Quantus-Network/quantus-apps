@@ -8,6 +8,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -226,6 +227,94 @@ class AccountManager {
     }
     await _ref.read(settingsServiceProvider).setWalletName(walletIndex, name.isEmpty ? null : name);
     _ref.invalidate(walletNameProvider(walletIndex));
+  }
+
+  /// Adds a Transparent account to the software wallet at [walletIndex],
+  /// after the navigation asked for before, one at a time so two never take
+  /// the same slot. It becomes the active account with its name ready to be
+  /// typed over. One that cannot be added says so on the active account.
+  Future<void> createAccount(int walletIndex) =>
+      _ref.read(shellNavigationProvider.notifier).run(() => _create(walletIndex));
+
+  /// [createAccount] in the wallet of the account active when its turn comes,
+  /// as ⌘N is meant for the account a switch still being saved ends on. With
+  /// no software wallet to add to, as on a Cold Wallet account, nothing is done.
+  Future<void> createInActiveWallet() => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final activeId = _ref.read(activeAccountProvider).value?.account.accountId;
+    final WalletGroup? wallet;
+    try {
+      // From storage: the list may still be reloading after the last one added.
+      final accounts = await _ref.read(accountsServiceProvider).getAccounts();
+      final multisigs = _ref.read(multisigAccountsProvider).value ?? const <MultisigAccount>[];
+      wallet = groupWallets(
+        accounts: accounts,
+        multisigs: multisigs,
+      ).wallets.where((w) => activeId != null && w.contains(activeId)).firstOrNull;
+    } catch (e) {
+      _noteNotAdded(e);
+      return;
+    }
+    if (wallet == null || wallet.kind != WalletKind.software) {
+      quantusPrint('The active account is in no software wallet; no account is added.');
+      return;
+    }
+    await _create(wallet.walletIndex);
+  });
+
+  Future<void> _create(int walletIndex) async {
+    // A sheet is for the account it opened on, so nothing moves under it.
+    if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return;
+    final l10n = _ref.read(l10nProvider);
+    final service = _ref.read(accountsServiceProvider);
+    final Account account;
+    try {
+      final accounts = await service.getAccounts();
+      if (accounts.any((a) => a.walletIndex == walletIndex && a.accountType == AccountType.keystone)) {
+        throw StateError('Wallet $walletIndex is a hardware wallet');
+      }
+      final draft = await service.createNewAccount(walletIndex: walletIndex);
+      account = draft.copyWith(name: l10n.createAccountDefaultName(accounts.length + 1));
+      await service.addAccount(account);
+    } catch (e) {
+      _noteNotAdded(e);
+      return;
+    }
+    if (!_ref.mounted) return;
+
+    _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
+    // Before the list reloads: the switch reads which wallet is being left.
+    await _ref.read(sidebarSelectionProvider.notifier).showInStep(RegularAccount(account));
+    if (!_ref.mounted) return;
+    _ref.invalidate(accountsProvider);
+    unawaited(registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId));
+
+    // A switch that failed has said so, and the account is there all the same.
+    if (_ref.read(activeAccountProvider).value?.account.accountId != account.accountId) return;
+    if (_ref.read(sidebarVisibleProvider)) {
+      _ref.read(sidebarRenameProvider.notifier).start(RenameAccount(account.accountId));
+    } else {
+      _ref
+          .read(accountInfoTargetProvider.notifier)
+          .set(AccountInfoTarget(account.accountId, start: AccountInfoStart.rename));
+      _ref.read(shellSheetProvider.notifier).openInStep(ShellSheet.accountInfo);
+    }
+  }
+
+  void _noteNotAdded(Object error) {
+    quantusPrint('Adding an account failed: $error');
+    if (!_ref.mounted) return;
+    final active = _ref.read(activeAccountProvider).value?.account;
+    if (active == null) return;
+    _ref
+        .read(accountNoteProvider.notifier)
+        .show(
+          AccountNote(
+            accountId: active.accountId,
+            message: _ref.read(l10nProvider).createAccountErrorCouldNotAdd,
+            isError: true,
+          ),
+        );
   }
 
   /// Does [action] on the account active once the navigation asked for
