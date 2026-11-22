@@ -254,9 +254,20 @@ class FakeUserApproval implements UserApproval {
   }
 }
 
-class _NoLocalNotifications implements LocalNotifications {
+/// The system's notifications: counts what is cancelled, and fails to when
+/// told to.
+class FakeLocalNotifications implements LocalNotifications {
+  int cancelAllCalls = 0;
+  Object? cancelAllError;
+
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async {}
+
+  @override
+  Future<void> cancelAll() async {
+    cancelAllCalls++;
+    if (cancelAllError case final error?) throw error;
+  }
 }
 
 class _FixedRemoteConfigService extends RemoteConfigService {
@@ -285,6 +296,7 @@ class WalletTestBed {
   final hdWallet = FakeHdWalletService();
   final telemetry = FakeTelemetry();
   final pushRegistration = FakePushRegistration();
+  final localNotifications = FakeLocalNotifications();
   final userApproval = FakeUserApproval();
   final FakeSubstrateService substrate;
   final FakeAccountDiscoveryService discovery;
@@ -296,7 +308,7 @@ class WalletTestBed {
     ...walletCoreOverrides(
       telemetry: (_) => telemetry,
       pushRegistration: (_) => pushRegistration,
-      localNotifications: (_) => _NoLocalNotifications(),
+      localNotifications: (_) => localNotifications,
       userApproval: (_) => userApproval,
     ),
     settingsServiceProvider.overrideWithValue(settings),

@@ -162,6 +162,11 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     state = NotificationsUnavailable(error is StateError ? error.message : '$error');
   }
 
+  /// Nothing to cancel: the desktop schedules no notification, and a click on
+  /// one already shown about a wiped wallet only brings the window forward.
+  @override
+  Future<void> cancelAll() async {}
+
   /// Shows [notification] now. Callers check [state] first: showing one the
   /// system does not allow fails.
   @override
