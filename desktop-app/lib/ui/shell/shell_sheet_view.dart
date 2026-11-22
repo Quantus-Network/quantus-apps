@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/import_wallet_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/manage_multisigs_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/import_wallet_page.dart' show ImportWallet;
 import 'package:quantus_desktop_wallet/ui/receive/receive_sheet.dart';
@@ -38,7 +39,7 @@ class ShellSheetView extends ConsumerWidget {
 
   bool get _actsOnAccount => switch (sheet) {
     ShellSheet.receive || ShellSheet.send || ShellSheet.propose || ShellSheet.swap => true,
-    ShellSheet.settings || ShellSheet.accountInfo || ShellSheet.importWallet => false,
+    ShellSheet.settings || ShellSheet.accountInfo || ShellSheet.importWallet || ShellSheet.manageMultisigs => false,
   };
 
   Widget? get _content => switch (sheet) {
@@ -48,7 +49,8 @@ class ShellSheetView extends ConsumerWidget {
     ShellSheet.swap ||
     ShellSheet.settings ||
     ShellSheet.accountInfo ||
-    ShellSheet.importWallet => null,
+    ShellSheet.importWallet ||
+    ShellSheet.manageMultisigs => null,
   };
 
   @override
@@ -75,6 +77,7 @@ class ShellSheetView extends ConsumerWidget {
             ShellSheet.accountInfo => const AccountInfoSheet(),
             ShellSheet.send || ShellSheet.propose => const SendSheet(),
             ShellSheet.importWallet => ImportWalletSheet(importWallet: importWallet!),
+            ShellSheet.manageMultisigs => const ManageMultisigsSheet(),
             _ => _TitledSheet(
               title: sheetTitle(ref.watch(l10nProvider), sheet),
               actsOnAccount: _actsOnAccount,

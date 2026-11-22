@@ -12,6 +12,7 @@ import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/utils/managed_multisigs.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
@@ -307,6 +308,27 @@ class AccountManager {
   /// Opens the Import Wallet sheet. Like any sheet, it does not open over
   /// another.
   Future<void> openImportWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.importWallet);
+
+  /// Opens the Manage Multisigs sheet. Like any sheet, it does not open over
+  /// another.
+  Future<void> openManageMultisigs() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.manageMultisigs);
+
+  /// Adds [multisig] under the lowest unused default name, after the
+  /// navigation asked for before, one at a time so two never take the same
+  /// name. A write that fails is thrown.
+  Future<void> addMultisig(MultisigAccount multisig) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final saved = await _ref.read(settingsServiceProvider).getMultisigAccounts();
+    if (!_ref.mounted) return;
+    final name = nextDefaultMultisigName(_ref.read(l10nProvider), saved);
+    await _ref.read(multisigAccountsProvider.notifier).add(multisig.copyWith(name: name));
+  });
+
+  /// Removes [multisig] from this app, after the navigation asked for
+  /// before. A write that fails is thrown.
+  Future<void> removeMultisig(MultisigAccount multisig) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (_ref.mounted) await disconnect(multisig);
+  });
 
   /// Shows the wallet of [root], just imported, once its sheet has closed:
   /// a field taking the focus under a sheet would lose it as the sheet left.

@@ -349,6 +349,17 @@ class FakeWalletStorage extends FakeSettingsService {
   @override
   Future<List<MultisigAccount>> getMultisigAccounts() async => List.of(multisigStore);
 
+  /// When set, adding or removing a multisig waits for this first.
+  Completer<void>? multisigWriteGate;
+
+  @override
+  Future<void> addMultisigAccount(MultisigAccount account) async {
+    await multisigWriteGate?.future;
+    _checkWrite();
+    if (multisigStore.any((m) => m.accountId == account.accountId)) throw Exception('Multisig already added');
+    multisigStore.add(account);
+  }
+
   @override
   Future<void> updateMultisigAccount(MultisigAccount account) async {
     _checkWrite();
@@ -359,6 +370,7 @@ class FakeWalletStorage extends FakeSettingsService {
 
   @override
   Future<void> removeMultisigAccount(String accountId) async {
+    await multisigWriteGate?.future;
     _checkWrite();
     multisigStore.removeWhere((m) => m.accountId == accountId);
     if (activeAccount?.account.accountId == accountId) activeAccount = RegularAccount(accounts.first);
@@ -564,6 +576,11 @@ class FakeSendChain {
   /// The pages of history read, by their number, in order.
   final historyReads = <int>[];
 
+  /// What the indexer answers when asked for the multisigs an account signs
+  /// for, and how many times it was asked.
+  Future<List<MultisigAccount>> Function() discoverMultisigs = () async => const [];
+  int discoverReads = 0;
+
   /// A multisig's open proposals, and its past ones, as the indexer gives
   /// them.
   List<MultisigProposal> openProposals = const [];
@@ -603,6 +620,12 @@ class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.chain);
 
   final FakeSendChain chain;
+
+  @override
+  Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) {
+    chain.discoverReads++;
+    return chain.discoverMultisigs();
+  }
 
   @override
   Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
@@ -802,6 +825,9 @@ class FakeWalletDevice {
   /// What every transparent account holds.
   BigInt balance = oneToken;
 
+  /// What the app is told it may offer.
+  RemoteConfigModel remoteConfig = RemoteConfigModel.defaults;
+
   /// The deposits, in tokens, an Encrypted account can spend, and the tokens
   /// of change still on their way back to it. With no deposits it holds one
   /// token and nothing to spend.
@@ -836,9 +862,7 @@ class FakeWalletDevice {
     ...chain.overrides(substrate: false),
     accountDiscoveryServiceProvider.overrideWithValue(_FakeAccountDiscoveryService(this)),
     logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
-    remoteConfigProvider.overrideWith(
-      (ref) => RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults)),
-    ),
+    remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(FakeRemoteConfigService(remoteConfig))),
     balanceProviderFamily.overrideWith((ref, accountId) => balance),
     encryptedBalanceProvider.overrideWith(
       (ref, walletIndex) =>

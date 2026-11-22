@@ -116,3 +116,29 @@ class _TerminalSpinnerState extends State<TerminalSpinner> with SingleTickerProv
     builder: (context, _) => Text(TerminalLine.busyFaces[_face.value], style: widget.style),
   );
 }
+
+/// What is happening during a wait, with the terminal's spinner unless the
+/// system asks for less motion.
+class TerminalBusyLine extends StatelessWidget {
+  const TerminalBusyLine({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = context.themeTextV3.dataAddress.copyWith(color: context.colorsV3.textMuted);
+
+    return Semantics(
+      liveRegion: true,
+      label: label,
+      excludeSemantics: true,
+      child: Row(
+        spacing: 8,
+        children: [
+          if (!MediaQuery.disableAnimationsOf(context)) TerminalSpinner(style: style),
+          Flexible(child: Text(label, style: style)),
+        ],
+      ),
+    );
+  }
+}

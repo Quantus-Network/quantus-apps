@@ -25,6 +25,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
@@ -106,6 +107,7 @@ class Sidebar extends ConsumerWidget {
       ref.read(l10nProvider),
       ref.read(softwareWalletsProvider),
       ref.read(accountManagerProvider),
+      offersMultisigs: ref.read(remoteConfigProvider).enableMultisig,
     );
     final box = row.findRenderObject()! as RenderBox;
     unawaited(showPullDownMenu(row, anchor: box.localToGlobal(Offset.zero) & box.size, items: items));
