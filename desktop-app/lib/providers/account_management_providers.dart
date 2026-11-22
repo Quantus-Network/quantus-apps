@@ -9,6 +9,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
@@ -368,6 +369,7 @@ class AccountManager {
             await service.removeAccount(account);
           case DisconnectWallet(:final walletIndex):
             await service.removeWallet(walletIndex);
+            _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
           case null:
             throw StateError('${account.accountId} cannot be disconnected');
         }

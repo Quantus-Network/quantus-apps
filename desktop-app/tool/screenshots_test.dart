@@ -21,6 +21,7 @@ import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
@@ -564,6 +565,16 @@ void main() {
     await _rightClickInSidebar(tester, 'WALLET 2');
   });
 
+  _scene('wallets_closed', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+  });
+
+  _scene('wallets_one_opened', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('WALLET 2')));
+    await tester.pumpAndSettle();
+  });
+
   _scene('account_rename_inline', (tester) async {
     await _openAccounts(tester);
     await _rightClickInSidebar(tester, 'Savings');
@@ -767,7 +778,7 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallet
 
 /// Opens the window of a wallet with every kind of account. Its clipboard
 /// takes whatever is copied.
-Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0}) async {
+Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0, bool walletsLeftOpen = true}) async {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
@@ -780,6 +791,14 @@ Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0}) async {
   ]);
   device.storage.mnemonics[2] = _phrase;
   device.storage.multisigStore.add(_infoTeam);
+  if (walletsLeftOpen) {
+    device.storage.strings[KeptOpenWalletsNotifier.settingsKey] = [
+      0,
+      1,
+      2,
+      for (var i = 0; i < moreWallets; i++) 3 + i,
+    ].join(',');
+  }
   await _open(
     tester,
     device,

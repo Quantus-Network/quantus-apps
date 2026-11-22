@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
@@ -60,6 +61,7 @@ Future<FakeWalletDevice> _pump(WidgetTester tester, {List<Account>? accounts}) a
     device.storage.accounts.addAll([_cold, _trading]);
     device.storage.mnemonics[2] = 'trading words';
     device.storage.multisigStore.add(_team);
+    device.storage.strings[KeptOpenWalletsNotifier.settingsKey] = '0,1,2';
   }
   await pumpShell(
     tester,
