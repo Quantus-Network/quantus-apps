@@ -6,7 +6,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
-import 'package:wallet_core/utils/accounts_grouping.dart';
+import 'package:wallet_core/utils/account_menu.dart';
 import 'package:resonance_network_wallet/v2/components/menu_row.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
@@ -83,27 +83,25 @@ class AccountMenuScreen extends ConsumerWidget {
     );
   }
 
-  /// Hardware accounts can always be disconnected. Software accounts can be
-  /// disconnected, except the last remaining account of the primary wallet
-  /// (index 0) — that wallet can only be removed by logging out.
-  static bool canDisconnect(WidgetRef ref, Account account) {
-    if (account.accountType == AccountType.keystone) return true;
-    if (account.accountType != AccountType.local) return false;
-    if (account.walletIndex == 0) return !_isLastInWallet(ref, account);
-    return true;
-  }
+  static DisconnectPlan? _planOf(WidgetRef ref, Account account) =>
+      disconnectPlanOf(account, ref.read(accountsProvider).requireValue);
 
-  static bool _isLastInWallet(WidgetRef ref, Account account) {
-    final all = ref.read(accountsProvider).value ?? <Account>[];
-    final siblings = all.where((a) => a.walletIndex == account.walletIndex && a.accountType != AccountType.encrypted);
-    return siblings.length <= 1;
-  }
+  /// Whether [account] can be disconnected; see [disconnectPlanOf].
+  static bool canDisconnect(WidgetRef ref, Account account) => _planOf(ref, account) != null;
 
   static Future<void> disconnect(BuildContext context, WidgetRef ref, Account account) {
-    if (account.accountType == AccountType.keystone) {
-      return _onDisconnectHardware(context, ref, account);
-    }
-    return _onDisconnectSoftware(context, ref, account);
+    return switch (_planOf(ref, account)) {
+      DisconnectHardware() => _onDisconnectHardware(context, ref, account),
+      DisconnectAccount() => _onDisconnectAccount(context, ref, account),
+      DisconnectWallet(:final walletIndex, :final walletNumber) => _onDisconnectWallet(
+        context,
+        ref,
+        account,
+        walletIndex: walletIndex,
+        walletNumber: walletNumber,
+      ),
+      null => throw StateError('${account.accountId} cannot be disconnected'),
+    };
   }
 
   static Future<void> _onDisconnectHardware(BuildContext context, WidgetRef ref, Account account) async {
@@ -120,28 +118,30 @@ class AccountMenuScreen extends ConsumerWidget {
     await _performRemoveAccount(context, ref, account);
   }
 
-  /// Disconnecting a software account removes just that account, unless it is
-  /// the last account in its wallet — in which case it removes the entire
-  /// wallet (and its recovery phrase) after a second confirmation.
-  static Future<void> _onDisconnectSoftware(BuildContext context, WidgetRef ref, Account account) async {
+  static Future<void> _onDisconnectAccount(BuildContext context, WidgetRef ref, Account account) async {
     final l10n = ref.read(l10nProvider);
-    final allAccounts = ref.read(accountsProvider).value ?? <Account>[];
+    final confirmed = await showConfirmActionSheet(
+      context,
+      title: l10n.accountMenuDisconnectAccountTitle,
+      message: l10n.accountMenuDisconnectAccountMessage(account.name),
+      confirmLabel: l10n.accountMenuDisconnect,
+      cancelLabel: l10n.commonCancel,
+      isDestructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    await _performRemoveAccount(context, ref, account);
+  }
 
-    if (!_isLastInWallet(ref, account)) {
-      final confirmed = await showConfirmActionSheet(
-        context,
-        title: l10n.accountMenuDisconnectAccountTitle,
-        message: l10n.accountMenuDisconnectAccountMessage(account.name),
-        confirmLabel: l10n.accountMenuDisconnect,
-        cancelLabel: l10n.commonCancel,
-        isDestructive: true,
-      );
-      if (!confirmed || !context.mounted) return;
-      await _performRemoveAccount(context, ref, account);
-      return;
-    }
-
-    final walletNumber = softwareWalletNumber(allAccounts, account.walletIndex) ?? account.walletIndex;
+  /// The last account of its wallet takes the entire wallet (and its recovery
+  /// phrase) with it, after a second confirmation.
+  static Future<void> _onDisconnectWallet(
+    BuildContext context,
+    WidgetRef ref,
+    Account account, {
+    required int walletIndex,
+    required int walletNumber,
+  }) async {
+    final l10n = ref.read(l10nProvider);
     final confirmWallet = await showConfirmActionSheet(
       context,
       title: l10n.accountMenuDisconnectWalletTitle(walletNumber),
@@ -162,7 +162,7 @@ class AccountMenuScreen extends ConsumerWidget {
     );
     if (!confirmDelete || !context.mounted) return;
 
-    await _performRemoveWallet(context, ref, account.walletIndex);
+    await _performRemoveWallet(context, ref, walletIndex);
   }
 
   static Future<void> _performRemoveAccount(BuildContext context, WidgetRef ref, Account account) async {

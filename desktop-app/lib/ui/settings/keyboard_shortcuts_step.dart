@@ -186,6 +186,8 @@ class _KeyboardShortcutsStepState extends ConsumerState<KeyboardShortcutsStep> {
                     row(AppCommand.send),
                     row(AppCommand.propose),
                     row(AppCommand.addAccount),
+                    row(AppCommand.getInfo),
+                    row(AppCommand.copyAddress),
                     _Row(
                       title: l10n.desktopShortcutsAccounts,
                       note: _accountRefusal,
@@ -311,6 +313,8 @@ String commandName(AppLocalizations l10n, AppCommand command) => switch (command
   AppCommand.send => sheetTitle(l10n, ShellSheet.send),
   AppCommand.propose => sheetTitle(l10n, ShellSheet.propose),
   AppCommand.addAccount => l10n.desktopMenuAddAccount,
+  AppCommand.getInfo => l10n.desktopAccountGetInfo,
+  AppCommand.copyAddress => l10n.desktopAccountCopyAddress,
   AppCommand.toggleSidebar => l10n.desktopShortcutsToggleSidebar,
   AppCommand.nextSidebarItem => l10n.desktopMenuNextSidebarItem,
   AppCommand.previousSidebarItem => l10n.desktopMenuPreviousSidebarItem,

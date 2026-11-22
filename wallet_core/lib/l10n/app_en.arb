@@ -4296,6 +4296,323 @@
     "@desktopActivityCreationFee": {
       "description": "Desktop transaction panel: the fee the chain charges for making a multisig"
     },
+    "desktopAccountGetInfo": "Get Info",
+    "@desktopAccountGetInfo": {
+      "description": "Desktop account menu: opens the account’s Info sheet"
+    },
+    "desktopAccountCopyAddress": "Copy Address",
+    "@desktopAccountCopyAddress": {
+      "description": "Desktop account menu: copies the account’s address"
+    },
+    "desktopAccountCopyInnerHash": "Copy Inner Hash",
+    "@desktopAccountCopyInnerHash": {
+      "description": "Desktop account menu: copies the encrypted account’s inner hash"
+    },
+    "desktopAccountRename": "Rename…",
+    "@desktopAccountRename": {
+      "description": "Desktop account menu: starts renaming the account"
+    },
+    "desktopAccountShowRecoveryPhrase": "Show Recovery Phrase…",
+    "@desktopAccountShowRecoveryPhrase": {
+      "description": "Desktop account and wallet menus: opens the wallet’s recovery phrase steps"
+    },
+    "desktopAccountShowSigners": "Show Signers…",
+    "@desktopAccountShowSigners": {
+      "description": "Desktop multisig menu: opens the multisig’s Info sheet with its signers"
+    },
+    "desktopAccountDisconnectAccount": "Disconnect Account…",
+    "@desktopAccountDisconnectAccount": {
+      "description": "Desktop account menu: starts disconnecting the account"
+    },
+    "desktopAccountDisconnectHardware": "Disconnect Hardware Account…",
+    "@desktopAccountDisconnectHardware": {
+      "description": "Desktop account menu: starts disconnecting a hardware account"
+    },
+    "desktopAccountDisconnectMultisig": "Disconnect Multisig…",
+    "@desktopAccountDisconnectMultisig": {
+      "description": "Desktop multisig menu: starts disconnecting the multisig"
+    },
+    "desktopAccountAddressCopied": "Address copied",
+    "@desktopAccountAddressCopied": {
+      "description": "Desktop: shown on the account’s row after its address was copied"
+    },
+    "desktopAccountInnerHashCopied": "Inner hash copied",
+    "@desktopAccountInnerHashCopied": {
+      "description": "Desktop: shown on the encrypted account’s row after its inner hash was copied"
+    },
+    "desktopAccountCopyFailed": "Couldn’t copy: {error}",
+    "@desktopAccountCopyFailed": {
+      "description": "Desktop: shown on the account’s row when copying failed",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoTitle": "Account Info",
+    "@desktopAccountInfoTitle": {
+      "description": "Desktop Info sheet title for an account"
+    },
+    "desktopMultisigInfoTitle": "Multisig Info",
+    "@desktopMultisigInfoTitle": {
+      "description": "Desktop Info sheet title for a multisig"
+    },
+    "desktopAccountInfoAccount": "Account",
+    "@desktopAccountInfoAccount": {
+      "description": "Desktop Info sheet: label of the group with the account’s name and address"
+    },
+    "desktopAccountInfoMultisig": "Multisig",
+    "@desktopAccountInfoMultisig": {
+      "description": "Desktop Info sheet: label of the group with the multisig’s name, address and threshold"
+    },
+    "desktopAccountInfoSigners": "Signers",
+    "@desktopAccountInfoSigners": {
+      "description": "Desktop Info sheet: label of the group listing a multisig’s signers"
+    },
+    "desktopAccountInfoThisDevice": "This device",
+    "@desktopAccountInfoThisDevice": {
+      "description": "Desktop Info sheet: label of the group with what applies to this device only"
+    },
+    "desktopAccountInfoMiningRewards": "Mining rewards",
+    "@desktopAccountInfoMiningRewards": {
+      "description": "Desktop Info sheet: label of the encrypted account’s inner hash group"
+    },
+    "desktopAccountInfoName": "Name",
+    "@desktopAccountInfoName": {
+      "description": "Desktop Info sheet: the name row’s title"
+    },
+    "desktopAccountInfoNameSubtitle": "Shown only in this app",
+    "@desktopAccountInfoNameSubtitle": {
+      "description": "Desktop Info sheet: under the name row’s title"
+    },
+    "desktopAccountInfoThreshold": "Threshold",
+    "@desktopAccountInfoThreshold": {
+      "description": "Desktop Info sheet: the multisig threshold row’s title"
+    },
+    "desktopAccountInfoThresholdSubtitle": "Signatures a proposal needs before it can run",
+    "@desktopAccountInfoThresholdSubtitle": {
+      "description": "Desktop Info sheet: under the threshold row’s title"
+    },
+    "desktopAccountInfoPhraseSubtitle": "The 24 words of {wallet}, which this account is in",
+    "@desktopAccountInfoPhraseSubtitle": {
+      "description": "Desktop Info sheet: under Recovery Phrase; wallet is the wallet’s name",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoInnerHash": "Inner Hash",
+    "@desktopAccountInfoInnerHash": {
+      "description": "Desktop Info sheet: the encrypted account’s inner hash row’s title"
+    },
+    "desktopAccountInfoInnerHashCaption": "Give it to your miner as --rewards-inner-hash, and block rewards land in this account.",
+    "@desktopAccountInfoInnerHashCaption": {
+      "description": "Desktop Info sheet: what the inner hash is for"
+    },
+    "desktopAccountInfoCreator": "Creator",
+    "@desktopAccountInfoCreator": {
+      "description": "Desktop Info sheet: mark on the signer who created the multisig"
+    },
+    "desktopAccountInfoYou": "You",
+    "@desktopAccountInfoYou": {
+      "description": "Desktop Info sheet: mark on the signer that is this wallet’s account"
+    },
+    "desktopAccountInfoDisconnectAccount": "Disconnect Account",
+    "@desktopAccountInfoDisconnectAccount": {
+      "description": "Desktop Info sheet: the row that starts disconnecting the account"
+    },
+    "desktopAccountInfoDisconnectAccountSubtitle": "Stops showing {name} in this app; {wallet} keeps its recovery phrase",
+    "@desktopAccountInfoDisconnectAccountSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoDisconnectWalletSubtitle": "{name} is the last account in {wallet}, so the wallet goes with it",
+    "@desktopAccountInfoDisconnectWalletSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Account when it is the wallet’s last account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoDisconnectHardware": "Disconnect Hardware Account",
+    "@desktopAccountInfoDisconnectHardware": {
+      "description": "Desktop Info sheet: the row that starts disconnecting a hardware account"
+    },
+    "desktopAccountInfoDisconnectHardwareSubtitle": "Stops showing {name} in this app; your device keeps its keys",
+    "@desktopAccountInfoDisconnectHardwareSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Hardware Account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoDisconnectMultisig": "Disconnect Multisig",
+    "@desktopAccountInfoDisconnectMultisig": {
+      "description": "Desktop Info sheet: the row that starts disconnecting the multisig"
+    },
+    "desktopAccountInfoDisconnectMultisigSubtitle": "Stops showing {name} in this app; it stays on the chain",
+    "@desktopAccountInfoDisconnectMultisigSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Multisig",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectTitle": "Disconnect",
+    "@desktopDisconnectTitle": {
+      "description": "Desktop Info sheet: the Disconnect step’s name in the sheet’s path"
+    },
+    "desktopDisconnectHeadline": "Stop showing {name}?",
+    "@desktopDisconnectHeadline": {
+      "description": "Desktop Disconnect step: headline for an account, a hardware account or a multisig",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectAccountEyebrow": "Disconnect account",
+    "@desktopDisconnectAccountEyebrow": {
+      "description": "Desktop Disconnect step: small capitals over the caution for an account"
+    },
+    "desktopDisconnectAccountLine1": "{name} leaves this app; its funds stay on the blockchain",
+    "@desktopDisconnectAccountLine1": {
+      "description": "Desktop Disconnect step: first line for an account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectAccountLine2": "{wallet} keeps its recovery phrase, so you can add {name} back later",
+    "@desktopDisconnectAccountLine2": {
+      "description": "Desktop Disconnect step: second line for an account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectHardwareEyebrow": "Disconnect hardware account",
+    "@desktopDisconnectHardwareEyebrow": {
+      "description": "Desktop Disconnect step: small capitals over the caution for a hardware account"
+    },
+    "desktopDisconnectHardwareLine2": "Your hardware wallet keeps its keys, so you can connect it again later",
+    "@desktopDisconnectHardwareLine2": {
+      "description": "Desktop Disconnect step: second line for a hardware account"
+    },
+    "desktopDisconnectMultisigEyebrow": "Disconnect multisig",
+    "@desktopDisconnectMultisigEyebrow": {
+      "description": "Desktop Disconnect step: small capitals over the caution for a multisig"
+    },
+    "desktopDisconnectMultisigLine1": "{name} leaves this app; it stays on the chain with its signers",
+    "@desktopDisconnectMultisigLine1": {
+      "description": "Desktop Disconnect step: first line for a multisig",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectMultisigLine2": "You can add it back later",
+    "@desktopDisconnectMultisigLine2": {
+      "description": "Desktop Disconnect step: second line for a multisig"
+    },
+    "desktopDisconnectWalletHeadline": "This removes {wallet}",
+    "@desktopDisconnectWalletHeadline": {
+      "description": "Desktop Disconnect step: headline when the account is its wallet’s last",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletLine1": "{name} is the last account in {wallet}, so the whole wallet goes with it",
+    "@desktopDisconnectWalletLine1": {
+      "description": "Desktop Disconnect step: first line when the account is its wallet’s last",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletLine2": "{wallet}’s recovery phrase will be deleted from this device",
+    "@desktopDisconnectWalletLine2": {
+      "description": "Desktop Disconnect step: second line when the account is its wallet’s last",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletLine3": "Its funds stay on the blockchain, but only that phrase can restore them",
+    "@desktopDisconnectWalletLine3": {
+      "description": "Desktop Disconnect step: third line when the account is its wallet’s last"
+    },
+    "desktopDisconnectWalletBackedUp": "I’ve backed up {wallet}’s recovery phrase",
+    "@desktopDisconnectWalletBackedUp": {
+      "description": "Desktop Disconnect step: the box to tick before a wallet can be deleted",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletReason": "Delete {wallet} and its recovery phrase",
+    "@desktopDisconnectWalletReason": {
+      "description": "Desktop: the reason the system shows when asking to approve deleting a wallet",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletDeclined": "Deleting {wallet} needs your approval",
+    "@desktopDisconnectWalletDeclined": {
+      "description": "Desktop Disconnect step: shown when the approval to delete a wallet was declined",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopRecoveryPhraseWalletsSubtitle": "View the 24 words of each of your {count} wallets",
+    "@desktopRecoveryPhraseWalletsSubtitle": {
+      "description": "Desktop Settings: under Recovery Phrase when there are several wallets",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopRecoveryPhraseChooseWallet": "Choose a wallet",
+    "@desktopRecoveryPhraseChooseWallet": {
+      "description": "Desktop Settings: label over the list of wallets whose recovery phrase can be shown"
+    },
+    "desktopWalletRenameFailed": "Couldn't rename the wallet",
+    "@desktopWalletRenameFailed": {
+      "description": "Desktop sidebar: under a wallet heading for a few seconds when the name typed over it could not be saved; the heading keeps its name"
+    },
     "desktopNotificationOpenAction": "Open",
     "@desktopNotificationOpenAction": {
       "description": "Desktop notification on Linux: the action that opens the wallet when the notification is clicked"

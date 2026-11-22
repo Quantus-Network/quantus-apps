@@ -2953,6 +2953,206 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopActivityCreationFee => 'Multisig fee';
 
   @override
+  String get desktopAccountGetInfo => 'Get Info';
+
+  @override
+  String get desktopAccountCopyAddress => 'Copy Address';
+
+  @override
+  String get desktopAccountCopyInnerHash => 'Copy Inner Hash';
+
+  @override
+  String get desktopAccountRename => 'Rename…';
+
+  @override
+  String get desktopAccountShowRecoveryPhrase => 'Show Recovery Phrase…';
+
+  @override
+  String get desktopAccountShowSigners => 'Show Signers…';
+
+  @override
+  String get desktopAccountDisconnectAccount => 'Disconnect Account…';
+
+  @override
+  String get desktopAccountDisconnectHardware => 'Disconnect Hardware Account…';
+
+  @override
+  String get desktopAccountDisconnectMultisig => 'Disconnect Multisig…';
+
+  @override
+  String get desktopAccountAddressCopied => 'Address copied';
+
+  @override
+  String get desktopAccountInnerHashCopied => 'Inner hash copied';
+
+  @override
+  String desktopAccountCopyFailed(String error) {
+    return 'Couldn’t copy: $error';
+  }
+
+  @override
+  String get desktopAccountInfoTitle => 'Account Info';
+
+  @override
+  String get desktopMultisigInfoTitle => 'Multisig Info';
+
+  @override
+  String get desktopAccountInfoAccount => 'Account';
+
+  @override
+  String get desktopAccountInfoMultisig => 'Multisig';
+
+  @override
+  String get desktopAccountInfoSigners => 'Signers';
+
+  @override
+  String get desktopAccountInfoThisDevice => 'This device';
+
+  @override
+  String get desktopAccountInfoMiningRewards => 'Mining rewards';
+
+  @override
+  String get desktopAccountInfoName => 'Name';
+
+  @override
+  String get desktopAccountInfoNameSubtitle => 'Shown only in this app';
+
+  @override
+  String get desktopAccountInfoThreshold => 'Threshold';
+
+  @override
+  String get desktopAccountInfoThresholdSubtitle => 'Signatures a proposal needs before it can run';
+
+  @override
+  String desktopAccountInfoPhraseSubtitle(String wallet) {
+    return 'The 24 words of $wallet, which this account is in';
+  }
+
+  @override
+  String get desktopAccountInfoInnerHash => 'Inner Hash';
+
+  @override
+  String get desktopAccountInfoInnerHashCaption =>
+      'Give it to your miner as --rewards-inner-hash, and block rewards land in this account.';
+
+  @override
+  String get desktopAccountInfoCreator => 'Creator';
+
+  @override
+  String get desktopAccountInfoYou => 'You';
+
+  @override
+  String get desktopAccountInfoDisconnectAccount => 'Disconnect Account';
+
+  @override
+  String desktopAccountInfoDisconnectAccountSubtitle(String name, String wallet) {
+    return 'Stops showing $name in this app; $wallet keeps its recovery phrase';
+  }
+
+  @override
+  String desktopAccountInfoDisconnectWalletSubtitle(String name, String wallet) {
+    return '$name is the last account in $wallet, so the wallet goes with it';
+  }
+
+  @override
+  String get desktopAccountInfoDisconnectHardware => 'Disconnect Hardware Account';
+
+  @override
+  String desktopAccountInfoDisconnectHardwareSubtitle(String name) {
+    return 'Stops showing $name in this app; your device keeps its keys';
+  }
+
+  @override
+  String get desktopAccountInfoDisconnectMultisig => 'Disconnect Multisig';
+
+  @override
+  String desktopAccountInfoDisconnectMultisigSubtitle(String name) {
+    return 'Stops showing $name in this app; it stays on the chain';
+  }
+
+  @override
+  String get desktopDisconnectTitle => 'Disconnect';
+
+  @override
+  String desktopDisconnectHeadline(String name) {
+    return 'Stop showing $name?';
+  }
+
+  @override
+  String get desktopDisconnectAccountEyebrow => 'Disconnect account';
+
+  @override
+  String desktopDisconnectAccountLine1(String name) {
+    return '$name leaves this app; its funds stay on the blockchain';
+  }
+
+  @override
+  String desktopDisconnectAccountLine2(String name, String wallet) {
+    return '$wallet keeps its recovery phrase, so you can add $name back later';
+  }
+
+  @override
+  String get desktopDisconnectHardwareEyebrow => 'Disconnect hardware account';
+
+  @override
+  String get desktopDisconnectHardwareLine2 => 'Your hardware wallet keeps its keys, so you can connect it again later';
+
+  @override
+  String get desktopDisconnectMultisigEyebrow => 'Disconnect multisig';
+
+  @override
+  String desktopDisconnectMultisigLine1(String name) {
+    return '$name leaves this app; it stays on the chain with its signers';
+  }
+
+  @override
+  String get desktopDisconnectMultisigLine2 => 'You can add it back later';
+
+  @override
+  String desktopDisconnectWalletHeadline(String wallet) {
+    return 'This removes $wallet';
+  }
+
+  @override
+  String desktopDisconnectWalletLine1(String name, String wallet) {
+    return '$name is the last account in $wallet, so the whole wallet goes with it';
+  }
+
+  @override
+  String desktopDisconnectWalletLine2(String wallet) {
+    return '$wallet’s recovery phrase will be deleted from this device';
+  }
+
+  @override
+  String get desktopDisconnectWalletLine3 => 'Its funds stay on the blockchain, but only that phrase can restore them';
+
+  @override
+  String desktopDisconnectWalletBackedUp(String wallet) {
+    return 'I’ve backed up $wallet’s recovery phrase';
+  }
+
+  @override
+  String desktopDisconnectWalletReason(String wallet) {
+    return 'Delete $wallet and its recovery phrase';
+  }
+
+  @override
+  String desktopDisconnectWalletDeclined(String wallet) {
+    return 'Deleting $wallet needs your approval';
+  }
+
+  @override
+  String desktopRecoveryPhraseWalletsSubtitle(int count) {
+    return 'View the 24 words of each of your $count wallets';
+  }
+
+  @override
+  String get desktopRecoveryPhraseChooseWallet => 'Choose a wallet';
+
+  @override
+  String get desktopWalletRenameFailed => 'Couldn\'t rename the wallet';
+
+  @override
   String get desktopNotificationOpenAction => 'Open';
 
   @override

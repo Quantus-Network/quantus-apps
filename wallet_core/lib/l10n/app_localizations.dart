@@ -5372,6 +5372,336 @@ abstract class AppLocalizations {
   /// **'Multisig fee'**
   String get desktopActivityCreationFee;
 
+  /// Desktop account menu: opens the account’s Info sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Get Info'**
+  String get desktopAccountGetInfo;
+
+  /// Desktop account menu: copies the account’s address
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Address'**
+  String get desktopAccountCopyAddress;
+
+  /// Desktop account menu: copies the encrypted account’s inner hash
+  ///
+  /// In en, this message translates to:
+  /// **'Copy Inner Hash'**
+  String get desktopAccountCopyInnerHash;
+
+  /// Desktop account menu: starts renaming the account
+  ///
+  /// In en, this message translates to:
+  /// **'Rename…'**
+  String get desktopAccountRename;
+
+  /// Desktop account and wallet menus: opens the wallet’s recovery phrase steps
+  ///
+  /// In en, this message translates to:
+  /// **'Show Recovery Phrase…'**
+  String get desktopAccountShowRecoveryPhrase;
+
+  /// Desktop multisig menu: opens the multisig’s Info sheet with its signers
+  ///
+  /// In en, this message translates to:
+  /// **'Show Signers…'**
+  String get desktopAccountShowSigners;
+
+  /// Desktop account menu: starts disconnecting the account
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Account…'**
+  String get desktopAccountDisconnectAccount;
+
+  /// Desktop account menu: starts disconnecting a hardware account
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Hardware Account…'**
+  String get desktopAccountDisconnectHardware;
+
+  /// Desktop multisig menu: starts disconnecting the multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Multisig…'**
+  String get desktopAccountDisconnectMultisig;
+
+  /// Desktop: shown on the account’s row after its address was copied
+  ///
+  /// In en, this message translates to:
+  /// **'Address copied'**
+  String get desktopAccountAddressCopied;
+
+  /// Desktop: shown on the encrypted account’s row after its inner hash was copied
+  ///
+  /// In en, this message translates to:
+  /// **'Inner hash copied'**
+  String get desktopAccountInnerHashCopied;
+
+  /// Desktop: shown on the account’s row when copying failed
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t copy: {error}'**
+  String desktopAccountCopyFailed(String error);
+
+  /// Desktop Info sheet title for an account
+  ///
+  /// In en, this message translates to:
+  /// **'Account Info'**
+  String get desktopAccountInfoTitle;
+
+  /// Desktop Info sheet title for a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig Info'**
+  String get desktopMultisigInfoTitle;
+
+  /// Desktop Info sheet: label of the group with the account’s name and address
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get desktopAccountInfoAccount;
+
+  /// Desktop Info sheet: label of the group with the multisig’s name, address and threshold
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig'**
+  String get desktopAccountInfoMultisig;
+
+  /// Desktop Info sheet: label of the group listing a multisig’s signers
+  ///
+  /// In en, this message translates to:
+  /// **'Signers'**
+  String get desktopAccountInfoSigners;
+
+  /// Desktop Info sheet: label of the group with what applies to this device only
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get desktopAccountInfoThisDevice;
+
+  /// Desktop Info sheet: label of the encrypted account’s inner hash group
+  ///
+  /// In en, this message translates to:
+  /// **'Mining rewards'**
+  String get desktopAccountInfoMiningRewards;
+
+  /// Desktop Info sheet: the name row’s title
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get desktopAccountInfoName;
+
+  /// Desktop Info sheet: under the name row’s title
+  ///
+  /// In en, this message translates to:
+  /// **'Shown only in this app'**
+  String get desktopAccountInfoNameSubtitle;
+
+  /// Desktop Info sheet: the multisig threshold row’s title
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get desktopAccountInfoThreshold;
+
+  /// Desktop Info sheet: under the threshold row’s title
+  ///
+  /// In en, this message translates to:
+  /// **'Signatures a proposal needs before it can run'**
+  String get desktopAccountInfoThresholdSubtitle;
+
+  /// Desktop Info sheet: under Recovery Phrase; wallet is the wallet’s name
+  ///
+  /// In en, this message translates to:
+  /// **'The 24 words of {wallet}, which this account is in'**
+  String desktopAccountInfoPhraseSubtitle(String wallet);
+
+  /// Desktop Info sheet: the encrypted account’s inner hash row’s title
+  ///
+  /// In en, this message translates to:
+  /// **'Inner Hash'**
+  String get desktopAccountInfoInnerHash;
+
+  /// Desktop Info sheet: what the inner hash is for
+  ///
+  /// In en, this message translates to:
+  /// **'Give it to your miner as --rewards-inner-hash, and block rewards land in this account.'**
+  String get desktopAccountInfoInnerHashCaption;
+
+  /// Desktop Info sheet: mark on the signer who created the multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Creator'**
+  String get desktopAccountInfoCreator;
+
+  /// Desktop Info sheet: mark on the signer that is this wallet’s account
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get desktopAccountInfoYou;
+
+  /// Desktop Info sheet: the row that starts disconnecting the account
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Account'**
+  String get desktopAccountInfoDisconnectAccount;
+
+  /// Desktop Info sheet: under Disconnect Account
+  ///
+  /// In en, this message translates to:
+  /// **'Stops showing {name} in this app; {wallet} keeps its recovery phrase'**
+  String desktopAccountInfoDisconnectAccountSubtitle(String name, String wallet);
+
+  /// Desktop Info sheet: under Disconnect Account when it is the wallet’s last account
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is the last account in {wallet}, so the wallet goes with it'**
+  String desktopAccountInfoDisconnectWalletSubtitle(String name, String wallet);
+
+  /// Desktop Info sheet: the row that starts disconnecting a hardware account
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Hardware Account'**
+  String get desktopAccountInfoDisconnectHardware;
+
+  /// Desktop Info sheet: under Disconnect Hardware Account
+  ///
+  /// In en, this message translates to:
+  /// **'Stops showing {name} in this app; your device keeps its keys'**
+  String desktopAccountInfoDisconnectHardwareSubtitle(String name);
+
+  /// Desktop Info sheet: the row that starts disconnecting the multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Multisig'**
+  String get desktopAccountInfoDisconnectMultisig;
+
+  /// Desktop Info sheet: under Disconnect Multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Stops showing {name} in this app; it stays on the chain'**
+  String desktopAccountInfoDisconnectMultisigSubtitle(String name);
+
+  /// Desktop Info sheet: the Disconnect step’s name in the sheet’s path
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get desktopDisconnectTitle;
+
+  /// Desktop Disconnect step: headline for an account, a hardware account or a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Stop showing {name}?'**
+  String desktopDisconnectHeadline(String name);
+
+  /// Desktop Disconnect step: small capitals over the caution for an account
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect account'**
+  String get desktopDisconnectAccountEyebrow;
+
+  /// Desktop Disconnect step: first line for an account
+  ///
+  /// In en, this message translates to:
+  /// **'{name} leaves this app; its funds stay on the blockchain'**
+  String desktopDisconnectAccountLine1(String name);
+
+  /// Desktop Disconnect step: second line for an account
+  ///
+  /// In en, this message translates to:
+  /// **'{wallet} keeps its recovery phrase, so you can add {name} back later'**
+  String desktopDisconnectAccountLine2(String name, String wallet);
+
+  /// Desktop Disconnect step: small capitals over the caution for a hardware account
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect hardware account'**
+  String get desktopDisconnectHardwareEyebrow;
+
+  /// Desktop Disconnect step: second line for a hardware account
+  ///
+  /// In en, this message translates to:
+  /// **'Your hardware wallet keeps its keys, so you can connect it again later'**
+  String get desktopDisconnectHardwareLine2;
+
+  /// Desktop Disconnect step: small capitals over the caution for a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect multisig'**
+  String get desktopDisconnectMultisigEyebrow;
+
+  /// Desktop Disconnect step: first line for a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'{name} leaves this app; it stays on the chain with its signers'**
+  String desktopDisconnectMultisigLine1(String name);
+
+  /// Desktop Disconnect step: second line for a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'You can add it back later'**
+  String get desktopDisconnectMultisigLine2;
+
+  /// Desktop Disconnect step: headline when the account is its wallet’s last
+  ///
+  /// In en, this message translates to:
+  /// **'This removes {wallet}'**
+  String desktopDisconnectWalletHeadline(String wallet);
+
+  /// Desktop Disconnect step: first line when the account is its wallet’s last
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is the last account in {wallet}, so the whole wallet goes with it'**
+  String desktopDisconnectWalletLine1(String name, String wallet);
+
+  /// Desktop Disconnect step: second line when the account is its wallet’s last
+  ///
+  /// In en, this message translates to:
+  /// **'{wallet}’s recovery phrase will be deleted from this device'**
+  String desktopDisconnectWalletLine2(String wallet);
+
+  /// Desktop Disconnect step: third line when the account is its wallet’s last
+  ///
+  /// In en, this message translates to:
+  /// **'Its funds stay on the blockchain, but only that phrase can restore them'**
+  String get desktopDisconnectWalletLine3;
+
+  /// Desktop Disconnect step: the box to tick before a wallet can be deleted
+  ///
+  /// In en, this message translates to:
+  /// **'I’ve backed up {wallet}’s recovery phrase'**
+  String desktopDisconnectWalletBackedUp(String wallet);
+
+  /// Desktop: the reason the system shows when asking to approve deleting a wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {wallet} and its recovery phrase'**
+  String desktopDisconnectWalletReason(String wallet);
+
+  /// Desktop Disconnect step: shown when the approval to delete a wallet was declined
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting {wallet} needs your approval'**
+  String desktopDisconnectWalletDeclined(String wallet);
+
+  /// Desktop Settings: under Recovery Phrase when there are several wallets
+  ///
+  /// In en, this message translates to:
+  /// **'View the 24 words of each of your {count} wallets'**
+  String desktopRecoveryPhraseWalletsSubtitle(int count);
+
+  /// Desktop Settings: label over the list of wallets whose recovery phrase can be shown
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a wallet'**
+  String get desktopRecoveryPhraseChooseWallet;
+
+  /// Desktop sidebar: under a wallet heading for a few seconds when the name typed over it could not be saved; the heading keeps its name
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t rename the wallet'**
+  String get desktopWalletRenameFailed;
+
   /// Desktop notification on Linux: the action that opens the wallet when the notification is clicked
   ///
   /// In en, this message translates to:
