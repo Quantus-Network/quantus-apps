@@ -24,8 +24,13 @@ dependencies:
   # UI
   cupertino_icons: ^1.0.9
 
+  # Time, so that tests can set it.
+  clock: ^1.1.1
+
   # Platform
   ffi: ^2.2.0
+  # The same version as the phone's.
+  flutter_local_notifications: ^21.0.0
   local_auth: ^3.0.1
   share_plus: ^13.1.0
   url_launcher: ^6.3.2

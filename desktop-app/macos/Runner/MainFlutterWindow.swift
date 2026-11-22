@@ -53,6 +53,9 @@ class MainFlutterWindow: NSWindow {
       case "titleBarDoubleClick":
         self?.performTitleBarDoubleClick()
         result(nil)
+      case "bringToFront":
+        self?.bringToFront()
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -124,6 +127,21 @@ class MainFlutterWindow: NSWindow {
     return !trafficLights.contains { type in
       guard let button = self.standardWindowButton(type) else { return false }
       return button.convert(button.bounds, to: nil).insetBy(dx: -4, dy: -4).contains(location)
+    }
+  }
+
+  /// Shows the window in front of the other apps' windows, minimized or
+  /// hidden as it may be: a notification was clicked.
+  private func bringToFront() {
+    NSApp.unhide(nil)
+    if self.isMiniaturized {
+      self.deminiaturize(nil)
+    }
+    self.makeKeyAndOrderFront(nil)
+    if #available(macOS 14.0, *) {
+      NSApp.activate()
+    } else {
+      NSApp.activate(ignoringOtherApps: true)
     }
   }
 
