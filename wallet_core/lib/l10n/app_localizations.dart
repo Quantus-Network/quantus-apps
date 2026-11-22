@@ -5767,6 +5767,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The proposal to send {amount} from {multisig} wasn’t seen on the chain in time.'**
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig);
+
+  /// Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting deposit'**
+  String get desktopSwapAwaitingDeposit;
+
+  /// Desktop swap row: what a swap awaiting its deposit is waiting for
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your deposit'**
+  String get desktopSwapWaitingForDeposit;
+
+  /// Desktop swap: the time by which a deposit must be sent, after its status
+  ///
+  /// In en, this message translates to:
+  /// **'until {time}'**
+  String desktopSwapUntil(String time);
+
+  /// Desktop swap row: label before what the swap is for
+  ///
+  /// In en, this message translates to:
+  /// **'For'**
+  String get desktopSwapFor;
+
+  /// Desktop swap: an amount with its token symbol and the network the token is on
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} on {network}'**
+  String desktopSwapAmountOnNetwork(String amount, String network);
+
+  /// Desktop swap panel: what the amount in the headline is swapped for; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'for {amount} on {network}'**
+  String desktopSwapForAmountOnNetwork(String amount, String network);
+
+  /// Desktop swap panel: heading over the address a swap pays out at
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient on {network}'**
+  String desktopSwapRecipientOn(String network);
+
+  /// Desktop swap: who a swap pays out to, as the last step names it (Sending USDC to the recipient)
+  ///
+  /// In en, this message translates to:
+  /// **'the recipient'**
+  String get desktopSwapTheRecipient;
+
+  /// Desktop swap panel: headline of a swap awaiting its deposit; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Send {amount}'**
+  String desktopSwapSendAmount(String amount);
+
+  /// Desktop swap panel: button that drops a swap whose deposit was not sent
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Swap'**
+  String get desktopSwapCancel;
+
+  /// Desktop swap panel: opens the deposit's transaction in the explorer
+  ///
+  /// In en, this message translates to:
+  /// **'View Deposit'**
+  String get desktopSwapViewDeposit;
+
+  /// Desktop swap panel: headline of a completed swap; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} received'**
+  String desktopSwapReceived(String amount);
+
+  /// Desktop swap panel: line under a completed swap's headline; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Your swap of {amount} is complete.'**
+  String desktopSwapCompleteBody(String amount);
+
+  /// Desktop swap: attribution to NEAR Intents
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by NEAR Intents'**
+  String get desktopSwapPoweredByNearIntents;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
