@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
@@ -263,6 +265,9 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       return;
     }
     if (sheet == ShellSheet.send || sheet == ShellSheet.propose) _beginSend();
+    // A swap starts from this sheet, so where swaps are allowed is asked
+    // again as it opens: the answer in hand may be from another place.
+    if (sheet == ShellSheet.swap) unawaited(ref.read(remoteConfigProvider.notifier).syncConfig());
     state = sheet;
   }
 
