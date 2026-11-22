@@ -386,8 +386,9 @@ class _StoredAccountsService extends Fake implements AccountsService {
   /// wallet's phrase.
   @override
   Future<Account> createNewAccount({required int walletIndex}) async {
-    if (await storage.getMnemonic(walletIndex) == null)
+    if (await storage.getMnemonic(walletIndex) == null) {
       throw Exception('Mnemonic not found. Cannot create new account.');
+    }
     final used = {
       for (final account in storage.accounts)
         if (account.walletIndex == walletIndex && account.accountType != AccountType.encrypted) account.index,
