@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/notification_status.dart';
+import 'package:quantus_desktop_wallet/providers/notification_click_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -141,6 +142,7 @@ class OwnActivityNotifications {
             id: 'proposal_created_$hash',
             accountId: multisig.accountId,
             accountName: multisig.name,
+            extrinsicHash: hash,
             intent: NotificationIntent.others,
             title: l10n.desktopNotificationProposalCreatedTitle,
             body: l10n.desktopNotificationProposalCreatedBody(amount, multisig.name),
@@ -150,6 +152,7 @@ class OwnActivityNotifications {
             id: 'proposal_not_confirmed_$hash',
             accountId: multisig.accountId,
             accountName: multisig.name,
+            extrinsicHash: hash,
             intent: NotificationIntent.others,
             title: l10n.desktopNotificationProposalNotConfirmedTitle,
             body: l10n.desktopNotificationProposalNotConfirmedBody(amount, multisig.name),
@@ -178,6 +181,7 @@ class OwnActivityNotifications {
       id: 'send_${send.id}',
       accountId: account.accountId,
       accountName: account.name,
+      extrinsicHash: send.extrinsicHash,
       intent: NotificationIntent.sentTokens,
       title: title(l10n, amountText),
       body: body(l10n, amountText, account.name),
@@ -194,6 +198,7 @@ class OwnActivityNotifications {
     required String id,
     required String accountId,
     required String accountName,
+    required String? extrinsicHash,
     required NotificationIntent intent,
     required String title,
     required String body,
@@ -215,6 +220,7 @@ class OwnActivityNotifications {
       message: body,
       accountName: accountName,
       timestamp: clock.now(),
+      metadata: extrinsicHash == null ? null : {notificationHashKey: extrinsicHash},
       persistent: false,
     );
     unawaited(_showNow(notification));

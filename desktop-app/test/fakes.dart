@@ -484,6 +484,13 @@ class FakeSendChain {
   /// sent in.
   final indexedTransfers = <String, TransactionEvent>{};
 
+  /// The proposals the indexer holds as created, by the hash of the
+  /// transaction each was created in.
+  final indexedProposals = <String, MultisigProposalCreatedEvent>{};
+
+  /// When set, looking a proposal up by its hash fails with this.
+  Object? proposalLookupError;
+
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
   /// proposal, expiring at block 1284220.
@@ -626,6 +633,12 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   @override
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async =>
       chain.indexedTransfers[extrinsicHash];
+
+  @override
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
+    if (chain.proposalLookupError case final error?) throw error;
+    return chain.indexedProposals[extrinsicHash];
+  }
 
   @override
   Future<SortedTransactionsList> fetchAllTransactionTypes({
