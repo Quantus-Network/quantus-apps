@@ -30,6 +30,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   bool referralChecked = false;
   bool seenPromoVideo = false;
 
+  /// When set, saving an account fails with this.
+  Object? addAccountError;
+
   @override
   Future<List<Account>> getAccounts() async => List.of(accounts);
 
@@ -38,6 +41,8 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   Future<void> addAccount(Account account) async {
+    final error = addAccountError;
+    if (error != null) throw error;
     if (accounts.any((a) => a.accountId == account.accountId)) throw Exception('Account already exists');
     accounts.add(account);
     if (accounts.length == 1) activeAccount = RegularAccount(account);
