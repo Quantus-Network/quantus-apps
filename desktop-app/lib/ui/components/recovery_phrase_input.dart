@@ -5,8 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/utils/recovery_phrase.dart';
+
+/// Asks whether to scan the chain again for an imported wallet's accounts,
+/// after the scan failed. Skipping leaves the scan for the next start.
+Future<bool> askToScanImportAgain(BuildContext context, AppLocalizations l10n) => showQuantusDialog(
+  context,
+  title: l10n.importWalletScanFailedTitle,
+  body: l10n.importWalletScanFailedBody,
+  actionLabel: l10n.importWalletScanRetry,
+  cancelLabel: l10n.importWalletScanSkip,
+  barrierDismissible: false,
+);
 
 /// The field a recovery phrase is typed or pasted into: masked, with how many
 /// words it holds and a Paste button under the phrase.

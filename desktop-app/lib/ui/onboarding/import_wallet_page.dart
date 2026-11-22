@@ -69,15 +69,7 @@ class _ImportWalletPageState extends ConsumerState<ImportWalletPage> {
 
   Future<bool> _askToScanAgain(Object error) async {
     if (!mounted) return false;
-    final l10n = ref.read(l10nProvider);
-    return showQuantusDialog(
-      context,
-      title: l10n.importWalletScanFailedTitle,
-      body: l10n.importWalletScanFailedBody,
-      actionLabel: l10n.importWalletScanRetry,
-      cancelLabel: l10n.importWalletScanSkip,
-      barrierDismissible: false,
-    );
+    return askToScanImportAgain(context, ref.read(l10nProvider));
   }
 
   @override

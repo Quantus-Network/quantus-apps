@@ -126,7 +126,7 @@ void main() {
 
       await _openMenu(tester);
 
-      expect(_labels(tester, _menu), ['New Account']);
+      expect(_labels(tester, _menu), ['New Account', 'Import Wallet…']);
       expect(find.descendant(of: _menu, matching: find.byIcon(CupertinoIcons.chevron_right)), findsNothing);
       expect(tester.getBottomLeft(_menu).dy, lessThanOrEqualTo(tester.getTopLeft(_addRow).dy));
       expect(find.byType(ShellSheetView), findsNothing);

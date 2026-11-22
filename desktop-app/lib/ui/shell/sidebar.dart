@@ -107,7 +107,6 @@ class Sidebar extends ConsumerWidget {
       ref.read(softwareWalletsProvider),
       ref.read(accountManagerProvider),
     );
-    if (items.isEmpty) return;
     final box = row.findRenderObject()! as RenderBox;
     unawaited(showPullDownMenu(row, anchor: box.localToGlobal(Offset.zero) & box.size, items: items));
   }
