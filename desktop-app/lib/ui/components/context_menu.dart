@@ -19,9 +19,13 @@ class ContextMenuItem {
       onSelected = null,
       isDestructive = false;
 
+  /// An item shown dimmed, which cannot be chosen.
+  const ContextMenuItem.disabled(this.label) : submenu = null, onSelected = null, isDestructive = false;
+
   final String label;
 
-  /// What choosing the item does; null on an item with a [submenu].
+  /// What choosing the item does; null on an item with a [submenu] and on a
+  /// disabled one.
   final VoidCallback? onSelected;
 
   /// What the item opens beside it, if it does.
@@ -29,6 +33,8 @@ class ContextMenuItem {
 
   /// Drawn in ember: the item removes or ends something.
   final bool isDestructive;
+
+  bool get isEnabled => onSelected != null || submenu != null;
 }
 
 /// Pulls down a menu of [items] from the control at [anchor], in global
@@ -360,10 +366,19 @@ class _ContextMenuState extends State<_ContextMenu> {
       _openSubmenu(index);
     } else {
       setState(() {
-        _highlighted = index;
+        _highlighted = _items[index].isEnabled ? index : null;
         _closeSubmenu();
       });
     }
+  }
+
+  /// The nearest enabled item after [from] in the direction of [step], or
+  /// [otherwise] when there is none that way.
+  int? _nextEnabled(int from, int step, {required int? otherwise}) {
+    for (var index = from + step; index >= 0 && index < _items.length; index += step) {
+      if (_items[index].isEnabled) return index;
+    }
+    return otherwise;
   }
 
   void _openSubmenu(int index, {bool withKeys = false}) {
@@ -406,15 +421,14 @@ class _ContextMenuState extends State<_ContextMenu> {
     final submenu = _submenu;
     if (_keysInSubmenu && submenu != null) return _onSubmenuKey(key, isChoose, submenu);
 
-    final last = _items.length - 1;
     if (key == LogicalKeyboardKey.arrowDown) {
       setState(() {
-        _highlighted = math.min((_highlighted ?? -1) + 1, last);
+        _highlighted = _nextEnabled(_highlighted ?? -1, 1, otherwise: _highlighted);
         _closeSubmenu();
       });
     } else if (key == LogicalKeyboardKey.arrowUp) {
       setState(() {
-        _highlighted = math.max((_highlighted ?? last + 1) - 1, 0);
+        _highlighted = _nextEnabled(_highlighted ?? _items.length, -1, otherwise: _highlighted);
         _closeSubmenu();
       });
     } else if (isChoose || key == LogicalKeyboardKey.arrowRight) {
@@ -507,10 +521,12 @@ class _ContextMenuState extends State<_ContextMenu> {
       }),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => opensSubmenu ? _openSubmenu(index) : _choose(item),
+        // Opaque with no tap: a click on a disabled item leaves the menu open.
+        onTap: item.isEnabled ? () => opensSubmenu ? _openSubmenu(index) : _choose(item) : null,
         child: MenuPanelRow(
           label: item.label,
           isDestructive: item.isDestructive,
+          isDisabled: !item.isEnabled,
           isHighlighted: index == _highlighted,
           hasSubmenu: opensSubmenu,
         ),
