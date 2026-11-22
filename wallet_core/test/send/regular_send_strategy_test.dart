@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +10,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -75,6 +79,83 @@ void main() {
 
       expect((outcome as SendFailed).message, ref.read(l10nProvider).sendReviewAuthRequired);
       expect(submission.transfers, isEmpty);
+    });
+  });
+
+  group('a wallet reset', () {
+    Future<KeystoneSigningSession> hardwareSession(WidgetRef ref) async {
+      final outcome = await RegularSendStrategy(account: makeAccount(3, accountType: AccountType.keystone)).submit(
+        ref,
+        recipientAddress: recipient.accountId,
+        amount: amount,
+        fee: RegularFee(networkFee: networkFee, amount: amount),
+        isPayMode: false,
+      );
+      return (outcome as SendNeedsHardwareSignature).session;
+    }
+
+    Future<String> submitHardware(KeystoneSigningSession session, WidgetRef ref) =>
+        session.submitSigned(ref, unsignedData: makeUnsignedTransactionData(), signatureWithPublicKey: Uint8List(0));
+
+    testWidgets('during the approval prompt submits nothing and says the send failed', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      bed.userApproval.answer = () async {
+        await ref.read(logoutServiceProvider).logout();
+        return ApprovalResult.approved;
+      };
+
+      final outcome = await submit(ref);
+
+      expect((outcome as SendFailed).message, ref.read(l10nProvider).sendReviewSubmitFailed);
+      expect(submission.transfers, isEmpty);
+    });
+
+    testWidgets('while a send goes out keeps its recipient out of the recent addresses', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final held = submission.holdTransfer = Completer<void>();
+      final sent = submit(ref);
+      await tester.pump();
+
+      await ref.read(logoutServiceProvider).logout();
+      held.complete();
+      final outcome = await sent;
+      await tester.pump();
+
+      expect(outcome, isA<SendSubmitted>());
+      expect(await RecentAddressesService().getAddresses(), isEmpty);
+    });
+
+    testWidgets('while a hardware send goes out keeps its recipient out of the recent addresses', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final session = await hardwareSession(ref);
+      final held = submission.holdTransfer = Completer<void>();
+      final sent = submitHardware(session, ref);
+      await tester.pump();
+
+      await ref.read(logoutServiceProvider).logout();
+      held.complete();
+      expect(await sent, '0xtxhash');
+      await tester.pump();
+
+      expect(await RecentAddressesService().getAddresses(), isEmpty);
+    });
+
+    testWidgets('that did not happen leaves a send\'s recipient among the recent addresses', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      await submit(ref);
+      await tester.pump();
+
+      expect(await RecentAddressesService().getAddresses(), [recipient.accountId]);
+    });
+
+    testWidgets('that did not happen leaves a hardware send\'s recipient there too', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      await submitHardware(await hardwareSession(ref), ref);
+      await tester.pump();
+
+      expect(await RecentAddressesService().getAddresses(), [recipient.accountId]);
     });
   });
 

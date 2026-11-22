@@ -13,6 +13,7 @@ import 'package:wallet_core/providers/pending_multisig_cancellations_provider.da
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/multisig_approval_polling_service.dart';
 import 'package:wallet_core/services/multisig_cancellation_polling_service.dart';
 import 'package:wallet_core/services/multisig_execution_polling_service.dart';
@@ -37,8 +38,11 @@ class TransactionSubmissionService {
     required BigInt amount,
     required BigInt fee,
   }) async {
-    final substrate = SubstrateService();
+    final poller = _poller;
+    final session = poller.session;
+    final substrate = _ref.read(substrateServiceProvider);
     final signed = await substrate.getExtrinsicPayload(account, call);
+    if (poller.session != session) throw StateError('The wallet was reset while this transfer was being signed');
     final pendingTx = createPendingTransaction(
       from: account.accountId,
       to: targetAddress,
@@ -544,12 +548,18 @@ class TransactionSubmissionService {
     Future<Uint8List> Function() submit,
     PendingTransactionEvent pendingTx,
   ) async {
+    final poller = _poller;
+    final session = poller.session;
     try {
       quantusPrint('Submitting transaction: ${pendingTx.id}');
 
       final extrinsicHashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
       quantusPrint('submission hash: $extrinsicHash');
+
+      // It went out for a wallet that a reset has since wiped: nothing of it
+      // may reach the next session.
+      if (poller.session != session) return extrinsicHash;
 
       _ref
           .read(pendingTransactionsProvider.notifier)

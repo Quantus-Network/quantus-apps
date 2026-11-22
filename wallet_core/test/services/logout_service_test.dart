@@ -61,18 +61,20 @@ class _Indexer extends Fake implements ChainHistoryService {
 
 typedef _Watched = ({WalletTestBed bed, _Indexer indexer, ProviderContainer container});
 
+PendingTransactionEvent _pendingSend(String id) => PendingTransactionEvent(
+  tempId: id,
+  from: 'qzFrom',
+  to: 'qzTo',
+  amount: BigInt.one,
+  fee: BigInt.zero,
+  timestamp: DateTime(2026),
+  blockNumber: 1,
+);
+
 /// Submits a send through the real submission service, which then watches
 /// the indexer for it.
 Future<void> _submit(ProviderContainer container, {String id = 'tx-1'}) async {
-  final pending = PendingTransactionEvent(
-    tempId: id,
-    from: 'qzFrom',
-    to: 'qzTo',
-    amount: BigInt.one,
-    fee: BigInt.zero,
-    timestamp: DateTime(2026),
-    blockNumber: 1,
-  );
+  final pending = _pendingSend(id);
   container.read(pendingTransactionsProvider.notifier).add(pending);
   await container
       .read(transactionSubmissionServiceProvider)
@@ -265,10 +267,9 @@ void main() {
     });
   });
 
-  group('a send still being watched at a reset', () {
-    /// A wallet that has just submitted a send, which the indexer does not
-    /// hold yet. A first search has run, or is held by [held].
-    Future<_Watched> watching(WidgetTester tester, {Completer<void>? held}) async {
+  group('a send under way at a reset', () {
+    /// A wallet with nothing sent yet, over the indexer.
+    Future<_Watched> wallet(WidgetTester tester, {Completer<void>? held}) async {
       final bed = WalletTestBed();
       final indexer = _Indexer()..held = held;
       final container = ProviderContainer(
@@ -276,10 +277,27 @@ void main() {
       );
       container.read(notificationProvider);
       await tester.pump();
-      await _submit(container);
-      await tester.pump();
       return (bed: bed, indexer: indexer, container: container);
     }
+
+    /// A wallet that has just submitted a send, which the indexer does not
+    /// hold yet. A first search has run, or is held by [held].
+    Future<_Watched> watching(WidgetTester tester, {Completer<void>? held}) async {
+      final watched = await wallet(tester, held: held);
+      await _submit(watched.container);
+      await tester.pump();
+      return watched;
+    }
+
+    Future<String> transfer(_Watched watched) => watched.container
+        .read(transactionSubmissionServiceProvider)
+        .balanceTransfer(
+          makeAccount(1),
+          call: FakeBalancesService().getBalanceTransferCall('qzTo', BigInt.one),
+          targetAddress: 'qzTo',
+          amount: BigInt.one,
+          fee: BigInt.zero,
+        );
 
     void expectNothingNotified(_Watched watched) {
       expect(watched.bed.localNotifications.shown, isEmpty);
@@ -318,7 +336,83 @@ void main() {
         await tester.pump();
         watched.container.dispose();
       });
+
+      testWidgets('a $kind send whose submission answers after it is not watched and notifies nothing', (tester) async {
+        final watched = await wallet(tester);
+        watched.indexer.holds = found();
+        final accepted = Completer<Uint8List>();
+        final pending = _pendingSend('tx-1');
+        watched.container.read(pendingTransactionsProvider.notifier).add(pending);
+        final submission = watched.container
+            .read(transactionSubmissionServiceProvider)
+            .submitAndTrackTransaction(() => accepted.future, pending);
+
+        await watched.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        expect(watched.bed.localNotifications.cancelAllCalls, 1);
+        accepted.complete(Uint8List.fromList([1]));
+        // It did reach the network, so its hash is still the answer.
+        expect(await submission, '0x01');
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pump();
+
+        expect(watched.indexer.reads, 0);
+        expect(watched.container.read(pendingTransactionsProvider), isEmpty);
+        expectNothingNotified(watched);
+        final saved = (await SharedPreferences.getInstance()).getStringList(notificationsStorageKey);
+        expect(saved, isNull);
+        await tester.pump();
+        watched.container.dispose();
+      });
     }
+
+    testWidgets('a transfer still being signed is neither broadcast nor listed', (tester) async {
+      final watched = await wallet(tester);
+      final signing = Completer<void>();
+      watched.bed.substrate.holdSigning = signing;
+      final refused = expectLater(transfer(watched), throwsStateError);
+
+      await watched.container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      signing.complete();
+      await refused;
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump();
+
+      expect(watched.bed.substrate.broadcast, isEmpty);
+      expect(watched.container.read(pendingTransactionsProvider), isEmpty);
+      expect(watched.indexer.reads, 0);
+      expectNothingNotified(watched);
+      await tester.pump();
+      watched.container.dispose();
+    });
+
+    testWidgets('without a reset, a signed transfer is broadcast and watched', (tester) async {
+      final watched = await wallet(tester);
+
+      expect(await transfer(watched), '0x01');
+      await tester.pump();
+
+      expect(watched.bed.substrate.broadcast, hasLength(1));
+      expect(watched.container.read(pendingTransactionsProvider), hasLength(1));
+      expect(watched.indexer.reads, 1);
+      watched.container.dispose();
+    });
+
+    testWidgets('a transfer started after the reset is broadcast and watched', (tester) async {
+      final watched = await wallet(tester);
+      await watched.container.read(logoutServiceProvider).logout();
+      watched.container.read(notificationProvider);
+      await tester.pump();
+
+      expect(await transfer(watched), '0x01');
+      await tester.pump();
+
+      expect(watched.bed.substrate.broadcast, hasLength(1));
+      expect(watched.container.read(pendingTransactionsProvider), hasLength(1));
+      expect(watched.indexer.reads, 1);
+      watched.container.dispose();
+    });
 
     testWidgets('without a reset, a send found by a later poll still notifies', (tester) async {
       final watched = await watching(tester);

@@ -20,6 +20,10 @@ class PendingTransactionPollingService {
   /// session that has ended, and what it finds is dropped.
   int _session = 0;
 
+  /// The wallet session now running. Taken before asynchronous work on a send
+  /// and compared after it, it tells whether a reset came in between.
+  int get session => _session;
+
   PendingTransactionPollingService(this._ref);
 
   /// Polls the indexer until [pendingTx] is found on-chain. Uses

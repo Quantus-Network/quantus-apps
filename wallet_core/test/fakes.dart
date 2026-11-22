@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -181,8 +182,26 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   /// When set, wiping the wallet fails with this.
   Object? logoutError;
 
+  /// When set, signing waits for it.
+  Completer<void>? holdSigning;
+
+  /// The signed extrinsics broadcast.
+  final broadcast = <Uint8List>[];
+
   @override
   Future<String> generateMnemonic() async => mnemonic;
+
+  @override
+  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
+    await holdSigning?.future;
+    return ExtrinsicData(payload: Uint8List.fromList([1]), blockHash: '0xblock', blockNumber: 1, nonce: 0);
+  }
+
+  @override
+  Future<Uint8List> submitSignedExtrinsic(Uint8List extrinsic, {int maxRetries = 3}) async {
+    broadcast.add(extrinsic);
+    return Uint8List.fromList([1]);
+  }
 
   /// Clears the saved preferences, as the real wipe does.
   @override
@@ -399,6 +418,23 @@ class FakeBalancesService extends Fake implements BalancesService {
       const balances_pallet.Txs().transferAll(dest: _anyDest, keepAlive: false);
 }
 
+/// A transaction as a hardware device would be handed it.
+UnsignedTransactionData makeUnsignedTransactionData() => UnsignedTransactionData(
+  payloadToSign: QuantusSigningPayload(
+    method: Uint8List(0),
+    specVersion: 1,
+    transactionVersion: 1,
+    genesisHash: '0x00',
+    blockHash: '0x00',
+    blockNumber: 42,
+    eraPeriod: 64,
+    nonce: 0,
+    tip: 0,
+  ),
+  signer: Uint8List(32),
+  registry: Object(),
+);
+
 /// Records what would be signed and submitted instead of doing it.
 class FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
   /// Each transfer's recipient, amount and fee.
@@ -406,6 +442,9 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
 
   /// Each multisig proposal's recipient, amount and expiry block.
   final proposals = <(String, BigInt, int)>[];
+
+  /// When set, a transfer waits for it before going out.
+  Completer<void>? holdTransfer;
 
   @override
   Future<String> balanceTransfer(
@@ -415,6 +454,22 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
     required BigInt amount,
     required BigInt fee,
   }) async {
+    await holdTransfer?.future;
+    transfers.add((targetAddress, amount, fee));
+    return '0xtxhash';
+  }
+
+  @override
+  Future<String> submitExternallySignedTransfer({
+    required Account account,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+    required int blockHeight,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) async {
+    await holdTransfer?.future;
     transfers.add((targetAddress, amount, fee));
     return '0xtxhash';
   }
