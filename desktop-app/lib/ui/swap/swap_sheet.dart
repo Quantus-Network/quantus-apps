@@ -229,17 +229,22 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
     }
   }
 
+  /// Whether the form is on [network]: what is known of the addresses saved
+  /// on another chain is not this form's to show.
+  bool _isOn(String network) => mounted && _foreign?.network == network;
+
   /// Reads the addresses saved on [network]. What cannot be read is said,
-  /// and the form goes on without them.
+  /// and the form goes on without them. A read for a chain the form has
+  /// left, or one a newer read has overtaken, changes nothing.
   Future<void> _loadSaved(String network) async {
     final load = ++_savedLoads;
     try {
       final saved = await ref.read(swapServiceProvider).getSavedAddresses(network);
-      if (!mounted || load != _savedLoads) return;
+      if (!_isOn(network) || load != _savedLoads) return;
       setState(() => _saved = saved);
     } catch (e) {
       quantusPrint('Saved swap addresses failed to load: $e');
-      if (!mounted || load != _savedLoads) return;
+      if (!_isOn(network) || load != _savedLoads) return;
       setState(() {
         _saved = const [];
         _savedProblem = ref.read(l10nProvider).desktopSwapSavedAddressesUnavailable('$e');
@@ -248,16 +253,19 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
   }
 
   /// Forgets [address] on [network]. One that cannot be removed is said, and
-  /// stays.
+  /// stays. Once the form has moved to another chain, how the removal ended
+  /// is no longer shown: neither its failure nor the list it leaves.
   Future<void> _removeSaved(String network, String address) async {
     try {
       await ref.read(swapServiceProvider).removeSavedAddress(network, address);
     } catch (e) {
       quantusPrint('Saved swap address failed to be removed: $e');
-      if (mounted) setState(() => _savedProblem = ref.read(l10nProvider).desktopSwapSavedAddressesUnavailable('$e'));
+      if (_isOn(network)) {
+        setState(() => _savedProblem = ref.read(l10nProvider).desktopSwapSavedAddressesUnavailable('$e'));
+      }
       return;
     }
-    if (!mounted) return;
+    if (!_isOn(network)) return;
     setState(() => _savedProblem = null);
     await _loadSaved(network);
   }

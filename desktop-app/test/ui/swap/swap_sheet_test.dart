@@ -1068,6 +1068,51 @@ void main() {
       expect(_key(SwapSheet.savedRowKey(older)), findsOneWidget);
     });
 
+    Future<void> removeFromMenu(WidgetTester tester, String address) async {
+      await tester.tap(_key(SwapSheet.savedRowKey(address)), buttons: kSecondaryButton);
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(ContextMenuRegion.menuKey),
+          matching: find.text(_l10n.desktopSwapRemoveSavedAddress),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testOnMac("a removal that ends after the form moved to another chain leaves that chain's addresses in place", (
+      tester,
+    ) async {
+      final swaps = withSaved()..removeHold = Completer<void>();
+      await _openSheet(tester, swaps: swaps);
+
+      await removeFromMenu(tester, older);
+      await _pickToken(tester, usdcOnEthereum);
+      expect(_key(SwapSheet.savedRowKey(onEthereum)), findsOneWidget);
+
+      swaps.removeHold!.complete();
+      await tester.pumpAndSettle();
+
+      expect(swaps.saved['ARB'], [swapRecipient]);
+      expect(_key(SwapSheet.savedRowKey(onEthereum)), findsOneWidget);
+      expect(_key(SwapSheet.savedRowKey(swapRecipient)), findsNothing);
+    });
+
+    testOnMac('a removal that fails after the form moved to another chain says nothing there', (tester) async {
+      final swaps = withSaved()
+        ..removeHold = Completer<void>()
+        ..removeError = StateError('disk full');
+      await _openSheet(tester, swaps: swaps);
+
+      await removeFromMenu(tester, older);
+      await _pickToken(tester, usdcOnEthereum);
+      swaps.removeHold!.complete();
+      await tester.pumpAndSettle();
+
+      expect(_key(SwapSheet.savedProblemKey), findsNothing);
+      expect(_key(SwapSheet.savedRowKey(onEthereum)), findsOneWidget);
+    });
+
     testOnMac('saved addresses that cannot be read are said, and the form works without them', (tester) async {
       final swaps = withSaved()..savedReadError = StateError('unreadable');
       await _openSheet(tester, swaps: swaps);

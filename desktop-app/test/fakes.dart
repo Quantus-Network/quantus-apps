@@ -1223,8 +1223,12 @@ class FakeSwapService extends Fake implements SwapService {
     saved[network] = [address, ...?saved[network]?.where((a) => a != address)];
   }
 
+  /// When set, a removal waits for it before it answers.
+  Completer<void>? removeHold;
+
   @override
   Future<void> removeSavedAddress(String network, String address) async {
+    await removeHold?.future;
     if (removeError case final error?) throw error;
     saved[network] = [...?saved[network]?.where((a) => a != address)];
   }
