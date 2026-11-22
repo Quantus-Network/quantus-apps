@@ -5,6 +5,7 @@ import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/language_pop_up.dart';
+import 'package:quantus_desktop_wallet/ui/settings/notifications_row.dart';
 import 'package:quantus_desktop_wallet/ui/settings/recovery_phrase_steps.dart';
 import 'package:quantus_desktop_wallet/ui/settings/reset_wallet_step.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -210,6 +211,7 @@ class _SettingsListState extends ConsumerState<_SettingsList> {
                 },
               ),
             ),
+            const NotificationsRow(),
             SettingsRow.action(
               key: SettingsSheet.keyboardShortcutsRowKey,
               title: l10n.settingsKeyboardShortcuts,

@@ -3201,4 +3201,18 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig) {
     return 'Proposal untuk mengirim $amount dari $multisig tidak terlihat di rantai tepat waktu.';
   }
+
+  @override
+  String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettings => 'Buka Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettingsFailed => 'Tidak dapat membuka Pengaturan Sistem';
+
+  @override
+  String desktopNotificationUnavailable(String reason) {
+    return 'Tidak tersedia: $reason';
+  }
 }

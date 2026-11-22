@@ -72,12 +72,18 @@ class SettingsRow extends StatefulWidget {
     required this.onPressed,
     this.isDestructive = false,
   }) : trailing = null,
+       isWarning = false,
        _isAction = true;
 
-  const SettingsRow.control({super.key, required this.title, required this.subtitle, required Widget this.trailing})
-    : onPressed = null,
-      isDestructive = false,
-      _isAction = false;
+  const SettingsRow.control({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    required Widget this.trailing,
+    this.isWarning = false,
+  }) : onPressed = null,
+       isDestructive = false,
+       _isAction = false;
 
   final String title;
   final String subtitle;
@@ -85,6 +91,9 @@ class SettingsRow extends StatefulWidget {
 
   /// Draws the title and chevron in the warning colour.
   final bool isDestructive;
+
+  /// Draws the line under the title in the warning colour.
+  final bool isWarning;
 
   final Widget? trailing;
   final bool _isAction;
@@ -124,7 +133,10 @@ class _SettingsRowState extends State<SettingsRow> {
               children: [
                 Text(widget.title, style: text.bodyEmphasis.copyWith(color: accent ?? colors.textContent)),
                 const SizedBox(height: 3),
-                Text(widget.subtitle, style: text.body.copyWith(color: colors.textMuted)),
+                Text(
+                  widget.subtitle,
+                  style: text.body.copyWith(color: widget.isWarning ? colors.semanticEmber : colors.textMuted),
+                ),
               ],
             ),
           ),

@@ -864,5 +864,9 @@
   "desktopNotificationProposalCreatedTitle": "Proposal dibuat",
   "desktopNotificationProposalCreatedBody": "Kirim {amount} dari {multisig}",
   "desktopNotificationProposalNotConfirmedTitle": "Proposal belum terkonfirmasi",
-  "desktopNotificationProposalNotConfirmedBody": "Proposal untuk mengirim {amount} dari {multisig} tidak terlihat di rantai tepat waktu."
+  "desktopNotificationProposalNotConfirmedBody": "Proposal untuk mengirim {amount} dari {multisig} tidak terlihat di rantai tepat waktu.",
+  "desktopNotificationNotAllowed": "Tidak diizinkan di Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettings": "Buka Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettingsFailed": "Tidak dapat membuka Pengaturan Sistem",
+  "desktopNotificationUnavailable": "Tidak tersedia: {reason}"
 }
