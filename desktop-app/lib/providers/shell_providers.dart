@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
@@ -253,6 +254,12 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
     // account the switch ended on.
     if (!_isOffered(sheet)) {
       quantusPrint('${sheet.name} is not offered on the active account; nothing is opened.');
+      return;
+    }
+    // A swap being followed lives in the window, not in a sheet: Swap opens
+    // it in the panel at the right, from whichever account.
+    if (sheet == ShellSheet.swap && ref.read(activeSwapProvider) != null) {
+      ref.read(openedActivityProvider.notifier).open(const OpenedSwap());
       return;
     }
     if (sheet == ShellSheet.send || sheet == ShellSheet.propose) _beginSend();
