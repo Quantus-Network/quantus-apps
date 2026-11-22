@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
@@ -93,6 +94,26 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     }
   }
 
+  /// Reads again what macOS allows, without asking the person: it may have
+  /// been changed in System Settings. Only once the person has answered: the
+  /// first prompt takes the focus from the app, and before they answer macOS
+  /// would read as not allowing.
+  Future<void> recheckPermission() async {
+    if (defaultTargetPlatform != TargetPlatform.macOS || !_hasAnswer) return;
+    final bool allowed;
+    try {
+      allowed = await ref.read(notificationPluginProvider).isMacOSPermissionGranted();
+    } catch (e) {
+      quantusPrint('Reading the notification permission failed: $e');
+      if (ref.mounted) ref.read(telemetryProvider).sendError('desktop_notifications_recheck_failed', error: e);
+      return;
+    }
+    if (!ref.mounted || !_hasAnswer) return;
+    state = allowed ? const NotificationsAllowed() : const NotificationsDenied();
+  }
+
+  bool get _hasAnswer => state is NotificationsAllowed || state is NotificationsDenied;
+
   /// The account a click asked for, until the wallet's accounts and its
   /// active account have loaded, as at launch.
   String? _clickedAccountId;
@@ -168,12 +189,15 @@ final desktopLocalNotificationsProvider = NotifierProvider<DesktopLocalNotificat
   DesktopLocalNotifications.new,
 );
 
-/// Starts the system's notifications with the app, and asks for permission
-/// once there is a wallet to notify about.
+/// Starts the system's notifications with the app, asks for permission once
+/// there is a wallet to notify about, and reads it again whenever the window
+/// comes back.
 final notificationsStartupProvider = Provider<void>((ref) {
   final notifications = ref.watch(desktopLocalNotificationsProvider.notifier);
   unawaited(notifications.start());
   ref.listen(walletPresenceProvider, (_, presence) {
     if (presence.value == WalletPresence.present) unawaited(notifications.requestPermission());
   }, fireImmediately: true);
+  final window = AppLifecycleListener(onResume: () => unawaited(notifications.recheckPermission()));
+  ref.onDispose(window.dispose);
 });
