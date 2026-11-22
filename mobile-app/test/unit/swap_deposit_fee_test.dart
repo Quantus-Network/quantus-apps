@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -17,10 +19,12 @@ class _Balances extends FakeBalancesService {
   }
 }
 
-/// The chain unable to price a call.
+/// The chain not answering: the kind of failure a provider retries on its
+/// own unless told not to, which an [Error] is not.
 class _SubstrateDown extends FakeSubstrateService {
   @override
-  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async => throw StateError('chain down');
+  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async =>
+      throw TimeoutException('the chain did not answer');
 }
 
 void main() {
@@ -55,14 +59,14 @@ void main() {
     },
   );
 
-  test('a fee the chain cannot give is an error, asked for once', () async {
+  test('a fee the chain cannot give is an error, asked for once: it is not retried on its own', () async {
     final balances = _Balances();
     final container = containerWith(_SubstrateDown(), balances);
     final key = swapDepositFeeProvider((account, amount));
     final kept = container.listen(key, (_, _) {}, onError: (_, _) {});
     addTearDown(kept.close);
 
-    await expectLater(container.read(key.future), throwsStateError);
+    await expectLater(container.read(key.future), throwsA(isA<TimeoutException>()));
     await Future<void>.delayed(const Duration(milliseconds: 600));
     expect(container.read(key).hasError, isTrue);
     expect(balances.transfers, hasLength(1));

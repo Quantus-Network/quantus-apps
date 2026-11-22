@@ -1544,14 +1544,21 @@ void main() {
     testWidgets('a network fee that cannot be had says so and blocks the swap until a retry has it', (tester) async {
       final oneClick = _OneClick(dryOut: outQuote.amountOut);
       var chainDown = true;
+      var asked = 0;
       await tester.pumpApp(
         ReviewSwapScreen(account: account, quote: outQuote),
         overrides: overrides(
           oneClick.service(),
-          depositFee: () async => chainDown ? throw StateError('chain down') : _unit ~/ BigInt.from(50),
+          depositFee: () async {
+            asked++;
+            // A failure a provider would retry on its own, were it let to.
+            if (chainDown) throw TimeoutException('the chain did not answer');
+            return _unit ~/ BigInt.from(50);
+          },
         ),
       );
       await settle(tester);
+      expect(asked, 1);
 
       expect(find.text(l10n.swapReviewFeeUnavailable), findsOneWidget);
       expect(find.text(l10n.swapReviewFeeFailed), findsOneWidget);
@@ -1564,6 +1571,7 @@ void main() {
       await tester.tap(find.text(l10n.commonRetry));
       await settle(tester);
 
+      expect(asked, 2);
       expect(find.text('0.02 QTC'), findsOneWidget);
       expect(find.text(l10n.swapReviewFeeFailed), findsNothing);
       expect(button(tester, l10n.swapReviewConfirm).isDisabled, isFalse);
