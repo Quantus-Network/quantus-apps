@@ -484,6 +484,12 @@ class FakeSendChain {
   /// sent in.
   final indexedTransfers = <String, TransactionEvent>{};
 
+  /// When set, reading a transfer by its hash fails with this.
+  Object? transferLookupError;
+
+  /// The hashes of the transfers read, in order.
+  final transferLookups = <String>[];
+
   /// The proposals the indexer holds as created, by the hash of the
   /// transaction each was created in.
   final indexedProposals = <String, MultisigProposalCreatedEvent>{};
@@ -635,8 +641,11 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   final FakeSendChain chain;
 
   @override
-  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async =>
-      chain.indexedTransfers[extrinsicHash];
+  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
+    chain.transferLookups.add(extrinsicHash);
+    if (chain.transferLookupError case final error?) throw error;
+    return chain.indexedTransfers[extrinsicHash];
+  }
 
   @override
   Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {

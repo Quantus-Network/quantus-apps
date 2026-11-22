@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
@@ -10,12 +11,15 @@ import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
+import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
@@ -44,17 +48,23 @@ Future<ProviderContainer> _openWallet(
   bool settle = true,
   FakeSendChain? chain,
   List<MultisigAccount> multisigs = const [],
+  List<Account> accounts = const [mainAccount, savingsAccount],
+  Account active = mainAccount,
+  List<Override> extra = const [],
 }) async {
   await pumpShell(
     tester,
     notifications: notifications,
     settle: settle,
-    overrides: shellOverrides(
-      accounts: const [mainAccount, savingsAccount],
-      loadAccounts: loadAccounts,
-      chain: chain,
-      settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs),
-    ),
+    overrides: [
+      ...shellOverrides(
+        accounts: accounts,
+        loadAccounts: loadAccounts,
+        chain: chain,
+        settings: FakeSettingsService(activeAccount: RegularAccount(active), multisigs: multisigs),
+      ),
+      ...extra,
+    ],
   );
   return ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
 }
@@ -331,6 +341,82 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_opened(container), OpenedTransaction(row));
+    });
+  });
+
+  group('an Encrypted send', () {
+    final landed = WormholeTransferEvent(
+      id: '0xlast',
+      from: encryptedAccount.accountId,
+      to: 'qzBob',
+      amount: oneToken,
+      timestamp: _when,
+      fee: BigInt.zero,
+      extrinsicHash: '0xlast',
+      blockNumber: 10,
+    );
+
+    /// The history as the account's last read of its state found it.
+    Override historyOf(List<TransactionEvent> rows) => encryptedHistoryProvider.overrideWith((ref, walletIndex) {
+      ref.watch(encryptedStateProvider(walletIndex));
+      return AsyncValue.data(List.of(rows));
+    });
+
+    /// The send, of two batches, is handed over and both land.
+    Future<void> sendLands(WidgetTester tester, ProviderContainer container, FakeSendChain chain) async {
+      container
+          .read(ownActivityNotificationsProvider)
+          .onEncryptedSendEnded(
+            account: encryptedAccount,
+            amount: oneToken,
+            send: EncryptedSendState(phase: EncryptedSendPhase.succeeded, txHashes: const ['0xfirst', '0xlast']),
+          );
+      chain.indexedTransfers['0xfirst'] = _transfer(hash: '0xfirst', id: 'first');
+      chain.indexedTransfers['0xlast'] = _transfer(hash: '0xlast', id: 'last');
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+    }
+
+    testOnMac('opens from its notification, its history read again once the chain has it', (tester) async {
+      final rows = <TransactionEvent>[];
+      final chain = FakeSendChain();
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(
+        tester,
+        notifications,
+        chain: chain,
+        accounts: const [mainAccount, encryptedAccount],
+        active: encryptedAccount,
+        extra: [historyOf(rows)],
+      );
+      expect(container.read(activityViewProvider).value?.settled, isEmpty);
+
+      rows.add(landed);
+      await sendLands(tester, container, chain);
+      notifications.click(notifications.shown.single.payload);
+      await tester.pumpAndSettle();
+
+      expect(_opened(container), OpenedTransaction(landed));
+    });
+
+    testOnMac('whose history has not caught up still opens the account, and nothing fails', (tester) async {
+      final chain = FakeSendChain();
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(
+        tester,
+        notifications,
+        chain: chain,
+        accounts: const [mainAccount, encryptedAccount],
+        extra: [historyOf(const [])],
+      );
+
+      await sendLands(tester, container, chain);
+      notifications.click(notifications.shown.single.payload);
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), encryptedAccount.accountId);
+      expect(container.read(openedActivityProvider), isNull);
+      expect(tester.takeException(), isNull);
     });
   });
 
