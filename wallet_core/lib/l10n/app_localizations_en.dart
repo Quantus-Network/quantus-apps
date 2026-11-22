@@ -3196,4 +3196,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig) {
     return 'The proposal to send $amount from $multisig wasn’t seen on the chain in time.';
   }
+
+  @override
+  String get desktopNotificationNotAllowed => 'Not allowed in System Settings';
+
+  @override
+  String get desktopNotificationOpenSystemSettings => 'Open System Settings';
+
+  @override
+  String get desktopNotificationOpenSystemSettingsFailed => 'Couldn’t open System Settings';
+
+  @override
+  String desktopNotificationUnavailable(String reason) {
+    return 'Unavailable: $reason';
+  }
 }
