@@ -495,12 +495,19 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
     }
   }
 
-  void _backToForm() => setState(() {
-    _step = _Step.form;
-    _reviewed = null;
-    _confirmation = null;
-    _notice = null;
-  });
+  /// Back to the form, by whichever way: the button, the keys, or the path
+  /// in the sheet's title. Not while a swap is being confirmed: its deposit
+  /// may be going out, and the form would let the sheet be closed, or another
+  /// swap be started, under it.
+  void _backToForm() {
+    if (_confirming) return;
+    setState(() {
+      _step = _Step.form;
+      _reviewed = null;
+      _confirmation = null;
+      _notice = null;
+    });
+  }
 
   // -------------------------------------------------- what the review does
 
@@ -620,7 +627,9 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
       key: SwapSheet.closeKey,
       label: l10n.commonClose,
       kind: SheetButtonKind.secondary,
-      onTap: () => Navigator.of(context).pop(),
+      // Asked, not told, as the cross in the title is: a sheet that is
+      // confirming a swap stays.
+      onTap: () => unawaited(Navigator.of(context).maybePop()),
     );
 
     if (_loadingTokens && !disabled) {
@@ -899,7 +908,7 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
             key: SwapSheet.cancelKey,
             label: l10n.commonCancel,
             kind: SheetButtonKind.secondary,
-            onTap: () => Navigator.of(context).pop(),
+            onTap: () => unawaited(Navigator.of(context).maybePop()),
           ),
           const SizedBox(width: 10),
           SheetButton(
