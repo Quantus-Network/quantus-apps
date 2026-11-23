@@ -1,0 +1,63 @@
+import Cocoa
+
+/// The menu bar icon, there while closing the window leaves the app running,
+/// so a wallet with no window is never out of sight. Its menu brings the
+/// window back or quits the app, in the app's language.
+final class BackgroundStatusItem: NSObject {
+  private static let imageName = "StatusBarIcon"
+
+  private let onOpen: () -> Void
+  private let menu = NSMenu()
+  private let openItem = NSMenuItem()
+  private let quitItem = NSMenuItem()
+  private var item: NSStatusItem?
+
+  init(onOpen: @escaping () -> Void) {
+    self.onOpen = onOpen
+    super.init()
+    openItem.target = self
+    openItem.action = #selector(openWindow)
+    quitItem.target = self
+    quitItem.action = #selector(quitApp)
+    menu.addItem(openItem)
+    menu.addItem(.separator())
+    menu.addItem(quitItem)
+  }
+
+  /// Shows the icon or takes it away, its menu saying [openLabel] and [quitLabel].
+  func update(isShown: Bool, openLabel: String, quitLabel: String) {
+    openItem.title = openLabel
+    quitItem.title = quitLabel
+    item?.button?.toolTip = openLabel
+    item?.button?.setAccessibilityLabel(openLabel)
+
+    guard isShown else {
+      if let item {
+        NSStatusBar.system.removeStatusItem(item)
+        self.item = nil
+      }
+      return
+    }
+    guard item == nil else { return }
+
+    let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+    if let image = NSImage(named: BackgroundStatusItem.imageName) {
+      image.isTemplate = true
+      item.button?.image = image
+    } else {
+      NSLog("BackgroundStatusItem: the image \(BackgroundStatusItem.imageName) is missing from the app")
+    }
+    item.button?.toolTip = openLabel
+    item.button?.setAccessibilityLabel(openLabel)
+    item.menu = menu
+    self.item = item
+  }
+
+  @objc private func openWindow() {
+    onOpen()
+  }
+
+  @objc private func quitApp() {
+    NSApp.terminate(nil)
+  }
+}

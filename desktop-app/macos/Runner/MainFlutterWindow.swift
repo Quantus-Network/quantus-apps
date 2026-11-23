@@ -33,6 +33,8 @@ class MainFlutterWindow: NSWindow {
   /// Whether the window is to leave the screen once it is out of full screen.
   private var hidesAfterFullScreen = false
 
+  private lazy var statusItem = BackgroundStatusItem(onOpen: { [weak self] in self?.bringToFront() })
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.flutterViewController = flutterViewController
@@ -65,12 +67,17 @@ class MainFlutterWindow: NSWindow {
         result(nil)
       case "setBackgroundMode":
         guard let arguments = call.arguments as? [String: Any],
-          let keepRunning = arguments["keepRunning"] as? Bool
+          let keepRunning = arguments["keepRunning"] as? Bool,
+          let openLabel = arguments["openLabel"] as? String,
+          let quitLabel = arguments["quitLabel"] as? String
         else {
-          result(FlutterError(code: "arguments", message: "setBackgroundMode needs keepRunning", details: nil))
+          result(
+            FlutterError(
+              code: "arguments", message: "setBackgroundMode needs keepRunning, openLabel and quitLabel", details: nil))
           return
         }
         self?.keepsRunning = keepRunning
+        self?.statusItem.update(isShown: keepRunning, openLabel: openLabel, quitLabel: quitLabel)
         result(nil)
       case "hideWindow":
         self?.hideKeepingAppRunning()
