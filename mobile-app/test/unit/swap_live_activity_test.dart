@@ -244,8 +244,10 @@ void main() {
 
   test('the card is about the newest swap still with 1Click, else the one that settled last', () {
     final now = started.add(const Duration(minutes: 1));
-    ActiveSwap settledAt(SwapStatus status, DateTime at) =>
-        swap(SwapStatus.processing).withOrder(SwapOrder(quote: quote, status: status), now: at);
+    ActiveSwap settledAt(SwapStatus status, DateTime at) => swap(SwapStatus.processing).withOrder(
+      SwapOrder(quote: quote, status: status),
+      now: at,
+    );
     final olderRunning = swap(SwapStatus.processing);
     final newerRunning = swap(SwapStatus.knownDepositTx);
     final settledFirst = settledAt(SwapStatus.success, started);
