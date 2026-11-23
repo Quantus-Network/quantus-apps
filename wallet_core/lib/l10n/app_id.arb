@@ -878,5 +878,9 @@
   "desktopSwapViewDeposit": "Lihat Deposit",
   "desktopSwapReceived": "{amount} diterima",
   "desktopSwapCompleteBody": "Swap {amount} Anda selesai.",
-  "desktopSwapPoweredByNearIntents": "Didukung oleh NEAR Intents"
+  "desktopSwapPoweredByNearIntents": "Didukung oleh NEAR Intents",
+  "desktopNotificationNotAllowed": "Tidak diizinkan di Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettings": "Buka Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettingsFailed": "Tidak dapat membuka Pengaturan Sistem",
+  "desktopNotificationUnavailable": "Tidak tersedia: {reason}"
 }

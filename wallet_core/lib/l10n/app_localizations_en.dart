@@ -3252,4 +3252,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopSwapPoweredByNearIntents => 'Powered by NEAR Intents';
+
+  @override
+  String get desktopNotificationNotAllowed => 'Not allowed in System Settings';
+
+  @override
+  String get desktopNotificationOpenSystemSettings => 'Open System Settings';
+
+  @override
+  String get desktopNotificationOpenSystemSettingsFailed => 'Couldn’t open System Settings';
+
+  @override
+  String desktopNotificationUnavailable(String reason) {
+    return 'Unavailable: $reason';
+  }
 }

@@ -3257,4 +3257,18 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopSwapPoweredByNearIntents => 'Didukung oleh NEAR Intents';
+
+  @override
+  String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettings => 'Buka Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettingsFailed => 'Tidak dapat membuka Pengaturan Sistem';
+
+  @override
+  String desktopNotificationUnavailable(String reason) {
+    return 'Tidak tersedia: $reason';
+  }
 }
