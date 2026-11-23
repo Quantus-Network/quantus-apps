@@ -508,6 +508,9 @@ class FakeSendChain {
   /// sent in.
   final indexedTransfers = <String, TransactionEvent>{};
 
+  /// When set, a search of the indexer by transaction hash waits for it.
+  Completer<void>? holdHashSearch;
+
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
   /// proposal, expiring at block 1284220.
@@ -648,8 +651,10 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   final FakeSendChain chain;
 
   @override
-  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async =>
-      chain.indexedTransfers[extrinsicHash];
+  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
+    await chain.holdHashSearch?.future;
+    return chain.indexedTransfers[extrinsicHash];
+  }
 
   @override
   Future<SortedTransactionsList> fetchAllTransactionTypes({

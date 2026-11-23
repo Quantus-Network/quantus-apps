@@ -71,7 +71,7 @@ class BackgroundMode {
     );
     _ref.listen<bool>(pendingWorkProvider, (_, isPending) {
       unawaited(_reported(_window.setStayAwake(isPending)));
-      if (!isPending && _ref.read(windowClosedProvider)) unawaited(_quitOnceHandedOver());
+      if (!isPending) unawaited(_quitOnceHandedOver());
     });
     // A menu still works with the window closed, and what it opens must show.
     _ref.listen<ShellSheet?>(shellSheetProvider, (_, sheet) {
@@ -130,10 +130,9 @@ class BackgroundMode {
   /// as settled, and would quit with no question.
   Future<AppExitResponse> _onQuitRequested() async {
     if (!_ref.read(pendingWorkProvider)) return AppExitResponse.exit;
-    if (!_ref.read(quitQuestionProvider)) {
-      if (_ref.read(windowClosedProvider)) unawaited(_reported(_window.bringToFront()));
-      _ref.read(quitQuestionProvider.notifier).set(true);
-    }
+    // Also when already asking: the window may have been closed behind it.
+    if (_ref.read(windowClosedProvider)) unawaited(_reported(_window.bringToFront()));
+    _ref.read(quitQuestionProvider.notifier).set(true);
     return AppExitResponse.cancel;
   }
 
@@ -164,7 +163,8 @@ class BackgroundMode {
     _closed.set(false);
   }
 
-  /// Quits once what the settled work has to say was handed to the system.
+  /// With the window closed, quits once what the settled work has to say was
+  /// handed to the system.
   Future<void> _quitOnceHandedOver() async {
     final attempt = ++_quitAttempt;
     _quitTimer?.cancel();
@@ -174,7 +174,7 @@ class BackgroundMode {
     await _ref.read(ownActivityNotificationsProvider).handedOver;
     if (!_ref.mounted || attempt != _quitAttempt || !_ref.read(windowClosedProvider)) return;
     _quitTimer = Timer(settleDelay, () {
-      if (!_ref.read(windowClosedProvider) || _ref.read(pendingWorkProvider)) return;
+      if (_ref.read(pendingWorkProvider)) return;
       _ref.read(requestAppExitProvider)();
     });
   }

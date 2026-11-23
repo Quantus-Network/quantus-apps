@@ -510,8 +510,12 @@ void main() {
 
     /// A wallet whose indexer holds Main's send, with a broadcast send under
     /// way, its window closed.
-    Future<_Opened> closedOnASend(WidgetTester tester, FakeNotificationPlugin notifications) async {
-      final device = FakeWalletDevice();
+    Future<_Opened> closedOnASend(
+      WidgetTester tester,
+      FakeNotificationPlugin notifications, {
+      FakeWalletDevice? device,
+    }) async {
+      device ??= FakeWalletDevice();
       device.chain.indexedTransfers[sendHash] = TransferEvent(
         id: 'indexed-send',
         from: mainAccount.accountId,
@@ -596,6 +600,49 @@ void main() {
       handover.complete();
       await tester.pump();
       await tester.pump(BackgroundMode.settleDelay);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('work settling twice while a notification is handed over quits once', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final (window: _, :container, :exits) = await closedOnASend(tester, notifications);
+      final handover = notifications.heldShow = Completer<void>();
+      final sends = container.read(pendingTransactionsProvider.notifier);
+      sends.updateState('tx-1', TransactionState.inHistory);
+      sends.remove('tx-1');
+      await tester.pump();
+      await tester.pump();
+
+      final holds = container.read(workHoldsProvider.notifier)..hold(_work);
+      await tester.pump();
+      holds.release(_work);
+      await tester.pump();
+
+      handover.complete();
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay);
+
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('a confirmed send whose amount is still being read keeps the app until it is notified', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final device = FakeWalletDevice();
+      final (window: _, :container, :exits) = await closedOnASend(tester, notifications, device: device);
+      final search = device.chain.holdHashSearch = Completer<void>();
+
+      final sends = container.read(pendingTransactionsProvider.notifier);
+      sends.updateState('tx-1', TransactionState.inHistory);
+      sends.remove('tx-1');
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(notifications.shown, isEmpty);
+      expect(exits, isEmpty);
+
+      search.complete();
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay);
+      expect(notifications.shown, hasLength(1));
       expect(exits, ['exit']);
     });
 
@@ -836,6 +883,21 @@ void main() {
 
       expect(await requestQuit(tester), AppExitResponse.cancel);
 
+      expect(find.text(title), findsOneWidget);
+      expect(exits, isEmpty);
+    });
+
+    testOnMac('a second quit with the window closed behind the question brings it back, without a second one', (
+      tester,
+    ) async {
+      final (:window, container: _, :exits) = await _open(tester, workUnderWay: true);
+      await requestQuit(tester);
+      await _pressClose(tester, window);
+      expect(window.calls, ['hide']);
+
+      expect(await requestQuit(tester), AppExitResponse.cancel);
+
+      expect(window.calls, ['hide', 'bringToFront']);
       expect(find.text(title), findsOneWidget);
       expect(exits, isEmpty);
     });
