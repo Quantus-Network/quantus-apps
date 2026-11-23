@@ -10,6 +10,7 @@ import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
+import 'package:wallet_core/swap/swap_progress.dart';
 
 /// Pinned at the top of the home activity: one row per followed swap, newest
 /// first, except a swap still waiting for its deposit to be sent. A running

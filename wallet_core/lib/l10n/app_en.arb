@@ -2245,9 +2245,9 @@
     "@settingsHelpScreenTitle": {
       "description": "App bar on help and support screen"
     },
-    "settingsHelpEmail": "Email Support",
-    "@settingsHelpEmail": {
-      "description": "Email support row title"
+    "settingsHelpDiscord": "Discord",
+    "@settingsHelpDiscord": {
+      "description": "Discord support row title"
     },
     "settingsHelpTelegram": "Telegram",
     "@settingsHelpTelegram": {
@@ -2506,6 +2506,10 @@
     "swapSaveAddress": "Save for future swaps",
     "@swapSaveAddress": {
       "description": "Checkbox that saves the entered address"
+    },
+    "swapSaveAddressFailed": "Could not save the address.",
+    "@swapSaveAddressFailed": {
+      "description": "Error toast when the entered swap address could not be saved for future swaps"
     },
     "swapContinue": "Continue to Swap",
     "@swapContinue": {
@@ -3047,6 +3051,10 @@
     "commonContactSupport": "Contact Support",
     "@commonContactSupport": {
       "description": "Link to support from a failed swap or the Keystone mismatch screen"
+    },
+    "commonSupportScamWarning": "Support will never DM you first or ask for your recovery phrase.",
+    "@commonSupportScamWarning": {
+      "description": "Warning against impostors, shown wherever the app sends someone to the support Discord"
     },
     "commonRetry": "Retry",
     "@commonRetry": {
@@ -4680,6 +4688,18 @@
         }
       }
     },
+    "desktopNotificationEncryptedSendFailedBody": "{amount} from {account} didn’t finish sending. Part of it may have gone through.",
+    "@desktopNotificationEncryptedSendFailedBody": {
+      "description": "Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "account": {
+          "type": "String"
+        }
+      }
+    },
     "desktopNotificationProposalCreatedTitle": "Proposal created",
     "@desktopNotificationProposalCreatedTitle": {
       "description": "Desktop notification title: a multisig proposal made on this computer was created on the chain"
@@ -4708,6 +4728,154 @@
           "type": "String"
         },
         "multisig": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapAwaitingDeposit": "Awaiting deposit",
+    "@desktopSwapAwaitingDeposit": {
+      "description": "Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet"
+    },
+    "desktopSwapWaitingForDeposit": "Waiting for your deposit",
+    "@desktopSwapWaitingForDeposit": {
+      "description": "Desktop swap row: what a swap awaiting its deposit is waiting for"
+    },
+    "desktopSwapUntil": "until {time}",
+    "@desktopSwapUntil": {
+      "description": "Desktop swap: the time by which a deposit must be sent, after its status",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapFor": "For",
+    "@desktopSwapFor": {
+      "description": "Desktop swap row: label before what the swap is for"
+    },
+    "desktopSwapAmountOnNetwork": "{amount} on {network}",
+    "@desktopSwapAmountOnNetwork": {
+      "description": "Desktop swap: an amount with its token symbol and the network the token is on",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapForAmountOnNetwork": "for {amount} on {network}",
+    "@desktopSwapForAmountOnNetwork": {
+      "description": "Desktop swap panel: what the amount in the headline is swapped for; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapRecipientOn": "Recipient on {network}",
+    "@desktopSwapRecipientOn": {
+      "description": "Desktop swap panel: heading over the address a swap pays out at",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapTheRecipient": "the recipient",
+    "@desktopSwapTheRecipient": {
+      "description": "Desktop swap: who a swap pays out to, as the last step names it (Sending USDC to the recipient)"
+    },
+    "desktopSwapSendAmount": "Send {amount}",
+    "@desktopSwapSendAmount": {
+      "description": "Desktop swap panel: headline of a swap awaiting its deposit; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapCancel": "Cancel Swap",
+    "@desktopSwapCancel": {
+      "description": "Desktop swap panel: button that drops a swap whose deposit was not sent"
+    },
+    "desktopSwapViewDeposit": "View Deposit",
+    "@desktopSwapViewDeposit": {
+      "description": "Desktop swap panel: opens the deposit's transaction in the explorer"
+    },
+    "desktopSwapReceived": "{amount} received",
+    "@desktopSwapReceived": {
+      "description": "Desktop swap panel: headline of a completed swap; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapCompleteBody": "Your swap of {amount} is complete.",
+    "@desktopSwapCompleteBody": {
+      "description": "Desktop swap panel: line under a completed swap's headline; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapPoweredByNearIntents": "Powered by NEAR Intents",
+    "@desktopSwapPoweredByNearIntents": {
+      "description": "Desktop swap: attribution to NEAR Intents"
+    },
+    "desktopSwapRecipientAddressOn": "Recipient address on {network}",
+    "@desktopSwapRecipientAddressOn": {
+      "description": "Desktop swap sheet: label of the address field for a swap out of QTC; network is the chain the token is paid out on",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapRefundAddressOn": "Refund address on {network}",
+    "@desktopSwapRefundAddressOn": {
+      "description": "Desktop swap sheet: label of the address field for a swap into QTC, and of that address on the review; network is the chain a refund returns on",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapMaximum": "Swap the maximum amount",
+    "@desktopSwapMaximum": {
+      "description": "Desktop swap sheet: checkbox that puts in the most QTC the account can swap"
+    },
+    "desktopSwapAccountAvailable": "{account} · {amount} available",
+    "@desktopSwapAccountAvailable": {
+      "description": "Desktop swap sheet: who pays and the most they can put in; amount includes the token symbol",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        },
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapLoadingTokens": "Loading tokens",
+    "@desktopSwapLoadingTokens": {
+      "description": "Desktop swap sheet: shown while the list of tokens is fetched"
+    },
+    "desktopSwapRemoveSavedAddress": "Remove Saved Address",
+    "@desktopSwapRemoveSavedAddress": {
+      "description": "Desktop swap sheet: context menu item on a saved address that forgets it"
+    },
+    "desktopSwapSavedAddressesUnavailable": "Saved addresses are unavailable: {error}",
+    "@desktopSwapSavedAddressesUnavailable": {
+      "description": "Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from",
+      "placeholders": {
+        "error": {
           "type": "String"
         }
       }

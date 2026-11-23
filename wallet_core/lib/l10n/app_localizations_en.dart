@@ -1559,7 +1559,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Help & Support';
 
   @override
-  String get settingsHelpEmail => 'Email Support';
+  String get settingsHelpDiscord => 'Discord';
 
   @override
   String get settingsHelpTelegram => 'Telegram';
@@ -1719,6 +1719,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapSaveAddress => 'Save for future swaps';
+
+  @override
+  String get swapSaveAddressFailed => 'Could not save the address.';
 
   @override
   String get swapContinue => 'Continue to Swap';
@@ -2081,6 +2084,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Contact Support';
+
+  @override
+  String get commonSupportScamWarning => 'Support will never DM you first or ask for your recovery phrase.';
 
   @override
   String get commonRetry => 'Retry';
@@ -3190,6 +3196,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount from $account didn’t finish sending. Part of it may have gone through.';
+  }
+
+  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal created';
 
   @override
@@ -3203,6 +3214,91 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig) {
     return 'The proposal to send $amount from $multisig wasn’t seen on the chain in time.';
+  }
+
+  @override
+  String get desktopSwapAwaitingDeposit => 'Awaiting deposit';
+
+  @override
+  String get desktopSwapWaitingForDeposit => 'Waiting for your deposit';
+
+  @override
+  String desktopSwapUntil(String time) {
+    return 'until $time';
+  }
+
+  @override
+  String get desktopSwapFor => 'For';
+
+  @override
+  String desktopSwapAmountOnNetwork(String amount, String network) {
+    return '$amount on $network';
+  }
+
+  @override
+  String desktopSwapForAmountOnNetwork(String amount, String network) {
+    return 'for $amount on $network';
+  }
+
+  @override
+  String desktopSwapRecipientOn(String network) {
+    return 'Recipient on $network';
+  }
+
+  @override
+  String get desktopSwapTheRecipient => 'the recipient';
+
+  @override
+  String desktopSwapSendAmount(String amount) {
+    return 'Send $amount';
+  }
+
+  @override
+  String get desktopSwapCancel => 'Cancel Swap';
+
+  @override
+  String get desktopSwapViewDeposit => 'View Deposit';
+
+  @override
+  String desktopSwapReceived(String amount) {
+    return '$amount received';
+  }
+
+  @override
+  String desktopSwapCompleteBody(String amount) {
+    return 'Your swap of $amount is complete.';
+  }
+
+  @override
+  String get desktopSwapPoweredByNearIntents => 'Powered by NEAR Intents';
+
+  @override
+  String desktopSwapRecipientAddressOn(String network) {
+    return 'Recipient address on $network';
+  }
+
+  @override
+  String desktopSwapRefundAddressOn(String network) {
+    return 'Refund address on $network';
+  }
+
+  @override
+  String get desktopSwapMaximum => 'Swap the maximum amount';
+
+  @override
+  String desktopSwapAccountAvailable(String account, String amount) {
+    return '$account · $amount available';
+  }
+
+  @override
+  String get desktopSwapLoadingTokens => 'Loading tokens';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Remove Saved Address';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Saved addresses are unavailable: $error';
   }
 
   @override

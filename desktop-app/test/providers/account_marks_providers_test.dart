@@ -20,13 +20,15 @@ void main() {
     WidgetTester tester,
     FakeSendChain chain, {
     List<MultisigAccount> multisigs = const [],
+    ActiveSwap? swap,
   }) async {
     clock = DateTime(2026, 11, 20, 14, 2);
     final container = ProviderContainer(
       overrides: [
         ...shellOverrides(
           accounts: const [mainAccount, savingsAccount, encryptedAccount],
-          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs),
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs)
+            ..activeSwap = swap,
           // Read as the chain answers: later, never at once.
           balanceOf: (_) async => oneToken,
           encryptedBalances: {0: oneToken},
@@ -119,6 +121,49 @@ void main() {
     expect(markOf(container, savingsAccount.accountId), const AccountMark());
     expect(markOf(container, mainAccount.accountId), const AccountMark());
     await close(tester, container);
+  });
+
+  testWidgets('a swap counts for the account it is from while it runs or awaits its deposit, and for no other', (
+    tester,
+  ) async {
+    final following = [
+      ('running', fakeActiveSwap(account: savingsAccount)),
+      (
+        'awaiting its deposit',
+        fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: savingsAccount),
+      ),
+    ];
+    for (final (state, swap) in following) {
+      final container = await wallet(tester, FakeSendChain(), swap: swap);
+
+      expect(markOf(container, savingsAccount.accountId), const AccountMark(inProgress: 1), reason: state);
+      expect(markOf(container, mainAccount.accountId), const AccountMark(), reason: state);
+      await close(tester, container);
+    }
+  });
+
+  testWidgets('a swap that has ended counts no more: complete, refunded, short-paid, or never paid in time', (
+    tester,
+  ) async {
+    final ended = [
+      ('complete', fakeActiveSwap(status: SwapStatus.success)),
+      ('refunded', fakeActiveSwap(status: SwapStatus.refunded)),
+      ('short-paid', fakeActiveSwap(swapOut: false, status: SwapStatus.incompleteDeposit)),
+      (
+        'expired',
+        fakeActiveSwap(
+          swapOut: false,
+          status: SwapStatus.pendingDeposit,
+          deadline: DateTime.now().subtract(const Duration(minutes: 1)),
+        ),
+      ),
+    ];
+    for (final (state, swap) in ended) {
+      final container = await wallet(tester, FakeSendChain(), swap: swap);
+
+      expect(markOf(container, mainAccount.accountId), const AccountMark(), reason: state);
+      await close(tester, container);
+    }
   });
 
   testWidgets("a transfer still scheduled counts for an account never opened, all accounts' read at once", (

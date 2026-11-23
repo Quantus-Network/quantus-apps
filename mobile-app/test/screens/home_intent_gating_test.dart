@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
+import 'package:wallet_core/swap/swap_progress.dart';
 import 'package:wallet_core/models/fiat_currency.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:wallet_core/providers/active_swaps_provider.dart';
