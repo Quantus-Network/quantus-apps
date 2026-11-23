@@ -3230,6 +3230,12 @@ abstract class AppLocalizations {
   /// **'Save for future swaps'**
   String get swapSaveAddress;
 
+  /// Error toast when the entered swap address could not be saved for future swaps
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the address.'**
+  String get swapSaveAddressFailed;
+
   /// Button that quotes the swap with the entered address
   ///
   /// In en, this message translates to:
@@ -5881,6 +5887,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Loading tokens'**
   String get desktopSwapLoadingTokens;
+
+  /// Desktop swap sheet: context menu item on a saved address that forgets it
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Saved Address'**
+  String get desktopSwapRemoveSavedAddress;
+
+  /// Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from
+  ///
+  /// In en, this message translates to:
+  /// **'Saved addresses are unavailable: {error}'**
+  String desktopSwapSavedAddressesUnavailable(String error);
 
   /// Desktop Settings, Notifications row: macOS is not letting the app show notifications
   ///

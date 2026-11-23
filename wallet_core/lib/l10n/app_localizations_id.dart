@@ -1724,6 +1724,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get swapSaveAddress => 'Simpan untuk swap berikutnya';
 
   @override
+  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
+
+  @override
   String get swapContinue => 'Lanjutkan ke Swap';
 
   @override
@@ -3278,6 +3281,14 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopSwapLoadingTokens => 'Memuat token';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Hapus Alamat Tersimpan';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Alamat tersimpan tidak tersedia: $error';
+  }
 
   @override
   String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';

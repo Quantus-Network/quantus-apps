@@ -1721,6 +1721,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapSaveAddress => 'Save for future swaps';
 
   @override
+  String get swapSaveAddressFailed => 'Could not save the address.';
+
+  @override
   String get swapContinue => 'Continue to Swap';
 
   @override
@@ -3273,6 +3276,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopSwapLoadingTokens => 'Loading tokens';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Remove Saved Address';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Saved addresses are unavailable: $error';
+  }
 
   @override
   String get desktopNotificationNotAllowed => 'Not allowed in System Settings';

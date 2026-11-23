@@ -2507,6 +2507,10 @@
     "@swapSaveAddress": {
       "description": "Checkbox that saves the entered address"
     },
+    "swapSaveAddressFailed": "Could not save the address.",
+    "@swapSaveAddressFailed": {
+      "description": "Error toast when the entered swap address could not be saved for future swaps"
+    },
     "swapContinue": "Continue to Swap",
     "@swapContinue": {
       "description": "Button that quotes the swap with the entered address"
@@ -4833,6 +4837,19 @@
     "desktopSwapLoadingTokens": "Loading tokens",
     "@desktopSwapLoadingTokens": {
       "description": "Desktop swap sheet: shown while the list of tokens is fetched"
+    },
+    "desktopSwapRemoveSavedAddress": "Remove Saved Address",
+    "@desktopSwapRemoveSavedAddress": {
+      "description": "Desktop swap sheet: context menu item on a saved address that forgets it"
+    },
+    "desktopSwapSavedAddressesUnavailable": "Saved addresses are unavailable: {error}",
+    "@desktopSwapSavedAddressesUnavailable": {
+      "description": "Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
     },
     "desktopNotificationNotAllowed": "Not allowed in System Settings",
     "@desktopNotificationNotAllowed": {

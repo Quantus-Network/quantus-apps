@@ -1630,6 +1630,34 @@ void _swapSheetScenes() {
     await tester.pumpAndSettle();
   });
 
+  _scene('swap_sheet_saved', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) => device.swaps.saved['ARB'] = const [
+        swapRecipient,
+        '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+        '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B',
+      ],
+    );
+    await tester.enterText(find.byKey(SwapSheet.amountFieldKey), '250');
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_save_address', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await tester.tap(find.descendant(of: find.byKey(SwapSheet.saveAddressKey), matching: find.byType(Checkbox)));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_save_failed', (tester) async {
+    await _openSwapSheet(tester, prepare: (device) => device.swaps.saveError = StateError('The disk is full'));
+    await _fillSwap(tester);
+    await tester.tap(find.descendant(of: find.byKey(SwapSheet.saveAddressKey), matching: find.byType(Checkbox)));
+    await tester.pumpAndSettle();
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
+
   _scene('swap_sheet_unavailable', (tester) async {
     await _openSwapSheet(
       tester,
