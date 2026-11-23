@@ -6,6 +6,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HelpAndSupportScreenV2 extends ConsumerWidget {
   const HelpAndSupportScreenV2({super.key});
@@ -20,9 +21,9 @@ class HelpAndSupportScreenV2 extends ConsumerWidget {
         children: [
           _contactBlock(
             context,
-            title: l10n.settingsHelpEmail,
-            subtitle: AppConstants.emailSupport,
-            onTap: () => openUrl('mailto:${AppConstants.emailSupport}'),
+            title: l10n.settingsHelpDiscord,
+            subtitle: l10n.commonSupportScamWarning,
+            onTap: () => openUrl(AppConstants.discordSupportUrl, mode: LaunchMode.externalApplication),
           ),
           _contactBlock(
             context,

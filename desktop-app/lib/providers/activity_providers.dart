@@ -6,6 +6,7 @@ import 'package:wallet_core/activity/activity_progress.dart';
 import 'package:wallet_core/activity/multisig_activity.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
@@ -62,7 +63,8 @@ class WalletRefreshingNotifier extends Notifier<bool> {
   }
 }
 
-/// What the panel at the window's right shows: a transaction or a proposal.
+/// What the panel at the window's right shows: a transaction, a proposal, or
+/// the swap being followed.
 sealed class OpenedActivity {
   const OpenedActivity();
 
@@ -259,13 +261,29 @@ final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
   };
 });
 
+/// The swap being followed: there is one at most, so it needs no more to be
+/// told apart.
+final class OpenedSwap extends OpenedActivity {
+  const OpenedSwap();
+
+  @override
+  String get id => 'swap';
+
+  @override
+  bool operator ==(Object other) => other is OpenedSwap;
+
+  @override
+  int get hashCode => id.hashCode;
+}
+
 /// What is open, as the lists hold it now: a transaction by its id, or, once
 /// it settled under the indexer's own id, by its hash; a proposal among the
-/// open ones or the past ones. Null when it is no longer there. While the
-/// lists load, what was opened stands.
+/// open ones or the past ones; the swap while one is followed. Null when it
+/// is no longer there. While the lists load, what was opened of them stands.
 final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
   final opened = ref.watch(openedActivityProvider);
   if (opened == null) return null;
+  if (opened is OpenedSwap) return ref.watch(activeSwapProvider) == null ? null : opened;
   final view = ref.watch(activityViewProvider).value;
   if (view == null) return opened;
   final activity = [...view.inProgress, ...view.settled];
@@ -278,6 +296,8 @@ final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
       if (hash == null) return null;
       final byHash = activity.where((other) => other.extrinsicHash == hash).firstOrNull;
       return byHash == null ? null : OpenedTransaction(byHash);
+    case OpenedSwap():
+      throw StateError('The swap is answered for before the lists are read.');
     case OpenedProposal(:final proposal):
       final open = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
       final past = [
