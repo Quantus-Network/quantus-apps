@@ -19,7 +19,9 @@ add_library(${PLUGIN_NAME} SHARED
   "camera_texture.cc"
   "camera_texture.h"
   "camera_texture_buffer.h"
+  "../native/camera.cc"
   "../native/camera.h"
+  "../native/frame_sizes.h"
   "../native/yuy2.h"
 )
 

@@ -10,6 +10,7 @@
 #include "yuy2.h"
 
 using desktop_qr_camera::ConvertYuy2;
+using desktop_qr_camera::IsReadableFrameSize;
 using desktop_qr_camera::kMaxFrameSide;
 using desktop_qr_camera::kMaxUnreadableFrames;
 using desktop_qr_camera::UnreadableFrames;
@@ -188,6 +189,17 @@ void HandlesTheLargestFrame() {
   CHECK(out.guards_intact());
 }
 
+void TellsWhichFrameSizesCanBeRead() {
+  CHECK(IsReadableFrameSize(2, 1));
+  CHECK(IsReadableFrameSize(1280, 720));
+  CHECK(IsReadableFrameSize(kMaxFrameSide, kMaxFrameSide));
+  CHECK(!IsReadableFrameSize(0, 720));
+  CHECK(!IsReadableFrameSize(1280, 0));
+  CHECK(!IsReadableFrameSize(1281, 720));
+  CHECK(!IsReadableFrameSize(kMaxFrameSide + 2, 720));
+  CHECK(!IsReadableFrameSize(1280, kMaxFrameSide + 1));
+}
+
 void AStrideNotStatedIsThePlainRow() { CHECK(UsableStride(0, 1280) == 1280); }
 
 void AStatedStrideIsUsedWhenItHoldsARow() {
@@ -220,6 +232,7 @@ void AGoodFrameStartsTheCountAgain() {
 }  // namespace
 
 int main() {
+  TellsWhichFrameSizesCanBeRead();
   AStrideNotStatedIsThePlainRow();
   AStatedStrideIsUsedWhenItHoldsARow();
   AStrideShorterThanARowIsRefused();

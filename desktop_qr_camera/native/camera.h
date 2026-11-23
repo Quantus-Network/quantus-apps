@@ -114,6 +114,7 @@ class Camera {
 #ifdef _WIN32
   enum class PixelFormat { kYuy2, kNv12 };
 
+  bool IsOpen() const { return reader_.Get() != nullptr; }
   CameraStatus OpenFirstDevice();
   CameraStatus ChooseFormat();
   // kUnsupported means this format and size can't be used, so try the next.
@@ -132,6 +133,7 @@ class Camera {
     size_t length;
   };
 
+  bool IsOpen() const { return fd_ >= 0 && capture_started_; }
   CameraStatus ChooseFormat();
   CameraStatus MapBuffers();
   void UnmapBuffers();

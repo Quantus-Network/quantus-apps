@@ -9,8 +9,8 @@
 
 namespace desktop_qr_camera {
 
-constexpr int64_t kWantedWidth = 1280;
-constexpr int64_t kWantedHeight = 720;
+constexpr uint32_t kWantedWidth = 1280;
+constexpr uint32_t kWantedHeight = 720;
 
 struct FrameSize {
   uint32_t width;
@@ -18,8 +18,8 @@ struct FrameSize {
 };
 
 inline int64_t DistanceFromWanted(const FrameSize& size) {
-  const int64_t across = static_cast<int64_t>(size.width) - kWantedWidth;
-  const int64_t down = static_cast<int64_t>(size.height) - kWantedHeight;
+  const int64_t across = static_cast<int64_t>(size.width) - static_cast<int64_t>(kWantedWidth);
+  const int64_t down = static_cast<int64_t>(size.height) - static_cast<int64_t>(kWantedHeight);
   return (across < 0 ? -across : across) + (down < 0 ? -down : down);
 }
 
@@ -28,10 +28,7 @@ inline int64_t DistanceFromWanted(const FrameSize& size) {
 inline std::vector<FrameSize> SizesNearestWanted(const std::vector<FrameSize>& offered) {
   std::vector<FrameSize> sizes;
   for (const FrameSize& size : offered) {
-    if (size.width == 0 || size.height == 0 || size.width > kMaxFrameSide || size.height > kMaxFrameSide ||
-        size.width % 2 != 0) {
-      continue;
-    }
+    if (!IsReadableFrameSize(size.width, size.height)) continue;
     const bool is_listed = std::any_of(sizes.begin(), sizes.end(), [&size](const FrameSize& other) {
       return other.width == size.width && other.height == size.height;
     });

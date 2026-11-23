@@ -107,6 +107,7 @@ int fake_munmap(void* start, size_t) {
 #undef ioctl
 #undef mmap
 #undef munmap
+#include "../../native/camera.cc"
 
 using desktop_qr_camera::Camera;
 using desktop_qr_camera::CameraStatus;
@@ -244,9 +245,27 @@ void TestReleasingClosesTheCamera() {
   CHECK(open_fds.empty());
 }
 
+void TestACameraThatIsNotOpenCannotCapture() {
+  Reset({});
+  Camera camera;
+  CHECK(!camera.StartCaptureLoop([](const uint8_t*, uint32_t, uint32_t) {}));
+  CHECK(camera.CaptureFrame().status == CameraStatus::kStopped);
+}
+
+void TestAnOpenCameraThatIsNotCapturingHasNoFrame() {
+  Reset({{0, FakeNode()}});
+  Camera camera;
+  CHECK(camera.Open() == CameraStatus::kOk);
+  const desktop_qr_camera::LumaFrame frame = camera.CaptureFrame();
+  CHECK(frame.status == CameraStatus::kStopped);
+  CHECK(frame.luma.empty());
+}
+
 }  // namespace
 
 int main() {
+  TestACameraThatIsNotOpenCannotCapture();
+  TestAnOpenCameraThatIsNotCapturingHasNoFrame();
   TestAPlainCameraOpens();
   TestAnInfraredNodeListedFirstIsPassedOver();
   TestANodeThatRefusesTheFormatIsPassedOver();

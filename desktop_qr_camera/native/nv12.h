@@ -16,8 +16,7 @@ namespace desktop_qr_camera {
 inline bool ConvertNv12(const uint8_t* source, size_t available, size_t stride, uint32_t width, uint32_t height,
                         uint8_t* rgba, size_t rgba_size, uint8_t* luma, size_t luma_size) {
   if (source == nullptr || rgba == nullptr || luma == nullptr) return false;
-  if (width == 0 || height == 0 || width > kMaxFrameSide || height > kMaxFrameSide) return false;
-  if (width % 2 != 0 || height % 2 != 0) return false;
+  if (!IsReadableFrameSize(width, height) || height % 2 != 0) return false;
 
   const size_t columns = width;
   const size_t rows = height;

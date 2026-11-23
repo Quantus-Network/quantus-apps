@@ -24,6 +24,7 @@ add_library(${PLUGIN_NAME} SHARED
   "CameraWindows.cpp"
   "texture_handler.cpp"
   "texture_handler.h"
+  "../native/camera.cc"
   "../native/camera.h"
   "../native/frame_sizes.h"
   "../native/nv12.h"

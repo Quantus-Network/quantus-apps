@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <initializer_list>
-#include <utility>
 #include <vector>
 
 #include "frame_sizes.h"
@@ -179,10 +178,7 @@ CameraStatus Camera::ReadCurrentFormat(PixelFormat format, uint32_t* width_out, 
   UINT32 width = 0;
   UINT32 height = 0;
   if (FAILED(MFGetAttributeSize(current.Get(), MF_MT_FRAME_SIZE, &width, &height))) return CameraStatus::kUnsupported;
-  if (width == 0 || height == 0 || width > kMaxFrameSide || height > kMaxFrameSide || width % 2 != 0) {
-    return CameraStatus::kUnsupported;
-  }
-  if (is_nv12 && height % 2 != 0) return CameraStatus::kUnsupported;
+  if (!IsReadableFrameSize(width, height) || (is_nv12 && height % 2 != 0)) return CameraStatus::kUnsupported;
 
   // Without a stated stride, a YUY2 row is two bytes a pixel and an NV12 row
   // one. A negative stride would mean a bottom-up picture, which neither is.
@@ -223,22 +219,6 @@ void Camera::Release() {
   width_ = 0;
   height_ = 0;
   stride_ = 0;
-}
-
-bool Camera::StartCaptureLoop(FrameCallback callback) {
-  if (!reader_ || streaming_.load()) return false;
-  // A loop that ended on its own has left a thread to join.
-  if (capture_thread_.joinable()) capture_thread_.join();
-
-  frame_callback_ = std::move(callback);
-  streaming_.store(true);
-  capture_thread_ = std::thread(&Camera::CaptureLoop, this);
-  return true;
-}
-
-void Camera::StoreLuma(const std::vector<uint8_t>& luma) {
-  std::lock_guard<std::mutex> lock(frame_mutex_);
-  newest_luma_ = luma;
 }
 
 void Camera::CaptureLoop() {
@@ -305,24 +285,6 @@ void Camera::CaptureLoop() {
   }
 
   streaming_.store(false);
-}
-
-LumaFrame Camera::CaptureFrame() {
-  LumaFrame frame;
-  const CameraStatus failure = failure_.load();
-  if (failure != CameraStatus::kOk) {
-    frame.status = failure;
-    return frame;
-  }
-  if (!streaming_.load()) {
-    frame.status = CameraStatus::kStopped;
-    return frame;
-  }
-  frame.width = width_;
-  frame.height = height_;
-  std::lock_guard<std::mutex> lock(frame_mutex_);
-  frame.luma.swap(newest_luma_);
-  return frame;
 }
 
 }  // namespace desktop_qr_camera

@@ -11,16 +11,14 @@
 #include <algorithm>
 #include <cstring>
 #include <string>
-#include <utility>
 
+#include "frame_sizes.h"
 #include "yuy2.h"
 
 namespace desktop_qr_camera {
 
 namespace {
 
-constexpr uint32_t kWantedWidth = 1280;
-constexpr uint32_t kWantedHeight = 720;
 constexpr unsigned int kBufferCount = 4;
 // Webcams often take every second node, the others carrying metadata.
 constexpr int kDevicesToTry = 64;
@@ -168,9 +166,7 @@ CameraStatus Camera::ChooseFormat() {
   const uint32_t width = format.fmt.pix.width;
   const uint32_t height = format.fmt.pix.height;
   if (format.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV) return CameraStatus::kUnsupported;
-  if (width == 0 || height == 0 || width > kMaxFrameSide || height > kMaxFrameSide || width % 2 != 0) {
-    return CameraStatus::kUnsupported;
-  }
+  if (!IsReadableFrameSize(width, height)) return CameraStatus::kUnsupported;
   const size_t row_bytes = static_cast<size_t>(width) * 2;
   const size_t stride = UsableStride(format.fmt.pix.bytesperline, row_bytes);
   if (stride == 0) return CameraStatus::kUnsupported;
@@ -237,22 +233,6 @@ void Camera::Release() {
   width_ = 0;
   height_ = 0;
   stride_ = 0;
-}
-
-bool Camera::StartCaptureLoop(FrameCallback callback) {
-  if (fd_ < 0 || !capture_started_ || streaming_.load()) return false;
-  // A loop that ended on its own has left a thread to join.
-  if (capture_thread_.joinable()) capture_thread_.join();
-
-  frame_callback_ = std::move(callback);
-  streaming_.store(true);
-  capture_thread_ = std::thread(&Camera::CaptureLoop, this);
-  return true;
-}
-
-void Camera::StoreLuma(const std::vector<uint8_t>& luma) {
-  std::lock_guard<std::mutex> lock(frame_mutex_);
-  newest_luma_ = luma;
 }
 
 void Camera::CaptureLoop() {
@@ -325,24 +305,6 @@ void Camera::CaptureLoop() {
   }
 
   streaming_.store(false);
-}
-
-LumaFrame Camera::CaptureFrame() {
-  LumaFrame frame;
-  const CameraStatus failure = failure_.load();
-  if (failure != CameraStatus::kOk) {
-    frame.status = failure;
-    return frame;
-  }
-  if (!streaming_.load()) {
-    frame.status = CameraStatus::kStopped;
-    return frame;
-  }
-  frame.width = width_;
-  frame.height = height_;
-  std::lock_guard<std::mutex> lock(frame_mutex_);
-  frame.luma.swap(newest_luma_);
-  return frame;
 }
 
 }  // namespace desktop_qr_camera

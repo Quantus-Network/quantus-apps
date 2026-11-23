@@ -10,6 +10,12 @@ namespace desktop_qr_camera {
 // well inside 64 bits, and a device claiming more is not a webcam.
 constexpr uint32_t kMaxFrameSide = 4096;
 
+// Whether a frame of this size can be read. YUY2 and NV12 both share color
+// between two pixels, so a row holds an even number.
+inline bool IsReadableFrameSize(uint32_t width, uint32_t height) {
+  return width != 0 && height != 0 && width <= kMaxFrameSide && height <= kMaxFrameSide && width % 2 == 0;
+}
+
 // How many frames in a row may be unreadable before the camera is reported as
 // failed. High enough that a few bad frames as a camera starts do not count.
 constexpr int kMaxUnreadableFrames = 60;
@@ -59,9 +65,7 @@ inline void WriteRgba(int y, int u, int v, uint8_t* rgba) {
 inline bool ConvertYuy2(const uint8_t* source, size_t available, size_t stride, uint32_t width, uint32_t height,
                         uint8_t* rgba, size_t rgba_size, uint8_t* luma, size_t luma_size) {
   if (source == nullptr || rgba == nullptr || luma == nullptr) return false;
-  if (width == 0 || height == 0 || width > kMaxFrameSide || height > kMaxFrameSide) return false;
-  // YUY2 shares color between two pixels, so a row holds an even number.
-  if (width % 2 != 0) return false;
+  if (!IsReadableFrameSize(width, height)) return false;
 
   const size_t columns = width;
   const size_t rows = height;
