@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
-import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';

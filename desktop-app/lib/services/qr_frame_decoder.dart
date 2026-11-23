@@ -39,7 +39,7 @@ String? textOfQrResult(Result result) =>
     result.resultMetadata.containsKey(ResultMetadataType.structuredAppendSequence) ? null : result.text;
 
 class _LumaSource extends LuminanceSource {
-  _LumaSource(Uint8List luma, int width, int height) : _bytes = Int8List.sublistView(luma), super(width, height);
+  _LumaSource(Uint8List luma, super.width, super.height) : _bytes = Int8List.sublistView(luma);
 
   final Int8List _bytes;
 
