@@ -247,6 +247,102 @@ void main() {
     });
   });
 
+  group('when the window comes back', () {
+    /// The person returns to the app, from System Settings for one.
+    Future<void> windowReturns() async {
+      final binding = TestWidgetsFlutterBinding.instance;
+      addTearDown(() => binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed));
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await _settle();
+    }
+
+    /// The app started on [platform], its wallet [presence].
+    Future<({ProviderContainer container, _RecordingTelemetry telemetry})> started(
+      FakeNotificationPlugin plugin, {
+      TargetPlatform platform = TargetPlatform.macOS,
+      WalletPresence presence = WalletPresence.present,
+    }) async {
+      final opened = _open(
+        plugin,
+        platform: platform,
+        overrides: [walletPresenceProvider.overrideWith(() => _Presence(presence))],
+      );
+      opened.container.read(notificationsStartupProvider);
+      await opened.container.read(walletPresenceProvider.future);
+      await _settle();
+      return opened;
+    }
+
+    test('notifications allowed in System Settings meanwhile work again, with no prompt', () async {
+      final plugin = FakeNotificationPlugin(grants: false);
+      final (:container, telemetry: _) = await started(plugin);
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsDenied>());
+
+      plugin.grants = true;
+      await windowReturns();
+
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsAllowed>());
+      expect(plugin.permissionRequests, 1);
+    });
+
+    test('notifications turned off in System Settings meanwhile are reported as not allowed', () async {
+      final plugin = FakeNotificationPlugin(grants: true);
+      final (:container, telemetry: _) = await started(plugin);
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsAllowed>());
+
+      plugin.grants = false;
+      await windowReturns();
+
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsDenied>());
+      expect(plugin.permissionRequests, 1);
+    });
+
+    test('nothing is read before the person has answered: the prompt itself takes the focus', () async {
+      final plugin = FakeNotificationPlugin(grants: false);
+      final (:container, telemetry: _) = await started(plugin, presence: WalletPresence.none);
+
+      await windowReturns();
+
+      expect(plugin.permissionChecks, 0);
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsNotAsked>());
+    });
+
+    for (final platform in [TargetPlatform.windows, TargetPlatform.linux]) {
+      test('on ${platform.name}, nothing is read', () async {
+        final plugin = FakeNotificationPlugin(grants: false);
+        final (:container, telemetry: _) = await started(plugin, platform: platform);
+
+        await windowReturns();
+
+        expect(plugin.permissionChecks, 0);
+        expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsAllowed>());
+      });
+    }
+
+    test('notifications that are unavailable are not read', () async {
+      final plugin = FakeNotificationPlugin(startError: StateError('no notification service'));
+      final (:container, telemetry: _) = await started(plugin);
+
+      await windowReturns();
+
+      expect(plugin.permissionChecks, 0);
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsUnavailable>());
+    });
+
+    test('a read that fails keeps what was known, and is reported', () async {
+      final plugin = FakeNotificationPlugin(grants: true);
+      final (:container, :telemetry) = await started(plugin);
+
+      plugin.permissionCheckError = StateError('macOS did not answer');
+      await windowReturns();
+
+      expect(plugin.permissionChecks, 1);
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsAllowed>());
+      expect(telemetry.errors, ['desktop_notifications_recheck_failed']);
+    });
+  });
+
   group('with the app', () {
     test('the app starting starts the notifications; with no wallet yet, nothing is asked', () async {
       final plugin = FakeNotificationPlugin();
