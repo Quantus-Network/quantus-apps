@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
+#include <string>
 #include <thread>
 #include <vector>
 
@@ -90,6 +91,10 @@ class Camera {
   // Takes the newest frame, so that the next call returns a different one.
   LumaFrame CaptureFrame();
 
+  // The operating system's code for the last failure, as text. Empty when the
+  // failure had none.
+  std::string ErrorDetail() const;
+
  private:
   void CaptureLoop();
   void StoreLuma(const std::vector<uint8_t>& luma);
@@ -101,6 +106,7 @@ class Camera {
   std::thread capture_thread_;
   std::atomic<bool> streaming_{false};
   std::atomic<CameraStatus> failure_{CameraStatus::kOk};
+  std::atomic<uint32_t> error_code_{0};
   FrameCallback frame_callback_;
   std::mutex frame_mutex_;
   std::vector<uint8_t> newest_luma_;
@@ -112,6 +118,9 @@ class Camera {
   CameraStatus ChooseFormat();
   // kUnsupported means this format and size can't be used, so try the next.
   CameraStatus TryFormat(PixelFormat format, uint32_t wanted_width, uint32_t wanted_height);
+  CameraStatus ReadCurrentFormat(PixelFormat format, uint32_t* width, uint32_t* height, size_t* stride);
+  // Remembers the code for ErrorDetail and says what it means.
+  CameraStatus StatusOf(HRESULT result);
 
   PixelFormat pixel_format_ = PixelFormat::kYuy2;
   Microsoft::WRL::ComPtr<IMFMediaSource> source_;
@@ -126,6 +135,8 @@ class Camera {
   CameraStatus ChooseFormat();
   CameraStatus MapBuffers();
   void UnmapBuffers();
+  // Remembers the code for ErrorDetail and says what it means.
+  CameraStatus StatusOf(int error);
 
   int fd_ = -1;
   std::vector<MappedBuffer> buffers_;

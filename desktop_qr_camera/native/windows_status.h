@@ -2,6 +2,8 @@
 #define DESKTOP_QR_CAMERA_WINDOWS_STATUS_H_
 
 #include <cstdint>
+#include <cstdio>
+#include <string>
 
 #include "camera.h"
 
@@ -14,6 +16,13 @@ constexpr uint32_t kErrorSharingViolation = 0x80070020;
 constexpr uint32_t kErrorBusy = 0x800700AA;
 constexpr uint32_t kErrorHardwareStartFailed = 0xC00D3704;
 constexpr uint32_t kErrorRecordingPreempted = 0xC00D3EA3;
+
+// The raw code as it is written in Microsoft's documentation.
+inline std::string HresultText(uint32_t code) {
+  char text[32];
+  std::snprintf(text, sizeof(text), "HRESULT 0x%08X", static_cast<unsigned int>(code));
+  return text;
+}
 
 inline CameraStatus StatusOfError(uint32_t code) {
   if (code == kErrorAccessDenied) return CameraStatus::kPermissionDenied;

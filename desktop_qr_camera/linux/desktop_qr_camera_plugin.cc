@@ -4,6 +4,7 @@
 #include <gtk/gtk.h>
 
 #include <cstring>
+#include <string>
 
 #include "camera.h"
 #include "camera_texture.h"
@@ -56,6 +57,12 @@ static FlMethodResponse* error_response(CameraStatus status, const char* message
   return FL_METHOD_RESPONSE(fl_method_error_response_new(CameraStatusCode(status), message, nullptr));
 }
 
+// A failure of the camera itself, with the operating system's code when it has one.
+static FlMethodResponse* camera_error_response(DesktopQrCameraPlugin* self, CameraStatus status) {
+  const std::string detail = self->camera->ErrorDetail();
+  return error_response(status, detail.empty() ? nullptr : detail.c_str());
+}
+
 static FlMethodResponse* start_preview(DesktopQrCameraPlugin* self) {
   if (self->texture_registered) {
     return error_response(CameraStatus::kFailed, "The preview is already running");
@@ -91,7 +98,7 @@ static FlMethodResponse* start_preview(DesktopQrCameraPlugin* self) {
 
 static FlMethodResponse* capture_frame(DesktopQrCameraPlugin* self) {
   LumaFrame frame = self->camera->CaptureFrame();
-  if (frame.status != CameraStatus::kOk) return error_response(frame.status);
+  if (frame.status != CameraStatus::kOk) return camera_error_response(self, frame.status);
   if (frame.luma.empty()) return FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
 
   g_autoptr(FlValue) answer = fl_value_new_map();
@@ -110,7 +117,7 @@ static void desktop_qr_camera_plugin_handle_method_call(DesktopQrCameraPlugin* s
     release_camera(self);
     const CameraStatus status = self->camera->Open();
     response = status == CameraStatus::kOk ? FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr))
-                                           : error_response(status);
+                                           : camera_error_response(self, status);
   } else if (strcmp(method, "startPreview") == 0) {
     response = start_preview(self);
   } else if (strcmp(method, "captureFrame") == 0) {

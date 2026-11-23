@@ -10,6 +10,32 @@ namespace desktop_qr_camera {
 // well inside 64 bits, and a device claiming more is not a webcam.
 constexpr uint32_t kMaxFrameSide = 4096;
 
+// How many frames in a row may be unreadable before the camera is reported as
+// failed. High enough that a few bad frames as a camera starts do not count.
+constexpr int kMaxUnreadableFrames = 60;
+
+// Counts unreadable frames in a row.
+class UnreadableFrames {
+ public:
+  // Records one frame. Returns whether the camera should be reported as failed.
+  bool Note(bool was_read) {
+    in_a_row_ = was_read ? 0 : in_a_row_ + 1;
+    return in_a_row_ >= kMaxUnreadableFrames;
+  }
+
+ private:
+  int in_a_row_ = 0;
+};
+
+// The row length to read a frame with: what the driver stated, or the plain
+// row length when it stated none (zero). Returns zero for a stated length that
+// cannot hold a row.
+inline size_t UsableStride(int64_t stated, size_t row_bytes) {
+  if (stated == 0) return row_bytes;
+  if (stated < 0 || static_cast<uint64_t>(stated) < row_bytes) return 0;
+  return static_cast<size_t>(stated);
+}
+
 inline uint8_t ClampToByte(int value) {
   if (value < 0) return 0;
   if (value > 255) return 255;

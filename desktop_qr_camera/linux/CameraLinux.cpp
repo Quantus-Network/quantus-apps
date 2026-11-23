@@ -26,7 +26,7 @@ constexpr unsigned int kBufferCount = 4;
 constexpr int kDevicesToTry = 64;
 constexpr int kPollMilliseconds = 200;
 
-CameraStatus StatusOf(int error) {
+CameraStatus StatusOfErrno(int error) {
   switch (error) {
     case EACCES:
     case EPERM:
@@ -64,9 +64,20 @@ bool CapturesVideo(int fd) {
 
 }  // namespace
 
+CameraStatus Camera::StatusOf(int error) {
+  error_code_.store(static_cast<uint32_t>(error));
+  return StatusOfErrno(error);
+}
+
+std::string Camera::ErrorDetail() const {
+  const uint32_t code = error_code_.load();
+  return code == 0 ? std::string() : "errno " + std::to_string(code);
+}
+
 CameraStatus Camera::Open() {
   Release();
   failure_.store(CameraStatus::kOk);
+  error_code_.store(0);
 
   // A node the user may not open says why, unless a usable camera follows it.
   CameraStatus blocked = CameraStatus::kNoCamera;
@@ -74,8 +85,8 @@ CameraStatus Camera::Open() {
     const std::string path = "/dev/video" + std::to_string(i);
     const int fd = open(path.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) {
-      const CameraStatus status = StatusOf(errno);
-      if (status != CameraStatus::kNoCamera) blocked = status;
+      const int error = errno;
+      if (StatusOfErrno(error) != CameraStatus::kNoCamera) blocked = StatusOf(error);
       continue;
     }
     if (CapturesVideo(fd)) {
@@ -96,7 +107,12 @@ CameraStatus Camera::Open() {
       capture_started_ = true;
     }
   }
-  if (status != CameraStatus::kOk) Release();
+  if (status == CameraStatus::kOk) {
+    // A node tried on the way here may have been refused.
+    error_code_.store(0);
+  } else {
+    Release();
+  }
   return status;
 }
 
@@ -109,7 +125,9 @@ CameraStatus Camera::ChooseFormat() {
   format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
   format.fmt.pix.field = V4L2_FIELD_NONE;
   if (Control(fd_, VIDIOC_S_FMT, &format) != 0) {
-    return errno == EBUSY ? CameraStatus::kBusy : CameraStatus::kUnsupported;
+    const int error = errno;
+    error_code_.store(static_cast<uint32_t>(error));
+    return error == EBUSY ? CameraStatus::kBusy : CameraStatus::kUnsupported;
   }
 
   // The driver answers with what it can do, which may be another format.
@@ -120,8 +138,8 @@ CameraStatus Camera::ChooseFormat() {
     return CameraStatus::kUnsupported;
   }
   const size_t row_bytes = static_cast<size_t>(width) * 2;
-  const size_t stride = format.fmt.pix.bytesperline == 0 ? row_bytes : format.fmt.pix.bytesperline;
-  if (stride < row_bytes) return CameraStatus::kUnsupported;
+  const size_t stride = UsableStride(format.fmt.pix.bytesperline, row_bytes);
+  if (stride == 0) return CameraStatus::kUnsupported;
 
   width_ = width;
   height_ = height;
@@ -207,6 +225,7 @@ void Camera::CaptureLoop() {
   const size_t pixels = static_cast<size_t>(width_) * height_;
   std::vector<uint8_t> rgba(pixels * 4);
   std::vector<uint8_t> luma(pixels);
+  UnreadableFrames unreadable;
 
   while (streaming_.load()) {
     // A timeout keeps Release() responsive when the camera stalls.
@@ -217,6 +236,7 @@ void Camera::CaptureLoop() {
     const int ready = poll(&waiting, 1, kPollMilliseconds);
     if (ready < 0) {
       if (errno == EINTR) continue;
+      error_code_.store(static_cast<uint32_t>(errno));
       failure_.store(CameraStatus::kStopped);
       break;
     }
@@ -232,8 +252,12 @@ void Camera::CaptureLoop() {
     buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buffer.memory = V4L2_MEMORY_MMAP;
     if (Control(fd_, VIDIOC_DQBUF, &buffer) != 0) {
-      if (errno == EAGAIN) continue;
-      if (streaming_.load()) failure_.store(CameraStatus::kStopped);
+      const int error = errno;
+      if (error == EAGAIN) continue;
+      if (streaming_.load()) {
+        error_code_.store(static_cast<uint32_t>(error));
+        failure_.store(CameraStatus::kStopped);
+      }
       break;
     }
     if (buffer.index >= buffers_.size()) {
@@ -249,7 +273,15 @@ void Camera::CaptureLoop() {
                                        rgba.data(), rgba.size(), luma.data(), luma.size());
 
     if (Control(fd_, VIDIOC_QBUF, &buffer) != 0) {
-      if (streaming_.load()) failure_.store(CameraStatus::kStopped);
+      const int error = errno;
+      if (streaming_.load()) {
+        error_code_.store(static_cast<uint32_t>(error));
+        failure_.store(CameraStatus::kStopped);
+      }
+      break;
+    }
+    if (unreadable.Note(converted)) {
+      if (streaming_.load()) failure_.store(CameraStatus::kUnsupported);
       break;
     }
     if (!converted) continue;

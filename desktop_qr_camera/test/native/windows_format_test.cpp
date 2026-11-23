@@ -16,6 +16,7 @@
 using desktop_qr_camera::CameraStatus;
 using desktop_qr_camera::ConvertNv12;
 using desktop_qr_camera::FrameSize;
+using desktop_qr_camera::HresultText;
 using desktop_qr_camera::kErrorAccessDenied;
 using desktop_qr_camera::kErrorBusy;
 using desktop_qr_camera::kErrorHardwareStartFailed;
@@ -223,9 +224,15 @@ void TestAReadFailingBecauseTheCameraWentAwayIsStopped() {
   CHECK(StatusOfStreamError(kSomeOtherError) == CameraStatus::kStopped);
 }
 
+void TestARawCodeIsWrittenAsMicrosoftWritesIt() {
+  CHECK(HresultText(kErrorHardwareStartFailed) == "HRESULT 0xC00D3704");
+  CHECK(HresultText(0x00000001) == "HRESULT 0x00000001");
+}
+
 }  // namespace
 
 int main() {
+  TestARawCodeIsWrittenAsMicrosoftWritesIt();
   TestEveryBusyCodeIsBusy();
   TestAccessDeniedIsAPermissionProblem();
   TestAnyOtherErrorIsAPlainFailure();

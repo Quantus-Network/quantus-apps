@@ -45,6 +45,14 @@ void DesktopQrCameraPlugin::ReleaseCamera() {
 void DesktopQrCameraPlugin::HandleMethodCall(const flutter::MethodCall<flutter::EncodableValue>& method_call,
                                              std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   const std::string& method = method_call.method_name();
+  const auto report_failure = [this, &result](CameraStatus status) {
+    const std::string detail = camera_.ErrorDetail();
+    if (detail.empty()) {
+      result->Error(CameraStatusCode(status));
+    } else {
+      result->Error(CameraStatusCode(status), detail);
+    }
+  };
 
   if (method == "open") {
     ReleaseCamera();
@@ -52,7 +60,7 @@ void DesktopQrCameraPlugin::HandleMethodCall(const flutter::MethodCall<flutter::
     if (status == CameraStatus::kOk) {
       result->Success();
     } else {
-      result->Error(CameraStatusCode(status));
+      report_failure(status);
     }
   } else if (method == "startPreview") {
     auto handler = std::make_shared<TextureHandler>(texture_registrar_);
@@ -77,7 +85,7 @@ void DesktopQrCameraPlugin::HandleMethodCall(const flutter::MethodCall<flutter::
   } else if (method == "captureFrame") {
     LumaFrame frame = camera_.CaptureFrame();
     if (frame.status != CameraStatus::kOk) {
-      result->Error(CameraStatusCode(frame.status));
+      report_failure(frame.status);
     } else if (frame.luma.empty()) {
       result->Success();
     } else {

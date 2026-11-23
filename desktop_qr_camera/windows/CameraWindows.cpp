@@ -28,8 +28,6 @@ static_assert(kErrorHardwareStartFailed == static_cast<uint32_t>(MF_E_HW_MFT_FAI
 static_assert(kErrorRecordingPreempted == static_cast<uint32_t>(MF_E_VIDEO_RECORDING_DEVICE_PREEMPTED),
               "MF_E_VIDEO_RECORDING_DEVICE_PREEMPTED");
 
-CameraStatus StatusOf(HRESULT result) { return StatusOfError(static_cast<uint32_t>(result)); }
-
 // Windows N and KN ship without Media Foundation. The plugin delay-loads it so
 // that the wallet still starts there, which makes this check required before
 // the first call into it: a missing DLL would otherwise raise an exception.
@@ -42,9 +40,20 @@ bool MediaFoundationIsInstalled() {
 
 }  // namespace
 
+CameraStatus Camera::StatusOf(HRESULT result) {
+  error_code_.store(static_cast<uint32_t>(result));
+  return StatusOfError(static_cast<uint32_t>(result));
+}
+
+std::string Camera::ErrorDetail() const {
+  const uint32_t code = error_code_.load();
+  return code == 0 ? std::string() : HresultText(code);
+}
+
 CameraStatus Camera::Open() {
   Release();
   failure_.store(CameraStatus::kOk);
+  error_code_.store(0);
 
   if (!MediaFoundationIsInstalled()) return CameraStatus::kMediaUnavailable;
 
@@ -53,7 +62,12 @@ CameraStatus Camera::Open() {
   media_foundation_started_ = true;
 
   const CameraStatus status = OpenFirstDevice();
-  if (status != CameraStatus::kOk) Release();
+  if (status == CameraStatus::kOk) {
+    // A size tried on the way here may have been refused.
+    error_code_.store(0);
+  } else {
+    Release();
+  }
   return status;
 }
 
@@ -131,15 +145,35 @@ CameraStatus Camera::TryFormat(PixelFormat format, uint32_t wanted_width, uint32
   if (FAILED(result)) return StatusOf(result);
 
   result = reader_->SetCurrentMediaType(kVideoStream, nullptr, wanted.Get());
-  if (FAILED(result)) return StatusOfRejectedFormat(static_cast<uint32_t>(result));
+  if (FAILED(result)) {
+    error_code_.store(static_cast<uint32_t>(result));
+    return StatusOfRejectedFormat(static_cast<uint32_t>(result));
+  }
 
-  // What the driver actually agreed to, which is what frames will hold.
+  uint32_t width = 0;
+  uint32_t height = 0;
+  size_t stride = 0;
+  const CameraStatus status = ReadCurrentFormat(format, &width, &height, &stride);
+  if (status != CameraStatus::kOk) return status;
+
+  pixel_format_ = format;
+  width_ = width;
+  height_ = height;
+  stride_ = stride;
+  return CameraStatus::kOk;
+}
+
+// What the driver actually agreed to, which is what frames will hold.
+CameraStatus Camera::ReadCurrentFormat(PixelFormat format, uint32_t* width_out, uint32_t* height_out,
+                                       size_t* stride_out) {
+  const bool is_nv12 = format == PixelFormat::kNv12;
   ComPtr<IMFMediaType> current;
-  result = reader_->GetCurrentMediaType(kVideoStream, &current);
+  const HRESULT result = reader_->GetCurrentMediaType(kVideoStream, &current);
   if (FAILED(result)) return StatusOf(result);
 
   GUID subtype = GUID_NULL;
-  if (FAILED(current->GetGUID(MF_MT_SUBTYPE, &subtype)) || subtype != wanted_subtype) {
+  if (FAILED(current->GetGUID(MF_MT_SUBTYPE, &subtype)) ||
+      subtype != (is_nv12 ? MFVideoFormat_NV12 : MFVideoFormat_YUY2)) {
     return CameraStatus::kUnsupported;
   }
   UINT32 width = 0;
@@ -152,18 +186,18 @@ CameraStatus Camera::TryFormat(PixelFormat format, uint32_t wanted_width, uint32
 
   // Without a stated stride, a YUY2 row is two bytes a pixel and an NV12 row
   // one. A negative stride would mean a bottom-up picture, which neither is.
-  size_t stride = static_cast<size_t>(width) * (is_nv12 ? size_t{1} : size_t{2});
+  const size_t row_bytes = static_cast<size_t>(width) * (is_nv12 ? size_t{1} : size_t{2});
+  size_t stride = row_bytes;
   UINT32 stated = 0;
   if (SUCCEEDED(current->GetUINT32(MF_MT_DEFAULT_STRIDE, &stated))) {
-    const INT32 signed_stride = static_cast<INT32>(stated);
-    if (signed_stride <= 0) return CameraStatus::kUnsupported;
-    stride = static_cast<size_t>(signed_stride);
+    if (stated == 0) return CameraStatus::kUnsupported;
+    stride = UsableStride(static_cast<INT32>(stated), row_bytes);
+    if (stride == 0) return CameraStatus::kUnsupported;
   }
 
-  pixel_format_ = format;
-  width_ = width;
-  height_ = height;
-  stride_ = stride;
+  *width_out = width;
+  *height_out = height;
+  *stride_out = stride;
   return CameraStatus::kOk;
 }
 
@@ -211,6 +245,7 @@ void Camera::CaptureLoop() {
   const size_t pixels = static_cast<size_t>(width_) * height_;
   std::vector<uint8_t> rgba(pixels * 4);
   std::vector<uint8_t> luma(pixels);
+  UnreadableFrames unreadable;
 
   while (streaming_.load()) {
     DWORD stream = 0;
@@ -220,27 +255,49 @@ void Camera::CaptureLoop() {
     const HRESULT result = reader_->ReadSample(kVideoStream, 0, &stream, &flags, &timestamp, &sample);
 
     if (FAILED(result)) {
-      if (streaming_.load()) failure_.store(StatusOfStreamError(static_cast<uint32_t>(result)));
+      if (streaming_.load()) {
+        error_code_.store(static_cast<uint32_t>(result));
+        failure_.store(StatusOfStreamError(static_cast<uint32_t>(result)));
+      }
       break;
     }
     if (flags & (MF_SOURCE_READERF_ERROR | MF_SOURCE_READERF_ENDOFSTREAM)) {
       if (streaming_.load()) failure_.store(CameraStatus::kStopped);
       break;
     }
+    if (flags & MF_SOURCE_READERF_CURRENTMEDIATYPECHANGED) {
+      // A new row length can be followed. The buffers and the texture are sized
+      // for this frame size, so a new one is reported instead of misdrawn.
+      uint32_t width = 0;
+      uint32_t height = 0;
+      size_t stride = 0;
+      const CameraStatus status = ReadCurrentFormat(pixel_format_, &width, &height, &stride);
+      if (status != CameraStatus::kOk || width != width_ || height != height_) {
+        if (streaming_.load()) failure_.store(status == CameraStatus::kOk ? CameraStatus::kUnsupported : status);
+        break;
+      }
+      stride_ = stride;
+    }
     if (!sample) continue;
 
+    bool converted = false;
     ComPtr<IMFMediaBuffer> buffer;
-    if (FAILED(sample->ConvertToContiguousBuffer(&buffer)) || !buffer) continue;
-
-    BYTE* data = nullptr;
-    DWORD capacity = 0;
-    DWORD length = 0;
-    if (FAILED(buffer->Lock(&data, &capacity, &length))) continue;
-    const bool converted =
-        pixel_format_ == PixelFormat::kNv12
-            ? ConvertNv12(data, length, stride_, width_, height_, rgba.data(), rgba.size(), luma.data(), luma.size())
-            : ConvertYuy2(data, length, stride_, width_, height_, rgba.data(), rgba.size(), luma.data(), luma.size());
-    buffer->Unlock();
+    if (SUCCEEDED(sample->ConvertToContiguousBuffer(&buffer)) && buffer) {
+      BYTE* data = nullptr;
+      DWORD capacity = 0;
+      DWORD length = 0;
+      if (SUCCEEDED(buffer->Lock(&data, &capacity, &length))) {
+        converted =
+            pixel_format_ == PixelFormat::kNv12
+                ? ConvertNv12(data, length, stride_, width_, height_, rgba.data(), rgba.size(), luma.data(), luma.size())
+                : ConvertYuy2(data, length, stride_, width_, height_, rgba.data(), rgba.size(), luma.data(), luma.size());
+        buffer->Unlock();
+      }
+    }
+    if (unreadable.Note(converted)) {
+      if (streaming_.load()) failure_.store(CameraStatus::kUnsupported);
+      break;
+    }
     if (!converted) continue;
 
     StoreLuma(luma);

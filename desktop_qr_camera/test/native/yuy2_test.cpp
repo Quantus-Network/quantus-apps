@@ -11,6 +11,9 @@
 
 using desktop_qr_camera::ConvertYuy2;
 using desktop_qr_camera::kMaxFrameSide;
+using desktop_qr_camera::kMaxUnreadableFrames;
+using desktop_qr_camera::UnreadableFrames;
+using desktop_qr_camera::UsableStride;
 
 static int failures = 0;
 
@@ -185,9 +188,45 @@ void HandlesTheLargestFrame() {
   CHECK(out.guards_intact());
 }
 
+void AStrideNotStatedIsThePlainRow() { CHECK(UsableStride(0, 1280) == 1280); }
+
+void AStatedStrideIsUsedWhenItHoldsARow() {
+  CHECK(UsableStride(1280, 1280) == 1280);
+  CHECK(UsableStride(1344, 1280) == 1344);
+}
+
+void AStrideShorterThanARowIsRefused() { CHECK(UsableStride(1279, 1280) == 0); }
+
+void ABackwardsStrideIsRefused() { CHECK(UsableStride(-1280, 1280) == 0); }
+
+void AFewUnreadableFramesAreNotAFailure() {
+  UnreadableFrames frames;
+  for (int i = 0; i < kMaxUnreadableFrames - 1; i++) CHECK(!frames.Note(false));
+}
+
+void TooManyUnreadableFramesInARowAreAFailure() {
+  UnreadableFrames frames;
+  for (int i = 0; i < kMaxUnreadableFrames - 1; i++) frames.Note(false);
+  CHECK(frames.Note(false));
+}
+
+void AGoodFrameStartsTheCountAgain() {
+  UnreadableFrames frames;
+  for (int i = 0; i < kMaxUnreadableFrames - 1; i++) frames.Note(false);
+  CHECK(!frames.Note(true));
+  for (int i = 0; i < kMaxUnreadableFrames - 1; i++) CHECK(!frames.Note(false));
+}
+
 }  // namespace
 
 int main() {
+  AStrideNotStatedIsThePlainRow();
+  AStatedStrideIsUsedWhenItHoldsARow();
+  AStrideShorterThanARowIsRefused();
+  ABackwardsStrideIsRefused();
+  AFewUnreadableFramesAreNotAFailure();
+  TooManyUnreadableFramesInARowAreAFailure();
+  AGoodFrameStartsTheCountAgain();
   ConvertsGrayPixels();
   ConvertsColor();
   ClampsToAByte();
