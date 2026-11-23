@@ -213,6 +213,78 @@ void main() {
       expect(await camera.readFrame(), isNull);
     });
 
+    group('start, stop, start while the first open is running', () {
+      late Completer<void> firstOpen;
+
+      setUp(() {
+        firstOpen = Completer<void>();
+        var opens = 0;
+        native.answers['open'] = () => ++opens == 1 ? firstOpen.future : null;
+        native.answers['captureFrame'] = () => _frame();
+      });
+
+      test('when the first open fails, the second start runs', () async {
+        final first = camera.start();
+        final stopping = camera.stop();
+        final second = camera.start();
+        await pumpEventQueue();
+
+        firstOpen.completeError(PlatformException(code: 'busy'));
+        await expectLater(first, throwsA(isA<QrCameraException>()));
+        await stopping;
+
+        expect(await second, 7);
+        expect(await camera.readFrame(), isNotNull);
+      });
+
+      test('when the first open fails, the last stop still releases the camera', () async {
+        final first = camera.start();
+        final stopping = camera.stop();
+        final second = camera.start();
+        await pumpEventQueue();
+
+        firstOpen.completeError(PlatformException(code: 'busy'));
+        await expectLater(first, throwsA(isA<QrCameraException>()));
+        await stopping;
+        await second;
+        await camera.stop();
+
+        expect(native.calls, ['open', 'release', 'open', 'startPreview', 'release']);
+      });
+
+      test('when the first open succeeds, no frame is asked for until the second is open', () async {
+        final releasing = Completer<void>();
+        native.answers['release'] = () => releasing.future;
+
+        final first = camera.start();
+        final stopping = camera.stop();
+        final second = camera.start();
+        await pumpEventQueue();
+
+        firstOpen.complete();
+        await first;
+        await pumpEventQueue();
+        expect(native.calls.last, 'release');
+
+        expect(await camera.readFrame(), isNull);
+        expect(native.calls, isNot(contains('captureFrame')));
+
+        releasing.complete();
+        await stopping;
+        expect(await second, 7);
+        expect(await camera.readFrame(), isNotNull);
+      });
+    });
+
+    test('stopping after a failed start asks nothing more of the camera', () async {
+      native.answers['open'] = () => throw PlatformException(code: 'busy');
+      await expectLater(camera.start(), throwsA(isA<QrCameraException>()));
+
+      await camera.stop();
+
+      expect(native.calls, ['open', 'release']);
+    });
+
     test('it can start again after stopping', () async {
       await camera.start();
       await camera.stop();

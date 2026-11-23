@@ -62,8 +62,11 @@ class QrCamera {
 
   Future<void> _queue = Future.value();
 
-  /// Between a [start] and its [stop].
-  bool _isWanted = false;
+  int _lastStart = 0;
+
+  /// The [start] that has not been stopped, if any. Steps still queued from an
+  /// earlier start compare against it, so they cannot act for a later one.
+  int? _wantedStart;
 
   /// Whether the native camera may hold anything that needs releasing.
   bool _needsRelease = false;
@@ -74,15 +77,15 @@ class QrCamera {
   /// Opens the camera and its preview, and returns the preview's texture.
   /// Throws [QrCameraException] when it cannot, with nothing left open.
   Future<int> start() async {
-    if (_isWanted) throw StateError('The camera was started twice.');
-    _isWanted = true;
-    return _inTurn(_open);
+    if (_wantedStart != null) throw StateError('The camera was started twice.');
+    final thisStart = ++_lastStart;
+    _wantedStart = thisStart;
+    return _inTurn(() => _open(thisStart));
   }
 
   /// Turns the camera off. Safe to call at any time.
   Future<void> stop() {
-    if (!_isWanted) return _queue;
-    _isWanted = false;
+    _wantedStart = null;
     _isRunning = false;
     return _inTurn(_release);
   }
@@ -107,7 +110,7 @@ class QrCamera {
     return result;
   }
 
-  Future<int> _open() async {
+  Future<int> _open(int thisStart) async {
     _needsRelease = true;
     try {
       await _channel.invokeMethod<void>('open');
@@ -115,13 +118,13 @@ class QrCamera {
       if (texture is! int) {
         throw QrCameraException(QrCameraFailure.failed, detail: 'The preview gave no texture: $texture');
       }
-      _isRunning = _isWanted;
+      _isRunning = _wantedStart == thisStart;
       return texture;
     } on PlatformException catch (error) {
-      await _releaseAfterFailure();
+      await _releaseAfterFailure(thisStart);
       throw _exceptionOf(error);
     } on QrCameraException {
-      await _releaseAfterFailure();
+      await _releaseAfterFailure(thisStart);
       rethrow;
     }
   }
@@ -138,9 +141,8 @@ class QrCamera {
 
   /// Releases what a failed start left. The failure that started this is the
   /// one to report, so a second one is only logged.
-  Future<void> _releaseAfterFailure() async {
-    _isWanted = false;
-    _isRunning = false;
+  Future<void> _releaseAfterFailure(int thisStart) async {
+    if (_wantedStart == thisStart) _wantedStart = null;
     try {
       await _release();
     } on QrCameraException catch (error) {
