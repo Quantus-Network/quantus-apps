@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoSwitch;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -69,7 +70,7 @@ void main() {
     await _pump(tester, initial: true);
 
     expect(
-      tester.getSemantics(find.byType(DesktopSwitch)),
+      tester.getSemantics(find.descendant(of: find.byType(DesktopSwitch), matching: find.byType(CupertinoSwitch))),
       isSemantics(label: 'Team', hasToggledState: true, isToggled: true, hasEnabledState: true, isEnabled: true),
     );
     semantics.dispose();
@@ -87,10 +88,10 @@ void main() {
     expect(reported, isEmpty);
     expect(
       tester.widget<Opacity>(find.descendant(of: find.byType(DesktopSwitch), matching: find.byType(Opacity))).opacity,
-      0.4,
+      0.5,
     );
     expect(
-      tester.getSemantics(find.byType(DesktopSwitch)),
+      tester.getSemantics(find.descendant(of: find.byType(DesktopSwitch), matching: find.byType(CupertinoSwitch))),
       isSemantics(label: 'Team', hasToggledState: true, isToggled: false, hasEnabledState: true, isEnabled: false),
     );
     semantics.dispose();
