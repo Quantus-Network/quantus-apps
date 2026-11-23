@@ -36,6 +36,9 @@ dependencies:
   local_auth: ^3.0.1
   share_plus: ^13.1.0
   url_launcher: ^6.3.2
+  # Reads QR codes from the camera on Windows and Linux. Exact: its QR path was
+  # reviewed line by line at this version.
+  zxing2: 0.2.4
 
 dev_dependencies:
   flutter_test:
