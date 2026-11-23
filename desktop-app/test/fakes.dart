@@ -492,6 +492,16 @@ class FakeSendChain {
   /// sent in.
   final indexedTransfers = <String, TransactionEvent>{};
 
+  /// The proposals the indexer holds as created, by the hash of the
+  /// transaction each was created in.
+  final indexedProposals = <String, MultisigProposalCreatedEvent>{};
+
+  /// When set, looking a proposal up by its hash fails with this.
+  Object? proposalLookupError;
+
+  /// When set, looking a proposal up by its hash waits for it.
+  Completer<void>? holdProposalLookup;
+
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
   /// proposal, expiring at block 1284220.
@@ -555,6 +565,9 @@ class FakeSendChain {
   List<MultisigProposal> openProposals = const [];
   List<MultisigProposal> pastProposals = const [];
 
+  /// When set, a read of open proposals waits for it.
+  Completer<void>? holdOpenProposals;
+
   /// The multisigs whose open proposals were read, in order.
   final openProposalReads = <String>[];
 
@@ -613,6 +626,7 @@ class _FakeMultisigService extends Fake implements MultisigService {
   @override
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
     chain.openProposalReads.add(msig.accountId);
+    await chain.holdOpenProposals?.future;
     return chain.openProposals;
   }
 
@@ -634,6 +648,13 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   @override
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async =>
       chain.indexedTransfers[extrinsicHash];
+
+  @override
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
+    await chain.holdProposalLookup?.future;
+    if (chain.proposalLookupError case final error?) throw error;
+    return chain.indexedProposals[extrinsicHash];
+  }
 
   @override
   Future<SortedTransactionsList> fetchAllTransactionTypes({
