@@ -22,7 +22,7 @@ final notificationProvider = StateNotifierProvider<NotificationNotifier, List<No
   final localNotifications = ref.watch(localNotificationsProvider);
   final notificationConfig = ref.watch(notificationConfigProvider);
 
-  return NotificationNotifier(localNotifications, notificationConfig);
+  return NotificationNotifier(localNotifications, notificationConfig, ref.read(walletSessionProvider));
 });
 
 /// Adds the notification [resolve] answers with, unless the wallet was reset
@@ -42,9 +42,13 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   final LocalNotifications _localNotifications;
   final NotificationConfig _config;
 
+  /// Held back from during a reset: what this notifier's own timers do would
+  /// write the old wallet's list into the wiped storage.
+  final WalletSession _session;
+
   final Map<String, Timer> _scheduledTimers = {};
 
-  NotificationNotifier(this._localNotifications, this._config) : super([]) {
+  NotificationNotifier(this._localNotifications, this._config, this._session) : super([]) {
     _initialize();
   }
 
@@ -150,8 +154,10 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
     // Schedule timer to show notification at the right time
     final timer = Timer(duration, () {
-      _addNotificationImmediately(notification);
       _scheduledTimers.remove(notification.id);
+      _session.unlessWiped(() {
+        if (mounted) _addNotificationImmediately(notification);
+      });
     });
 
     _scheduledTimers[notification.id] = timer;
@@ -162,6 +168,11 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    if (_session.isResetting) {
+      _session.unlessWiped(() => unawaited(_saveNotifications()));
+      return;
+    }
     final notificationsJson = state
         .where((notification) => notification.persistent)
         .map((notification) => jsonEncode(notification.toJson()))

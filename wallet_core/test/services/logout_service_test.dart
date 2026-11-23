@@ -21,6 +21,7 @@ import 'package:wallet_core/services/multisig_creation_polling_service.dart';
 import 'package:wallet_core/services/multisig_proposal_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 import '../fakes.dart';
 
@@ -271,6 +272,191 @@ void main() {
 
       expect(container.read(notificationProvider).map((n) => n.id), ['old']);
       expect(container.read(notificationProvider.notifier).getScheduledNotificationIds(), ['reminder']);
+      container.dispose();
+    });
+  });
+
+  group("the notifier's own timers during the wipe", () {
+    Future<List<String>?> savedIds() async => (await SharedPreferences.getInstance())
+        .getStringList(notificationsStorageKey)
+        ?.map((json) => jsonDecode(json)['id'] as String)
+        .toList();
+
+    Iterable<String> shownIds(ProviderContainer container) => container.read(notificationProvider).map((n) => n.id);
+
+    /// An entry whose expiry has passed, which the next cleanup removes.
+    NotificationData expired() => NotificationData(
+      id: 'expired',
+      accountId: 'account',
+      type: NotificationType.success,
+      intent: NotificationIntent.sentTokens,
+      source: NotificationSource.local,
+      title: 'Sent',
+      message: 'From Account',
+      accountName: 'Account',
+      timestamp: DateTime.now(),
+      expiryTime: DateTime.now().subtract(const Duration(hours: 1)),
+    );
+
+    /// A wallet with the entry `old`, its wipe held by the returned completer.
+    Future<(WalletTestBed, ProviderContainer, Completer<void>)> wallet(
+      WidgetTester tester, {
+      Object? wipeError,
+      List<NotificationData> also = const [],
+    }) async {
+      final bed = WalletTestBed();
+      final container = ProviderContainer(overrides: bed.overrides);
+      final notifications = container.read(notificationProvider.notifier);
+      await tester.pump();
+      await notifications.addNotification(_shown('old'));
+      for (final notification in also) {
+        await notifications.addNotification(notification);
+      }
+      await tester.pump();
+      bed.substrate.logoutError = wipeError;
+      return (bed, container, bed.substrate.holdWipe = Completer<void>());
+    }
+
+    testWidgets('a reminder due during it saves nothing, and is gone after it', (tester) async {
+      final (_, container, wipe) = await wallet(tester, also: [_reminderIn(const Duration(seconds: 1))]);
+
+      final logout = container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+
+      expect(await savedIds(), isNull);
+      expect(shownIds(container), ['old']);
+
+      wipe.complete();
+      await logout;
+      await tester.pump();
+
+      expect(await savedIds(), isNull);
+      expect(shownIds(container), isEmpty);
+      await tester.pump();
+      container.dispose();
+    });
+
+    testWidgets('a cleanup during it saves nothing', (tester) async {
+      final (_, container, wipe) = await wallet(tester, also: [expired()]);
+
+      final logout = container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      await tester.pump(const Duration(minutes: 6));
+
+      expect(await savedIds(), isNull);
+
+      wipe.complete();
+      await logout;
+      await tester.pump();
+
+      expect(await savedIds(), isNull);
+      expect(shownIds(container), isEmpty);
+      await tester.pump();
+      container.dispose();
+    });
+
+    testWidgets('a reminder due during a wipe that fails shows and is saved once it has failed', (tester) async {
+      final (_, container, wipe) = await wallet(
+        tester,
+        wipeError: StateError('the wipe failed'),
+        also: [_reminderIn(const Duration(seconds: 1))],
+      );
+
+      final logout = container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+      expect(shownIds(container), ['old']);
+      expect(await savedIds(), ['old']);
+
+      wipe.complete();
+      await expectLater(logout, throwsStateError);
+      await tester.pump();
+
+      expect(shownIds(container), ['old', 'reminder']);
+      expect(await savedIds(), ['old', 'reminder']);
+      expect(container.read(notificationProvider.notifier).getScheduledNotificationIds(), isEmpty);
+      container.dispose();
+    });
+
+    testWidgets('a cleanup during a wipe that fails is saved once it has failed', (tester) async {
+      final (_, container, wipe) = await wallet(tester, wipeError: StateError('the wipe failed'), also: [expired()]);
+      expect(await savedIds(), ['old', 'expired']);
+
+      final logout = container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      await tester.pump(const Duration(minutes: 6));
+      expect(await savedIds(), ['old', 'expired']);
+
+      wipe.complete();
+      await expectLater(logout, throwsStateError);
+      await tester.pump();
+
+      expect(await savedIds(), ['old']);
+      container.dispose();
+    });
+
+    testWidgets('a reminder held back by a wipe that fails is dropped if its notifier was replaced meanwhile', (
+      tester,
+    ) async {
+      final (_, container, wipe) = await wallet(
+        tester,
+        wipeError: StateError('the wipe failed'),
+        also: [_reminderIn(const Duration(seconds: 1))],
+      );
+      final logout = container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 2));
+
+      await container
+          .read(notificationConfigProvider.notifier)
+          .updateConfig(container.read(notificationConfigProvider).copyWith(sound: false));
+      container.read(notificationProvider);
+      await tester.pump();
+      wipe.complete();
+      await expectLater(logout, throwsStateError);
+      await tester.pump();
+
+      expect(tester.takeException(), isNull);
+      expect(shownIds(container), ['old']);
+      container.dispose();
+    });
+
+    test(
+      'work held back runs at once with no reset, after one that fails, and never after one that succeeds',
+      () async {
+        final session = WalletSession(log: (_) {});
+        final ran = <String>[];
+
+        session.unlessWiped(() => ran.add('no reset'));
+        expect(ran, ['no reset']);
+
+        session.beginReset();
+        session.unlessWiped(() => ran.add('failed'));
+        expect(ran, ['no reset']);
+        session.cancelReset();
+        await Future<void>.delayed(Duration.zero);
+        expect(ran, ['no reset', 'failed']);
+
+        session.beginReset();
+        session.unlessWiped(() => ran.add('wiped'));
+        session.finishReset();
+        await Future<void>.delayed(Duration.zero);
+        expect(ran, ['no reset', 'failed']);
+
+        session.unlessWiped(() => ran.add('next wallet'));
+        expect(ran, ['no reset', 'failed', 'next wallet']);
+      },
+    );
+
+    testWidgets('with no reset, a reminder that comes due shows and is saved', (tester) async {
+      final (_, container, _) = await wallet(tester, also: [_reminderIn(const Duration(seconds: 1))]);
+
+      await tester.pump(const Duration(seconds: 2));
+      await tester.pump();
+
+      expect(shownIds(container), ['old', 'reminder']);
+      expect(await savedIds(), ['old', 'reminder']);
       container.dispose();
     });
   });
