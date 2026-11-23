@@ -106,14 +106,18 @@ class SendField extends StatelessWidget {
   }
 }
 
-/// One address paid before: the whole address over its checkphrase. A press
+/// One address used before: the whole address over its checkphrase. A press
 /// picks it. It has a soft backing under the cursor, stronger while
 /// pressed, and a ring when it has the keyboard's focus.
 class SendRecentRow extends StatefulWidget {
-  const SendRecentRow({super.key, required this.address, required this.onPressed});
+  const SendRecentRow({super.key, required this.address, required this.onPressed, this.showsCheckphrase = true});
 
   final String address;
   final VoidCallback onPressed;
+
+  /// Whether the address has a checkphrase to show under it: one on another
+  /// chain has none.
+  final bool showsCheckphrase;
 
   @override
   State<SendRecentRow> createState() => _SendRecentRowState();
@@ -160,7 +164,9 @@ class _SendRecentRowState extends State<SendRecentRow> {
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(color: colors.textContent.useOpacity(backing), borderRadius: radius),
-              child: DesktopAddressCheckphrase(address: widget.address),
+              child: widget.showsCheckphrase
+                  ? DesktopAddressCheckphrase(address: widget.address)
+                  : Text(widget.address, style: context.sendMono(colors.textWhite)),
             ),
           ),
         ),

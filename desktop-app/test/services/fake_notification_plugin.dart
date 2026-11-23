@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 
@@ -12,8 +14,16 @@ class FakeNotificationPlugin implements NotificationPlugin {
   /// What starting throws, as a system without a notification service would.
   Object? startError;
 
-  /// Whether macOS lets the app show notifications when asked.
+  /// Whether macOS lets the app show notifications, when asked or read.
   bool grants;
+
+  /// Holds macOS's answer to the prompt until completed, as a person who has
+  /// not answered yet does.
+  Completer<bool>? heldAnswer;
+
+  /// What reading the permission throws, when it fails.
+  Object? permissionCheckError;
+  var permissionChecks = 0;
 
   /// The payload of the notification whose click launched the app, if one did.
   final String? launchedBy;
@@ -41,12 +51,34 @@ class FakeNotificationPlugin implements NotificationPlugin {
   @override
   Future<bool> requestMacOSPermission() async {
     permissionRequests++;
+    final held = heldAnswer;
+    if (held != null) return held.future;
+    return grants;
+  }
+
+  @override
+  Future<bool> isMacOSPermissionGranted() async {
+    permissionChecks++;
+    final error = permissionCheckError;
+    if (error != null) throw error;
     return grants;
   }
 
   @override
   Future<void> show({required int id, required String title, required String body, required String payload}) async {
     shown.add((id: id, title: title, body: body, payload: payload));
+  }
+
+  var cancelAllCalls = 0;
+
+  /// What removing the notifications throws, when it fails.
+  Object? cancelAllError;
+
+  @override
+  Future<void> cancelAll() async {
+    cancelAllCalls++;
+    final error = cancelAllError;
+    if (error != null) throw error;
   }
 
   /// Clicks a notification with [payload], as the person would.

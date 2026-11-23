@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 const _usdcEth = SwapToken(
   assetId: 'nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near',
@@ -32,6 +33,55 @@ Map<String, dynamic> _signed(Map<String, dynamic> response) {
     ...response,
     'signature': OneClickQuoteSignature.encodeKey(ed25519.sign(_managerKeyPair.privateKey, message)),
   };
+}
+
+/// A preferences store that works as the Linux and Windows ones do: an edit
+/// goes into the copy it keeps in [memory] first and is then written to
+/// [disk], and a write that fails answers false with the edit still in memory.
+class _DiskBackedStore extends SharedPreferencesStorePlatform {
+  _DiskBackedStore(Map<String, Object> saved) : disk = {...saved}, memory = {...saved};
+
+  Map<String, Object> disk;
+  final Map<String, Object> memory;
+
+  /// Whether a write reaches [disk].
+  bool isWritable = true;
+
+  bool _write() {
+    if (!isWritable) return false;
+    disk = {...memory};
+    return true;
+  }
+
+  @override
+  Future<Map<String, Object>> getAll() async => {...memory};
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async {
+    memory[key] = value;
+    return _write();
+  }
+
+  @override
+  Future<bool> remove(String key) async {
+    memory.remove(key);
+    return _write();
+  }
+
+  @override
+  Future<bool> clear() async {
+    memory.clear();
+    return _write();
+  }
+}
+
+/// Makes the preferences read from and write to a [_DiskBackedStore] holding
+/// [saved].
+_DiskBackedStore _useStore(Map<String, Object> saved) {
+  SharedPreferences.setMockInitialValues({});
+  final store = _DiskBackedStore(saved);
+  SharedPreferencesStorePlatform.instance = store;
+  return store;
 }
 
 final _liveDeadline = DateTime.now().toUtc().add(const Duration(minutes: 30)).toIso8601String();
@@ -571,6 +621,87 @@ void main() {
       expect(await service.getSavedAddresses('ETH'), ['0xa', '0xb']);
       expect(await service.getSavedAddresses('SOL'), ['sol1']);
       expect(await service.getSavedAddresses('BTC'), isEmpty);
+    });
+
+    test('removes one address from its network, leaving the others and the other networks as they were', () async {
+      SharedPreferences.setMockInitialValues({});
+      final service = _service((_) async => throw StateError('no HTTP expected'));
+      await service.saveAddress('ETH', '0xa');
+      await service.saveAddress('ETH', '0xb');
+      await service.saveAddress('SOL', '0xa');
+
+      await service.removeSavedAddress('ETH', '0xa');
+
+      expect(await service.getSavedAddresses('ETH'), ['0xb']);
+      expect(await service.getSavedAddresses('SOL'), ['0xa']);
+    });
+
+    test('removing an address that is not saved changes nothing', () async {
+      SharedPreferences.setMockInitialValues({});
+      final service = _service((_) async => throw StateError('no HTTP expected'));
+      await service.saveAddress('ETH', '0xa');
+
+      await service.removeSavedAddress('ETH', '0xzz');
+      await service.removeSavedAddress('BTC', '0xa');
+
+      expect(await service.getSavedAddresses('ETH'), ['0xa']);
+      expect(await service.getSavedAddresses('BTC'), isEmpty);
+    });
+
+    group('when storage refuses the write', () {
+      const ethKey = 'flutter.swap_saved_addresses_eth';
+
+      test('a save throws, and the saved addresses stay what storage holds', () async {
+        final store = _useStore({
+          ethKey: ['0xa'],
+        });
+        final service = _service((_) async => throw StateError('no HTTP expected'));
+        store.isWritable = false;
+
+        await expectLater(service.saveAddress('ETH', '0xb'), throwsA(isA<SwapSavedAddressesWriteException>()));
+
+        expect(await service.getSavedAddresses('ETH'), ['0xa']);
+        expect(store.memory, store.disk);
+      });
+
+      test('a first save throws, and nothing is saved', () async {
+        final store = _useStore({});
+        final service = _service((_) async => throw StateError('no HTTP expected'));
+        store.isWritable = false;
+
+        await expectLater(service.saveAddress('ETH', '0xa'), throwsA(isA<SwapSavedAddressesWriteException>()));
+
+        expect(await service.getSavedAddresses('ETH'), isEmpty);
+        expect(store.memory, isEmpty);
+      });
+
+      test('a removal throws, and the address stays saved', () async {
+        final store = _useStore({
+          ethKey: ['0xa', '0xb'],
+        });
+        final service = _service((_) async => throw StateError('no HTTP expected'));
+        store.isWritable = false;
+
+        await expectLater(service.removeSavedAddress('ETH', '0xa'), throwsA(isA<SwapSavedAddressesWriteException>()));
+
+        expect(await service.getSavedAddresses('ETH'), ['0xa', '0xb']);
+        expect(store.memory, store.disk);
+      });
+
+      test('a save goes through once storage takes writes again', () async {
+        final store = _useStore({
+          ethKey: ['0xa'],
+        });
+        final service = _service((_) async => throw StateError('no HTTP expected'));
+        store.isWritable = false;
+        await expectLater(service.saveAddress('ETH', '0xb'), throwsA(isA<SwapSavedAddressesWriteException>()));
+
+        store.isWritable = true;
+        await service.saveAddress('ETH', '0xb');
+
+        expect(await service.getSavedAddresses('ETH'), ['0xb', '0xa']);
+        expect(store.disk[ethKey], ['0xb', '0xa']);
+      });
     });
   });
 

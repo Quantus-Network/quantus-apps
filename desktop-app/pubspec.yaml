@@ -26,6 +26,8 @@ dependencies:
 
   # Time, so that tests can set it.
   clock: ^1.1.1
+  # Token logos come as SVG as often as not.
+  flutter_svg: ^2.3.0
 
   # Platform
   # The camera on Windows and Linux: our own copy, see its README.
@@ -49,6 +51,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/quantus_orange_logo.png
+    # QTC's mark among the swap tokens, the phone's.
+    - assets/token_qtc.svg
     # The words of the checkphrases, read from this app's bundle by
     # quantus_sdk's HumanReadableChecksumService. Without it every address
     # shows "Checkphrase unavailable"; test/checkphrase_word_list_test.dart

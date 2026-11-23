@@ -20,8 +20,16 @@ abstract interface class NotificationPlugin {
   /// time; after that it answers with what they chose.
   Future<bool> requestMacOSPermission();
 
+  /// Whether macOS lets the app show notifications right now. Unlike
+  /// [requestMacOSPermission], this never asks the person.
+  Future<bool> isMacOSPermissionGranted();
+
   /// Shows a notification now. One shown with the same [id] replaces it.
   Future<void> show({required int id, required String title, required String body, required String payload});
+
+  /// Removes every notification of the app the system still shows. Throws on
+  /// Windows and Linux when the notifications have not been started.
+  Future<void> cancelAll();
 }
 
 /// The system's notifications through flutter_local_notifications.
@@ -62,9 +70,21 @@ class SystemNotificationPlugin implements NotificationPlugin {
   }
 
   @override
+  Future<bool> isMacOSPermissionGranted() async {
+    final macOS = _plugin.resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>();
+    if (macOS == null) throw StateError('There are no macOS notifications on $defaultTargetPlatform');
+    final options = await macOS.checkPermissions();
+    if (options == null) throw StateError('macOS did not say whether the app may show notifications');
+    return options.isEnabled;
+  }
+
+  @override
   Future<void> show({required int id, required String title, required String body, required String payload}) {
     return _plugin.show(id: id, title: title, body: body, payload: payload);
   }
+
+  @override
+  Future<void> cancelAll() => _plugin.cancelAll();
 }
 
 final notificationPluginProvider = Provider<NotificationPlugin>((ref) => SystemNotificationPlugin());
