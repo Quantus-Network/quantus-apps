@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -16,8 +14,10 @@ import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
+import 'package:wallet_core/utils/recipient_rememberer.dart';
 
 /// Proposal cost for a recipient. The network fee is still a chain estimate,
 /// so it is keyed by recipient only and sized with a representative amount —
@@ -224,6 +224,8 @@ class MultisigProposeStrategy extends SendStrategy {
     final breakdown = (fee as ProposeFee).breakdown;
     final recipient = recipientAddress.trim();
     final terminal = _terminal(l10n, fmt, recipient: recipient, amount: amount);
+    final walletSession = ref.read(walletSessionProvider);
+    final ticket = walletSession.ticket;
 
     final Account signer;
     try {
@@ -249,6 +251,10 @@ class MultisigProposeStrategy extends SendStrategy {
           cacheKey: _hardwareCacheKey(signer, recipient: recipient, amount: amount, expiryBlock: breakdown.expiryBlock),
           telemetryPrefix: 'multisig_propose_hardware',
           submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+            if (!walletSession.isCurrent(ticket)) {
+              throw StateError('The wallet was reset before this proposal was signed');
+            }
+            final afterProposed = _afterProposedBy(ref, recipient);
             final hash = await ref
                 .read(transactionSubmissionServiceProvider)
                 .proposeTransferWithExternalSignature(
@@ -261,7 +267,7 @@ class MultisigProposeStrategy extends SendStrategy {
                   unsignedData: unsignedData,
                   signatureWithPublicKey: signatureWithPublicKey,
                 );
-            _afterProposed(ref, recipient);
+            afterProposed();
             return hash;
           },
         ),
@@ -273,8 +279,12 @@ class MultisigProposeStrategy extends SendStrategy {
     // again while the approval was asked for. A proposal its member cannot
     // pay for is included all the same, and fails at the cost of its fee.
     if (!_memberCoversCost(ref, fee)) return SendFailed(l10n.multisigProposeFeePayerInsufficient);
+    final afterProposed = _afterProposedBy(ref, recipient);
     final approval = await ref.read(userApprovalProvider).approve(reason: l10n.multisigProposeAuthReason);
     if (approval != ApprovalResult.approved) return SendFailed(l10n.multisigProposeAuthRequired);
+    if (!walletSession.stillCurrent(ticket, dropping: 'a proposal approved before the reset')) {
+      return SendFailed(l10n.multisigProposeSubmitFailed);
+    }
     if (!_memberCoversCost(ref, fee)) return SendFailed(l10n.multisigProposeFeePayerInsufficient);
 
     try {
@@ -288,7 +298,7 @@ class MultisigProposeStrategy extends SendStrategy {
             expiryBlock: breakdown.expiryBlock,
             feeBreakdown: breakdown,
           );
-      _afterProposed(ref, recipient);
+      afterProposed();
       // Broadcast is not created: what the terminal says of the proposal
       // holds once the wallet has seen the transaction create it.
       return SendSubmitted(
@@ -301,15 +311,19 @@ class MultisigProposeStrategy extends SendStrategy {
     }
   }
 
-  void _afterProposed(WidgetRef ref, String recipient) {
-    unawaited(
-      RecentAddressesService()
-          .addAddress(recipient)
-          .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
-    );
-    ref.invalidate(multisigOpenProposalsProvider(msig));
-    ref.invalidate(multisigPastProposalsProvider(msig));
-    ref.invalidate(multisigCurrentBlockProvider);
+  /// What follows a proposal going out. Taken before it goes out: after a
+  /// reset in between, none of it may reach the next wallet.
+  void Function() _afterProposedBy(WidgetRef ref, String recipient) {
+    final session = ref.read(walletSessionProvider);
+    final ticket = session.ticket;
+    final rememberRecipient = recipientRememberer(ref.read);
+    return () {
+      if (!session.stillCurrent(ticket, dropping: 'what follows a proposal that went out')) return;
+      rememberRecipient(recipient);
+      ref.invalidate(multisigOpenProposalsProvider(msig));
+      ref.invalidate(multisigPastProposalsProvider(msig));
+      ref.invalidate(multisigCurrentBlockProvider);
+    };
   }
 
   SendTerminalContent _terminal(

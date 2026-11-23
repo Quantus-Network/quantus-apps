@@ -9,7 +9,7 @@ const _channel = MethodChannel('dexterous.com/flutter/local_notifications');
 
 /// Answers the plugin's native calls on macOS with [launchDetails] for the
 /// launch, and records which calls were made.
-List<String> _nativeMacOS({required Map<String, Object?> launchDetails}) {
+List<String> _nativeMacOS({required Map<String, Object?> launchDetails, bool isEnabled = false}) {
   debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
   addTearDown(() => debugDefaultTargetPlatformOverride = null);
   MacOSFlutterLocalNotificationsPlugin.registerWith();
@@ -21,6 +21,7 @@ List<String> _nativeMacOS({required Map<String, Object?> launchDetails}) {
       // The answer to whether permission was granted, which was not asked.
       'initialize' => false,
       'getNotificationAppLaunchDetails' => launchDetails,
+      'checkPermissions' => {'isEnabled': isEnabled},
       _ => null,
     };
   });
@@ -60,6 +61,18 @@ void main() {
 
     expect(await plugin.launchPayload(), isNull);
   });
+
+  for (final isEnabled in [true, false]) {
+    test("on macOS, reading the permission gives macOS's current answer ($isEnabled) and never asks", () async {
+      final calls = _nativeMacOS(launchDetails: {'notificationLaunchedApp': false}, isEnabled: isEnabled);
+      final plugin = SystemNotificationPlugin();
+      await plugin.initialize(_settings, onClick: (_) {});
+
+      expect(await plugin.isMacOSPermissionGranted(), isEnabled);
+      expect(calls, contains('checkPermissions'));
+      expect(calls, isNot(contains('requestPermissions')));
+    });
+  }
 
   for (final platform in [TargetPlatform.windows, TargetPlatform.linux]) {
     test('on ${platform.name}, which a click does not launch the app on, no launch details are asked for', () async {

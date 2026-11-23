@@ -9,6 +9,7 @@ import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
+import 'package:wallet_core/swap/swap_progress.dart';
 
 /// Pinned at the top of the home activity while a swap is with 1Click: what
 /// is swapped, the step it is on, the dots and the clock. Nothing while a

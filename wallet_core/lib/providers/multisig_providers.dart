@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 final multisigServiceProvider = Provider<MultisigService>((ref) => MultisigService());
 
@@ -25,12 +26,18 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     }
   }
 
-  Future<void> add(MultisigAccount account) async {
+  /// Adds [account]. False if a reset wiped the wallet while it was being added.
+  Future<bool> add(MultisigAccount account) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     await _settingsService.addMultisigAccount(account);
+    if (!await session.survivesReset(ticket, dropping: 'registering ${account.accountId}')) return false;
     await registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId);
+    if (!await session.survivesReset(ticket, dropping: 'adding ${account.accountId}')) return false;
 
     final current = state.value ?? [];
     state = AsyncValue.data([...current, account]);
+    return true;
   }
 
   Future<void> updateName(MultisigAccount account, String name) async {

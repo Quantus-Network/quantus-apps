@@ -25,13 +25,16 @@ import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
+import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
+import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
@@ -39,6 +42,10 @@ import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_row_view.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
@@ -50,6 +57,7 @@ import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import '../test/fakes.dart';
+import '../test/services/fake_notification_plugin.dart';
 import 'support.dart';
 
 const _windowSize = Size(1200, 800);
@@ -61,7 +69,14 @@ Future<void> _open(
   bool reduceMotion = false,
   List<Override> overrides = const [],
   FakeNetwork? network,
-}) => _openWith(tester, [...device.overrides, ...overrides], reduceMotion: reduceMotion, network: network);
+  FakeNotificationPlugin? notifications,
+}) => _openWith(
+  tester,
+  [...device.overrides, ...overrides],
+  reduceMotion: reduceMotion,
+  network: network,
+  notifications: notifications,
+);
 
 /// Opens the app's window on what [overrides] make of the device, online
 /// unless [network] says otherwise.
@@ -70,6 +85,7 @@ Future<void> _openWith(
   List<Override> overrides, {
   bool reduceMotion = false,
   FakeNetwork? network,
+  FakeNotificationPlugin? notifications,
 }) async {
   tester.view.physicalSize = _windowSize * _pixelRatio;
   tester.view.devicePixelRatio = _pixelRatio;
@@ -83,6 +99,7 @@ Future<void> _openWith(
       overrides: [
         ...overrides,
         ...liveDataOverrides(network: network),
+        notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
       ],
     ),
   );
@@ -611,6 +628,17 @@ void main() {
     await _openSettings(tester);
   });
 
+  _scene('settings_notifications_not_allowed', (tester) async {
+    await _openSettings(tester, notifications: FakeNotificationPlugin(grants: false));
+  });
+
+  _scene('settings_notifications_unavailable', (tester) async {
+    await _openSettings(
+      tester,
+      notifications: FakeNotificationPlugin(startError: StateError("The system's notification service did not start")),
+    );
+  }, platform: TargetPlatform.linux);
+
   _scene('settings_linux_not_set_up', (tester) async {
     await _openSettings(tester, loginPassword: FakeLoginPassword()..isSetUpAnswer = false);
   }, platform: TargetPlatform.linux);
@@ -694,6 +722,8 @@ void main() {
   }, platform: TargetPlatform.windows);
 
   _activityScenes();
+  _swapScenes();
+  _swapSheetScenes();
 }
 
 /// Opens Settings › Keyboard Shortcuts.
@@ -842,11 +872,16 @@ Future<void> _openPhraseWallets(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _openSettings(WidgetTester tester, {FakeLoginPassword? loginPassword}) async {
+Future<void> _openSettings(
+  WidgetTester tester, {
+  FakeLoginPassword? loginPassword,
+  FakeNotificationPlugin? notifications,
+}) async {
   await _open(
     tester,
     FakeWalletDevice()..store([_root, _second, _encrypted], mnemonic: _phrase),
     reduceMotion: true,
+    notifications: notifications,
     overrides: [
       if (loginPassword != null)
         loginPasswordProvider.overrideWithValue(loginPassword)
@@ -1346,4 +1381,355 @@ void _activityScenes() {
 
   _scene('activity_multisig', openTeamProposal);
   _scene('activity_multisig_smallest_window', (tester) => openTeamProposal(tester, window: const Size(960, 640)));
+}
+
+/// Opens Account 1 following [swap], with some settled activity under it.
+Future<void> _openFollowing(
+  WidgetTester tester,
+  ActiveSwap Function() swap, {
+  bool opened = true,
+  bool reduceMotion = true,
+}) async {
+  useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+  final device = _activityDevice();
+  device.storage.activeSwap = swap();
+  await _open(tester, device, reduceMotion: reduceMotion);
+  if (reduceMotion) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump(const Duration(milliseconds: 600));
+  }
+  if (!opened) return;
+  await tester.tap(find.byType(SwapRowView));
+  if (reduceMotion) {
+    await tester.pumpAndSettle();
+  } else {
+    // Far enough into the spinner's turn for it to show.
+    await tester.pump(const Duration(milliseconds: 350));
+  }
+}
+
+void _swapScenes() {
+  // The spinners turn here, as they do in the app.
+  _scene('swap_running', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), reduceMotion: false);
+  });
+
+  _scene('swap_running_row', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), opened: false);
+  });
+
+  _scene('swap_running_in', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.processing, depositSent: true, account: _root),
+    );
+  });
+
+  _scene('swap_status_unavailable', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(account: _root, pollError: 'Connection closed before full header was received'),
+    );
+  });
+
+  _scene('swap_overdue', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(
+        account: _root,
+        status: SwapStatus.processing,
+        age: const Duration(minutes: 41, seconds: 12),
+        deadline: DateTime.now().subtract(ActiveSwap.finishGrace + const Duration(minutes: 1)),
+      ),
+    );
+  });
+
+  _scene('swap_stop_tracking', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root));
+    final stop = find.widgetWithText(ToolbarAction, lookupAppLocalizations(const Locale('en')).swapStopTracking);
+    await tester.ensureVisible(stop);
+    await tester.tap(stop);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_deposit', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: _root),
+    );
+  });
+
+  _scene('swap_deposit_memo', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: _root, depositMemo: '7741902'),
+    );
+  });
+
+  _scene('swap_complete', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(account: _root, status: SwapStatus.success, age: const Duration(minutes: 4, seconds: 12)),
+    );
+  });
+
+  _scene('swap_refunded', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(account: _root, status: SwapStatus.refunded, refundReason: 'PARTIAL_DEPOSIT'),
+    );
+  });
+
+  _scene('swap_failed', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root, status: SwapStatus.failed));
+  });
+
+  _scene('swap_expired', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(
+        swapOut: false,
+        status: SwapStatus.pendingDeposit,
+        account: _root,
+        deadline: DateTime.now().subtract(const Duration(minutes: 1)),
+      ),
+    );
+  });
+
+  _scene('swap_smallest_window', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), opened: false);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(SwapRowView));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_deposit_smallest_window', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: _root),
+      opened: false,
+    );
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(SwapRowView));
+    await tester.pumpAndSettle();
+  });
+}
+
+/// Opens the Swap sheet on a wallet that holds 1,250 QTC, in [window] when
+/// it is not the usual one. [prepare] sets 1Click and the chain up first.
+Future<FakeWalletDevice> _openSwapSheet(
+  WidgetTester tester, {
+  void Function(FakeWalletDevice device)? prepare,
+  Size? window,
+}) async {
+  useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+  final device = _activityDevice();
+  // As the mocks drew a quote: a fee taken from the payment, and one for
+  // paying out.
+  device.swaps.quote = (request) async => fakeQuoteFor(request, withdrawFee: BigInt.from(20000), feeBps: 30);
+  prepare?.call(device);
+  await _open(
+    tester,
+    device,
+    reduceMotion: true,
+    overrides: [systemApprovalProvider.overrideWithValue(FakeUserApproval())],
+  );
+  await tester.pumpAndSettle();
+  if (window != null) {
+    tester.view.physicalSize = window * _pixelRatio;
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(
+    find.descendant(
+      of: find.byType(AccountToolbar),
+      matching: find.widgetWithText(ToolbarAction, lookupAppLocalizations(const Locale('en')).homeSwap),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return device;
+}
+
+/// Fills the form in: [amount], and [address] when there is one, and lets
+/// its quote come in.
+Future<void> _fillSwap(WidgetTester tester, {String amount = '250', String? address = swapRecipient}) async {
+  await tester.enterText(find.byKey(SwapSheet.amountFieldKey), amount);
+  if (address != null) await tester.enterText(find.byKey(SwapSheet.addressFieldKey), address);
+  // The form asks for its quote once it has been drawn with what was typed,
+  // and has then rested.
+  await tester.pump();
+  await tester.pump(swapFormQuoteDebounce);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pressSwap(WidgetTester tester, Key key) async {
+  await tester.ensureVisible(find.byKey(key));
+  await tester.tap(find.byKey(key));
+  await tester.pumpAndSettle();
+}
+
+void _swapSheetScenes() {
+  _scene('swap_sheet_empty', (tester) async {
+    await _openSwapSheet(tester);
+  });
+
+  _scene('swap_sheet_estimate', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester, address: null);
+  });
+
+  _scene('swap_sheet_quoted', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+  });
+
+  _scene('swap_sheet_exact_output', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.otherAmountKey);
+    await _fillSwap(tester, amount: '100');
+  });
+
+  _scene('swap_sheet_in', (tester) async {
+    await _openSwapSheet(tester);
+    await _pressSwap(tester, SwapSheet.flipKey);
+    await _fillSwap(tester, amount: '100');
+  });
+
+  _scene('swap_sheet_max', (tester) async {
+    await _openSwapSheet(tester);
+    await tester.enterText(find.byKey(SwapSheet.addressFieldKey), swapRecipient);
+    await _pressSwap(tester, SwapSheet.maxKey);
+    await tester.pump();
+    await tester.pump(swapFormQuoteDebounce);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_insufficient', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester, amount: '2500');
+  });
+
+  _scene('swap_sheet_quote_failed', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) =>
+          device.swaps.quote = (_) async =>
+              throw const SwapApiException(400, 'Amount is too low for bridge, try at least 12.5 QTC'),
+    );
+    await _fillSwap(tester, amount: '2');
+  });
+
+  _scene('swap_sheet_fee_failed', (tester) async {
+    await _openSwapSheet(tester, prepare: (device) => device.chain.fee = () async => throw StateError('offline'));
+  });
+
+  _scene('swap_sheet_tokens', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.tokenButtonKey);
+    await tester.enterText(find.byKey(SwapSheet.tokenSearchKey), 'us');
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_slippage_custom', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.slippageKey);
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(PopUpButton.menuKey),
+        matching: find.text(lookupAppLocalizations(const Locale('en')).swapSlippageCustom),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(SwapSheet.customSlippageKey), '99.5');
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_saved', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) => device.swaps.saved['ARB'] = const [
+        swapRecipient,
+        '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+        '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B',
+      ],
+    );
+    await tester.enterText(find.byKey(SwapSheet.amountFieldKey), '250');
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_save_address', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await tester.tap(find.descendant(of: find.byKey(SwapSheet.saveAddressKey), matching: find.byType(Checkbox)));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_save_failed', (tester) async {
+    await _openSwapSheet(tester, prepare: (device) => device.swaps.saveError = StateError('The disk is full'));
+    await _fillSwap(tester);
+    await tester.tap(find.descendant(of: find.byKey(SwapSheet.saveAddressKey), matching: find.byType(Checkbox)));
+    await tester.pumpAndSettle();
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
+
+  _scene('swap_sheet_unavailable', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) => device.swaps.tokens = () async => throw const SwapApiException(503, 'down'),
+    );
+  });
+
+  _scene('swap_sheet_disabled', (tester) async {
+    await _openSwapSheet(tester, prepare: (device) => device.swaps.listedQuantus = null);
+  });
+
+  _scene('swap_sheet_review', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
+
+  _scene('swap_sheet_review_in', (tester) async {
+    await _openSwapSheet(tester);
+    await _pressSwap(tester, SwapSheet.flipKey);
+    await _fillSwap(tester, amount: '100');
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
+
+  _scene('swap_sheet_review_price_moved', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) => device.swaps.create = (reviewed) async => SwapOrder(
+        quote: fakeQuoteFor((
+          from: reviewed.fromToken,
+          to: reviewed.toToken,
+          amount: reviewed.amountIn * BigInt.from(98) ~/ BigInt.from(100),
+          swapType: reviewed.swapType,
+          refundAddress: reviewed.refundAddress,
+          recipient: reviewed.recipient,
+          slippageBps: reviewed.slippageBps,
+        ), feeBps: 30),
+        status: SwapStatus.pendingDeposit,
+      ),
+    );
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.reviewKey);
+    await _pressSwap(tester, SwapSheet.confirmKey);
+  });
+
+  _scene('swap_sheet_smallest_window', (tester) async {
+    await _openSwapSheet(tester, window: const Size(960, 640));
+    await _fillSwap(tester);
+  });
+
+  _scene('swap_sheet_review_smallest_window', (tester) async {
+    await _openSwapSheet(tester, window: const Size(960, 640));
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
 }

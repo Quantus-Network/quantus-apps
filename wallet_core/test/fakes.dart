@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -8,8 +9,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_core_overrides.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/push_registration.dart';
@@ -93,6 +96,36 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   String? getSelectedAppLocale() => 'en';
+
+  @override
+  Future<void> clearSelectedAppLocale() async {}
+
+  @override
+  String? getSelectedFiatCurrency() => null;
+
+  @override
+  Future<void> clearSelectedFiatCurrency() async {}
+
+  @override
+  ActiveSwap? getActiveSwap() => null;
+
+  @override
+  Future<void> clearActiveSwap() async {}
+
+  @override
+  Future<List<MultisigAccount>> getMultisigAccounts() async => const [];
+
+  /// The multisigs saved since the test began.
+  final savedMultisigs = <MultisigAccount>[];
+
+  /// When set, a save is recorded and then answers only once this completes.
+  Completer<void>? holdMultisigSave;
+
+  @override
+  Future<void> addMultisigAccount(MultisigAccount account) async {
+    savedMultisigs.add(account);
+    await holdMultisigSave?.future;
+  }
 }
 
 /// The accounts of [settings], plus the encrypted account the real service
@@ -159,8 +192,45 @@ class FakeSubstrateService extends Fake implements SubstrateService {
   /// What [generateMnemonic] answers.
   String mnemonic;
 
+  /// When set, wiping the wallet fails with this.
+  Object? logoutError;
+
+  /// When set, signing waits for it.
+  Completer<void>? holdSigning;
+
+  /// The signed extrinsics broadcast.
+  final broadcast = <Uint8List>[];
+
   @override
   Future<String> generateMnemonic() async => mnemonic;
+
+  @override
+  Future<ExtrinsicData> getExtrinsicPayload(Account account, RuntimeCall call, {bool isSigned = true}) async {
+    await holdSigning?.future;
+    return ExtrinsicData(payload: Uint8List.fromList([1]), blockHash: '0xblock', blockNumber: 1, nonce: 0);
+  }
+
+  @override
+  Future<Uint8List> submitSignedExtrinsic(Uint8List extrinsic, {int maxRetries = 3}) async {
+    broadcast.add(extrinsic);
+    return Uint8List.fromList([1]);
+  }
+
+  /// When set, the wipe waits for it: after clearing the preferences, as the
+  /// real one then goes on to the keychain and the files, or before failing
+  /// with [logoutError].
+  Completer<void>? holdWipe;
+
+  /// Clears the saved preferences, as the real wipe does.
+  @override
+  Future<void> logout() async {
+    if (logoutError case final error?) {
+      await holdWipe?.future;
+      throw error;
+    }
+    await (await SharedPreferences.getInstance()).clear();
+    await holdWipe?.future;
+  }
 }
 
 /// The chain scan for a wallet's accounts. Each call takes the next entry of
@@ -197,8 +267,14 @@ class FakePushRegistration implements PushRegistration {
   @override
   Future<void> registerDevice() async => deviceRegistrations++;
 
+  /// When set, an address is recorded and then answers only once this completes.
+  Completer<void>? holdAddress;
+
   @override
-  Future<void> registerAddress(String address) async => registeredAddresses.add(address);
+  Future<void> registerAddress(String address) async {
+    registeredAddresses.add(address);
+    await holdAddress?.future;
+  }
 
   @override
   Future<void> unregister() async {}
@@ -225,9 +301,25 @@ class FakeUserApproval implements UserApproval {
   }
 }
 
-class _NoLocalNotifications implements LocalNotifications {
+/// The system's notifications: notes what is shown or scheduled and what is
+/// cancelled, and fails to cancel when told to.
+class FakeLocalNotifications implements LocalNotifications {
+  final shown = <NotificationData>[];
+  int cancelAllCalls = 0;
+  Object? cancelAllError;
+
+  /// When set, cancelling waits for it, as a platform call does.
+  Completer<void>? holdCancel;
+
   @override
-  Future<void> showOrScheduleNotification(NotificationData notification) async {}
+  Future<void> showOrScheduleNotification(NotificationData notification) async => shown.add(notification);
+
+  @override
+  Future<void> cancelAll() async {
+    cancelAllCalls++;
+    await holdCancel?.future;
+    if (cancelAllError case final error?) throw error;
+  }
 }
 
 class _FixedRemoteConfigService extends RemoteConfigService {
@@ -256,6 +348,7 @@ class WalletTestBed {
   final hdWallet = FakeHdWalletService();
   final telemetry = FakeTelemetry();
   final pushRegistration = FakePushRegistration();
+  final localNotifications = FakeLocalNotifications();
   final userApproval = FakeUserApproval();
   final FakeSubstrateService substrate;
   final FakeAccountDiscoveryService discovery;
@@ -263,11 +356,16 @@ class WalletTestBed {
   /// The wallets whose encrypted state was loaded.
   final List<int> encryptedStatesLoaded = [];
 
+  /// What the wallet session logged as dropped by a reset.
+  final droppedByReset = <String>[];
+  late final walletSession = WalletSession(log: droppedByReset.add);
+
   List<Override> get overrides => [
+    walletSessionProvider.overrideWithValue(walletSession),
     ...walletCoreOverrides(
       telemetry: (_) => telemetry,
       pushRegistration: (_) => pushRegistration,
-      localNotifications: (_) => _NoLocalNotifications(),
+      localNotifications: (_) => localNotifications,
       userApproval: (_) => userApproval,
     ),
     settingsServiceProvider.overrideWithValue(settings),
@@ -357,6 +455,23 @@ class FakeBalancesService extends Fake implements BalancesService {
       const balances_pallet.Txs().transferAll(dest: _anyDest, keepAlive: false);
 }
 
+/// A transaction as a hardware device would be handed it.
+UnsignedTransactionData makeUnsignedTransactionData() => UnsignedTransactionData(
+  payloadToSign: QuantusSigningPayload(
+    method: Uint8List(0),
+    specVersion: 1,
+    transactionVersion: 1,
+    genesisHash: '0x00',
+    blockHash: '0x00',
+    blockNumber: 42,
+    eraPeriod: 64,
+    nonce: 0,
+    tip: 0,
+  ),
+  signer: Uint8List(32),
+  registry: Object(),
+);
+
 /// Records what would be signed and submitted instead of doing it.
 class FakeTransactionSubmissionService extends Fake implements TransactionSubmissionService {
   /// Each transfer's recipient, amount and fee.
@@ -364,6 +479,9 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
 
   /// Each multisig proposal's recipient, amount and expiry block.
   final proposals = <(String, BigInt, int)>[];
+
+  /// When set, a transfer waits for it before going out.
+  Completer<void>? holdTransfer;
 
   @override
   Future<String> balanceTransfer(
@@ -373,6 +491,22 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
     required BigInt amount,
     required BigInt fee,
   }) async {
+    await holdTransfer?.future;
+    transfers.add((targetAddress, amount, fee));
+    return '0xtxhash';
+  }
+
+  @override
+  Future<String> submitExternallySignedTransfer({
+    required Account account,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+    required int blockHeight,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) async {
+    await holdTransfer?.future;
     transfers.add((targetAddress, amount, fee));
     return '0xtxhash';
   }
@@ -386,6 +520,23 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
     required int expiryBlock,
     required ProposeFeeBreakdown feeBreakdown,
   }) async {
+    await holdTransfer?.future;
+    proposals.add((recipient, amount, expiryBlock));
+    return '0xproposal';
+  }
+
+  @override
+  Future<String> proposeTransferWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) async {
+    await holdTransfer?.future;
     proposals.add((recipient, amount, expiryBlock));
     return '0xproposal';
   }
