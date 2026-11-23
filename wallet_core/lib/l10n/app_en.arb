@@ -4850,5 +4850,26 @@
           "type": "String"
         }
       }
+    },
+    "desktopNotificationNotAllowed": "Not allowed in System Settings",
+    "@desktopNotificationNotAllowed": {
+      "description": "Desktop Settings, Notifications row: macOS is not letting the app show notifications"
+    },
+    "desktopNotificationOpenSystemSettings": "Open System Settings",
+    "@desktopNotificationOpenSystemSettings": {
+      "description": "Desktop Settings, Notifications row: opens the Notifications pane of macOS System Settings"
+    },
+    "desktopNotificationOpenSystemSettingsFailed": "Couldn’t open System Settings",
+    "@desktopNotificationOpenSystemSettingsFailed": {
+      "description": "Desktop Settings: the Notifications pane of System Settings could not be opened"
+    },
+    "desktopNotificationUnavailable": "Unavailable: {reason}",
+    "@desktopNotificationUnavailable": {
+      "description": "Desktop Settings, Notifications row: the system's notifications cannot be used, and why",
+      "placeholders": {
+        "reason": {
+          "type": "String"
+        }
+      }
     }
 }

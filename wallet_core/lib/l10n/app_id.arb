@@ -886,5 +886,9 @@
   "desktopSwapAccountAvailable": "{account} · {amount} tersedia",
   "desktopSwapLoadingTokens": "Memuat token",
   "desktopSwapRemoveSavedAddress": "Hapus Alamat Tersimpan",
-  "desktopSwapSavedAddressesUnavailable": "Alamat tersimpan tidak tersedia: {error}"
+  "desktopSwapSavedAddressesUnavailable": "Alamat tersimpan tidak tersedia: {error}",
+  "desktopNotificationNotAllowed": "Tidak diizinkan di Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettings": "Buka Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettingsFailed": "Tidak dapat membuka Pengaturan Sistem",
+  "desktopNotificationUnavailable": "Tidak tersedia: {reason}"
 }

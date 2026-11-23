@@ -345,6 +345,20 @@ void main() {
     expect(_shown(notifications), [('Sent 12.5 QTC', 'From Main')]);
   });
 
+  test('once macOS stops allowing notifications, a send notifies nothing', () async {
+    final (:container, :notifications, telemetry: _) = await _open(platform: TargetPlatform.macOS);
+    final desktop = container.read(desktopLocalNotificationsProvider.notifier);
+    await desktop.requestPermission();
+    notifications.grants = false;
+    await desktop.recheckPermission();
+
+    _broadcast(container);
+    _found(container);
+    await _settleDown();
+
+    expect(notifications.shown, isEmpty);
+  });
+
   test('the text follows the app language', () async {
     final (:container, :notifications, telemetry: _) = await _open(locale: 'id');
 

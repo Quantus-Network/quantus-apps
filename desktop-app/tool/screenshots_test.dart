@@ -24,6 +24,7 @@ import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
+import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
@@ -55,6 +56,7 @@ import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import '../test/fakes.dart';
+import '../test/services/fake_notification_plugin.dart';
 import 'support.dart';
 
 const _windowSize = Size(1200, 800);
@@ -66,7 +68,14 @@ Future<void> _open(
   bool reduceMotion = false,
   List<Override> overrides = const [],
   FakeNetwork? network,
-}) => _openWith(tester, [...device.overrides, ...overrides], reduceMotion: reduceMotion, network: network);
+  FakeNotificationPlugin? notifications,
+}) => _openWith(
+  tester,
+  [...device.overrides, ...overrides],
+  reduceMotion: reduceMotion,
+  network: network,
+  notifications: notifications,
+);
 
 /// Opens the app's window on what [overrides] make of the device, online
 /// unless [network] says otherwise.
@@ -75,6 +84,7 @@ Future<void> _openWith(
   List<Override> overrides, {
   bool reduceMotion = false,
   FakeNetwork? network,
+  FakeNotificationPlugin? notifications,
 }) async {
   tester.view.physicalSize = _windowSize * _pixelRatio;
   tester.view.devicePixelRatio = _pixelRatio;
@@ -88,6 +98,7 @@ Future<void> _openWith(
       overrides: [
         ...overrides,
         ...liveDataOverrides(network: network),
+        notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
       ],
     ),
   );
@@ -606,6 +617,17 @@ void main() {
     await _openSettings(tester);
   });
 
+  _scene('settings_notifications_not_allowed', (tester) async {
+    await _openSettings(tester, notifications: FakeNotificationPlugin(grants: false));
+  });
+
+  _scene('settings_notifications_unavailable', (tester) async {
+    await _openSettings(
+      tester,
+      notifications: FakeNotificationPlugin(startError: StateError("The system's notification service did not start")),
+    );
+  }, platform: TargetPlatform.linux);
+
   _scene('settings_linux_not_set_up', (tester) async {
     await _openSettings(tester, loginPassword: FakeLoginPassword()..isSetUpAnswer = false);
   }, platform: TargetPlatform.linux);
@@ -831,11 +853,16 @@ Future<void> _openPhraseWallets(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> _openSettings(WidgetTester tester, {FakeLoginPassword? loginPassword}) async {
+Future<void> _openSettings(
+  WidgetTester tester, {
+  FakeLoginPassword? loginPassword,
+  FakeNotificationPlugin? notifications,
+}) async {
   await _open(
     tester,
     FakeWalletDevice()..store([_root, _second, _encrypted], mnemonic: _phrase),
     reduceMotion: true,
+    notifications: notifications,
     overrides: [
       if (loginPassword != null)
         loginPasswordProvider.overrideWithValue(loginPassword)

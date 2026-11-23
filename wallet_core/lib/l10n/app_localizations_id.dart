@@ -3289,4 +3289,18 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopSwapSavedAddressesUnavailable(String error) {
     return 'Alamat tersimpan tidak tersedia: $error';
   }
+
+  @override
+  String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettings => 'Buka Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettingsFailed => 'Tidak dapat membuka Pengaturan Sistem';
+
+  @override
+  String desktopNotificationUnavailable(String reason) {
+    return 'Tidak tersedia: $reason';
+  }
 }

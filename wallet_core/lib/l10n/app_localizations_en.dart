@@ -3284,4 +3284,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopSwapSavedAddressesUnavailable(String error) {
     return 'Saved addresses are unavailable: $error';
   }
+
+  @override
+  String get desktopNotificationNotAllowed => 'Not allowed in System Settings';
+
+  @override
+  String get desktopNotificationOpenSystemSettings => 'Open System Settings';
+
+  @override
+  String get desktopNotificationOpenSystemSettingsFailed => 'Couldn’t open System Settings';
+
+  @override
+  String desktopNotificationUnavailable(String reason) {
+    return 'Unavailable: $reason';
+  }
 }

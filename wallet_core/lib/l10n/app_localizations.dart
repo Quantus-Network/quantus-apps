@@ -5899,6 +5899,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Saved addresses are unavailable: {error}'**
   String desktopSwapSavedAddressesUnavailable(String error);
+
+  /// Desktop Settings, Notifications row: macOS is not letting the app show notifications
+  ///
+  /// In en, this message translates to:
+  /// **'Not allowed in System Settings'**
+  String get desktopNotificationNotAllowed;
+
+  /// Desktop Settings, Notifications row: opens the Notifications pane of macOS System Settings
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get desktopNotificationOpenSystemSettings;
+
+  /// Desktop Settings: the Notifications pane of System Settings could not be opened
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t open System Settings'**
+  String get desktopNotificationOpenSystemSettingsFailed;
+
+  /// Desktop Settings, Notifications row: the system's notifications cannot be used, and why
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable: {reason}'**
+  String desktopNotificationUnavailable(String reason);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
