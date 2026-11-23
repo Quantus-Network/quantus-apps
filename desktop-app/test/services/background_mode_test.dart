@@ -28,6 +28,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
@@ -625,17 +626,31 @@ void main() {
       expect(window.stayAwake, [true, false]);
     });
 
-    testOnMac('is held with the Send sheet open, where a private send is proved', (tester) async {
+    testOnMac('is held while a multisig creation is watched, and let go when it settles', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final (:window, :container, exits: _) = await _open(tester);
+      final creations = container.read(pendingMultisigCreationsProvider.notifier);
+      await creations.ready;
+
+      await creations.add(PendingMultisigCreationEvent.fromDraft(teamMultisig, networkFee: BigInt.one), teamMultisig);
+      await tester.pump();
+      expect(container.read(pendingWorkProvider), isTrue);
+      expect(window.stayAwake, [true]);
+
+      await creations.remove(teamMultisig.accountId);
+      await tester.pump();
+      expect(container.read(pendingWorkProvider), isFalse);
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is not asked for by the Send sheet being open with nothing sent', (tester) async {
       final (:window, :container, exits: _) = await _open(tester);
 
       container.read(shellSheetProvider.notifier).open(ShellSheet.send);
       await tester.pumpAndSettle();
-      expect(window.stayAwake, [true]);
 
-      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
-      await tester.pumpAndSettle();
-      expect(container.read(shellSheetProvider), isNull);
-      expect(window.stayAwake, [true, false]);
+      expect(container.read(pendingWorkProvider), isFalse);
+      expect(window.stayAwake, isEmpty);
     });
 
     testOnMac('is let go by a wallet reset', (tester) async {

@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
@@ -182,6 +184,61 @@ void main() {
     expect(proving.cancels, 0);
     expect(proving.wasDisposed, isFalse);
     expect(find.byKey(SendSheet.stepKey(5)), findsOneWidget);
+  });
+
+  group('as work under way', () {
+    ProviderContainer container(WidgetTester tester) =>
+        ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+
+    testOnMac('counts from the press of Send, before anything is recorded, until the approval is declined', (
+      tester,
+    ) async {
+      final answer = Completer<ApprovalResult>();
+      await _openSend(tester, approval: FakeUserApproval()..answer = () => answer.future);
+      await _fill(tester);
+      await _tap(tester, SendSheet.reviewKey);
+      expect(container(tester).read(pendingWorkProvider), isFalse);
+
+      await tester.tap(find.byKey(SendSheet.sendKey));
+      await tester.pump();
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+
+      answer.complete(ApprovalResult.declined);
+      await tester.pumpAndSettle();
+      expect(container(tester).read(pendingWorkProvider), isFalse);
+    });
+
+    for (final (ending, state) in [
+      ('succeeds', EncryptedSendState(phase: EncryptedSendPhase.succeeded, txHashes: const ['0xabc'])),
+      ('fails', EncryptedSendState(phase: EncryptedSendPhase.failed, errorMessage: 'no')),
+      ('is cancelled', EncryptedSendState(phase: EncryptedSendPhase.cancelled)),
+      ('goes stale', EncryptedSendState(phase: EncryptedSendPhase.planStale)),
+    ]) {
+      testOnMac('counts while proving and stopping, until the proving $ending, with no frame needed', (tester) async {
+        final proving = await _startSend(tester);
+        await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+        expect(container(tester).read(pendingWorkProvider), isTrue);
+        await _report(tester, proving, _partWay(EncryptedSendPhase.canceling));
+        expect(container(tester).read(pendingWorkProvider), isTrue);
+
+        // A closed window draws no frames, so this must not wait for one.
+        proving.report(state);
+
+        expect(container(tester).read(pendingWorkProvider), isFalse);
+        await tester.pumpAndSettle();
+      });
+    }
+
+    testOnMac('stops counting when the sheet goes away with the proving under way', (tester) async {
+      final proving = await _startSend(tester);
+      await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await tester.pumpAndSettle();
+
+      expect(container(tester).read(pendingWorkProvider), isFalse);
+    });
   });
 
   group('the form', () {

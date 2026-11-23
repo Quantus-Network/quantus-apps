@@ -43,3 +43,19 @@ class WindowClosedNotifier extends Notifier<bool> {
 
   void set(bool isClosed) => state = isClosed;
 }
+
+/// Who has work under way that no pending record shows, such as a send being
+/// approved, signed or proved.
+final workHoldsProvider = NotifierProvider<WorkHoldsNotifier, Set<Object>>(WorkHoldsNotifier.new);
+
+class WorkHoldsNotifier extends Notifier<Set<Object>> {
+  @override
+  Set<Object> build() => const {};
+
+  void hold(Object holder) => state = {...state, holder};
+
+  void release(Object holder) {
+    if (!ref.mounted || !state.contains(holder)) return;
+    state = {...state}..remove(holder);
+  }
+}

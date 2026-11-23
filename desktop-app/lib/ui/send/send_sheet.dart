@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
@@ -163,6 +164,22 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// created it.
   ProviderListenable<SendConfirmation>? _confirmation;
 
+  /// Where this sheet's send counts as work under way, from the press of Send
+  /// until it was handed over or came to nothing. Set and cleared where that
+  /// happens, not in a build: a closed window draws no frames.
+  WorkHoldsNotifier? _workHold;
+
+  void _holdWork() {
+    final holds = ref.read(workHoldsProvider.notifier);
+    holds.hold(this);
+    _workHold = holds;
+  }
+
+  void _releaseWork() {
+    _workHold?.release(this);
+    _workHold = null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -182,6 +199,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   @override
   void dispose() {
+    // After this frame: no provider may change while the tree is being built.
+    final hold = _workHold;
+    if (hold != null) scheduleMicrotask(() => hold.release(this));
     _blockSubscription?.cancel();
     _address.dispose();
     _amountText.dispose();
@@ -393,6 +413,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   Future<void> _send(SendReview review, List<SendReviewRow> rows) async {
     if (_isSending || review.confirmBlocked) return;
+    _holdWork();
     setState(() {
       _isSending = true;
       _error = null;
@@ -417,6 +438,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
     switch (outcome) {
       case SendSubmitted(:final terminal, :final confirmation):
+        _releaseWork();
         setState(() {
           _isSending = false;
           _submitted = terminal;
@@ -425,6 +447,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           _step = _Step.receipt;
         });
       case SendFailed(:final message):
+        _releaseWork();
         setState(() {
           _isSending = false;
           _error = message;
@@ -433,6 +456,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         // The proving lives as long as something listens to it: from here
         // on the sheet does, and moves on once every proof is handed over.
         ref.listenManual(encryptedSendControllerProvider, (_, next) {
+          if (!_isUnderWay(next)) _releaseWork();
           if (next.phase == EncryptedSendPhase.succeeded && _step == _Step.proving) {
             setState(() => _step = _Step.receipt);
           }
@@ -450,6 +474,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
               .start(account: account, plan: plan, amount: amount, recipientAddress: _recipient),
         );
       case SendNeedsHardwareSignature():
+        _releaseWork();
         setState(() {
           _isSending = false;
           _error = failed;
