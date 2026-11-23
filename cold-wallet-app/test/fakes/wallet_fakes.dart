@@ -52,6 +52,11 @@ class FakeColdAuth extends ColdAuthService {
   }
 }
 
+/// The controller of a wallet that keeps a vault, which is what the host
+/// platform of these tests gets.
+VaultWalletController vaultController(ProviderContainer container) =>
+    container.read(walletControllerProvider.notifier) as VaultWalletController;
+
 /// Waits for the controller's startup read of secure storage.
 Future<void> awaitInit(ProviderContainer container) async {
   while (container.read(walletControllerProvider).status == WalletStatus.initializing) {

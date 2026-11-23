@@ -5,12 +5,14 @@ import 'package:quantus_cold_wallet/components/lock_screen.dart';
 import 'package:quantus_cold_wallet/components/password_field.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/secure_element_warning_screen.dart';
+import 'package:quantus_cold_wallet/screens/unlock_method_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
-/// The one-time step for a wallet created with an app password: the password
-/// moves the vault behind the device key and is never asked again.
+/// The one-time step for a wallet an earlier app version created: what opens
+/// it today, its password or its device key, moves it to how this version
+/// holds the key, and the password is never asked again.
 class MigrateVaultScreen extends ConsumerStatefulWidget {
   const MigrateVaultScreen({super.key});
 
@@ -32,10 +34,17 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
   /// What the vault moves behind: user presence where the device offers it,
   /// otherwise a plain entry, which would leave the wallet open to anyone
   /// holding the phone and so needs the same acceptance as creating one.
-  /// Null when that warning was declined. The choice is made here, once, and
-  /// carried into the migration.
+  /// Null when that warning was declined, or when a device that seals the
+  /// phrase cannot yet. The choice is made here, once, and carried into the
+  /// migration.
   Future<bool?> _chooseProtection() async {
-    if (await ref.read(coldAuthServiceProvider).deviceCanProtect()) return true;
+    final auth = ref.read(coldAuthServiceProvider);
+    if (ref.read(walletControllerProvider.notifier).sealed) {
+      if (await auth.canUseBiometrics()) return true;
+      if (mounted) setState(() => _error = faceIdRequiredMessage);
+      return null;
+    }
+    if (await auth.deviceCanProtect()) return true;
     if (!mounted) return null;
     final proceed = await Navigator.push<bool>(
       context,
@@ -44,7 +53,7 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
     return proceed == true ? false : null;
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit(bool needsPassword) async {
     if (_busy) return;
     final protected = await _chooseProtection();
     if (protected == null || !mounted) return;
@@ -56,9 +65,17 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
       final moved = await ref
           .read(walletControllerProvider.notifier)
           .migrateLegacy(_password.text, protected: protected);
-      if (!moved && mounted) setState(() => _error = 'Incorrect password');
+      if (!moved && mounted) {
+        setState(
+          () => _error = needsPassword
+              ? 'Incorrect password'
+              : 'This device can no longer open the wallet on its own. Enter its password.',
+        );
+      }
     } on VaultAccessCancelled {
       if (mounted) setState(() => _error = 'Face ID is needed to finish moving your wallet.');
+    } on KeyRefused catch (e) {
+      if (mounted) setState(() => _error = e.message);
     } catch (e, st) {
       debugPrint('Migration failed: $e\n$st');
       if (mounted) setState(() => _error = 'Secure storage failed. Nothing was changed.');
@@ -71,6 +88,8 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
+    final sealed = ref.read(walletControllerProvider.notifier).sealed;
+    final needsPassword = !ref.watch(walletControllerProvider.select((s) => s.biometricEnabled));
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Wallet update', showBackButton: false),
@@ -82,18 +101,34 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
             Center(child: ColdIcon(ColdIcons.key, size: 60, color: colors.accentFlare)),
             const SizedBox(height: 24),
             Text(
-              'One last password',
+              needsPassword ? 'One last password' : 'Face ID for every signature',
               style: text.titleHero.copyWith(color: colors.textContent),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
-              'Enter your password once to move this wallet behind your device lock. You will not need it again.',
+              switch ((sealed, needsPassword)) {
+                (false, _) =>
+                  'Enter your password once to move this wallet behind your device lock. You will not need it again.',
+                (true, true) =>
+                  'Enter your password once to move the signing key behind Face ID. You will not need it again: '
+                      'from now on Face ID is asked for every signature.',
+                (true, false) =>
+                  'This update keeps the signing key behind Face ID alone and asks for it at every signature. '
+                      'Face ID is asked twice now: to open the wallet as it is stored today, and to confirm the '
+                      'new key.',
+              },
               style: text.bodyLarge.copyWith(color: colors.textMuted),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
-            PasswordField(controller: _password, hintText: 'Password', enabled: !_busy, onSubmitted: (_) => _submit()),
+            if (needsPassword)
+              PasswordField(
+                controller: _password,
+                hintText: 'Password',
+                enabled: !_busy,
+                onSubmitted: (_) => _submit(needsPassword),
+              ),
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(
@@ -112,7 +147,7 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
               label: 'Continue',
               padding: coldButtonPadding,
               isLoading: _busy,
-              onTap: _busy ? null : _submit,
+              onTap: _busy ? null : () => _submit(needsPassword),
             ),
             const SizedBox(height: 12),
             QuantusButton.simple(

@@ -10,6 +10,7 @@ import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/rename_account_screen.dart';
+import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 enum _Derivation { accountIndex, fullPath }
@@ -165,6 +166,8 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     try {
       await ref.read(walletControllerProvider.notifier).addAccount(account);
       if (mounted) Navigator.pop(context);
+    } on VaultAccessCancelled {
+      if (mounted) setState(() => _adding = false);
     } catch (e) {
       debugPrint('Add account failed: $e');
       if (mounted) {
@@ -341,7 +344,11 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     }
 
     final path = account.derivationPath;
-    final address = _previewPath == path
+    // A sealed wallet releases the phrase only to Face ID, so there the address
+    // is derived once, when the account is added.
+    final address = ref.read(walletControllerProvider.notifier).sealed
+        ? null
+        : _previewPath == path
         ? ref.watch(derivedAddressProvider((path: path, scheme: account.scheme)))
         : const AsyncValue<String>.loading();
 
@@ -357,14 +364,20 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
         children: [
           Text(path, style: text.caption.copyWith(color: colors.textMuted)),
           const SizedBox(height: 4),
-          address.when(
-            data: (value) => AddressWithCheckphrase(label: 'Address', address: value),
-            loading: () => _addressPlaceholder(context),
-            error: (e, _) {
-              debugPrint('Address preview failed for $path: $e');
-              return Text('Could not derive this account.', style: text.caption.copyWith(color: colors.semanticEmber));
-            },
-          ),
+          if (address == null)
+            _notice(context, 'Face ID derives the address when you add this account.', isError: false)
+          else
+            address.when(
+              data: (value) => AddressWithCheckphrase(label: 'Address', address: value),
+              loading: () => _addressPlaceholder(context),
+              error: (e, _) {
+                debugPrint('Address preview failed for $path: $e');
+                return Text(
+                  'Could not derive this account.',
+                  style: text.caption.copyWith(color: colors.semanticEmber),
+                );
+              },
+            ),
         ],
       ),
     );

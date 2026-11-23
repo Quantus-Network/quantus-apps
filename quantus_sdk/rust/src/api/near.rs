@@ -335,9 +335,12 @@ pub fn near_transaction_hash(transaction: Vec<u8>) -> Vec<u8> {
     Sha256::digest(&transaction).to_vec()
 }
 
-fn require_ml_dsa_65(keypair: &Keypair) -> Result<(), String> {
-    if keypair.scheme != DilithiumScheme::MlDsa65 {
-        return Err("NEAR accepts ML-DSA-65 keys only; this account is ML-DSA-87".to_string());
+pub(crate) const ML_DSA_65_ONLY: &str =
+    "NEAR accepts ML-DSA-65 keys only; this account is ML-DSA-87";
+
+fn require_ml_dsa_65_key(public_key: &[u8]) -> Result<(), String> {
+    if public_key.len() != ML_DSA_65_PUBLIC_KEY_LEN {
+        return Err(ML_DSA_65_ONLY.to_string());
     }
     Ok(())
 }
@@ -351,20 +354,33 @@ pub fn sign_near_transaction(
     transaction: Vec<u8>,
     entropy: Option<[u8; 32]>,
 ) -> Result<Vec<u8>, String> {
-    require_ml_dsa_65(keypair)?;
-    let wire = decode_wire(&transaction)?;
-    if wire.public_key.bytes() != keypair.public_key {
+    if keypair.scheme != DilithiumScheme::MlDsa65 {
+        return Err(ML_DSA_65_ONLY.to_string());
+    }
+    let secret = ml_dsa_65::SecretKey::from_bytes(&keypair.secret_key)
+        .map_err(|e| format!("Secret key does not parse: {e:?}"))?;
+    sign_declared_transaction(&secret, &keypair.public_key, &transaction, entropy)
+}
+
+/// `signature ‖ public_key` over a transaction, refused unless it declares
+/// `public_key` as the key that signs it.
+pub(crate) fn sign_declared_transaction(
+    secret: &ml_dsa_65::SecretKey,
+    public_key: &[u8],
+    transaction: &[u8],
+    entropy: Option<[u8; 32]>,
+) -> Result<Vec<u8>, String> {
+    let wire = decode_wire(transaction)?;
+    if wire.public_key.bytes() != public_key {
         return Err(format!(
             "Transaction is signed by {}, not by this account",
             wire.public_key.text()
         ));
     }
 
-    let secret = ml_dsa_65::SecretKey::from_bytes(&keypair.secret_key)
-        .map_err(|e| format!("Secret key does not parse: {e:?}"))?;
     let mut entropy = entropy;
     let hedge = entropy.as_mut().map(SensitiveBytes32::new);
-    let hash = Sha256::digest(&transaction);
+    let hash = Sha256::digest(transaction);
     // Pure ML-DSA, no context: NEAR's verifier passes none.
     let signature = secret
         .sign(&hash, None, hedge.as_ref())
@@ -372,7 +388,7 @@ pub fn sign_near_transaction(
 
     let mut response = Vec::with_capacity(ML_DSA_65_SIGNATURE_LEN + ML_DSA_65_PUBLIC_KEY_LEN);
     response.extend_from_slice(signature.as_ref());
-    response.extend_from_slice(&keypair.public_key);
+    response.extend_from_slice(public_key);
     Ok(response)
 }
 
@@ -393,22 +409,22 @@ pub fn verify_near_signature(
 /// The account's key in NEAR text form, `ml-dsa-65:<base58>`. This is the
 /// `--signer-public-key` near-cli-rs takes and what an `AddKey` carries.
 #[flutter_rust_bridge::frb(sync)]
-pub fn near_public_key_text(keypair: &Keypair) -> Result<String, String> {
-    require_ml_dsa_65(keypair)?;
+pub fn near_public_key_text(public_key: Vec<u8>) -> Result<String, String> {
+    require_ml_dsa_65_key(&public_key)?;
     Ok(format!(
         "ml-dsa-65:{}",
-        bs58::encode(&keypair.public_key).into_string()
+        bs58::encode(&public_key).into_string()
     ))
 }
 
 /// The on-chain handle of the key, `ml-dsa-65-hash:<base58>`: what
 /// `view_access_key_list` shows, SHA3-256 of a domain tag and the key.
 #[flutter_rust_bridge::frb(sync)]
-pub fn near_public_key_handle(keypair: &Keypair) -> Result<String, String> {
-    require_ml_dsa_65(keypair)?;
+pub fn near_public_key_handle(public_key: Vec<u8>) -> Result<String, String> {
+    require_ml_dsa_65_key(&public_key)?;
     let mut hasher = Sha3_256::new();
     hasher.update(ML_DSA_65_HANDLE_DOMAIN_TAG);
-    hasher.update(&keypair.public_key);
+    hasher.update(&public_key);
     Ok(format!(
         "ml-dsa-65-hash:{}",
         bs58::encode(hasher.finalize()).into_string()
@@ -416,7 +432,7 @@ pub fn near_public_key_handle(keypair: &Keypair) -> Result<String, String> {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
     use crate::api::crypto::generate_keypair_from_seed;
 
@@ -460,7 +476,7 @@ mod tests {
         }
     }
 
-    fn tx_for(keypair: &Keypair) -> Vec<u8> {
+    pub(crate) fn tx_for(keypair: &Keypair) -> Vec<u8> {
         let key: [u8; ML_DSA_65_PUBLIC_KEY_LEN] = keypair.public_key.as_slice().try_into().unwrap();
         borsh::to_vec(&WireTransaction {
             signer_id: "vault.alice.near".to_string(),
@@ -726,8 +742,8 @@ mod tests {
         assert_eq!(ml87.scheme, DilithiumScheme::MlDsa87);
         let err = sign_near_transaction(&ml87, tx, None).unwrap_err();
         assert!(err.contains("ML-DSA-65"), "{err}");
-        assert!(near_public_key_text(&ml87).is_err());
-        assert!(near_public_key_handle(&ml87).is_err());
+        assert!(near_public_key_text(ml87.public_key.clone()).is_err());
+        assert!(near_public_key_handle(ml87.public_key).is_err());
     }
 
     #[test]
@@ -735,7 +751,7 @@ mod tests {
         let mut keypair = ml_dsa_65_keypair(7);
         keypair.public_key = vec![0x42; ML_DSA_65_PUBLIC_KEY_LEN];
 
-        let text = near_public_key_text(&keypair).unwrap();
+        let text = near_public_key_text(keypair.public_key.clone()).unwrap();
         assert!(text.starts_with("ml-dsa-65:"));
         assert_eq!(
             bs58::decode(&text["ml-dsa-65:".len()..])
@@ -746,7 +762,7 @@ mod tests {
 
         // Golden from quantus-cli (SHA3-256 over tag ‖ key), cross-checked
         // against near-cli-rs's "pub key hash" display.
-        let handle = near_public_key_handle(&keypair).unwrap();
+        let handle = near_public_key_handle(keypair.public_key.clone()).unwrap();
         let handle_bytes = bs58::decode(&handle["ml-dsa-65-hash:".len()..])
             .into_vec()
             .unwrap();

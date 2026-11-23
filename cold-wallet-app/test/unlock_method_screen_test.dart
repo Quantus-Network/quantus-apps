@@ -13,7 +13,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 import 'fakes/wallet_fakes.dart';
 
-class _RecordingController extends WalletController {
+class _RecordingController extends VaultWalletController {
   _RecordingController({this.failure});
 
   final Object? failure;

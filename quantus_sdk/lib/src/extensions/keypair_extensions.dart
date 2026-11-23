@@ -11,15 +11,16 @@ extension KeypairExtensions on crypto.Keypair {
 
   /// Hedged ML-DSA signature. [specVersion] 148+ uses QUANTUS_EXTRINSIC; earlier specs use none.
   Uint8List sign(List<int> message, {required int specVersion}) =>
-      crypto.signMessage(keypair: this, message: message, entropy: _hedgeEntropy(), specVersion: specVersion);
+      crypto.signMessage(keypair: this, message: message, entropy: hedgeEntropy(), specVersion: specVersion);
 
   /// Hedged pure ML-DSA-65 signature over a borsh NEAR `TransactionV0`.
   /// Returns `signature ‖ public_key`, the cold-signing response NEAR tooling expects.
   Uint8List signNear(List<int> transaction) =>
-      near.signNearTransaction(keypair: this, transaction: transaction, entropy: _hedgeEntropy());
+      near.signNearTransaction(keypair: this, transaction: transaction, entropy: hedgeEntropy());
 }
 
-U8Array32 _hedgeEntropy() {
+/// Fresh randomness that hedges an ML-DSA signature against a faulty nonce.
+U8Array32 hedgeEntropy() {
   final random = Random.secure();
   return U8Array32(Uint8List.fromList(List<int>.generate(32, (_) => random.nextInt(256))));
 }

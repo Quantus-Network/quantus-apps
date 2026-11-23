@@ -46,10 +46,9 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> w
   /// Returns signature ++ publicKey; the hot wallet reads the scheme off its
   /// length and rebuilds the extrinsic via submitExtrinsicWithExternalSignature.
   void _sign(ParsedPayload parsed) => approve(
-    widget.request.signer,
-    (keypair) => signMessageWithPubkey(
-      keypair: keypair,
-      message: QuantusSigningPayload.signablePayload(widget.request.payload),
+    (wallet) => wallet.signExtrinsic(
+      widget.request.signer,
+      QuantusSigningPayload.signablePayload(widget.request.payload),
       specVersion: parsed.extensions.specVersion,
     ),
   );

@@ -54,6 +54,7 @@ export 'src/models/referral_rank.dart';
 export 'src/models/raid_stats.dart';
 // note we have to hide some things here because they're exported by substrate service
 // should probably expise all of crypto.dart through substrateservice instead
+export 'src/rust/api/cold_key.dart';
 export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/rust/api/ur.dart';
 export 'src/utils/print.dart';

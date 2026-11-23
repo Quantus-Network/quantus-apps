@@ -13,7 +13,7 @@ import 'fakes/account_fixtures.dart' show coldApp;
 import 'fakes/fault_injecting_storage.dart';
 import 'fakes/wallet_fakes.dart';
 
-class _MigrationController extends WalletController {
+class _MigrationController extends VaultWalletController {
   _MigrationController({this.failure});
 
   final Object? failure;

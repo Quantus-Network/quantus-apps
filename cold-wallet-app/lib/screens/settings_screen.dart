@@ -30,20 +30,21 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   Future<void> _showSecretPhrase(BuildContext context, WidgetRef ref) async {
-    final bool confirmed;
+    final String? phrase;
     try {
-      confirmed = await ref.read(walletControllerProvider.notifier).confirmPresence();
+      phrase = await ref.read(walletControllerProvider.notifier).revealPhrase();
     } catch (e, st) {
-      debugPrint('Show secret phrase: presence check failed: $e\n$st');
+      debugPrint('Show secret phrase: the key was not released: $e\n$st');
       if (context.mounted) context.showErrorToaster(message: 'Could not read the signing key: $e');
       return;
     }
     if (!context.mounted) return;
-    if (!confirmed) {
+    if (phrase == null) {
       context.showInfoToaster(message: 'Could not confirm it is you.');
       return;
     }
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const ShowSecretPhraseScreen()));
+    final screen = ShowSecretPhraseScreen(phrase: phrase);
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
@@ -75,6 +76,9 @@ class SettingsScreen extends ConsumerWidget {
                       'to confirm it is you before each use.',
                 KeyProtection.none =>
                   'None. This phone has no device lock, so the signing key is stored without user presence.',
+                KeyProtection.biometryEachUse =>
+                  'Face ID, every time. This iPhone releases the signing key for one signature at a time, and only '
+                      'after a Face ID match. Changing Face ID or turning the passcode off removes the key.',
               },
             ),
             const SizedBox(height: 12),
@@ -115,7 +119,9 @@ class SettingsScreen extends ConsumerWidget {
             const _SectionLabel('DANGER ZONE'),
             _SettingsCard(
               title: 'Reset wallet',
-              subtitle: 'Erase the encrypted key and its device-protected unlock key from this phone.',
+              subtitle: protection == KeyProtection.biometryEachUse
+                  ? 'Erase the signing key and the list of accounts from this iPhone.'
+                  : 'Erase the encrypted key and its device-protected unlock key from this phone.',
               titleColor: colors.semanticEmber,
               onTap: () => confirmResetWallet(context, ref),
             ),

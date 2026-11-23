@@ -61,7 +61,7 @@ class DebugCallsScreen extends ConsumerWidget {
         .where((e) => e.value.scheme == DilithiumScheme.mlDsa65)
         .firstOrNull
         ?.key;
-    return address == null ? null : keypairFor(ref, address)?.publicKey;
+    return address == null ? null : ref.read(walletControllerProvider.notifier).publicKeyOf(address);
   }
 
   Widget _header(BuildContext context, String title, Color color) {

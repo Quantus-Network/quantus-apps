@@ -105,8 +105,8 @@ class ShowKeyScreen extends ConsumerWidget {
 
   /// The full key is only useful where a key is registered directly rather
   /// than by Quantus address, and ML-DSA-65 is the one scheme such a system
-  /// (NEAR) accepts today, so only those accounts offer it. The key pair is
-  /// derived on tap, not on build.
+  /// (NEAR) accepts today, so only those accounts offer it. The key is read on
+  /// tap, not on build.
   Widget _publicKeySection(BuildContext context, WidgetRef ref) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
@@ -123,17 +123,16 @@ class ShowKeyScreen extends ConsumerWidget {
         ColdButton.secondary(
           label: 'Show public key',
           onTap: () {
-            final keypair = keypairFor(ref, address);
-            if (keypair == null) return;
+            final publicKey = ref.read(walletControllerProvider.notifier).publicKeyOf(address);
             Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) => PublicKeyExportScreen(
                   export: NearPublicKeyExport(
                     address: address,
-                    nearPublicKey: nearPublicKeyText(keypair: keypair),
+                    nearPublicKey: nearPublicKeyText(publicKey: publicKey),
                   ),
-                  handle: nearPublicKeyHandle(keypair: keypair),
+                  handle: nearPublicKeyHandle(publicKey: publicKey),
                 ),
               ),
             );
@@ -217,8 +216,7 @@ Future<void> confirmDisconnect(
   ColdAccount account, {
   VoidCallback? afterRemove,
 }) async {
-  final mnemonic = ref.read(walletControllerProvider).mnemonic ?? (throw StateError('Wallet is locked'));
-  final words = mnemonic.split(' ').length;
+  final words = ref.read(walletControllerProvider.notifier).phraseWords;
   final confirmed = await showColdDialog(
     context,
     title: 'Disconnect ${account.label}?',

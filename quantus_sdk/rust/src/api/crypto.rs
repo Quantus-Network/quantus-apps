@@ -43,6 +43,8 @@ macro_rules! dispatch {
     };
 }
 
+pub(crate) use dispatch;
+
 #[flutter_rust_bridge::frb(sync)]
 pub fn set_default_ss58_prefix(prefix: u16) {
     sp_core::crypto::set_default_ss58_version(sp_core::crypto::Ss58AddressFormat::custom(prefix));
@@ -78,12 +80,15 @@ fn ml_dsa_87_from_entropy(entropy: &mut SensitiveBytes32) -> Keypair {
     )
 }
 
+/// The account a public key belongs to, in ss58check format.
+pub(crate) fn address_of(public_key: &[u8]) -> String {
+    AccountId32::new(hash_bytes(public_key)).to_ss58check()
+}
+
 /// Convert public key to accountId32 in ss58check format
 #[flutter_rust_bridge::frb(sync)]
 pub fn to_account_id(obj: &Keypair) -> String {
-    let hashed = hash_bytes(obj.public_key.as_slice());
-    let account = AccountId32::new(hashed);
-    account.to_ss58check()
+    address_of(&obj.public_key)
 }
 /// Convert key in ss58check format to accountId32
 #[flutter_rust_bridge::frb(sync)]

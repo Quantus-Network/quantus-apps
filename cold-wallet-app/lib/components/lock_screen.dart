@@ -86,7 +86,7 @@ class _LockScreenState extends ConsumerState<LockScreen> with WidgetsBindingObse
   Future<void> _unlock() async {
     if (_busy) return;
     setState(() => _busy = true);
-    await ref.read(walletControllerProvider.notifier).unlockWithBiometric();
+    await (ref.read(walletControllerProvider.notifier) as VaultWalletController).unlockWithBiometric();
     if (mounted) setState(() => _busy = false);
   }
 
