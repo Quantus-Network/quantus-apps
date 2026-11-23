@@ -146,14 +146,18 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     if (accountId == null) return true;
     final accounts = ref.read(sidebarAccountsProvider);
     if (accounts.isEmpty || !ref.read(activeAccountProvider).hasValue) return false;
+    _forgetClick();
+    final account = accounts.where((display) => display.account.accountId == accountId).firstOrNull;
+    if (account != null) unawaited(ref.read(sidebarSelectionProvider.notifier).showAccount(account));
+    return true;
+  }
+
+  void _forgetClick() {
     _clickedAccountId = null;
     for (final subscription in _untilLoaded) {
       subscription.close();
     }
     _untilLoaded.clear();
-    final account = accounts.where((display) => display.account.accountId == accountId).firstOrNull;
-    if (account != null) unawaited(ref.read(sidebarSelectionProvider.notifier).showAccount(account));
-    return true;
   }
 
   void _unavailable(Object error) {
@@ -162,10 +166,15 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     state = NotificationsUnavailable(error is StateError ? error.message : '$error');
   }
 
-  /// Nothing to cancel: the desktop schedules no notification, and a click on
-  /// one already shown about a wiped wallet only brings the window forward.
+  /// Removes what the system still shows of a wallet that was wiped, and drops
+  /// a click still waiting for its accounts. Nothing can be asked of a system
+  /// whose notifications have not started or are unavailable.
   @override
-  Future<void> cancelAll() async {}
+  Future<void> cancelAll() async {
+    _forgetClick();
+    if (state is NotificationsStarting || state is NotificationsUnavailable) return;
+    await ref.read(notificationPluginProvider).cancelAll();
+  }
 
   /// Shows [notification] now. Callers check [state] first: showing one the
   /// system does not allow fails.
