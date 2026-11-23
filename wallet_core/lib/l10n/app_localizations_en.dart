@@ -3285,4 +3285,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopCreateMultisigTimedOut => 'Multisig not confirmed';
+
+  @override
+  String get desktopMenuConnectColdWallet => 'Connect Cold Wallet…';
+
+  @override
+  String get desktopColdWalletStepHold => 'Hold it up to this camera';
+
+  @override
+  String get desktopColdWalletLooking => 'Looking for a QR code';
+
+  @override
+  String get desktopColdWalletNotAddress => 'That QR code isn\'t an account address.';
+
+  @override
+  String get desktopColdWalletAlreadyAdded => 'That account is already in this app.';
+
+  @override
+  String get desktopColdWalletConfirmTitle => 'Confirm Address';
+
+  @override
+  String get desktopColdWalletConfirmBody => 'Check that this matches the address on your cold wallet.';
+
+  @override
+  String get desktopColdWalletScanAgain => 'Scan Again';
+
+  @override
+  String get desktopColdWalletConnect => 'Connect';
+
+  @override
+  String get desktopColdWalletSaveFailed => 'Couldn\'t connect this cold wallet';
+
+  @override
+  String get desktopCameraNoneTitle => 'No camera found';
+
+  @override
+  String get desktopCameraNoneBody => 'Connect a camera to this computer, then try again.';
+
+  @override
+  String get desktopCameraPermissionTitle => 'Camera access is off';
+
+  @override
+  String get desktopCameraPermissionMac => 'Allow Quantus Wallet under Privacy & Security, Camera.';
+
+  @override
+  String get desktopCameraPermissionWindows => 'Allow camera access under Privacy & security, Camera.';
+
+  @override
+  String get desktopCameraPermissionLinux => 'Check that your user is allowed to use the camera.';
+
+  @override
+  String get desktopCameraOpenSettings => 'Open System Settings';
+
+  @override
+  String get desktopCameraBusyTitle => 'The camera is in use';
+
+  @override
+  String get desktopCameraBusyBody => 'Close the other app using it, then try again.';
+
+  @override
+  String get desktopCameraUnsupportedTitle => 'This camera can\'t be used';
+
+  @override
+  String get desktopCameraUnsupportedBody => 'It offers no picture format this app can read.';
+
+  @override
+  String get desktopCameraMediaTitle => 'Camera support is missing';
+
+  @override
+  String get desktopCameraMediaBody => 'Install the Media Feature Pack for Windows, then try again.';
+
+  @override
+  String get desktopCameraStoppedTitle => 'The camera stopped';
+
+  @override
+  String get desktopCameraStoppedBody => 'Check that it\'s connected, then try again.';
+
+  @override
+  String get desktopCameraFailedTitle => 'Couldn\'t use the camera';
+
+  @override
+  String get desktopCameraFailedBody => 'Something went wrong with the camera. Try again.';
 }

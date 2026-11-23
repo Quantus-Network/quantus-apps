@@ -3290,4 +3290,85 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopCreateMultisigTimedOut => 'Multisig belum terkonfirmasi';
+
+  @override
+  String get desktopMenuConnectColdWallet => 'Hubungkan Cold Wallet…';
+
+  @override
+  String get desktopColdWalletStepHold => 'Arahkan ke kamera ini';
+
+  @override
+  String get desktopColdWalletLooking => 'Mencari kode QR';
+
+  @override
+  String get desktopColdWalletNotAddress => 'Kode QR itu bukan alamat akun.';
+
+  @override
+  String get desktopColdWalletAlreadyAdded => 'Akun itu sudah ada di aplikasi ini.';
+
+  @override
+  String get desktopColdWalletConfirmTitle => 'Konfirmasi Alamat';
+
+  @override
+  String get desktopColdWalletConfirmBody => 'Pastikan ini sama dengan alamat di cold wallet Anda.';
+
+  @override
+  String get desktopColdWalletScanAgain => 'Pindai Lagi';
+
+  @override
+  String get desktopColdWalletConnect => 'Hubungkan';
+
+  @override
+  String get desktopColdWalletSaveFailed => 'Tidak dapat menghubungkan cold wallet ini';
+
+  @override
+  String get desktopCameraNoneTitle => 'Kamera tidak ditemukan';
+
+  @override
+  String get desktopCameraNoneBody => 'Hubungkan kamera ke komputer ini, lalu coba lagi.';
+
+  @override
+  String get desktopCameraPermissionTitle => 'Akses kamera nonaktif';
+
+  @override
+  String get desktopCameraPermissionMac => 'Izinkan Quantus Wallet di Privasi & Keamanan, Kamera.';
+
+  @override
+  String get desktopCameraPermissionWindows => 'Izinkan akses kamera di Privasi & keamanan, Kamera.';
+
+  @override
+  String get desktopCameraPermissionLinux => 'Pastikan pengguna Anda diizinkan memakai kamera.';
+
+  @override
+  String get desktopCameraOpenSettings => 'Buka Pengaturan Sistem';
+
+  @override
+  String get desktopCameraBusyTitle => 'Kamera sedang digunakan';
+
+  @override
+  String get desktopCameraBusyBody => 'Tutup aplikasi lain yang memakainya, lalu coba lagi.';
+
+  @override
+  String get desktopCameraUnsupportedTitle => 'Kamera ini tidak dapat digunakan';
+
+  @override
+  String get desktopCameraUnsupportedBody => 'Kamera ini tidak menyediakan format gambar yang dapat dibaca aplikasi.';
+
+  @override
+  String get desktopCameraMediaTitle => 'Dukungan kamera tidak tersedia';
+
+  @override
+  String get desktopCameraMediaBody => 'Pasang Media Feature Pack untuk Windows, lalu coba lagi.';
+
+  @override
+  String get desktopCameraStoppedTitle => 'Kamera berhenti';
+
+  @override
+  String get desktopCameraStoppedBody => 'Pastikan kamera terhubung, lalu coba lagi.';
+
+  @override
+  String get desktopCameraFailedTitle => 'Tidak dapat menggunakan kamera';
+
+  @override
+  String get desktopCameraFailedBody => 'Terjadi masalah pada kamera. Coba lagi.';
 }

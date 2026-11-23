@@ -4834,5 +4834,113 @@
     "desktopCreateMultisigTimedOut": "Multisig not confirmed",
     "@desktopCreateMultisigTimedOut": {
       "description": "Desktop: short note on the active account's sidebar row when a multisig being created was not confirmed in time"
+    },
+    "desktopMenuConnectColdWallet": "Connect Cold Wallet…",
+    "@desktopMenuConnectColdWallet": {
+      "description": "Desktop: the item that opens the Connect Cold Wallet sheet, in the Account menu and the sidebar's Add Account menu"
+    },
+    "desktopColdWalletStepHold": "Hold it up to this camera",
+    "@desktopColdWalletStepHold": {
+      "description": "Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device"
+    },
+    "desktopColdWalletLooking": "Looking for a QR code",
+    "@desktopColdWalletLooking": {
+      "description": "Desktop Connect Cold Wallet sheet: a line with a spinner while the camera is on"
+    },
+    "desktopColdWalletNotAddress": "That QR code isn't an account address.",
+    "@desktopColdWalletNotAddress": {
+      "description": "Desktop Connect Cold Wallet sheet: the camera read a QR code that is not an address"
+    },
+    "desktopColdWalletAlreadyAdded": "That account is already in this app.",
+    "@desktopColdWalletAlreadyAdded": {
+      "description": "Desktop Connect Cold Wallet sheet: the address read is already an account or multisig here"
+    },
+    "desktopColdWalletConfirmTitle": "Confirm Address",
+    "@desktopColdWalletConfirmTitle": {
+      "description": "Desktop Connect Cold Wallet sheet: the step showing the address read, before it is added"
+    },
+    "desktopColdWalletConfirmBody": "Check that this matches the address on your cold wallet.",
+    "@desktopColdWalletConfirmBody": {
+      "description": "Desktop Connect Cold Wallet sheet: above the address read"
+    },
+    "desktopColdWalletScanAgain": "Scan Again",
+    "@desktopColdWalletScanAgain": {
+      "description": "Desktop Connect Cold Wallet sheet: forgets the address read and turns the camera back on"
+    },
+    "desktopColdWalletConnect": "Connect",
+    "@desktopColdWalletConnect": {
+      "description": "Desktop Connect Cold Wallet sheet: adds the address read as a cold wallet account"
+    },
+    "desktopColdWalletSaveFailed": "Couldn't connect this cold wallet",
+    "@desktopColdWalletSaveFailed": {
+      "description": "Desktop Connect Cold Wallet sheet: saving the account failed; the address stays to try again"
+    },
+    "desktopCameraNoneTitle": "No camera found",
+    "@desktopCameraNoneTitle": {
+      "description": "Desktop camera: this computer has no camera"
+    },
+    "desktopCameraNoneBody": "Connect a camera to this computer, then try again.",
+    "@desktopCameraNoneBody": {
+      "description": "Desktop camera: what to do when there is no camera"
+    },
+    "desktopCameraPermissionTitle": "Camera access is off",
+    "@desktopCameraPermissionTitle": {
+      "description": "Desktop camera: the system refused this app the camera"
+    },
+    "desktopCameraPermissionMac": "Allow Quantus Wallet under Privacy & Security, Camera.",
+    "@desktopCameraPermissionMac": {
+      "description": "Desktop camera, macOS: where to allow the camera"
+    },
+    "desktopCameraPermissionWindows": "Allow camera access under Privacy & security, Camera.",
+    "@desktopCameraPermissionWindows": {
+      "description": "Desktop camera, Windows: where to allow the camera"
+    },
+    "desktopCameraPermissionLinux": "Check that your user is allowed to use the camera.",
+    "@desktopCameraPermissionLinux": {
+      "description": "Desktop camera, Linux: what to check when the camera is refused"
+    },
+    "desktopCameraOpenSettings": "Open System Settings",
+    "@desktopCameraOpenSettings": {
+      "description": "Desktop camera: opens the system's camera privacy settings"
+    },
+    "desktopCameraBusyTitle": "The camera is in use",
+    "@desktopCameraBusyTitle": {
+      "description": "Desktop camera: another app holds the camera"
+    },
+    "desktopCameraBusyBody": "Close the other app using it, then try again.",
+    "@desktopCameraBusyBody": {
+      "description": "Desktop camera: what to do when another app holds the camera"
+    },
+    "desktopCameraUnsupportedTitle": "This camera can't be used",
+    "@desktopCameraUnsupportedTitle": {
+      "description": "Desktop camera: the camera offers no picture format the app reads"
+    },
+    "desktopCameraUnsupportedBody": "It offers no picture format this app can read.",
+    "@desktopCameraUnsupportedBody": {
+      "description": "Desktop camera: why the camera cannot be used"
+    },
+    "desktopCameraMediaTitle": "Camera support is missing",
+    "@desktopCameraMediaTitle": {
+      "description": "Desktop camera, Windows N: the system lacks its media components"
+    },
+    "desktopCameraMediaBody": "Install the Media Feature Pack for Windows, then try again.",
+    "@desktopCameraMediaBody": {
+      "description": "Desktop camera, Windows N: what to install"
+    },
+    "desktopCameraStoppedTitle": "The camera stopped",
+    "@desktopCameraStoppedTitle": {
+      "description": "Desktop camera: it was working and stopped, as when unplugged"
+    },
+    "desktopCameraStoppedBody": "Check that it's connected, then try again.",
+    "@desktopCameraStoppedBody": {
+      "description": "Desktop camera: what to do after it stopped"
+    },
+    "desktopCameraFailedTitle": "Couldn't use the camera",
+    "@desktopCameraFailedTitle": {
+      "description": "Desktop camera: any other failure"
+    },
+    "desktopCameraFailedBody": "Something went wrong with the camera. Try again.",
+    "@desktopCameraFailedBody": {
+      "description": "Desktop camera: any other failure, what to do"
     }
 }
