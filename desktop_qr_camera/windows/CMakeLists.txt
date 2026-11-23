@@ -25,6 +25,8 @@ add_library(${PLUGIN_NAME} SHARED
   "texture_handler.cpp"
   "texture_handler.h"
   "../native/camera.h"
+  "../native/frame_sizes.h"
+  "../native/nv12.h"
   "../native/yuy2.h"
 )
 

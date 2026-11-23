@@ -106,9 +106,14 @@ class Camera {
   std::vector<uint8_t> newest_luma_;
 
 #ifdef _WIN32
+  enum class PixelFormat { kYuy2, kNv12 };
+
   CameraStatus OpenFirstDevice();
   CameraStatus ChooseFormat();
+  // kUnsupported means this format and size can't be used, so try the next.
+  CameraStatus TryFormat(PixelFormat format, uint32_t wanted_width, uint32_t wanted_height);
 
+  PixelFormat pixel_format_ = PixelFormat::kYuy2;
   Microsoft::WRL::ComPtr<IMFMediaSource> source_;
   Microsoft::WRL::ComPtr<IMFSourceReader> reader_;
   bool media_foundation_started_ = false;

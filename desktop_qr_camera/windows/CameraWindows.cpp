@@ -2,9 +2,11 @@
 
 #include <cstdint>
 #include <initializer_list>
-#include <limits>
 #include <utility>
+#include <vector>
 
+#include "frame_sizes.h"
+#include "nv12.h"
 #include "yuy2.h"
 
 using Microsoft::WRL::ComPtr;
@@ -14,8 +16,6 @@ namespace desktop_qr_camera {
 namespace {
 
 constexpr DWORD kVideoStream = static_cast<DWORD>(MF_SOURCE_READER_FIRST_VIDEO_STREAM);
-constexpr int64_t kWantedWidth = 1280;
-constexpr int64_t kWantedHeight = 720;
 
 CameraStatus StatusOf(HRESULT result) {
   if (result == E_ACCESSDENIED) return CameraStatus::kPermissionDenied;
@@ -73,8 +73,9 @@ CameraStatus Camera::OpenFirstDevice() {
   CoTaskMemFree(devices);
   if (FAILED(result)) return StatusOf(result);
 
-  // Lets the reader convert a camera's own format, such as MJPEG or NV12, to
-  // the YUY2 this package reads.
+  // Lets the reader deinterlace. It does not turn one YUV format into another,
+  // so ChooseFormat asks only for formats this package reads. The reader adds a
+  // decoder by itself for a compressed format such as MJPEG.
   ComPtr<IMFAttributes> reader_settings;
   result = MFCreateAttributes(&reader_settings, 1);
   if (FAILED(result)) return StatusOf(result);
@@ -88,9 +89,7 @@ CameraStatus Camera::OpenFirstDevice() {
 }
 
 CameraStatus Camera::ChooseFormat() {
-  UINT32 best_width = 0;
-  UINT32 best_height = 0;
-  int64_t best_distance = (std::numeric_limits<int64_t>::max)();
+  std::vector<FrameSize> offered;
   for (DWORD i = 0;; i++) {
     ComPtr<IMFMediaType> candidate;
     if (FAILED(reader_->GetNativeMediaType(kVideoStream, i, &candidate))) break;
@@ -98,27 +97,32 @@ CameraStatus Camera::ChooseFormat() {
     UINT32 width = 0;
     UINT32 height = 0;
     if (FAILED(MFGetAttributeSize(candidate.Get(), MF_MT_FRAME_SIZE, &width, &height))) continue;
-    if (width == 0 || height == 0 || width > kMaxFrameSide || height > kMaxFrameSide || width % 2 != 0) continue;
+    offered.push_back({width, height});
+  }
 
-    const int64_t across = static_cast<int64_t>(width) - kWantedWidth;
-    const int64_t down = static_cast<int64_t>(height) - kWantedHeight;
-    const int64_t distance = (across < 0 ? -across : across) + (down < 0 ? -down : down);
-    if (distance < best_distance) {
-      best_distance = distance;
-      best_width = width;
-      best_height = height;
+  for (const FrameSize& size : SizesNearestWanted(offered)) {
+    for (const PixelFormat format : {PixelFormat::kYuy2, PixelFormat::kNv12}) {
+      const CameraStatus status = TryFormat(format, size.width, size.height);
+      if (status != CameraStatus::kUnsupported) return status;
     }
   }
-  if (best_width == 0) return CameraStatus::kUnsupported;
+  return CameraStatus::kUnsupported;
+}
+
+CameraStatus Camera::TryFormat(PixelFormat format, uint32_t wanted_width, uint32_t wanted_height) {
+  const bool is_nv12 = format == PixelFormat::kNv12;
+  // NV12 shares color between two rows, so it needs an even number of them.
+  if (is_nv12 && wanted_height % 2 != 0) return CameraStatus::kUnsupported;
+  const GUID wanted_subtype = is_nv12 ? MFVideoFormat_NV12 : MFVideoFormat_YUY2;
 
   ComPtr<IMFMediaType> wanted;
   HRESULT result = MFCreateMediaType(&wanted);
   if (FAILED(result)) return StatusOf(result);
   result = wanted->SetGUID(MF_MT_MAJOR_TYPE, MFMediaType_Video);
   if (FAILED(result)) return StatusOf(result);
-  result = wanted->SetGUID(MF_MT_SUBTYPE, MFVideoFormat_YUY2);
+  result = wanted->SetGUID(MF_MT_SUBTYPE, wanted_subtype);
   if (FAILED(result)) return StatusOf(result);
-  result = MFSetAttributeSize(wanted.Get(), MF_MT_FRAME_SIZE, best_width, best_height);
+  result = MFSetAttributeSize(wanted.Get(), MF_MT_FRAME_SIZE, wanted_width, wanted_height);
   if (FAILED(result)) return StatusOf(result);
 
   result = reader_->SetCurrentMediaType(kVideoStream, nullptr, wanted.Get());
@@ -131,7 +135,7 @@ CameraStatus Camera::ChooseFormat() {
   if (FAILED(result)) return StatusOf(result);
 
   GUID subtype = GUID_NULL;
-  if (FAILED(current->GetGUID(MF_MT_SUBTYPE, &subtype)) || subtype != MFVideoFormat_YUY2) {
+  if (FAILED(current->GetGUID(MF_MT_SUBTYPE, &subtype)) || subtype != wanted_subtype) {
     return CameraStatus::kUnsupported;
   }
   UINT32 width = 0;
@@ -140,10 +144,11 @@ CameraStatus Camera::ChooseFormat() {
   if (width == 0 || height == 0 || width > kMaxFrameSide || height > kMaxFrameSide || width % 2 != 0) {
     return CameraStatus::kUnsupported;
   }
+  if (is_nv12 && height % 2 != 0) return CameraStatus::kUnsupported;
 
-  // YUY2 is packed, so without a stated stride a row is two bytes a pixel. A
-  // negative stride would mean a bottom-up picture, which YUY2 never is.
-  size_t stride = static_cast<size_t>(width) * 2;
+  // Without a stated stride, a YUY2 row is two bytes a pixel and an NV12 row
+  // one. A negative stride would mean a bottom-up picture, which neither is.
+  size_t stride = static_cast<size_t>(width) * (is_nv12 ? size_t{1} : size_t{2});
   UINT32 stated = 0;
   if (SUCCEEDED(current->GetUINT32(MF_MT_DEFAULT_STRIDE, &stated))) {
     const INT32 signed_stride = static_cast<INT32>(stated);
@@ -151,6 +156,7 @@ CameraStatus Camera::ChooseFormat() {
     stride = static_cast<size_t>(signed_stride);
   }
 
+  pixel_format_ = format;
   width_ = width;
   height_ = height;
   stride_ = stride;
@@ -230,7 +236,9 @@ void Camera::CaptureLoop() {
     DWORD length = 0;
     if (FAILED(buffer->Lock(&data, &capacity, &length))) continue;
     const bool converted =
-        ConvertYuy2(data, length, stride_, width_, height_, rgba.data(), rgba.size(), luma.data(), luma.size());
+        pixel_format_ == PixelFormat::kNv12
+            ? ConvertNv12(data, length, stride_, width_, height_, rgba.data(), rgba.size(), luma.data(), luma.size())
+            : ConvertYuy2(data, length, stride_, width_, height_, rgba.data(), rgba.size(), luma.data(), luma.size());
     buffer->Unlock();
     if (!converted) continue;
 
