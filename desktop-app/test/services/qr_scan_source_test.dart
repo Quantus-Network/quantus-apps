@@ -316,7 +316,7 @@ void main() {
       await unmount(tester, scan);
     });
 
-    testWidgets('a scanning error is reported as a failed camera', (tester) async {
+    testWidgets('a scanning error is reported as a failed camera and turns it off', (tester) async {
       final scan = await mounted(tester);
       final errors = <Object>[];
       final subscription = scan.reads.listen(null, onError: errors.add);
@@ -326,6 +326,7 @@ void main() {
       await tester.pump();
 
       expect(errors.single, isA<QrCameraException>().having((e) => e.failure, 'failure', QrCameraFailure.failed));
+      expect(platform.stops, 1);
       unawaited(subscription.cancel());
       await unmount(tester, scan);
     });

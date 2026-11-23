@@ -105,6 +105,8 @@ class QrFrameDecoder {
       );
       timer = Timer(limit, abandon);
       return await result.future;
+    } on IsolateSpawnException catch (error) {
+      throw QrDecodeFailure('$error');
     } finally {
       timer?.cancel();
       worker?.kill(priority: Isolate.immediate);

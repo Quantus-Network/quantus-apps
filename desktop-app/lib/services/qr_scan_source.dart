@@ -164,10 +164,22 @@ class MacQrScanSource implements QrScanSource {
         // Two codes in view cannot be told apart, so neither is taken.
         if (capture.barcodes case [Barcode(:final rawValue?)]) sink.add(rawValue);
       },
-      handleError: (error, stackTrace, sink) =>
-          sink.addError(QrCameraException(QrCameraFailure.failed, detail: '$error'), stackTrace),
+      handleError: (error, stackTrace, sink) {
+        unawaited(_stopAfterFailure());
+        sink.addError(QrCameraException(QrCameraFailure.failed, detail: '$error'), stackTrace);
+      },
     ),
   );
+
+  /// The failure that started this is the one to report, so a second one is
+  /// only logged.
+  Future<void> _stopAfterFailure() async {
+    try {
+      await stop();
+    } catch (error) {
+      debugPrint('The camera could not be turned off after a failure: $error');
+    }
+  }
 
   @override
   Future<void> start() {
