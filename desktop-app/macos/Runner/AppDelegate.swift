@@ -3,8 +3,10 @@ import FlutterMacOS
 
 @main
 class AppDelegate: FlutterAppDelegate {
+  /// macOS counts hiding the only window as closing it, so a window hidden
+  /// with work under way must not quit the app.
   override func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-    return true
+    return (mainFlutterWindow as? MainFlutterWindow)?.isHiddenForWork != true
   }
 
   /// A logout, restart or shutdown goes through at once. Flutter otherwise

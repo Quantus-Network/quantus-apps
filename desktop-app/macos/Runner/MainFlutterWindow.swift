@@ -34,6 +34,9 @@ class MainFlutterWindow: NSWindow {
   /// Whether the window is to leave the screen once it is out of full screen.
   private var hidesAfterFullScreen = false
 
+  /// Whether the window is off the screen with the app still running.
+  private(set) var isHiddenForWork = false
+
   private lazy var statusItem = BackgroundStatusItem(onOpen: { [weak self] in self?.bringToFront() })
 
   /// Held while something is under way that App Nap would make the app late
@@ -199,6 +202,7 @@ class MainFlutterWindow: NSWindow {
   /// Takes the window off the screen, the app still running. A window in
   /// full screen comes out of it first, or its empty space would stay.
   private func hideKeepingAppRunning() {
+    isHiddenForWork = true
     statusItem.setShown(true)
     if self.styleMask.contains(.fullScreen) {
       hidesAfterFullScreen = true
@@ -229,6 +233,7 @@ class MainFlutterWindow: NSWindow {
   /// or closed as it may be: a notification, the Dock icon or the menu bar
   /// icon was clicked.
   func bringToFront() {
+    isHiddenForWork = false
     hidesAfterFullScreen = false
     statusItem.setShown(false)
     NSApp.unhide(nil)
