@@ -656,10 +656,9 @@ packages:
   mobile_scanner:
     dependency: "direct main"
     description:
-      name: mobile_scanner
-      sha256: c92c26bf2231695b6d3477c8dcf435f51e28f87b1745966b1fe4c47a286171ce
-      url: "https://pub.dev"
-    source: hosted
+      path: "../third_party/mobile_scanner"
+      relative: true
+    source: path
     version: "7.2.0"
   native_toolchain_c:
     dependency: transitive
