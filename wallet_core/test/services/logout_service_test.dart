@@ -6,8 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wallet_core/models/filtered_transactions_params.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/models/pending_multisig_creation_record.dart';
+import 'package:wallet_core/providers/account_id_list_cache.dart';
+import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/global_toast_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
@@ -96,13 +99,40 @@ class _Creations extends Fake implements MultisigService {
   Completer<bool>? held;
   bool indexed = false;
 
+  /// When set, the indexer's record of the multisig waits for this.
+  Completer<void>? heldRecord;
+
   @override
   Future<bool> isMultisigIndexed(String multisigAddress) async => await held?.future ?? indexed;
+
+  @override
+  Future<Map<String, dynamic>?> fetchMultisigFromIndexer(String address) async {
+    await heldRecord?.future;
+    return null;
+  }
+}
+
+/// An empty history, whose fetches wait for [held] while it is set.
+class _History extends Fake implements ChainHistoryService {
+  Completer<void>? held;
+
+  @override
+  Future<SortedTransactionsList> fetchAllTransactionTypes({
+    required List<String> accountIds,
+    int limit = 20,
+    AccountEventCursor? otherAfter,
+    AccountEventCursor? scheduledAfter,
+    required TransactionFilter filter,
+  }) async {
+    await held?.future;
+    return SortedTransactionsList.empty;
+  }
 }
 
 typedef _Creating = ({
   WalletTestBed bed,
   _Creations chain,
+  _History history,
   MultisigCreationPollingService poller,
   ProviderContainer container,
 });
@@ -608,8 +638,13 @@ void main() {
     Future<_Creating> creating(WidgetTester tester, {bool expired = false}) async {
       final bed = WalletTestBed();
       final chain = _Creations()..held = Completer<bool>();
+      final history = _History();
       final container = ProviderContainer(
-        overrides: [...bed.overrides, multisigServiceProvider.overrideWithValue(chain)],
+        overrides: [
+          ...bed.overrides,
+          multisigServiceProvider.overrideWithValue(chain),
+          chainHistoryServiceProvider.overrideWithValue(history),
+        ],
       );
       final poller = container.read(multisigCreationPollingServiceProvider);
       await tester.pump();
@@ -628,7 +663,7 @@ void main() {
         poller.startPolling(_oldMultisig);
       }
       await tester.pump();
-      return (bed: bed, chain: chain, poller: poller, container: container);
+      return (bed: bed, chain: chain, history: history, poller: poller, container: container);
     }
 
     void expectNothingOfIt(_Creating creation) {
@@ -735,6 +770,140 @@ void main() {
       expect(creation.bed.pushRegistration.registeredAddresses, [_oldMultisig.accountId]);
       expect(creation.container.read(globalToastProvider)?.type, ToastType.success);
       creation.container.dispose();
+    });
+
+    group('already past the indexer answer', () {
+      List<String> accountIds(_Creating creation) =>
+          (creation.container.read(multisigAccountsProvider).value ?? []).map((a) => a.accountId).toList();
+
+      Iterable<MultisigCreatedEvent> historyOf(_Creating creation) => creation.container
+          .read(
+            filteredPaginationControllerProviderFamily(
+              FilteredTransactionsParams(accountIds: AccountIdListCache.get(['qzA']), filter: TransactionFilter.all),
+            ),
+          )
+          .otherTransfers
+          .whereType<MultisigCreatedEvent>();
+
+      Future<void> confirm(WidgetTester tester, _Creating creation) async {
+        creation.chain.held!.complete(true);
+        await tester.pump();
+        await tester.pump();
+      }
+
+      final stages = <({String name, bool registered, Completer<void> Function(_Creating) hold})>[
+        (
+          name: 'saving the account',
+          registered: false,
+          hold: (c) => c.bed.settings.holdMultisigSave = Completer<void>(),
+        ),
+        (
+          name: 'registering its address',
+          registered: true,
+          hold: (c) => c.bed.pushRegistration.holdAddress = Completer<void>(),
+        ),
+        (name: 'reading its indexer record', registered: true, hold: (c) => c.chain.heldRecord = Completer<void>()),
+        (name: 'refreshing the history', registered: true, hold: (c) => c.history.held = Completer<void>()),
+      ];
+
+      for (final expired in [false, true]) {
+        final kind = expired ? 'an expired one' : 'one';
+
+        testWidgets('with no reset, $kind is added, reconciled and announced', (tester) async {
+          final creation = await creating(tester, expired: expired);
+
+          await confirm(tester, creation);
+
+          expect(accountIds(creation), [_oldMultisig.accountId]);
+          expect(historyOf(creation).single.multisigAddress, _oldMultisig.accountId);
+          expect(creation.container.read(globalToastProvider)?.type, ToastType.success);
+          creation.container.dispose();
+        });
+
+        for (final stage in stages) {
+          testWidgets('$kind ${stage.name} when a reset goes through leaves nothing behind', (tester) async {
+            final creation = await creating(tester, expired: expired);
+            final held = stage.hold(creation);
+            await confirm(tester, creation);
+
+            await creation.container.read(logoutServiceProvider).logout();
+            await tester.pump();
+            held.complete();
+            await tester.pump();
+            await tester.pump();
+
+            expect(accountIds(creation), isEmpty);
+            expect(historyOf(creation), isEmpty);
+            expect(creation.container.read(globalToastProvider), isNull);
+            expect(creation.bed.pushRegistration.registeredAddresses, stage.registered ? [_oldMultisig.accountId] : []);
+            expect(creation.bed.droppedByReset, contains(contains(_oldMultisig.accountId)));
+            // Reading the history above may have started its first load.
+            await tester.pump();
+            creation.container.dispose();
+          });
+
+          testWidgets('$kind ${stage.name} when a wipe fails still finishes, after it', (tester) async {
+            final creation = await creating(tester, expired: expired);
+            final held = stage.hold(creation);
+            await confirm(tester, creation);
+            final wipe = creation.bed.substrate.holdWipe = Completer<void>();
+            creation.bed.substrate.logoutError = StateError('the wipe failed');
+
+            final logout = creation.container.read(logoutServiceProvider).logout();
+            await tester.pump();
+            held.complete();
+            await tester.pump();
+            await tester.pump();
+            expect(creation.container.read(globalToastProvider), isNull);
+
+            wipe.complete();
+            await expectLater(logout, throwsStateError);
+            await tester.pump();
+            await tester.pump();
+
+            expect(accountIds(creation), [_oldMultisig.accountId]);
+            expect(creation.bed.pushRegistration.registeredAddresses, [_oldMultisig.accountId]);
+            expect(historyOf(creation).single.multisigAddress, _oldMultisig.accountId);
+            expect(creation.container.read(globalToastProvider)?.type, ToastType.success);
+            creation.container.dispose();
+          });
+        }
+      }
+
+      test('a ticket survives no reset and a failed one, not one that went through', () async {
+        final dropped = <String>[];
+        final session = WalletSession(log: dropped.add);
+        final ticket = session.ticket;
+
+        expect(await session.survivesReset(ticket, dropping: 'none'), isTrue);
+
+        session.beginReset();
+        final failed = session.survivesReset(ticket, dropping: 'failed');
+        session.cancelReset();
+        expect(await failed, isTrue);
+        expect(dropped, isEmpty);
+
+        session.beginReset();
+        final wiped = session.survivesReset(ticket, dropping: 'wiped');
+        session.finishReset();
+        expect(await wiped, isFalse);
+        expect(dropped, ['Dropped after a wallet reset: wiped']);
+      });
+
+      test('a reset that starts as another fails is waited out too', () async {
+        final session = WalletSession(log: (_) {});
+        final ticket = session.ticket;
+
+        session.beginReset();
+        final answer = session.survivesReset(ticket, dropping: 'it');
+        session
+          ..cancelReset()
+          ..beginReset();
+        await Future<void>.delayed(Duration.zero);
+        session.cancelReset();
+
+        expect(await answer, isTrue);
+      });
     });
   });
 

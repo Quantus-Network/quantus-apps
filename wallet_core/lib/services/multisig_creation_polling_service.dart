@@ -124,16 +124,19 @@ class MultisigCreationPollingService {
   }
 
   Future<void> _confirmCreation(MultisigAccount draft, String key, BigInt networkFee) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     stopPolling(key);
     removePendingMultisigCreation(_ref, key);
 
     final existing = _ref.read(multisigAccountsProvider).value ?? [];
     if (!existing.any((a) => a.accountId == draft.accountId)) {
-      await _ref.read(multisigAccountsProvider.notifier).add(draft);
+      if (!await _ref.read(multisigAccountsProvider.notifier).add(draft)) return;
       _ref.invalidate(discoveredMultisigsProvider);
     }
 
     await reconcileConfirmedMultisigCreation(_ref, draft, networkFee: networkFee);
+    if (!await session.survivesReset(ticket, dropping: 'the toast for creating $key')) return;
 
     _ref.read(globalToastProvider.notifier).showSuccess(_ref.read(l10nProvider).multisigCreateReadyToast);
   }

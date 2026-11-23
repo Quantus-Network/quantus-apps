@@ -47,6 +47,15 @@ class WalletSession {
     return false;
   }
 
+  /// Waits out a reset under way. True if [ticket] holds after it, as after
+  /// one that failed; otherwise logs what is [dropping] and answers false.
+  Future<bool> survivesReset(int ticket, {required String dropping}) async {
+    while (_resetting) {
+      await _resetEnded!.future;
+    }
+    return stillCurrent(ticket, dropping: dropping);
+  }
+
   void beginReset() {
     _resetting = true;
     _resetEnded ??= Completer<void>();

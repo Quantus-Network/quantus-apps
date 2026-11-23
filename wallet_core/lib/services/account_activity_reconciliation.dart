@@ -4,6 +4,7 @@ import 'package:wallet_core/models/filtered_transactions_params.dart';
 import 'package:wallet_core/providers/account_id_list_cache.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 import 'package:wallet_core/utils/tx_filter_family_provider.dart';
 
@@ -16,7 +17,10 @@ Future<void> appendConfirmedEventToHistory({
   required bool Function(TransactionEvent existing) isDuplicate,
 }) async {
   try {
+    final session = ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     await refreshAccountsPagination(ref, accountIds: [accountId], action: (notifier) => notifier.silentRefresh());
+    if (!await session.survivesReset(ticket, dropping: 'the history event ${event.id}')) return;
 
     updatePaginationFiltersFor(ref.read, [accountId], (notifier, filter) {
       if (!includeForFilter(filter)) return;

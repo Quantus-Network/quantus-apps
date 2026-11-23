@@ -118,8 +118,14 @@ class FakeSettingsService extends Fake implements SettingsService {
   /// The multisigs saved since the test began.
   final savedMultisigs = <MultisigAccount>[];
 
+  /// When set, a save is recorded and then answers only once this completes.
+  Completer<void>? holdMultisigSave;
+
   @override
-  Future<void> addMultisigAccount(MultisigAccount account) async => savedMultisigs.add(account);
+  Future<void> addMultisigAccount(MultisigAccount account) async {
+    savedMultisigs.add(account);
+    await holdMultisigSave?.future;
+  }
 }
 
 /// The accounts of [settings], plus the encrypted account the real service
@@ -261,8 +267,14 @@ class FakePushRegistration implements PushRegistration {
   @override
   Future<void> registerDevice() async => deviceRegistrations++;
 
+  /// When set, an address is recorded and then answers only once this completes.
+  Completer<void>? holdAddress;
+
   @override
-  Future<void> registerAddress(String address) async => registeredAddresses.add(address);
+  Future<void> registerAddress(String address) async {
+    registeredAddresses.add(address);
+    await holdAddress?.future;
+  }
 
   @override
   Future<void> unregister() async {}
