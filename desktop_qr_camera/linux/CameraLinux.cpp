@@ -42,6 +42,22 @@ CameraStatus StatusOfErrno(int error) {
   }
 }
 
+// When no node works, the failure that tells the person the most is reported.
+int WeightOf(CameraStatus status) {
+  switch (status) {
+    case CameraStatus::kBusy:
+      return 4;
+    case CameraStatus::kPermissionDenied:
+      return 3;
+    case CameraStatus::kFailed:
+      return 2;
+    case CameraStatus::kUnsupported:
+      return 1;
+    default:
+      return 0;
+  }
+}
+
 // An ioctl that a signal interrupted is retried, as V4L2 expects.
 int Control(int fd, unsigned long request, void* argument) {
   int result;
@@ -79,26 +95,44 @@ CameraStatus Camera::Open() {
   failure_.store(CameraStatus::kOk);
   error_code_.store(0);
 
-  // A node the user may not open says why, unless a usable camera follows it.
+  // A node that can't be used says why, unless a usable camera follows it. An
+  // infrared camera, for one, is often listed before the main camera.
   CameraStatus blocked = CameraStatus::kNoCamera;
+  uint32_t blocked_code = 0;
+  const auto note_blocked = [&blocked, &blocked_code](CameraStatus status, uint32_t code) {
+    if (WeightOf(status) > WeightOf(blocked)) {
+      blocked = status;
+      blocked_code = code;
+    }
+  };
   for (int i = 0; i < kDevicesToTry && fd_ < 0; i++) {
     const std::string path = "/dev/video" + std::to_string(i);
     const int fd = open(path.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) {
       const int error = errno;
-      if (StatusOfErrno(error) != CameraStatus::kNoCamera) blocked = StatusOf(error);
+      note_blocked(StatusOfErrno(error), static_cast<uint32_t>(error));
       continue;
     }
-    if (CapturesVideo(fd)) {
-      fd_ = fd;
-    } else {
+    if (!CapturesVideo(fd)) {
       close(fd);
+      continue;
+    }
+
+    fd_ = fd;
+    error_code_.store(0);
+    const CameraStatus format_status = ChooseFormat();
+    if (format_status != CameraStatus::kOk) {
+      note_blocked(format_status, error_code_.load());
+      close(fd_);
+      fd_ = -1;
     }
   }
-  if (fd_ < 0) return blocked;
+  if (fd_ < 0) {
+    error_code_.store(blocked_code);
+    return blocked;
+  }
 
-  CameraStatus status = ChooseFormat();
-  if (status == CameraStatus::kOk) status = MapBuffers();
+  CameraStatus status = MapBuffers();
   if (status == CameraStatus::kOk) {
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (Control(fd_, VIDIOC_STREAMON, &type) != 0) {

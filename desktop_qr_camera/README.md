@@ -11,7 +11,7 @@ This is a trimmed and patched copy of [`flutter_lite_camera`](https://pub.dev/pa
 - Removed: the phone, web and macOS code, device listing, resolution control, JPEG writing and its bundled encoder.
 - Every frame's size, row length and byte count is checked before it is read (`native/yuy2.h`, `native/nv12.h`).
 - Windows: reads NV12 as well as YUY2 and tries each size the camera offers, no crash when reading without an open camera, a failed capture can be restarted, a stalled camera cannot hang closing it, and Media Foundation is delay-loaded so the wallet still starts on Windows N.
-- Linux: the format the driver really chose is checked, a partly failed open cleans up only what it opened, and metadata nodes are skipped.
+- Linux: the format the driver really chose is checked, a partly failed open cleans up only what it opened, and metadata nodes and nodes without a readable format, such as an infrared camera, are skipped.
 - No camera, permission denied, camera busy and an unsupported camera are reported as different errors.
 - Frames carry brightness only, and each frame is handed over once.
 
@@ -31,6 +31,9 @@ c++ -std=c++17 -Wall -Wextra -Wno-unused-parameter -Werror -pthread \
   -o /tmp/texture_handler_test && /tmp/texture_handler_test
 c++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror -fsanitize=address,undefined \
   -I native test/native/windows_format_test.cpp -o /tmp/windows_format_test && /tmp/windows_format_test
+c++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined \
+  -I test/native/fake_v4l2 -I native test/native/camera_linux_open_test.cpp \
+  -o /tmp/camera_linux_open_test && /tmp/camera_linux_open_test
 ```
 
 The Windows and Linux capture code needs a real camera, so it is only built by CI and tested by hand.

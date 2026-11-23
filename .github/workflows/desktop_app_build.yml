@@ -104,6 +104,10 @@ jobs:
           clang++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror -fsanitize=address,undefined \
             -I native test/native/windows_format_test.cpp -o "$RUNNER_TEMP/windows_format_test"
           "$RUNNER_TEMP/windows_format_test"
+          clang++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined \
+            -I test/native/fake_v4l2 -I native test/native/camera_linux_open_test.cpp \
+            -o "$RUNNER_TEMP/camera_linux_open_test"
+          "$RUNNER_TEMP/camera_linux_open_test"
 
       # The only run of the login password check against a real libpam. The
       # app's PAM service is installed as its package will install it, and the
