@@ -161,6 +161,57 @@ void main() {
       expect(await RecentAddressesService().getAddresses(), isEmpty);
     });
 
+    testWidgets('before a Keystone signature comes back sends nothing and saves no recipient', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final session = await hardwareSession(ref);
+
+      await ref.read(logoutServiceProvider).logout();
+
+      await expectLater(submitHardware(session, ref), throwsStateError);
+      await tester.pump();
+      expect(submission.transfers, isEmpty);
+      expect(await RecentAddressesService().getAddresses(), isEmpty);
+    });
+
+    testWidgets('still wiping when a Keystone signature comes back sends nothing', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final session = await hardwareSession(ref);
+      final wipe = bed.substrate.holdWipe = Completer<void>();
+      final logout = ref.read(logoutServiceProvider).logout();
+      await tester.pump();
+
+      await expectLater(submitHardware(session, ref), throwsStateError);
+      await tester.pump();
+      expect(submission.transfers, isEmpty);
+
+      wipe.complete();
+      await logout;
+    });
+
+    testWidgets('that failed leaves a Keystone signature able to send', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final session = await hardwareSession(ref);
+      bed.substrate.logoutError = StateError('the wipe failed');
+      await expectLater(ref.read(logoutServiceProvider).logout(), throwsStateError);
+
+      expect(await submitHardware(session, ref), '0xtxhash');
+      await tester.pump();
+
+      expect(submission.transfers, hasLength(1));
+      expect(await RecentAddressesService().getAddresses(), [recipient.accountId]);
+    });
+
+    testWidgets('before a Keystone send starts leaves that send able to go out', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      await ref.read(logoutServiceProvider).logout();
+
+      expect(await submitHardware(await hardwareSession(ref), ref), '0xtxhash');
+      await tester.pump();
+
+      expect(submission.transfers, hasLength(1));
+      expect(await RecentAddressesService().getAddresses(), [recipient.accountId]);
+    });
+
     testWidgets('that did not happen leaves a send\'s recipient among the recent addresses', (tester) async {
       final ref = await pumpRef(tester, overrides: overrides());
 

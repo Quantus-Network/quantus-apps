@@ -204,6 +204,9 @@ class RegularSendStrategy extends SendStrategy {
     // Keystone (hardware) accounts sign off-device: hand off to the QR flow
     // instead of signing locally. The debug flag forces this path for testing.
     if (account.signsWithHardware) {
+      // Taken now: the signature can come back long after, past a wallet reset.
+      final walletSession = ref.read(walletSessionProvider);
+      final ticket = walletSession.ticket;
       return SendNeedsHardwareSignature(
         session: KeystoneSigningSession(
           account: account,
@@ -217,6 +220,9 @@ class RegularSendStrategy extends SendStrategy {
           cacheKey: _hardwareCacheKey(recipient, amount, sendAll: sendAll),
           telemetryPrefix: 'send_transfer_hardware',
           submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+            if (!walletSession.isCurrent(ticket)) {
+              throw StateError('The wallet was reset before this send was signed');
+            }
             final rememberRecipient = recipientRememberer(ref.read);
             final hash = await ref
                 .read(transactionSubmissionServiceProvider)
