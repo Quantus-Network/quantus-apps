@@ -12,6 +12,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_core_overrides.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/push_registration.dart';
@@ -343,7 +344,12 @@ class WalletTestBed {
   /// The wallets whose encrypted state was loaded.
   final List<int> encryptedStatesLoaded = [];
 
+  /// What the wallet session logged as dropped by a reset.
+  final droppedByReset = <String>[];
+  late final walletSession = WalletSession(log: droppedByReset.add);
+
   List<Override> get overrides => [
+    walletSessionProvider.overrideWithValue(walletSession),
     ...walletCoreOverrides(
       telemetry: (_) => telemetry,
       pushRegistration: (_) => pushRegistration,

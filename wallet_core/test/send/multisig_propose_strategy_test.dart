@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -202,6 +201,7 @@ void main() {
 
       expect((outcome as SendFailed).message, ref.read(l10nProvider).multisigProposeSubmitFailed);
       expect(submission.proposals, isEmpty);
+      expect(bed.droppedByReset.single, contains('proposal'));
     });
 
     testWidgets('before a Keystone signature comes back proposes nothing', (tester) async {
@@ -226,6 +226,7 @@ void main() {
       await tester.pump();
 
       expect(await RecentAddressesService().getAddresses(), isEmpty);
+      expect(bed.droppedByReset.single, contains('proposal'));
     });
 
     testWidgets('that also closed the screen still reports a proposal that went out', (tester) async {
@@ -263,6 +264,7 @@ void main() {
       await tester.pump();
 
       expect(await RecentAddressesService().getAddresses(), [recipient.accountId]);
+      expect(bed.droppedByReset, isEmpty);
     });
 
     testWidgets('that did not happen leaves a Keystone proposal\'s recipient there too', (tester) async {

@@ -71,7 +71,7 @@ class MultisigCreationPollingService {
       final ticket = session.ticket;
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigIndexed(key);
-      if (!session.isCurrent(ticket)) return;
+      if (!session.stillCurrent(ticket, dropping: 'recovering the creation of $key')) return;
       if (exists) {
         await _confirmCreation(record.draft, key, record.networkFee);
       } else {
@@ -98,7 +98,7 @@ class MultisigCreationPollingService {
       final ticket = session.ticket;
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigIndexed(draft.accountId);
-      if (!session.isCurrent(ticket)) return;
+      if (!session.stillCurrent(ticket, dropping: 'the indexer answer for $key')) return;
       if (!exists) {
         quantusPrint('[MultisigCreationPoller] not on-chain yet: ${draft.accountId}');
         return;

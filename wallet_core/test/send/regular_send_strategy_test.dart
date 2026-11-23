@@ -142,6 +142,7 @@ void main() {
       await logout;
 
       expect(savedDuringTheWipe, isEmpty);
+      expect(bed.droppedByReset.single, contains('recipient'));
       expect(await RecentAddressesService().getAddresses(), isEmpty);
     });
 

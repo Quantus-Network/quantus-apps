@@ -352,6 +352,7 @@ void main() {
       await tester.pump();
 
       await expectNothingAdded(container);
+      expect(bed.droppedByReset.single, contains('reminder'));
       wipe.complete();
       await logout;
       await tester.pump();
@@ -461,6 +462,7 @@ void main() {
       await tester.pump();
 
       expectNothingOfIt(creation);
+      expect(creation.bed.droppedByReset.single, contains(_oldMultisig.accountId));
       wipe.complete();
       await logout;
       await tester.pump();
@@ -516,6 +518,7 @@ void main() {
         await tester.pump();
 
         expectNothingOfIt(creation);
+        expect(creation.bed.droppedByReset.single, contains(_oldMultisig.accountId));
         wipe.complete();
         await logout;
         await tester.pump();
@@ -667,6 +670,7 @@ void main() {
 
         expect(savedNotifications(await SharedPreferences.getInstance()), isNull);
         expect(watched.bed.localNotifications.shown, hasLength(shownBefore));
+        expect(watched.bed.droppedByReset.single, contains('tx-1'));
         wipe.complete();
         await logout;
         await tester.pump();
@@ -714,6 +718,7 @@ void main() {
         accepted.complete(Uint8List.fromList([1]));
         expect(await submission, '0x01');
         await tester.pump();
+        expect(watched.bed.droppedByReset.single, contains('0x01'));
         wipe.complete();
         await logout;
         await tester.pump(const Duration(seconds: 6));
@@ -817,6 +822,7 @@ void main() {
         await tester.pump(const Duration(seconds: 6));
         await tester.pump();
 
+        expect(proposal.bed.droppedByReset.single, contains('0x01'));
         expect(proposal.indexer.proposalReads, 0);
         expect(proposal.container.read(pendingMultisigProposalsProvider), isEmpty);
         proposal.container.dispose();

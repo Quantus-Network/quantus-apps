@@ -241,7 +241,7 @@ class TransactionSubmissionService {
 
       // It went out for a wallet a reset has wiped or is wiping. Its row goes
       // too: after a wipe that failed, nothing else would ever remove it.
-      if (!session.isCurrent(ticket)) {
+      if (!session.stillCurrent(ticket, dropping: 'tracking proposal $extrinsicHash')) {
         removePendingMultisigProposal(_ref, pending.id);
         return extrinsicHash;
       }
@@ -569,7 +569,7 @@ class TransactionSubmissionService {
 
       // It went out for a wallet that a reset has since wiped: nothing of it
       // may reach the next session.
-      if (!session.isCurrent(ticket)) return extrinsicHash;
+      if (!session.stillCurrent(ticket, dropping: 'tracking send $extrinsicHash')) return extrinsicHash;
 
       _ref
           .read(pendingTransactionsProvider.notifier)

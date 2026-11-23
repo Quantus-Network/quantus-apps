@@ -84,7 +84,8 @@ class PendingTransactionPollingService {
         );
       }
 
-      if (!_ref.mounted || !session.isCurrent(ticket)) return;
+      if (!_ref.mounted) return;
+      if (!session.stillCurrent(ticket, dropping: 'the search for ${pendingTx.id}')) return;
 
       if (result != null) {
         quantusPrint('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');

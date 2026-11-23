@@ -282,7 +282,9 @@ class MultisigProposeStrategy extends SendStrategy {
     final afterProposed = _afterProposedBy(ref, recipient);
     final approval = await ref.read(userApprovalProvider).approve(reason: l10n.multisigProposeAuthReason);
     if (approval != ApprovalResult.approved) return SendFailed(l10n.multisigProposeAuthRequired);
-    if (!walletSession.isCurrent(ticket)) return SendFailed(l10n.multisigProposeSubmitFailed);
+    if (!walletSession.stillCurrent(ticket, dropping: 'a proposal approved before the reset')) {
+      return SendFailed(l10n.multisigProposeSubmitFailed);
+    }
     if (!_memberCoversCost(ref, fee)) return SendFailed(l10n.multisigProposeFeePayerInsufficient);
 
     try {
@@ -316,7 +318,7 @@ class MultisigProposeStrategy extends SendStrategy {
     final ticket = session.ticket;
     final rememberRecipient = recipientRememberer(ref.read);
     return () {
-      if (!session.isCurrent(ticket)) return;
+      if (!session.stillCurrent(ticket, dropping: 'what follows a proposal that went out')) return;
       rememberRecipient(recipient);
       ref.invalidate(multisigOpenProposalsProvider(msig));
       ref.invalidate(multisigPastProposalsProvider(msig));

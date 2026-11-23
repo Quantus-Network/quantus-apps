@@ -32,7 +32,8 @@ Future<void> addResolvedNotification(ProviderReader read, Future<NotificationDat
   final session = read(walletSessionProvider);
   final ticket = session.ticket;
   final notification = await resolve();
-  if (notification == null || !session.isCurrent(ticket)) return;
+  if (notification == null) return;
+  if (!session.stillCurrent(ticket, dropping: 'the notification ${notification.id}')) return;
   await read(notificationProvider.notifier).addNotification(notification);
 }
 

@@ -15,7 +15,7 @@ void Function(String recipient) recipientRememberer(ProviderReader read) {
   final ticket = session.ticket;
   final recents = read(recentAddressesServiceProvider);
   return (recipient) {
-    if (!session.isCurrent(ticket)) return;
+    if (!session.stillCurrent(ticket, dropping: "saving a send's recipient")) return;
     unawaited(
       recents.addAddress(recipient).catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
     );
