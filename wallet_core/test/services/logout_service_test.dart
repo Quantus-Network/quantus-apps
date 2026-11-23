@@ -12,6 +12,7 @@ import 'package:wallet_core/providers/notification_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
+import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 
 import '../fakes.dart';
@@ -365,6 +366,122 @@ void main() {
         watched.container.dispose();
       });
     }
+
+    group('while the wipe is running', () {
+      List<String>? savedNotifications(SharedPreferences prefs) => prefs.getStringList(notificationsStorageKey);
+
+      testWidgets('a search that answers saves and notifies nothing', (tester) async {
+        final held = Completer<void>();
+        final watched = await watching(tester, held: held);
+        await watched.container.read(notificationProvider.notifier).addNotification(_shown('old'));
+        final wipe = watched.bed.substrate.holdWipe = Completer<void>();
+        final shownBefore = watched.bed.localNotifications.shown.length;
+
+        final logout = watched.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        watched.indexer.holds = _transferFound();
+        held.complete();
+        await tester.pump();
+        await tester.pump();
+
+        expect(savedNotifications(await SharedPreferences.getInstance()), isNull);
+        expect(watched.bed.localNotifications.shown, hasLength(shownBefore));
+        wipe.complete();
+        await logout;
+        await tester.pump();
+        expect(savedNotifications(await SharedPreferences.getInstance()), isNull);
+        watched.container.dispose();
+      });
+
+      testWidgets('a search that starts then and answers after it notifies nothing', (tester) async {
+        final watched = await watching(tester);
+        final wipe = watched.bed.substrate.holdWipe = Completer<void>();
+
+        final logout = watched.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        // The next tick runs during the wipe, and its search is held.
+        final answer = watched.indexer.held = Completer<void>();
+        final readsBefore = watched.indexer.reads;
+        await tester.pump(const Duration(seconds: 6));
+        expect(watched.indexer.reads, greaterThan(readsBefore));
+        wipe.complete();
+        await logout;
+        await tester.pump();
+        watched.indexer.holds = _transferFound();
+        answer.complete();
+        await tester.pump();
+        await tester.pump();
+
+        expectNothingNotified(watched);
+        expect(savedNotifications(await SharedPreferences.getInstance()), isNull);
+        watched.container.dispose();
+      });
+
+      testWidgets('a broadcast that answers is not tracked', (tester) async {
+        final watched = await wallet(tester);
+        watched.indexer.holds = _transferFound();
+        final accepted = Completer<Uint8List>();
+        final pending = _pendingSend('tx-1');
+        watched.container.read(pendingTransactionsProvider.notifier).add(pending);
+        final submission = watched.container
+            .read(transactionSubmissionServiceProvider)
+            .submitAndTrackTransaction(() => accepted.future, pending);
+        final wipe = watched.bed.substrate.holdWipe = Completer<void>();
+
+        final logout = watched.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        accepted.complete(Uint8List.fromList([1]));
+        expect(await submission, '0x01');
+        await tester.pump();
+        wipe.complete();
+        await logout;
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pump();
+
+        expect(watched.indexer.reads, 0);
+        expect(watched.container.read(pendingTransactionsProvider), isEmpty);
+        expectNothingNotified(watched);
+        await tester.pump();
+        watched.container.dispose();
+      });
+    });
+
+    group('after a wipe that failed', () {
+      testWidgets('polling goes on, and a send found later still notifies', (tester) async {
+        final watched = await watching(tester);
+        watched.bed.substrate.logoutError = StateError('the wipe failed');
+
+        await expectLater(watched.container.read(logoutServiceProvider).logout(), throwsStateError);
+        // A reversible send is the one that reaches the system's notifications.
+        watched.indexer.holds = _reversibleFound();
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pump();
+
+        expect(watched.bed.localNotifications.shown, hasLength(1));
+        watched.container.dispose();
+      });
+
+      testWidgets('a broadcast that answers afterwards is still tracked', (tester) async {
+        final watched = await wallet(tester);
+        final accepted = Completer<Uint8List>();
+        final pending = _pendingSend('tx-1');
+        watched.container.read(pendingTransactionsProvider.notifier).add(pending);
+        final submission = watched.container
+            .read(transactionSubmissionServiceProvider)
+            .submitAndTrackTransaction(() => accepted.future, pending);
+        watched.bed.substrate.logoutError = StateError('the wipe failed');
+
+        await expectLater(watched.container.read(logoutServiceProvider).logout(), throwsStateError);
+        accepted.complete(Uint8List.fromList([1]));
+        expect(await submission, '0x01');
+        await tester.pump();
+
+        expect(watched.indexer.reads, 1);
+        expect(watched.container.read(pendingTransactionsProvider), hasLength(1));
+        watched.container.read(pendingTransactionPollingServiceProvider).stopAll();
+        watched.container.dispose();
+      });
+    });
 
     testWidgets('a transfer still being signed is neither broadcast nor listed', (tester) async {
       final watched = await wallet(tester);

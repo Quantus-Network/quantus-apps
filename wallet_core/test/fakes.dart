@@ -203,11 +203,20 @@ class FakeSubstrateService extends Fake implements SubstrateService {
     return Uint8List.fromList([1]);
   }
 
+  /// When set, the wipe waits for it: after clearing the preferences, as the
+  /// real one then goes on to the keychain and the files, or before failing
+  /// with [logoutError].
+  Completer<void>? holdWipe;
+
   /// Clears the saved preferences, as the real wipe does.
   @override
   Future<void> logout() async {
-    if (logoutError case final error?) throw error;
+    if (logoutError case final error?) {
+      await holdWipe?.future;
+      throw error;
+    }
     await (await SharedPreferences.getInstance()).clear();
+    await holdWipe?.future;
   }
 }
 

@@ -37,6 +37,23 @@ class LogoutService {
   /// Wipes the wallet and every piece of session state. Where to go next is
   /// the caller's decision.
   Future<void> logout() async {
+    // First: what answers during the wipe would write into cleared storage.
+    // The pollers keep running until it succeeds, so a failed wipe loses none.
+    final session = _ref.read(walletSessionProvider)..beginReset();
+    try {
+      await _wipe();
+    } catch (_) {
+      session.cancelReset();
+      rethrow;
+    }
+    try {
+      await _clearSessionState();
+    } finally {
+      session.finishReset();
+    }
+  }
+
+  Future<void> _wipe() async {
     if (_ref.read(remoteConfigProvider).enableRemoteNotifications) {
       _ref.read(pushRegistrationProvider).unregister();
     }
@@ -45,9 +62,11 @@ class LogoutService {
     // old wallet's swap back, and nothing of it may reach the next session.
     await _ref.read(activeSwapProvider.notifier).clear();
     await _ref.read(substrateServiceProvider).logout();
+  }
+
+  Future<void> _clearSessionState() async {
     // The wipe removed the saved choice; the live one must not outlast it.
     _ref.invalidate(notificationConfigProvider);
-    _ref.read(walletSessionProvider).finishReset();
     _stopPollers();
     // After the pollers, which could add another. Left in place, the old
     // wallet's list would be saved back with the next notification.

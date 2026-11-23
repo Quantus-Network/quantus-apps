@@ -125,6 +125,26 @@ void main() {
       expect(await RecentAddressesService().getAddresses(), isEmpty);
     });
 
+    testWidgets('whose wipe is still running when a send answers keeps its recipient out', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final held = submission.holdTransfer = Completer<void>();
+      final sent = submit(ref);
+      await tester.pump();
+      final wipe = bed.substrate.holdWipe = Completer<void>();
+
+      final logout = ref.read(logoutServiceProvider).logout();
+      await tester.pump();
+      held.complete();
+      expect(await sent, isA<SendSubmitted>());
+      await tester.pump();
+      final savedDuringTheWipe = await RecentAddressesService().getAddresses();
+      wipe.complete();
+      await logout;
+
+      expect(savedDuringTheWipe, isEmpty);
+      expect(await RecentAddressesService().getAddresses(), isEmpty);
+    });
+
     testWidgets('while a hardware send goes out keeps its recipient out of the recent addresses', (tester) async {
       final ref = await pumpRef(tester, overrides: overrides());
       final session = await hardwareSession(ref);
