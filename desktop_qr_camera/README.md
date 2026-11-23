@@ -4,7 +4,7 @@ Reads the computer's camera on Windows and Linux so that the desktop wallet can 
 
 ## Where it came from
 
-This is a trimmed and patched copy of [`flutter_lite_camera`](https://pub.dev/packages/flutter_lite_camera) 0.2.4 by Xiao Ling, under the MIT license in `LICENSE`. It is kept in this repository so that a package update can never change code that runs with camera access. The first commit that added it is the package exactly as published, so `git log -p -- desktop_qr_camera` shows every change made since.
+This is a trimmed and patched copy of [`flutter_lite_camera`](https://pub.dev/packages/flutter_lite_camera) 0.2.4 by Xiao Ling, under the MIT license in `LICENSE`. It is kept in this repository so that a package update can never change code that runs with camera access. Commit `95c72bd4`, the first in PR #789, is the package exactly as published, and the PR's later commits show every change made to it. They stay available from `refs/pull/789/head` even after a squash merge.
 
 ## What changed
 
