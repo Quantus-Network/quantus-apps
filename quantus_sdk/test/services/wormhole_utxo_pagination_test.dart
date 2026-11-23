@@ -1,4 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:quantus_sdk/src/services/network/redundant_endpoint.dart';
 import 'package:quantus_sdk/src/services/wormhole_utxo_service.dart';
 
 const _dest = 'dest';
@@ -50,56 +55,170 @@ class _KeysetIndexer extends WormholeUtxoService {
   final List<WormholeTransferCursor?> requestedCursors = [];
 
   @override
-  Future<List<WormholeTransfer>> queryTransfersPage({
-    required String toAddress,
-    required int afterBlock,
-    WormholeTransferCursor? after,
+  Future<List<List<WormholeTransfer>>> queryTransferPages(
+    List<TransferPageRequest> requests, {
     int limit = WormholeUtxoService.transferPageSize,
   }) async {
-    requestedCursors.add(after);
-    final matching = rows.where((r) => r.toId == toAddress && r.blockHeight > afterBlock).where((r) {
-      if (after == null) return true;
-      if (r.blockHeight != after.blockHeight) return r.blockHeight > after.blockHeight;
-      return r.id.compareTo(after.id) > 0;
-    }).toList()..sort(_byHeightThenId);
-    return matching.take(limit).toList();
+    return [
+      for (final request in requests)
+        () {
+          final after = request.after;
+          requestedCursors.add(after);
+          final matching = rows.where((r) => r.toId == request.toAddress && r.blockHeight > request.afterBlock).where((
+            r,
+          ) {
+            if (after == null) return true;
+            if (r.blockHeight != after.blockHeight) return r.blockHeight > after.blockHeight;
+            return r.id.compareTo(after.id) > 0;
+          }).toList()..sort(_byHeightThenId);
+          return matching.take(limit).toList();
+        }(),
+    ];
   }
 }
 
 void main() {
-  group('transfersToAddress queries', () {
-    test('first page filters on indexed scalar columns and orders by (block_height, id)', () {
-      const query = WormholeUtxoService.transfersToAddressQuery;
+  group('transfers document', () {
+    test('a first page filters on indexed scalar columns and orders by (block_height, id)', () {
+      final query = WormholeUtxoService.transfersDocument([const TransferPageRequest(toAddress: 'a', afterBlock: 7)]);
 
       expect(
         query,
-        contains(r'to_id: {_eq: $to}'),
+        contains(r'to_id: {_eq: $to0}'),
         reason:
             'Hasura renders _in as `= ANY(array)`, which Postgres will not walk in (block_height, id) order; '
             'on a 1M-row inbox that was a full seq scan + sort instead of a 300-row index range scan',
       );
       expect(query, isNot(contains('_in:')));
-      expect(query, contains(r'block_height: {_gt: $afterBlock}'));
+      expect(query, contains(r'block_height: {_gt: $afterBlock0}'));
       expect(query, contains('order_by: [{block_height: asc}, {id: asc}]'));
       expect(query, isNot(contains('offset')), reason: 'OFFSET re-scans every earlier row on each page');
       expect(query, isNot(contains('to: {')), reason: 'a nested relation filter cannot use (to_id, block_height, id)');
       expect(query, isNot(contains('block: {')), reason: 'block height is denormalized onto transfer');
     });
 
-    test('next page continues strictly after the (block_height, id) cursor', () {
-      const query = WormholeUtxoService.transfersToAddressAfterQuery;
+    test('a next page continues strictly after the (block_height, id) cursor', () {
+      final query = WormholeUtxoService.transfersDocument([
+        const TransferPageRequest(
+          toAddress: 'a',
+          afterBlock: 7,
+          after: WormholeTransferCursor(blockHeight: 9, id: 'x'),
+        ),
+      ]);
 
-      expect(query, contains(r'to_id: {_eq: $to}'));
-      expect(query, contains(r'block_height: {_gte: $cursorHeight}'));
-      expect(query, contains(r'_not: {block_height: {_eq: $cursorHeight}, id: {_lte: $cursorId}}'));
+      expect(query, contains(r'to_id: {_eq: $to0}'));
+      expect(query, contains(r'block_height: {_gte: $cursorHeight0}'));
+      expect(query, contains(r'_not: {block_height: {_eq: $cursorHeight0}, id: {_lte: $cursorId0}}'));
+      expect(query, isNot(contains(r'$afterBlock0')), reason: 'the cursor row is already above afterBlock');
       expect(query, contains('order_by: [{block_height: asc}, {id: asc}]'));
       expect(query, isNot(contains('offset')));
       expect(query, isNot(contains('_or')), reason: '_or keyset predicates plan as BitmapOr + sort');
     });
+
+    test('several requests become one document with one aliased field each, still one address per field', () {
+      final query = WormholeUtxoService.transfersDocument([
+        const TransferPageRequest(toAddress: 'a', afterBlock: 0),
+        const TransferPageRequest(
+          toAddress: 'b',
+          afterBlock: 5,
+          after: WormholeTransferCursor(blockHeight: 6, id: 'y'),
+        ),
+        const TransferPageRequest(toAddress: 'c', afterBlock: 3),
+      ]);
+
+      expect(query, startsWith('query Transfers('));
+      expect('t0: transfer('.allMatches(query), hasLength(1));
+      expect('t1: transfer('.allMatches(query), hasLength(1));
+      expect('t2: transfer('.allMatches(query), hasLength(1));
+      expect(query, contains(r'$to0: String!'));
+      expect(query, contains(r'$afterBlock0: Int!'));
+      expect(query, contains(r'$cursorHeight1: Int!'));
+      expect(query, contains(r'$cursorId1: String!'));
+      expect(query, contains(r'$afterBlock2: Int!'));
+      expect(query, isNot(contains('_in:')));
+      expect(r'$limit'.allMatches(query), hasLength(4), reason: 'one declaration, shared by every field');
+    });
+  });
+
+  test('queryTransferPages sends one request, retried once transient, and demultiplexes the aliases', () async {
+    final bodies = <Map<String, dynamic>>[];
+    Map<String, dynamic> row(String to, int height, String id) => {
+      'id': id,
+      'blockHeight': height,
+      'timestamp': '2026-01-01T00:00:00.000Z',
+      'fromId': 'from',
+      'toId': to,
+      'amount': '100',
+      'toHash': '',
+      'leafIndex': '1',
+      'transferCount': '1',
+      'extrinsicId': '',
+      'extrinsic': {'pallet': 'Balances'},
+    };
+    final service = WormholeUtxoService(
+      graphQl: GraphQlEndpointService.forUrls(
+        ['https://indexer.test'],
+        client: MockClient((request) async {
+          bodies.add(jsonDecode(request.body) as Map<String, dynamic>);
+          // The first attempt hits a statement timeout; the walk retries it.
+          if (bodies.length == 1) {
+            return http.Response(
+              jsonEncode({
+                'errors': [
+                  {
+                    'message': 'database query error',
+                    'extensions': {'path': r'$', 'code': 'unexpected'},
+                  },
+                ],
+              }),
+              200,
+            );
+          }
+          return http.Response(
+            jsonEncode({
+              'data': {
+                't0': [row('a', 1, 'a1'), row('a', 2, 'a2')],
+                't1': <Object>[],
+                't2': [row('c', 9, 'c9')],
+              },
+            }),
+            200,
+          );
+        }),
+      ),
+    );
+
+    final pages = await service.queryTransferPages([
+      const TransferPageRequest(toAddress: 'a', afterBlock: 0),
+      const TransferPageRequest(
+        toAddress: 'b',
+        afterBlock: 5,
+        after: WormholeTransferCursor(blockHeight: 6, id: 'y'),
+      ),
+      const TransferPageRequest(toAddress: 'c', afterBlock: 3),
+    ], limit: 50);
+
+    expect(bodies, hasLength(2));
+    expect(bodies.last, bodies.first);
+    expect(bodies.last['variables'], {
+      'limit': 50,
+      'to0': 'a',
+      'afterBlock0': 0,
+      'to1': 'b',
+      'cursorHeight1': 6,
+      'cursorId1': 'y',
+      'to2': 'c',
+      'afterBlock2': 3,
+    });
+    expect(pages.map((p) => p.map((t) => t.id).toList()), [
+      ['a1', 'a2'],
+      <String>[],
+      ['c9'],
+    ]);
   });
 
   test('caches are generation-versioned so a network switch never reads the previous chain', () {
-    expect(WormholeUtxoService.cacheVersion, 7);
+    expect(WormholeUtxoService.cacheVersion, 8);
   });
 
   test('keyset walk returns every row once, including same-height siblings on the page boundary', () async {

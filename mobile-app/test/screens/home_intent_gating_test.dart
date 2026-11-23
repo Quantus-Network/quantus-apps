@@ -1,24 +1,24 @@
 import 'package:clock/clock.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/combined_transactions_list.dart';
-import 'package:resonance_network_wallet/models/fiat_currency.dart';
-import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
-import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
+import 'package:wallet_core/models/combined_transactions_list.dart';
+import 'package:wallet_core/models/fiat_currency.dart';
+import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/providers/connectivity_provider.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/route_intent_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/exchange_rate_service.dart';
+import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/home/home_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_activity_row.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
@@ -33,8 +33,6 @@ void main() {
     WidgetTester tester, {
     required FakeSettingsService settings,
     required TestLocalAuthController auth,
-    bool enableSwap = true,
-    bool enableSwapAndroid = true,
     bool geoNearAllowed = true,
     AsyncValue<CombinedTransactionsList>? activity,
   }) async {
@@ -59,17 +57,13 @@ void main() {
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         remoteConfigProvider.overrideWith((ref) {
-          final config = RemoteConfigModel.fromJson({
-            'enableSwap': enableSwap,
-            'enableSwapAndroid': enableSwapAndroid,
-            'geoNearAllowed': geoNearAllowed,
-          });
+          final config = RemoteConfigModel.fromJson({'geoNearAllowed': geoNearAllowed});
           return RemoteConfigNotifier(FakeRemoteConfigService(config, remote: config));
         }),
       ],
     );
     // Let the active account and multisig list finish their async load, then
-    // the remote config sync that grants the location verdict.
+    // the remote config sync.
     await tester.pump();
     await tester.pump();
     return ProviderScope.containerOf(tester.element(find.byType(HomeScreen)));
@@ -210,6 +204,26 @@ void main() {
     );
   });
 
+  testWidgets('a tap on the lock-screen card opens the swap it shows, once', (tester) async {
+    final account = makeAccount(1);
+    final settings = FakeSettingsService(
+      activeAccount: RegularAccount(account),
+      activeSwaps: [
+        swapOf(account, SwapStatus.processing),
+        swapOf(account, SwapStatus.refunded, depositAddress: 'qzlater'),
+      ],
+    );
+    final container = await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+    for (var tap = 0; tap < 2; tap++) {
+      container.read(swapProgressIntentProvider.notifier).state = true;
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+    }
+    expect(tester.widget<SwapProgressScreen>(find.byType(SwapProgressScreen)).swapId, 'qzdeposit');
+    expect(container.read(swapProgressIntentProvider), isFalse);
+  });
+
   testWidgets('a swap whose hand deposit 1Click has seen is pinned, on a multisig home too', (tester) async {
     final account = makeAccount(1);
     final settings = settingsFollowing(account, swapOf(account, SwapStatus.knownDepositTx, byHand: true))
@@ -303,30 +317,18 @@ void main() {
     });
   }
 
-  // Each platform follows its own flag; the other platform's flag is set to
-  // the opposite so it visibly has no say.
-  for (final (enabled, geoNearAllowed) in [(true, true), (false, true), (true, false)]) {
-    testWidgets(
-      'home actions show receive and send, and swap when the platform swap flag is $enabled and the location allows NEAR is $geoNearAllowed',
-      (tester) async {
-        final android = defaultTargetPlatform == TargetPlatform.android;
-        final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
-        final auth = TestLocalAuthController(authenticated: true);
-        await pumpHome(
-          tester,
-          settings: settings,
-          auth: auth,
-          enableSwap: android ? !enabled : enabled,
-          enableSwapAndroid: android ? enabled : !enabled,
-          geoNearAllowed: geoNearAllowed,
-        );
+  for (final geoNearAllowed in [true, false]) {
+    testWidgets('home actions show receive and send, and swap when the location allows NEAR is $geoNearAllowed', (
+      tester,
+    ) async {
+      final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
+      final auth = TestLocalAuthController(authenticated: true);
+      await pumpHome(tester, settings: settings, auth: auth, geoNearAllowed: geoNearAllowed);
 
-        expect(find.text('Receive'), findsOneWidget);
-        expect(find.text('Send'), findsOneWidget);
-        expect(find.text('Swap'), enabled && geoNearAllowed ? findsOneWidget : findsNothing);
-      },
-      variant: const TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.android}),
-    );
+      expect(find.text('Receive'), findsOneWidget);
+      expect(find.text('Send'), findsOneWidget);
+      expect(find.text('Swap'), geoNearAllowed ? findsOneWidget : findsNothing);
+    });
   }
 
   testWidgets('intent arriving while locked stays queued and drains on unlock', (tester) async {
@@ -430,5 +432,58 @@ void main() {
 
     expect(find.byType(InputAmountScreen), findsNothing);
     expect(container.read(sendFlowActiveProvider), isFalse);
+  });
+
+  group('top bar', () {
+    testWidgets('the account pill names the active account and offers the switcher caret', (tester) async {
+      final account = makeAccount(1);
+      final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+      final pill = find.byType(OpenAccountsManagementButton);
+      expect(find.descendant(of: pill, matching: find.text(account.name)), findsOneWidget);
+      expect(
+        find.descendant(
+          of: pill,
+          matching: find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == QuantusIcons.caretUpDown),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    for (final width in [375.0, 390.0]) {
+      testWidgets('a long account name shrinks the pill instead of overflowing at ${width.toInt()}px', (tester) async {
+        tester.view.physicalSize = Size(width * 2, 1334);
+        tester.view.devicePixelRatio = 2.0;
+        addTearDown(tester.view.reset);
+
+        final account = makeAccount(1).copyWith(name: 'My long savings account');
+        final settings = FakeSettingsService(activeAccount: RegularAccount(account));
+        await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+        expect(tester.takeException(), isNull);
+        expect(find.text('My long savings account'), findsOneWidget);
+        final pill = tester.getRect(find.byType(OpenAccountsManagementButton));
+        final gear = tester.getRect(find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == QuantusIcons.gear));
+        expect(pill.right, lessThanOrEqualTo(gear.left));
+        expect(gear.right, lessThanOrEqualTo(width - 24));
+      });
+    }
+
+    testWidgets('the eye hides the balance and turns into a crossed eye', (tester) async {
+      final settings = FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)));
+      await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+      Finder glyph(QuantusIcons icon) => find.byWidgetPredicate((w) => w is QuantusIcon && w.icon == icon);
+      expect(glyph(QuantusIcons.eye), findsOneWidget);
+      expect(glyph(QuantusIcons.gear), findsOneWidget);
+      expect(find.text('1,250'), findsNothing);
+      expect(find.text('10'), findsOneWidget);
+
+      await tester.tap(glyph(QuantusIcons.eye));
+      await tester.pump();
+      expect(glyph(QuantusIcons.eyeSlash), findsOneWidget);
+      expect(find.text('10'), findsNothing);
+    });
   });
 }

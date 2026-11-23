@@ -4,17 +4,17 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/models/swap_preflight.dart';
-import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/models/swap_preflight.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
 /// Shows a dry quote's terms. Confirming takes a live quote; when it
@@ -66,7 +66,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
       if (fee != null && txHash == null) return;
       // The deposit is out, so the swap is followed even if the screen is gone,
-      // unless the wallet logged out or moved on meanwhile.
+      // unless the wallet logged out meanwhile.
       final swap = ActiveSwap(
         order: order,
         accountId: widget.account.accountId,
@@ -79,9 +79,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       if (!swaps.start(swap, ticket: ticket) || !mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(
-          builder: (_) => SwapProgressScreen(swapId: swap.id, account: widget.account),
-        ),
+        SwapProgressScreen.route(swap.id, account: widget.account),
         (route) => route.isFirst,
       );
     } finally {
@@ -214,6 +212,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
                 foreign.symbol,
               ),
             ),
+            SwapQuoteFeeRows(quote: quote),
             if (_swapOut)
               row(l10n.swapReviewRecipient, AddressFormattingService.formatAddress(quote.recipient), mono: true)
             else
@@ -233,6 +232,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
               ),
             ),
             row(l10n.swapReviewGuaranteedMinimum, amount(quote.minAmountOut, to)),
+            if (quote.refundFee > BigInt.zero) row(l10n.swapReviewRefundFee, amount(quote.refundFee, from)),
             if (exactOutput) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewUnusedRefunded, style: text.caption.copyWith(color: colors.textMuted)),

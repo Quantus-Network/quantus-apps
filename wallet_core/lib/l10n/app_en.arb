@@ -1,0 +1,4736 @@
+{
+    "walletInitErrorTitle": "Wallet Error",
+    "@walletInitErrorTitle": {
+      "description": "Title for the error dialog when the wallet is not found"
+    },
+    "walletInitErrorMessage": "Unable to find secret phrase. Please restore your wallet.",
+    "@walletInitErrorMessage": {
+      "description": "Message for the error dialog when the wallet is not found"
+    },
+    "walletInitErrorButtonLabel": "OK",
+    "@walletInitErrorButtonLabel": {
+      "description": "Label for the button on the error dialog when the wallet is not found"
+    },
+
+
+    "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
+    "@authUseDeviceBiometricsToUnlock": {
+      "description": "Text for the text on the lock screen when using device biometrics to unlock"
+    },
+    "authAuthenticating": "Authenticating...",
+    "@authAuthenticating": {
+      "description": "Text for the text on the lock screen when authenticating"
+    },
+    "authUnlockWallet": "Unlock Wallet",
+    "@authUnlockWallet": {
+      "description": "Text for the button on the lock screen to unlock the wallet"
+    },
+    "authAuthorizationRequired": "Authorization \n Required",
+    "@authAuthorizationRequired": {
+      "description": "Text for displayed on the lock screen when authorization is required"
+    },
+
+    "welcomeTagline": "Quantum Secure Encrypted Money",
+    "@welcomeTagline": {
+      "description": "Tagline on the welcome screen"
+    },
+    "welcomeCreateNewWallet": "Create New Wallet",
+    "@welcomeCreateNewWallet": {
+      "description": "Button to start creating a new wallet on the welcome screen"
+    },
+    "welcomeImportWallet": "Import Wallet",
+    "@welcomeImportWallet": {
+      "description": "Button to import an existing wallet on the welcome screen"
+    },
+
+    "createWalletCautionHeadline": "Keep your Recovery Phrase Secret",
+    "@createWalletCautionHeadline": {
+      "description": "Headline on the recovery phrase caution screen during wallet creation"
+    },
+    "createWalletCautionBullet1": "If you lose this device, your recovery phrase is the only way back",
+    "@createWalletCautionBullet1": {
+      "description": "First bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionBullet2": "Anyone who gets hold of it has complete control over your funds, permanently",
+    "@createWalletCautionBullet2": {
+      "description": "Second bullet on the recovery phrase caution screen"
+    },
+    "createWalletCautionBullet3": "Write it down and keep it somewhere safe. Do not save it digitally",
+    "@createWalletCautionBullet3": {
+      "description": "Third bullet on the recovery phrase caution screen"
+    },
+    "createWalletRecoveryPhraseSaveError": "Error saving wallet: {error}",
+    "@createWalletRecoveryPhraseSaveError": {
+      "description": "Error when saving a new wallet fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+
+    "recoveryPhraseBodyInstructions": "Write these words down in order and keep them somewhere only you can access. Do not screenshot or copy to a notes app.",
+    "@recoveryPhraseBodyInstructions": {
+      "description": "Instructions above the recovery phrase word grid"
+    },
+    "recoveryPhraseBodyCopy": "Copy",
+    "@recoveryPhraseBodyCopy": {
+      "description": "Copy button on the recovery phrase screen"
+    },
+    "recoveryPhraseBodyTapToReveal": "Tap to reveal",
+    "@recoveryPhraseBodyTapToReveal": {
+      "description": "Overlay on the blurred recovery phrase grid"
+    },
+    "recoveryPhraseBodyTapToHide": "Tap to hide",
+    "@recoveryPhraseBodyTapToHide": {
+      "description": "Hint below the revealed recovery phrase grid"
+    },
+    "recoveryPhraseBodyCopiedMessage": "Recovery phrase copied to clipboard",
+    "@recoveryPhraseBodyCopiedMessage": {
+      "description": "Toast when recovery phrase is copied"
+    },
+
+    "accountReadyAccountCreated": "Account Created",
+    "@accountReadyAccountCreated": {
+      "description": "Title when a new account is created"
+    },
+    "accountReadyWalletCreated": "Wallet Created",
+    "@accountReadyWalletCreated": {
+      "description": "Title when a new wallet is created"
+    },
+    "accountReadyWalletImported": "Wallet Imported",
+    "@accountReadyWalletImported": {
+      "description": "Title when a wallet is imported"
+    },
+    "accountReadyDone": "Done",
+    "@accountReadyDone": {
+      "description": "Done button on the account ready screen"
+    },
+    "accountReadyTwoAccountsCreated": "Two accounts were created for you.",
+    "@accountReadyTwoAccountsCreated": {
+      "description": "Subtitle on wallet created ready screen explaining the two accounts"
+    },
+    "accountReadyMainAccountDescription": "Your main account. Fast, visible on chain.",
+    "@accountReadyMainAccountDescription": {
+      "description": "Description under the transparent main account card after wallet creation"
+    },
+    "accountReadyEncryptedAccountDescription": "For private transactions. Shielded, slower.",
+    "@accountReadyEncryptedAccountDescription": {
+      "description": "Description under the encrypted account card after wallet creation"
+    },
+    "accountReadyGoToWallet": "Go to Wallet",
+    "@accountReadyGoToWallet": {
+      "description": "Primary CTA on the wallet created ready screen"
+    },
+
+    "importWalletAppBarTitle": "Import Wallet",
+    "@importWalletAppBarTitle": {
+      "description": "App bar title on the import wallet screen"
+    },
+    "importWalletDescription": "Restore an existing wallet with your 12 or 24 words recovery phrase",
+    "@importWalletDescription": {
+      "description": "Description on the import wallet screen"
+    },
+    "importWalletHint": "Type in or paste your recovery phrase. Separate words with spaces.",
+    "@importWalletHint": {
+      "description": "Hint for the recovery phrase text field"
+    },
+    "importWalletButton": "Import",
+    "@importWalletButton": {
+      "description": "Import button on the import wallet screen"
+    },
+    "importWalletValidationError": "Recovery phrase must be 12 or 24 words",
+    "@importWalletValidationError": {
+      "description": "Validation error when recovery phrase word count is invalid"
+    },
+    "importWalletScanFailedTitle": "Account scan failed",
+    "@importWalletScanFailedTitle": {
+      "description": "Title of the dialog shown when looking up the imported wallet's accounts fails"
+    },
+    "importWalletScanFailedBody": "We could not reach the network to look for your accounts. Try again now, or skip and the app will scan again the next time it starts.",
+    "@importWalletScanFailedBody": {
+      "description": "Body of the dialog shown when looking up the imported wallet's accounts fails"
+    },
+    "importWalletScanRetry": "Try again",
+    "@importWalletScanRetry": {
+      "description": "Button that runs the account scan again"
+    },
+    "importWalletScanSkip": "Skip",
+    "@importWalletScanSkip": {
+      "description": "Button that finishes the import without scanning for accounts"
+    },
+
+    "homeError": "Error: {error}",
+    "@homeError": {
+      "description": "Error message on the home screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "homeNoActiveAccount": "No active account",
+    "@homeNoActiveAccount": {
+      "description": "Shown when no account is active on the home screen"
+    },
+    "homeErrorLoadingBalance": "Error loading balance",
+    "@homeErrorLoadingBalance": {
+      "description": "Error when balance fails to load on the home screen"
+    },
+    "homeBackupReminder": "Back up your recovery phrase",
+    "@homeBackupReminder": {
+      "description": "Home banner prompting the user to back up their recovery phrase"
+    },
+    "networkStatusOfflineBanner": "Offline · showing last known balances",
+    "@networkStatusOfflineBanner": {
+      "description": "Full-width strip shown when the device is offline; rendered uppercase"
+    },
+    "homeReceive": "Receive",
+    "@homeReceive": {
+      "description": "Receive action button on the home screen"
+    },
+    "homeSend": "Send",
+    "@homeSend": {
+      "description": "Send action button on the home screen"
+    },
+    "homeSwap": "Swap",
+    "@homeSwap": {
+      "description": "Swap action button on the home screen"
+    },
+
+    "homeActivityTitle": "Activity",
+    "@homeActivityTitle": {
+      "description": "Section title for recent activity on the home screen"
+    },
+    "homeActivityViewAll": "View All",
+    "@homeActivityViewAll": {
+      "description": "Link to full activity screen from home"
+    },
+    "homeActivityErrorLoading": "Error loading transactions",
+    "@homeActivityErrorLoading": {
+      "description": "Error when transactions fail to load in home activity section"
+    },
+    "homeActivityRetry": "Retry",
+    "@homeActivityRetry": {
+      "description": "Retry link in home activity section error state"
+    },
+    "homeActivityEmptyTitle": "No Transactions Yet",
+    "@homeActivityEmptyTitle": {
+      "description": "Empty state title in home activity section"
+    },
+    "homeActivityEmptyMessage": "Your activity will appear here once you send or receive {tokenSymbol}.",
+    "@homeActivityEmptyMessage": {
+      "description": "Empty state message in home activity section",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+
+    "accountsSheetTitle": "Accounts",
+    "@accountsSheetTitle": {
+      "description": "Title of the accounts bottom sheet"
+    },
+    "accountsSheetFailedLoadAccounts": "Failed to load accounts.",
+    "@accountsSheetFailedLoadAccounts": {
+      "description": "Error when accounts list fails to load"
+    },
+    "accountsSheetFailedLoadActiveAccount": "Failed to load active account.",
+    "@accountsSheetFailedLoadActiveAccount": {
+      "description": "Error when active account fails to load"
+    },
+    "accountsSheetNoAccountsFound": "No accounts found.",
+    "@accountsSheetNoAccountsFound": {
+      "description": "Empty state in accounts sheet"
+    },
+    "accountsSheetAddAccount": "Add Account",
+    "@accountsSheetAddAccount": {
+      "description": "Button to add a new account"
+    },
+    "accountsSheetBalanceUnavailable": "Balance unavailable",
+    "@accountsSheetBalanceUnavailable": {
+      "description": "When account balance fails to load"
+    },
+    "accountsSheetBalance": "{balance} {symbol}",
+    "@accountsSheetBalance": {
+      "description": "Formatted balance with token symbol",
+      "placeholders": {
+        "balance": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "accountsSheetWallet": "Wallet {number}",
+    "@accountsSheetWallet": {
+      "description": "Software wallet segment header in accounts sheet",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountsSheetKeystoneWallet": "{number, plural, =1{Cold Wallet} other{Cold Wallet {number}}}",
+    "@accountsSheetKeystoneWallet": {
+      "description": "Keystone hardware wallet segment header in accounts sheet; the first wallet omits the number",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountsScreenActiveWallet": "Active Wallet",
+    "@accountsScreenActiveWallet": {
+      "description": "Badge on the wallet header containing the active account; rendered uppercase"
+    },
+    "accountsScreenAccountCount": "{count, plural, =1{1 Account} other{{count} Accounts}}",
+    "@accountsScreenAccountCount": {
+      "description": "Account count on a collapsed wallet row",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "walletNameTitle": "Wallet Name",
+    "@walletNameTitle": {
+      "description": "App bar title of the wallet naming screen"
+    },
+    "walletNameSubtitle": "Naming your wallets makes it easier to tell their accounts apart. Each wallet has its own encrypted account.",
+    "@walletNameSubtitle": {
+      "description": "Explainer text on the wallet naming screen"
+    },
+    "walletNameHint": "Enter a name for your wallet",
+    "@walletNameHint": {
+      "description": "Placeholder of the wallet name field"
+    },
+
+    "addAccountMenuTitle": "Add Account",
+    "@addAccountMenuTitle": {
+      "description": "App bar title on add account menu"
+    },
+    "addAccountMenuCreateTitle": "Add Transparent Account",
+    "@addAccountMenuCreateTitle": {
+      "description": "Add transparent account menu row title"
+    },
+    "addAccountMenuCreateSubtitle": "Add another public account",
+    "@addAccountMenuCreateSubtitle": {
+      "description": "Add transparent account menu row subtitle"
+    },
+    "addAccountMenuMoreTitle": "Advanced",
+    "@addAccountMenuMoreTitle": {
+      "description": "Title of the add account more options action sheet"
+    },
+    "addAccountMenuImportKeystoneTitle": "Add Cold Wallet",
+    "@addAccountMenuImportKeystoneTitle": {
+      "description": "Add keystone hardware account menu row title"
+    },
+    "addAccountMenuImportKeystoneSubtitle": "Air-gapped signing via QR code",
+    "@addAccountMenuImportKeystoneSubtitle": {
+      "description": "Add keystone hardware account menu row subtitle"
+    },
+    "addAccountMenuImportTitle": "Import Account",
+    "@addAccountMenuImportTitle": {
+      "description": "Import account menu row title"
+    },
+    "addAccountMenuImportSubtitle": "Restore from recovery phrase",
+    "@addAccountMenuImportSubtitle": {
+      "description": "Import account menu row subtitle"
+    },
+    "addAccountMenuMultisigTitle": "Create Multisig Account",
+    "@addAccountMenuMultisigTitle": {
+      "description": "Create multisig account menu row title"
+    },
+    "addAccountMenuMultisigSubtitle": "Set up a shared address with multiple signers",
+    "@addAccountMenuMultisigSubtitle": {
+      "description": "Add multisig menu row subtitle"
+    },
+    "addAccountMenuDiscoverMultisigTitle": "Add Multisig Account",
+    "@addAccountMenuDiscoverMultisigTitle": {
+      "description": "Add (discover) multisig menu row title"
+    },
+    "addAccountMenuDiscoverMultisigSubtitle": "Find multisigs where your accounts are signers",
+    "@addAccountMenuDiscoverMultisigSubtitle": {
+      "description": "Discover multisig menu row subtitle"
+    },
+
+    "multisigTag": "MULTISIG",
+    "@multisigTag": {
+      "description": "Badge label for multisig accounts"
+    },
+    "multisigProposeTitle": "Propose",
+    "@multisigProposeTitle": {
+      "description": "Propose flow app bar title and home CTA"
+    },
+    "multisigAddTitle": "Create Multisig",
+    "@multisigAddTitle": {
+      "description": "Create multisig screen app bar title"
+    },
+    "multisigDiscoverTitle": "Discover Multisig",
+    "@multisigDiscoverTitle": {
+      "description": "Discover multisig screen app bar title"
+    },
+    "multisigCreateSubtitle": "Give this multisig a name you'll recognize. You can change it anytime.",
+    "@multisigCreateSubtitle": {
+      "description": "Subtitle under multisig name field"
+    },
+    "multisigCreateButton": "Create",
+    "@multisigCreateButton": {
+      "description": "Primary button to create multisig"
+    },
+    "multisigCreateCreatingButton": "Creating",
+    "@multisigCreateCreatingButton": {
+      "description": "Create button label while multisig creation is confirming on-chain"
+    },
+    "multisigCreateDefaultName": "Multisig {number}",
+    "@multisigCreateDefaultName": {
+      "description": "Default name for a new multisig",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigCreateErrorCouldNotCreate": "Could not create multisig.",
+    "@multisigCreateErrorCouldNotCreate": {
+      "description": "Error toast when multisig creation fails"
+    },
+    "multisigCreateReadyToast": "Multisig added to your accounts.",
+    "@multisigCreateReadyToast": {
+      "description": "Toast when multisig creation is confirmed on-chain"
+    },
+    "multisigCreateAlreadyExists": "A multisig with this address already exists on-chain.",
+    "@multisigCreateAlreadyExists": {
+      "description": "Toast when predicted multisig address is already registered"
+    },
+    "multisigCreateInsufficientBalance": "Insufficient balance to cover multisig creation fees.",
+    "@multisigCreateInsufficientBalance": {
+      "description": "Toast when creator balance is below pallet fee + network fee + deposit"
+    },
+    "multisigCreateTimeoutToast": "Multisig creation is taking longer than expected. Check the chain or try again.",
+    "@multisigCreateTimeoutToast": {
+      "description": "Toast when on-chain confirmation polling times out"
+    },
+    "multisigCreateAuthReason": "Authenticate to create this multisig",
+    "@multisigCreateAuthReason": {
+      "description": "Local auth prompt when submitting create multisig"
+    },
+    "multisigCreateSignersLabel": "SIGNERS",
+    "@multisigCreateSignersLabel": {
+      "description": "Section label for signer list on create multisig"
+    },
+    "multisigCreateSignersSubtitle": "Add at least one other signer besides yourself.",
+    "@multisigCreateSignersSubtitle": {
+      "description": "Helper text under signers section on create multisig"
+    },
+    "multisigCreateAddSignerHint": "Signer address",
+    "@multisigCreateAddSignerHint": {
+      "description": "Hint for adding a signer address"
+    },
+    "multisigCreateAddSignerButton": "Add Signer",
+    "@multisigCreateAddSignerButton": {
+      "description": "Button to add a signer from address field"
+    },
+    "multisigCreateDuplicateSigner": "This signer is already in the list.",
+    "@multisigCreateDuplicateSigner": {
+      "description": "Error when signer address is duplicate"
+    },
+    "multisigCreateInvalidSigner": "Enter a valid signer address.",
+    "@multisigCreateInvalidSigner": {
+      "description": "Error when signer address is invalid"
+    },
+    "multisigCreateSignerIsMultisig": "This address is a multisig account. A multisig cannot sign, so this signer cannot approve in this wallet. If the remaining members cannot meet the threshold, funds in that multisig may need recovery through the CLI.",
+    "@multisigCreateSignerIsMultisig": {
+      "description": "Error when an added signer address is one of this wallet's multisig accounts"
+    },
+    "multisigCreateThresholdLabel": "THRESHOLD",
+    "@multisigCreateThresholdLabel": {
+      "description": "Threshold slider section label on create multisig"
+    },
+    "multisigCreateThresholdValue": "{count} of {total}",
+    "@multisigCreateThresholdValue": {
+      "description": "Threshold slider value label",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigCreateKeystoneAction": "Create {count} of {total} multisig",
+    "@multisigCreateKeystoneAction": {
+      "description": "What a Keystone creator is signing, shown on the Keystone sign and verify screens",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigCreatePredictedAddressLabel": "MULTISIG ADDRESS",
+    "@multisigCreatePredictedAddressLabel": {
+      "description": "Label for predicted multisig address preview"
+    },
+    "multisigCreatePredictedAddressPlaceholder": "Add signers to preview address",
+    "@multisigCreatePredictedAddressPlaceholder": {
+      "description": "Placeholder when predicted address is not yet available"
+    },
+    "multisigDone": "Done",
+    "@multisigDone": {
+      "description": "Done button on multisig flow completion screens"
+    },
+    "multisigAddDiscoveredTitle": "Discovered for you",
+    "@multisigAddDiscoveredTitle": {
+      "description": "Section title for on-chain discovered multisigs"
+    },
+    "multisigAddDiscoveredSubtitle": "Multisigs on chain where one of your accounts is a signer",
+    "@multisigAddDiscoveredSubtitle": {
+      "description": "Helper text under discovered multisigs section"
+    },
+    "multisigAddButton": "Add",
+    "@multisigAddButton": {
+      "description": "Add button on discovered multisig row"
+    },
+    "multisigAddedButton": "Added",
+    "@multisigAddedButton": {
+      "description": "Disabled state when multisig is already added"
+    },
+    "multisigAddNoneFound": "No multisigs found.",
+    "@multisigAddNoneFound": {
+      "description": "Empty state when no multisigs are discovered"
+    },
+    "multisigAddDiscoverFailed": "Could not discover multisigs: {error}",
+    "@multisigAddDiscoverFailed": {
+      "description": "Error when multisig discovery fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigAddFailed": "Could not add multisig: {error}",
+    "@multisigAddFailed": {
+      "description": "Error when adding a multisig fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigOpenProposals": "Open Proposals",
+    "@multisigOpenProposals": {
+      "description": "Section title for open multisig proposals"
+    },
+    "multisigPastProposals": "Past Proposals",
+    "@multisigPastProposals": {
+      "description": "Section title for past multisig proposals"
+    },
+    "multisigNoOpenProposals": "No open proposals.",
+    "@multisigNoOpenProposals": {
+      "description": "Empty state for open proposals list"
+    },
+    "multisigNoPastProposals": "No past proposals.",
+    "@multisigNoPastProposals": {
+      "description": "Empty state for past proposals list"
+    },
+    "multisigLoadFailed": "Failed to load: {error}",
+    "@multisigLoadFailed": {
+      "description": "Error when proposal list fails to load",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposalToAddress": "to {address}",
+    "@multisigProposalToAddress": {
+      "description": "Proposal row recipient line",
+      "placeholders": {
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposalCallLoading": "Reading the proposal from the chain…",
+    "@multisigProposalCallLoading": {
+      "description": "Shown while the proposal's stored call bytes are being fetched before approving"
+    },
+    "multisigProposalCallUnavailable": "Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.",
+    "@multisigProposalCallUnavailable": {
+      "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
+    },
+    "multisigProposalInvalid": "Invalid proposal",
+    "@multisigProposalInvalid": {
+      "description": "Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval"
+    },
+    "multisigStatusApproved": "SIGNED",
+    "@multisigStatusApproved": {
+      "description": "Proposal status chip when the current signer has approved"
+    },
+    "multisigStatusProposed": "PROPOSED",
+    "@multisigStatusProposed": {
+      "description": "Proposal status chip when the current signer has not approved yet"
+    },
+    "multisigStatusExpired": "EXPIRED",
+    "@multisigStatusExpired": {
+      "description": "Proposal status chip when expired"
+    },
+    "multisigStatusCancelled": "CANCELLED",
+    "@multisigStatusCancelled": {
+      "description": "Proposal status chip when cancelled"
+    },
+    "multisigProposeSelectRecipientTo": "Transfer to",
+    "@multisigProposeSelectRecipientTo": {
+      "description": "Section label on propose recipient screen — transfer destination"
+    },
+    "multisigProposeSearchHint": "Enter {symbol} Address",
+    "@multisigProposeSearchHint": {
+      "description": "Hint for recipient search field on propose flow",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposeAmountToLabel": "TRANSFER TO",
+    "@multisigProposeAmountToLabel": {
+      "description": "Recipient card label on propose amount screen"
+    },
+    "multisigProposeDepositLabel": "Deposit:",
+    "@multisigProposeDepositLabel": {
+      "description": "Refundable proposal deposit label on propose amount screen"
+    },
+    "multisigProposeCreationFeeLabel": "Proposal Fee:",
+    "@multisigProposeCreationFeeLabel": {
+      "description": "Non-refundable burned proposal fee label (scales with signers)"
+    },
+    "multisigProposeDepositRefundableNote": "refundable",
+    "@multisigProposeDepositRefundableNote": {
+      "description": "Short note that proposal deposit is returned on execute/cancel"
+    },
+    "multisigProposeMemberTotalLabel": "TOTAL FROM YOUR ACCOUNT",
+    "@multisigProposeMemberTotalLabel": {
+      "description": "Review row for total member cost at proposal submit"
+    },
+    "multisigProposeFeeLabel": "Proposal Fee:",
+    "@multisigProposeFeeLabel": {
+      "description": "Deprecated single fee label; prefer fee breakdown labels"
+    },
+    "multisigProposeFeeFetchFailed": "Unable to estimate fee",
+    "@multisigProposeFeeFetchFailed": {
+      "description": "Shown when proposal fee estimation fails on the amount screen"
+    },
+    "multisigProposeFeePayerBalanceLabel": "Your Balance:",
+    "@multisigProposeFeePayerBalanceLabel": {
+      "description": "Label for the proposing member's balance on the amount screen"
+    },
+    "multisigProposeFeePayerInsufficient": "Insufficient Balance for Fee",
+    "@multisigProposeFeePayerInsufficient": {
+      "description": "Button text when proposer cannot afford the proposal fee"
+    },
+    "multisigProposeProposerLabel": "PROPOSER",
+    "@multisigProposeProposerLabel": {
+      "description": "Row label for the proposer address on the propose review screen"
+    },
+    "multisigProposeReviewButton": "Review transfer",
+    "@multisigProposeReviewButton": {
+      "description": "Button to open propose review screen"
+    },
+    "multisigProposeReviewProposing": "PROPOSED TRANSFER",
+    "@multisigProposeReviewProposing": {
+      "description": "Hero label on propose review screen"
+    },
+    "multisigProposeReviewFromName": "from {name}",
+    "@multisigProposeReviewFromName": {
+      "description": "Multisig name on propose review hero card",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposeThresholdLabel": "THRESHOLD",
+    "@multisigProposeThresholdLabel": {
+      "description": "Threshold row label on propose review"
+    },
+    "multisigProposeExpiresLabel": "EXPIRES",
+    "@multisigProposeExpiresLabel": {
+      "description": "Expiry row label on propose review"
+    },
+    "multisigExpiresBlockOnly": "Block {block}",
+    "@multisigExpiresBlockOnly": {
+      "description": "On-chain expiry block when current block is unavailable",
+      "placeholders": {
+        "block": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigProposeFeeRowLabel": "PROPOSAL FEE",
+    "@multisigProposeFeeRowLabel": {
+      "description": "Non-refundable burned proposal fee row on propose review"
+    },
+    "multisigProposeCreateButton": "Submit proposal",
+    "@multisigProposeCreateButton": {
+      "description": "Submit button on propose review screen"
+    },
+    "multisigProposeAuthReason": "Authenticate to propose transaction",
+    "@multisigProposeAuthReason": {
+      "description": "Biometric auth prompt when creating a proposal"
+    },
+    "multisigProposeAuthRequired": "Authentication required",
+    "@multisigProposeAuthRequired": {
+      "description": "Error when auth fails on propose review"
+    },
+    "multisigProposeSubmitFailed": "Failed to create proposal",
+    "@multisigProposeSubmitFailed": {
+      "description": "Error when proposal creation fails"
+    },
+    "multisigProposeTimeoutToast": "Proposal confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigProposeTimeoutToast": {
+      "description": "Toast when proposal indexing polling times out"
+    },
+    "multisigProposeDoneHeadline": "Transfer proposal submitted",
+    "@multisigProposeDoneHeadline": {
+      "description": "Success headline on propose done screen"
+    },
+    "multisigProposeDoneSubline": "Co-signers must approve before the transfer can execute.",
+    "@multisigProposeDoneSubline": {
+      "description": "Success subline on propose done screen"
+    },
+    "multisigProposeDoneToChecksum": "to {checksum}",
+    "@multisigProposeDoneToChecksum": {
+      "description": "Recipient checksum line on propose done screen",
+      "placeholders": {
+        "checksum": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigSignaturesCount": "Signatures: {current}/{threshold}",
+    "@multisigSignaturesCount": {
+      "description": "Approval count on propose or approve done screen",
+      "placeholders": {
+        "current": {
+          "type": "int"
+        },
+        "threshold": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigProposalTitle": "Proposal",
+    "@multisigProposalTitle": {
+      "description": "App bar title on proposal detail screen"
+    },
+    "multisigProposalLoadFailed": "Failed: {error}",
+    "@multisigProposalLoadFailed": {
+      "description": "Error when proposal detail fails to load",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigProposalNotFound": "Proposal not found.",
+    "@multisigProposalNotFound": {
+      "description": "Empty state when proposal id is missing"
+    },
+    "multisigProposalSignButton": "Sign",
+    "@multisigProposalSignButton": {
+      "description": "Sign button on the read-only proposal detail sheet"
+    },
+    "multisigProposalSigningSoonNote": "Signing will be available soon.",
+    "@multisigProposalSigningSoonNote": {
+      "description": "Deprecated; kept for generated l10n compatibility"
+    },
+    "multisigProposalApprovingLabel": "Approving…",
+    "@multisigProposalApprovingLabel": {
+      "description": "Disabled approve button while approval is pending indexer confirmation"
+    },
+    "multisigProposalApprovingNote": "Your approval is being confirmed on-chain.",
+    "@multisigProposalApprovingNote": {
+      "description": "Note under the button while approval is pending"
+    },
+    "multisigApproveUnavailableNote": "This proposal can no longer be approved.",
+    "@multisigApproveUnavailableNote": {
+      "description": "Note when approve is unavailable (expired or closed)"
+    },
+    "activityTxApproving": "Approving…",
+    "@activityTxApproving": {
+      "description": "Trailing label on proposal row while approval is pending"
+    },
+    "activityTxCancelling": "Cancelling…",
+    "@activityTxCancelling": {
+      "description": "Trailing label on proposal row while cancellation is pending"
+    },
+    "multisigApprovalTimeoutToast": "Approval confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigApprovalTimeoutToast": {
+      "description": "Toast when approval indexer polling times out"
+    },
+    "multisigProposalAlreadySignedNote": "You've already signed this proposal.",
+    "@multisigProposalAlreadySignedNote": {
+      "description": "Note shown when the current member already approved"
+    },
+    "multisigProposalAlreadyExecutedNote": "This proposal is already executed.",
+    "@multisigProposalAlreadyExecutedNote": {
+      "description": "Note shown on proposal detail when the proposal is executed"
+    },
+    "multisigProposalAlreadyCancelledNote": "This proposal is already cancelled.",
+    "@multisigProposalAlreadyCancelledNote": {
+      "description": "Note shown on proposal detail when the proposal is cancelled"
+    },
+    "multisigProposalProposerLabel": "PROPOSER",
+    "@multisigProposalProposerLabel": {
+      "description": "Proposer row label on proposal detail"
+    },
+    "multisigProposalStatusLabel": "STATUS",
+    "@multisigProposalStatusLabel": {
+      "description": "Status row label on proposal detail"
+    },
+    "multisigProposalDepositLabel": "DEPOSIT",
+    "@multisigProposalDepositLabel": {
+      "description": "Deposit row label on proposal detail"
+    },
+    "multisigStatusActive": "ACTIVE",
+    "@multisigStatusActive": {
+      "description": "Active proposal status label"
+    },
+    "multisigStatusExecuted": "EXECUTED",
+    "@multisigStatusExecuted": {
+      "description": "Executed proposal status label"
+    },
+    "multisigStatusRemoved": "REMOVED",
+    "@multisigStatusRemoved": {
+      "description": "Removed proposal status label"
+    },
+    "multisigStatusUnknown": "UNKNOWN",
+    "@multisigStatusUnknown": {
+      "description": "Unknown proposal status label when indexer returns an unrecognized value"
+    },
+    "activityTxProposal": "Proposal",
+    "@activityTxProposal": {
+      "description": "Activity row label for an indexed multisig proposal"
+    },
+    "activityTxProposing": "Proposing",
+    "@activityTxProposing": {
+      "description": "Activity row label for a pending multisig proposal"
+    },
+    "activityTxProposalCreated": "Proposal created",
+    "@activityTxProposalCreated": {
+      "description": "Activity row label for a confirmed multisig proposal creation on the proposer account"
+    },
+    "activityTxProposalApproved": "Proposal approved",
+    "@activityTxProposalApproved": {
+      "description": "Activity row label for a confirmed multisig proposal approval on the approver account"
+    },
+    "activityTxProposalExecuted": "Proposal executed",
+    "@activityTxProposalExecuted": {
+      "description": "Activity row label for a confirmed multisig proposal execution on the executor account"
+    },
+    "activityTxProposalCancelled": "Proposal cancelled",
+    "@activityTxProposalCancelled": {
+      "description": "Activity row label for a confirmed multisig proposal cancellation on the proposer account"
+    },
+    "activityTxProposalRemoved": "Proposal removed",
+    "@activityTxProposalRemoved": {
+      "description": "Activity row label for a multisig proposal that expired and was removed"
+    },
+    "multisigApproveButton": "Approve",
+    "@multisigApproveButton": {
+      "description": "Approve button on proposal detail"
+    },
+    "multisigAlreadyApproved": "Already Signed",
+    "@multisigAlreadyApproved": {
+      "description": "Disabled approve button when user already signed"
+    },
+    "multisigSignerPickerTitle": "Choose account",
+    "@multisigSignerPickerTitle": {
+      "description": "Title on sheet for picking which local signer approves a proposal"
+    },
+    "multisigSignerPickerBody": "Multiple accounts on this device can sign. Choose which one to approve with.",
+    "@multisigSignerPickerBody": {
+      "description": "Body text on multi-local-signer approve picker sheet"
+    },
+
+    "multisigCancelProposalButton": "Cancel Proposal",
+    "@multisigCancelProposalButton": {
+      "description": "Cancel proposal button on detail screen"
+    },
+    "multisigProposalExpiresLabel": "EXPIRES",
+    "@multisigProposalExpiresLabel": {
+      "description": "Expires row label on proposal detail"
+    },
+    "multisigProposalAtLabel": "AT",
+    "@multisigProposalAtLabel": {
+      "description": "Timestamp row label on past proposal detail"
+    },
+    "multisigProposalThresholdLabel": "THRESHOLD",
+    "@multisigProposalThresholdLabel": {
+      "description": "Threshold row label on proposal detail"
+    },
+    "multisigProposalApprovalsLabel": "APPROVALS",
+    "@multisigProposalApprovalsLabel": {
+      "description": "Approvals row label on proposal detail"
+    },
+    "multisigProposalFeeRowLabel": "PROPOSAL FEE",
+    "@multisigProposalFeeRowLabel": {
+      "description": "Proposal fee row label on proposal detail"
+    },
+    "multisigProposalSignersLabel": "SIGNERS",
+    "@multisigProposalSignersLabel": {
+      "description": "Signers section label on proposal detail"
+    },
+    "multisigYouLabel": "YOU",
+    "@multisigYouLabel": {
+      "description": "Badge on current user in signers list"
+    },
+    "multisigSignerCreatorLabel": "CREATOR",
+    "@multisigSignerCreatorLabel": {
+      "description": "Badge on multisig creator in signers list"
+    },
+    "multisigAccountMenuDetails": "Multisig details",
+    "@multisigAccountMenuDetails": {
+      "description": "Menu row to view multisig threshold and signers"
+    },
+    "multisigAccountMenuDetailsTitle": "Multisig details",
+    "@multisigAccountMenuDetailsTitle": {
+      "description": "App bar title on multisig details screen"
+    },
+    "multisigAccountMenuDetailsThresholdHint": "This many signer approvals are required to execute a proposal.",
+    "@multisigAccountMenuDetailsThresholdHint": {
+      "description": "Helper text under threshold on multisig details screen"
+    },
+    "multisigThresholdOf": "{count} of {total}",
+    "@multisigThresholdOf": {
+      "description": "Threshold value on proposal detail",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigApprovalsOf": "{count} of {threshold}",
+    "@multisigApprovalsOf": {
+      "description": "Approvals value on proposal detail",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "threshold": {
+          "type": "int"
+        }
+      }
+    },
+    "multisigApproveConfirmTitle": "Are you sure?",
+    "@multisigApproveConfirmTitle": {
+      "description": "Title on approve confirmation sheet"
+    },
+    "multisigApproveConfirmBody": "You are about to approve a transfer of",
+    "@multisigApproveConfirmBody": {
+      "description": "Body text on approve confirmation sheet"
+    },
+    "multisigApproveConfirmTo": "to {address}",
+    "@multisigApproveConfirmTo": {
+      "description": "Recipient line on approve confirmation sheet",
+      "placeholders": {
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "multisigApproveConfirmYes": "Yes, Approve",
+    "@multisigApproveConfirmYes": {
+      "description": "Confirm button on approve sheet"
+    },
+    "multisigApproveConfirmNo": "No, Go Back",
+    "@multisigApproveConfirmNo": {
+      "description": "Dismiss button on approve sheet"
+    },
+    "multisigApproveAuthReason": "Authenticate to approve",
+    "@multisigApproveAuthReason": {
+      "description": "Biometric auth prompt when approving"
+    },
+    "multisigAuthRequired": "Authentication required",
+    "@multisigAuthRequired": {
+      "description": "Error when auth fails on a multisig action"
+    },
+    "multisigApproveFailed": "Failed to approve",
+    "@multisigApproveFailed": {
+      "description": "Error when approve submission fails"
+    },
+    "multisigExecuteButton": "Execute",
+    "@multisigExecuteButton": {
+      "description": "Button to execute an approved multisig proposal"
+    },
+    "multisigExecuteConfirmTitle": "Are you sure?",
+    "@multisigExecuteConfirmTitle": {
+      "description": "Title on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmBody": "You are about to execute a transfer of",
+    "@multisigExecuteConfirmBody": {
+      "description": "Body text on execute confirmation sheet"
+    },
+    "multisigExecuteConfirmYes": "Yes, Execute",
+    "@multisigExecuteConfirmYes": {
+      "description": "Confirm button on execute sheet"
+    },
+    "multisigExecuteAuthReason": "Authenticate to execute",
+    "@multisigExecuteAuthReason": {
+      "description": "Biometric auth prompt when executing"
+    },
+    "multisigExecuteFailed": "Failed to execute",
+    "@multisigExecuteFailed": {
+      "description": "Error when execute submission fails"
+    },
+    "multisigExecuteUnavailableNote": "This proposal can no longer be executed.",
+    "@multisigExecuteUnavailableNote": {
+      "description": "Note when execute action is unavailable"
+    },
+    "multisigProposalExecutingLabel": "Executing…",
+    "@multisigProposalExecutingLabel": {
+      "description": "Disabled execute button while pending"
+    },
+    "multisigProposalExecutingNote": "Your execution is being confirmed on-chain.",
+    "@multisigProposalExecutingNote": {
+      "description": "Note while execution is pending indexer confirmation"
+    },
+    "activityTxExecuting": "Executing…",
+    "@activityTxExecuting": {
+      "description": "Status label on proposal row while execution is pending"
+    },
+    "multisigExecutionTimeoutToast": "Execution confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigExecutionTimeoutToast": {
+      "description": "Toast when execution indexer polling times out"
+    },
+    "multisigExecutedByOtherToast": "Proposal was executed by another signer.",
+    "@multisigExecutedByOtherToast": {
+      "description": "Toast when a proposal is executed but not by this user's extrinsic"
+    },
+    "multisigFeeEstimateUnavailable": "Network fee estimate is unavailable.",
+    "@multisigFeeEstimateUnavailable": {
+      "description": "Inline note on confirm sheet when fee estimation fails"
+    },
+    "multisigCancelConfirmTitle": "Cancel Proposal?",
+    "@multisigCancelConfirmTitle": {
+      "description": "Title on cancel confirmation sheet"
+    },
+    "multisigCancelConfirmBody": "Cancelling refunds your proposal deposit. Other signers will no longer be able to approve.",
+    "@multisigCancelConfirmBody": {
+      "description": "Explanation on cancel confirmation sheet"
+    },
+    "multisigCancelConfirmYes": "Yes, Cancel Proposal",
+    "@multisigCancelConfirmYes": {
+      "description": "Confirm cancel button"
+    },
+    "multisigCancelConfirmKeep": "Keep Proposal",
+    "@multisigCancelConfirmKeep": {
+      "description": "Dismiss cancel button"
+    },
+    "multisigCancelAuthReason": "Authenticate to cancel",
+    "@multisigCancelAuthReason": {
+      "description": "Biometric auth prompt when cancelling"
+    },
+    "multisigCancelFailed": "Failed to cancel",
+    "@multisigCancelFailed": {
+      "description": "Error when cancel submission fails"
+    },
+    "multisigProposalCancellingLabel": "Cancelling…",
+    "@multisigProposalCancellingLabel": {
+      "description": "Cancel button label while cancellation is pending"
+    },
+    "multisigProposalCancellingNote": "Your cancellation is being confirmed on-chain.",
+    "@multisigProposalCancellingNote": {
+      "description": "Note under the button while cancellation is pending"
+    },
+    "multisigCancelTimeoutToast": "Cancellation confirmation is taking longer than expected. Check the chain or try again.",
+    "@multisigCancelTimeoutToast": {
+      "description": "Toast when cancellation indexer polling times out"
+    },
+    "multisigApproveTitle": "Approve",
+    "@multisigApproveTitle": {
+      "description": "App bar title on approve done screen"
+    },
+    "multisigApproveDoneExecuted": "Proposal executed",
+    "@multisigApproveDoneExecuted": {
+      "description": "Headline when threshold reached after approve"
+    },
+    "multisigApproveDoneRecorded": "Approval recorded",
+    "@multisigApproveDoneRecorded": {
+      "description": "Headline when approval recorded but threshold not met"
+    },
+    "multisigApproveDoneExecutedSubline": "Threshold reached — transfer dispatched.",
+    "@multisigApproveDoneExecutedSubline": {
+      "description": "Subline when proposal executed"
+    },
+    "multisigApproveDoneRecordedSubline": "Awaiting more co-signers.",
+    "@multisigApproveDoneRecordedSubline": {
+      "description": "Subline when awaiting more approvals"
+    },
+
+    "createAccountAppBarTitle": "Account Name",
+    "@createAccountAppBarTitle": {
+      "description": "App bar title when creating an account"
+    },
+    "createAccountSubtitle": "Give this account a name you'll recognize. You can change it anytime.",
+    "@createAccountSubtitle": {
+      "description": "Subtitle on create account name field"
+    },
+    "createAccountButton": "Create",
+    "@createAccountButton": {
+      "description": "Create account button"
+    },
+    "createAccountErrorCouldNotAdd": "Could not add account.",
+    "@createAccountErrorCouldNotAdd": {
+      "description": "Error when account creation fails"
+    },
+    "createAccountEncryptedDefaultName": "Encrypted Account",
+    "@createAccountEncryptedDefaultName": {
+      "description": "Default name for a newly created encrypted account"
+    },
+    "createAccountDefaultName": "Account {number}",
+    "@createAccountDefaultName": {
+      "description": "Default name for a new account",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+
+    "editAccountAppBarTitle": "Account Name",
+    "@editAccountAppBarTitle": {
+      "description": "App bar title when editing account name"
+    },
+    "editAccountDone": "Done",
+    "@editAccountDone": {
+      "description": "Done button on edit account screen"
+    },
+    "editAccountNameEmpty": "Account name can't be empty",
+    "@editAccountNameEmpty": {
+      "description": "Validation error when account name is empty"
+    },
+    "editAccountRenameFailed": "Failed to rename account.",
+    "@editAccountRenameFailed": {
+      "description": "Error when renaming account fails"
+    },
+
+    "accountMenuTitle": "Accounts",
+    "@accountMenuTitle": {
+      "description": "App bar title on account menu screen"
+    },
+    "accountMenuAccountName": "Account Name",
+    "@accountMenuAccountName": {
+      "description": "Account name menu row label"
+    },
+    "accountMenuAddressDetails": "Address Details",
+    "@accountMenuAddressDetails": {
+      "description": "Address details menu row label"
+    },
+    "accountMenuInnerHash": "Inner Hash",
+    "@accountMenuInnerHash": {
+      "description": "Menu row label shown for encrypted accounts instead of address details"
+    },
+    "accountMenuShowRecoveryPhrase": "Show Recovery Phrase",
+    "@accountMenuShowRecoveryPhrase": {
+      "description": "Show recovery phrase menu row label"
+    },
+    "accountMenuShowAddress": "Show address",
+    "@accountMenuShowAddress": {
+      "description": "Account row menu item opening the address details"
+    },
+    "accountMenuRename": "Rename",
+    "@accountMenuRename": {
+      "description": "Account and wallet row menu item opening the name editor"
+    },
+    "accountMenuDisconnectAccount": "Disconnect account",
+    "@accountMenuDisconnectAccount": {
+      "description": "Destructive account row menu item"
+    },
+    "accountMenuNotFound": "Account not found",
+    "@accountMenuNotFound": {
+      "description": "When account is not found on menu screen"
+    },
+    "accountMenuDone": "Done",
+    "@accountMenuDone": {
+      "description": "Done button shown on the account overview right after creating an account"
+    },
+    "accountMenuDisconnect": "Disconnect",
+    "@accountMenuDisconnect": {
+      "description": "Disconnect (stop tracking) button on hardware wallet and multisig overview"
+    },
+    "accountMenuDisconnectHardwareTitle": "Disconnect hardware wallet?",
+    "@accountMenuDisconnectHardwareTitle": {
+      "description": "Title of the hardware wallet disconnect confirmation"
+    },
+    "accountMenuDisconnectHardwareMessage": "This stops tracking \"{name}\" on this device. Your hardware wallet keeps the account, so you can reconnect it anytime.",
+    "@accountMenuDisconnectHardwareMessage": {
+      "description": "Body of the hardware wallet disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectMultisigTitle": "Disconnect multisig?",
+    "@accountMenuDisconnectMultisigTitle": {
+      "description": "Title of the multisig disconnect confirmation"
+    },
+    "accountMenuDisconnectMultisigMessage": "This stops tracking \"{name}\" on this device. The multisig stays on-chain, so you can re-add it anytime.",
+    "@accountMenuDisconnectMultisigMessage": {
+      "description": "Body of the multisig disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectError": "Couldn't disconnect. Please try again.",
+    "@accountMenuDisconnectError": {
+      "description": "Error toaster shown when disconnecting an account fails"
+    },
+    "accountMenuDisconnectAccountTitle": "Disconnect account?",
+    "@accountMenuDisconnectAccountTitle": {
+      "description": "Title of the software account disconnect confirmation"
+    },
+    "accountMenuDisconnectAccountMessage": "This stops tracking \"{name}\" on this device. Your recovery phrase stays, so you can restore it later.",
+    "@accountMenuDisconnectAccountMessage": {
+      "description": "Body of the software account disconnect confirmation",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletTitle": "Disconnect Wallet {number}?",
+    "@accountMenuDisconnectWalletTitle": {
+      "description": "Title shown when disconnecting the last account in a wallet, which removes the whole wallet",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletMessage": "\"{name}\" is the last account in Wallet {number}. Disconnecting it removes the entire wallet from this device.",
+    "@accountMenuDisconnectWalletMessage": {
+      "description": "Body shown when disconnecting the last account in a wallet",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDisconnectWalletConfirm": "Disconnect Wallet",
+    "@accountMenuDisconnectWalletConfirm": {
+      "description": "Confirm button for disconnecting an entire wallet"
+    },
+    "accountMenuDeleteWalletTitle": "Are you sure?",
+    "@accountMenuDeleteWalletTitle": {
+      "description": "Title of the final confirmation before permanently deleting a wallet"
+    },
+    "accountMenuDeleteWalletMessage": "Wallet {number}'s recovery phrase will be permanently deleted from this device. Make sure it's backed up — this can't be undone.",
+    "@accountMenuDeleteWalletMessage": {
+      "description": "Body of the final confirmation before permanently deleting a wallet's seed phrase",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+    "accountMenuDeleteWalletConfirm": "Delete Wallet",
+    "@accountMenuDeleteWalletConfirm": {
+      "description": "Confirm button for permanently deleting a wallet and its recovery phrase"
+    },
+
+    "accountDetailsTitle": "Address Details",
+    "@accountDetailsTitle": {
+      "description": "App bar title on account details screen"
+    },
+
+    "innerHashTitle": "Inner Hash",
+    "@innerHashTitle": {
+      "description": "App bar title on the encrypted account inner hash screen"
+    },
+    "innerHashLabel": "INNER HASH",
+    "@innerHashLabel": {
+      "description": "Card label above the inner hash value"
+    },
+    "innerHashCopied": "Inner hash copied",
+    "@innerHashCopied": {
+      "description": "Toaster shown after copying the inner hash"
+    },
+    "innerHashLoadError": "Couldn't load inner hash",
+    "@innerHashLoadError": {
+      "description": "Toaster shown when deriving the inner hash fails"
+    },
+
+    "addKeystoneAppBarTitle": "Add Cold Wallet",
+    "@addKeystoneAppBarTitle": {
+      "description": "App bar title for the add Keystone wallet screens"
+    },
+    "addKeystoneIntroTitle": "Cold Wallet",
+    "@addKeystoneIntroTitle": {
+      "description": "Headline on the add Keystone intro screen"
+    },
+    "addKeystoneIntroSubtitle": "An air-gapped wallet that talks to this app only through QR codes. Keys never leave the device.",
+    "@addKeystoneIntroSubtitle": {
+      "description": "Subtitle on the add Keystone intro screen"
+    },
+    "addKeystoneConnectButton": "Connect Cold Wallet",
+    "@addKeystoneConnectButton": {
+      "description": "Primary button on the add Keystone intro screen"
+    },
+    "addKeystoneConnectTitle": "Connect Cold Wallet",
+    "@addKeystoneConnectTitle": {
+      "description": "Headline on the Keystone connect instructions screen"
+    },
+    "addKeystoneConnectSubtitle": "Scan your device's QR code to connect.",
+    "@addKeystoneConnectSubtitle": {
+      "description": "Subtitle on the Keystone connect instructions screen"
+    },
+    "addKeystoneOnYourKeystone": "ON YOUR COLD WALLET",
+    "@addKeystoneOnYourKeystone": {
+      "description": "Section label for the on-device steps"
+    },
+    "addKeystoneStepUnlock": "Unlock your cold wallet",
+    "@addKeystoneStepUnlock": {
+      "description": "On-device step: unlock"
+    },
+    "addKeystoneStepSelectQuantus": "Show your account QR code",
+    "@addKeystoneStepSelectQuantus": {
+      "description": "On-device step: select Quantus and scan"
+    },
+    "addKeystoneReadyToScan": "Ready to Scan",
+    "@addKeystoneReadyToScan": {
+      "description": "Primary button opening the QR scanner on the Keystone connect instructions screen"
+    },
+
+    "invalidAddress": "Invalid address",
+    "@invalidAddress": {
+      "description": "Shown when an address fails SS58 validation"
+    },
+
+    "sendTitle": "Send",
+    "@sendTitle": {
+      "description": "Send flow app bar title"
+    },
+    "sendPayTitle": "Pay",
+    "@sendPayTitle": {
+      "description": "Pay flow app bar title"
+    },
+    "sendEnterAddress": "Enter Address",
+    "@sendEnterAddress": {
+      "description": "Button label when recipient address is missing"
+    },
+
+    "sendSelectRecipientSendTo": "Send To",
+    "@sendSelectRecipientSendTo": {
+      "description": "Section label on select recipient screen"
+    },
+    "sendSelectRecipientSearchHint": "Enter {symbol} Address",
+    "@sendSelectRecipientSearchHint": {
+      "description": "Hint for recipient search field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendSelectRecipientScanTitle": "Scan QR code",
+    "@sendSelectRecipientScanTitle": {
+      "description": "Scan QR row title"
+    },
+    "sendSelectRecipientScanSubtitle": "Tap to scan a {symbol} Address",
+    "@sendSelectRecipientScanSubtitle": {
+      "description": "Scan QR row subtitle",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendSelectRecipientRecents": "Recents",
+    "@sendSelectRecipientRecents": {
+      "description": "Recents section title"
+    },
+    "sendSelectRecipientContinue": "Continue",
+    "@sendSelectRecipientContinue": {
+      "description": "Continue button on select recipient screen"
+    },
+
+    "sendInputAmountSendTo": "SEND TO",
+    "@sendInputAmountSendTo": {
+      "description": "Recipient card label on input amount screen"
+    },
+    "sendInputAmountAvailableBalance": "Available Balance:",
+    "@sendInputAmountAvailableBalance": {
+      "description": "Available balance label"
+    },
+    "sendInputAmountPending": "Pending:",
+    "@sendInputAmountPending": {
+      "description": "Label for balance that is not yet spendable (encrypted change awaiting the indexer)"
+    },
+    "sendInputAmountNetworkFee": "Transaction Fee:",
+    "@sendInputAmountNetworkFee": {
+      "description": "Network fee label"
+    },
+    "sendInputAmountMax": "Max",
+    "@sendInputAmountMax": {
+      "description": "Max amount button"
+    },
+    "sendInputAmountInvalidAmount": "Please enter a valid amount",
+    "@sendInputAmountInvalidAmount": {
+      "description": "Error when amount input is invalid"
+    },
+
+    "sendReviewSending": "SENDING",
+    "@sendReviewSending": {
+      "description": "Sending section label on review screen"
+    },
+    "sendReviewTo": "TO",
+    "@sendReviewTo": {
+      "description": "To section label on review screen"
+    },
+    "sendReviewAmount": "AMOUNT",
+    "@sendReviewAmount": {
+      "description": "Amount row label on review screen"
+    },
+    "sendReviewNetworkFee": "NETWORK FEE",
+    "@sendReviewNetworkFee": {
+      "description": "Network fee row label on review screen"
+    },
+    "sendReviewYouPay": "YOU PAY",
+    "@sendReviewYouPay": {
+      "description": "Total you pay row label on review screen"
+    },
+    "sendReviewConfirm": "Confirm",
+    "@sendReviewConfirm": {
+      "description": "Confirm button on review screen"
+    },
+    "sendReviewAuthReason": "Authenticate to confirm transaction",
+    "@sendReviewAuthReason": {
+      "description": "Biometric auth prompt on review screen"
+    },
+    "sendReviewAuthRequired": "Authentication required to send",
+    "@sendReviewAuthRequired": {
+      "description": "Error when auth fails on review screen"
+    },
+    "sendReviewSubmitFailed": "Failed submitting transaction",
+    "@sendReviewSubmitFailed": {
+      "description": "Error when transaction submission fails"
+    },
+    "sendRegularAccountRequired": "Switch to a regular account to send",
+    "@sendRegularAccountRequired": {
+      "description": "Toast when a send is requested while the active account cannot make regular transfers"
+    },
+
+    "sendTxSubmittedHeadlinePaid": "{amount} {symbol} paid",
+    "@sendTxSubmittedHeadlinePaid": {
+      "description": "Success headline when payment completed",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendTxSubmittedHeadlineSent": "{amount} {symbol} sent",
+    "@sendTxSubmittedHeadlineSent": {
+      "description": "Success headline when send completed",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendTxSubmittedOnItsWay": "On its way",
+    "@sendTxSubmittedOnItsWay": {
+      "description": "Subtitle on transaction submitted screen"
+    },
+    "sendTxSubmittedToLabel": "To",
+    "@sendTxSubmittedToLabel": {
+      "description": "Recipient label on transaction submitted screen"
+    },
+    "sendTxSubmittedDone": "Done",
+    "@sendTxSubmittedDone": {
+      "description": "Done button on transaction submitted screen"
+    },
+
+    "keystoneSignScreenTitle": "Sign with Cold Wallet",
+    "@keystoneSignScreenTitle": {
+      "description": "App bar title shared by the Keystone signing screens"
+    },
+    "keystoneSignStep": "STEP {current}/{total}",
+    "@keystoneSignStep": {
+      "description": "Step indicator on the Keystone signing screens",
+      "placeholders": {
+        "current": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "keystoneSignTitle": "Scan with your cold wallet",
+    "@keystoneSignTitle": {
+      "description": "Title on the Keystone sign screen showing the unsigned transaction QR"
+    },
+    "keystoneSignInstruction": "Open your cold wallet and scan this QR code to load the transaction.",
+    "@keystoneSignInstruction": {
+      "description": "Instruction on the Keystone sign screen"
+    },
+    "keystoneSignActionLabel": "ACTION",
+    "@keystoneSignActionLabel": {
+      "description": "Label for a non-transfer action on the Keystone sign and verify screens"
+    },
+    "keystoneSignYouAreSigning": "YOU ARE SIGNING",
+    "@keystoneSignYouAreSigning": {
+      "description": "Section label above the transaction details on the Keystone sign screen"
+    },
+    "keystoneSignNext": "Continue to Sign",
+    "@keystoneSignNext": {
+      "description": "Button to advance to the next Keystone signing step"
+    },
+    "keystoneSignCancel": "Cancel Transaction",
+    "@keystoneSignCancel": {
+      "description": "Link to abort the Keystone signing flow"
+    },
+    "keystoneSignError": "Failed to prepare the transaction. Please try again.",
+    "@keystoneSignError": {
+      "description": "Error when building the unsigned transaction payload fails"
+    },
+    "keystoneVerifyTitle": "Check your Cold Wallet Screen",
+    "@keystoneVerifyTitle": {
+      "description": "Title on the Keystone verification screen"
+    },
+    "keystoneVerifyInstruction": "Before approving on your cold wallet, make sure its screen shows exactly this:",
+    "@keystoneVerifyInstruction": {
+      "description": "Instruction on the Keystone verification screen"
+    },
+    "keystoneVerifyWarning": "If the amount or address on your cold wallet screen is different from what's shown here, reject the transaction on your device.",
+    "@keystoneVerifyWarning": {
+      "description": "Warning shown when asking the user to compare the Keystone screen"
+    },
+    "keystoneVerifyMismatch": "It doesn't match",
+    "@keystoneVerifyMismatch": {
+      "description": "Link opening the mismatch help screen"
+    },
+    "keystoneScanTitle": "Scan the signature",
+    "@keystoneScanTitle": {
+      "description": "Title on the Keystone signature scanner screen"
+    },
+    "keystoneScanInstruction": "Your cold wallet is now showing an animated QR. Hold your phone up to it, this takes a moment.",
+    "@keystoneScanInstruction": {
+      "description": "Instruction on the Keystone signature scanner screen"
+    },
+    "keystoneScanReceiving": "RECEIVING SIGNATURE",
+    "@keystoneScanReceiving": {
+      "description": "Label next to the scan progress on the Keystone signature scanner screen"
+    },
+    "keystoneScanSubmitting": "Submitting transaction...",
+    "@keystoneScanSubmitting": {
+      "description": "Overlay text while the externally signed transaction is broadcast"
+    },
+    "keystoneScanError": "Couldn't read the signature. Please try again.",
+    "@keystoneScanError": {
+      "description": "Error when decoding or submitting the scanned signature fails"
+    },
+    "keystoneScanExpired": "The transaction expired before it could be submitted. Go back and scan the new QR code with your device.",
+    "@keystoneScanExpired": {
+      "description": "Error when the mortal era window closed before the signed transaction was submitted"
+    },
+    "keystoneRejectTitle": "Don't approve this transaction",
+    "@keystoneRejectTitle": {
+      "description": "Headline on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep1Title": "Reject the transaction on your cold wallet.",
+    "@keystoneRejectStep1Title": {
+      "description": "First step title on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep1Body": "Nothing is signed or sent until you approve there.",
+    "@keystoneRejectStep1Body": {
+      "description": "First step body on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep2Title": "Don't retry from this phone.",
+    "@keystoneRejectStep2Title": {
+      "description": "Second step title on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep2Body": "If it's compromised, retrying gives the attacker another chance.",
+    "@keystoneRejectStep2Body": {
+      "description": "Second step body on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep3Title": "Your funds are safe on the cold wallet.",
+    "@keystoneRejectStep3Title": {
+      "description": "Third step title on the Keystone mismatch help screen"
+    },
+    "keystoneRejectStep3Body": "Keys never left the device. Move to a trusted phone before sending again.",
+    "@keystoneRejectStep3Body": {
+      "description": "Third step body on the Keystone mismatch help screen"
+    },
+    "keystoneRejectConfirm": "I rejected it on the cold wallet",
+    "@keystoneRejectConfirm": {
+      "description": "Button confirming the transaction was rejected on the device"
+    },
+
+    "sendLogicCantSelfTransfer": "Can't Self Transfer",
+    "@sendLogicCantSelfTransfer": {
+      "description": "Button label when sending to own address"
+    },
+    "sendLogicEnterAmount": "Enter Amount",
+    "@sendLogicEnterAmount": {
+      "description": "Button label when amount is zero"
+    },
+    "sendLogicInvalidAmount": "Invalid Amount",
+    "@sendLogicInvalidAmount": {
+      "description": "Button label when amount is negative"
+    },
+    "sendLogicBelowMinimum": "Minimum is {amount} {tokenSymbol}",
+    "@sendLogicBelowMinimum": {
+      "description": "Button label when amount is below the minimum send amount (one wormhole leaf quantum)",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "sendLogicInsufficientBalance": "Insufficient Balance",
+    "@sendLogicInsufficientBalance": {
+      "description": "Button label when balance is insufficient"
+    },
+    "sendLogicReviewSend": "Review Send",
+    "@sendLogicReviewSend": {
+      "description": "Button label to proceed to review"
+    },
+
+    "activityTitle": "Activity",
+    "@activityTitle": {
+      "description": "App bar title on activity screen"
+    },
+    "activityError": "Error: {error}",
+    "@activityError": {
+      "description": "Error message on activity screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "activityNoAccount": "No account",
+    "@activityNoAccount": {
+      "description": "Shown when no account is active on activity screen"
+    },
+    "activityEmpty": "No transactions yet",
+    "@activityEmpty": {
+      "description": "Empty state on activity screen"
+    },
+    "activityFilterAll": "All",
+    "@activityFilterAll": {
+      "description": "Filter button for all transactions"
+    },
+    "activityFilterSend": "Send",
+    "@activityFilterSend": {
+      "description": "Filter button for sent transactions"
+    },
+    "activityFilterReceive": "Receive",
+    "@activityFilterReceive": {
+      "description": "Filter button for received transactions"
+    },
+    "activityDateToday": "Today",
+    "@activityDateToday": {
+      "description": "Date group label for today"
+    },
+    "activityDateYesterday": "Yesterday",
+    "@activityDateYesterday": {
+      "description": "Date group label for yesterday"
+    },
+
+    "activityTxSending": "Sending",
+    "@activityTxSending": {
+      "description": "Transaction row label for pending send"
+    },
+    "activityTxReceiving": "Receiving",
+    "@activityTxReceiving": {
+      "description": "Transaction row label for pending or scheduled receive"
+    },
+    "activityTxPending": "Pending",
+    "@activityTxPending": {
+      "description": "Transaction row label for scheduled send"
+    },
+    "activityTxSent": "Sent",
+    "@activityTxSent": {
+      "description": "Transaction row label for completed send"
+    },
+    "activityTxReceived": "Received",
+    "@activityTxReceived": {
+      "description": "Transaction row label for completed receive"
+    },
+    "activityTxPrivatelySending": "Privately Sending",
+    "@activityTxPrivatelySending": {
+      "description": "Transaction row label for pending encrypted send"
+    },
+    "activityTxPrivatelyReceiving": "Privately Receiving",
+    "@activityTxPrivatelyReceiving": {
+      "description": "Transaction row label for pending encrypted receive"
+    },
+    "activityTxPrivateSent": "Private Sent",
+    "@activityTxPrivateSent": {
+      "description": "Transaction row label for completed encrypted send"
+    },
+    "activityTxPrivateReceived": "Private Received",
+    "@activityTxPrivateReceived": {
+      "description": "Transaction row label for completed encrypted receive"
+    },
+    "activityTxMultisigCreated": "Multisig created",
+    "@activityTxMultisigCreated": {
+      "description": "Transaction row label for multisig account creation"
+    },
+    "activityTxMultisigCreating": "Creating multisig",
+    "@activityTxMultisigCreating": {
+      "description": "Activity row label while multisig creation is confirming on-chain"
+    },
+    "activityTxMultisigLabel": "Multisig",
+    "@activityTxMultisigLabel": {
+      "description": "Counterparty label for multisig creation row"
+    },
+    "activityTxTo": "To",
+    "@activityTxTo": {
+      "description": "Counterparty direction label for send"
+    },
+    "activityTxFrom": "From",
+    "@activityTxFrom": {
+      "description": "Counterparty direction label for receive"
+    },
+    "activityTxAggregatedBatch": "Aggregated batch",
+    "@activityTxAggregatedBatch": {
+      "description": "Counterparty line of a private send whose proof was bundled with other transfers, so the chain cannot say who received it"
+    },
+    "activityDetailAggregatedBatch": "Aggregated batch, recipient not recorded",
+    "@activityDetailAggregatedBatch": {
+      "description": "Detail sheet 'To' value of a private send whose proof was bundled with other transfers"
+    },
+    "activityTxTimeNow": "now",
+    "@activityTxTimeNow": {
+      "description": "Time label for just now"
+    },
+    "activityTxTimeMinutesAgo": "{minutes}m ago",
+    "@activityTxTimeMinutesAgo": {
+      "description": "Time label for minutes ago",
+      "placeholders": {
+        "minutes": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeHoursAgo": "{hours}h ago",
+    "@activityTxTimeHoursAgo": {
+      "description": "Time label for hours ago",
+      "placeholders": {
+        "hours": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeDaysAgo": "{days}d ago",
+    "@activityTxTimeDaysAgo": {
+      "description": "Time label for days ago",
+      "placeholders": {
+        "days": {
+          "type": "int"
+        }
+      }
+    },
+    "activityTxTimeRemaining": "{days}d:{hours}h:{minutes}m",
+    "@activityTxTimeRemaining": {
+      "description": "Time remaining for scheduled transaction",
+      "placeholders": {
+        "days": {
+          "type": "String"
+        },
+        "hours": {
+          "type": "String"
+        },
+        "minutes": {
+          "type": "String"
+        }
+      }
+    },
+
+    "activityDetailTitleSending": "Sending",
+    "@activityDetailTitleSending": {
+      "description": "Detail sheet title for pending send"
+    },
+    "activityDetailTitleScheduled": "Scheduled",
+    "@activityDetailTitleScheduled": {
+      "description": "Detail sheet title for scheduled send"
+    },
+    "activityDetailTitleReceiving": "Receiving",
+    "@activityDetailTitleReceiving": {
+      "description": "Detail sheet title for receiving"
+    },
+    "activityDetailTitleSent": "Sent",
+    "@activityDetailTitleSent": {
+      "description": "Detail sheet title for completed send"
+    },
+    "activityDetailTitleReceived": "Received",
+    "@activityDetailTitleReceived": {
+      "description": "Detail sheet title for completed receive"
+    },
+    "activityDetailTitlePrivatelySending": "Privately Sending",
+    "@activityDetailTitlePrivatelySending": {
+      "description": "Detail sheet title for pending encrypted send"
+    },
+    "activityDetailTitlePrivatelyReceiving": "Privately Receiving",
+    "@activityDetailTitlePrivatelyReceiving": {
+      "description": "Detail sheet title for pending encrypted receive"
+    },
+    "activityDetailTitlePrivateSent": "Private Sent",
+    "@activityDetailTitlePrivateSent": {
+      "description": "Detail sheet title for completed encrypted send"
+    },
+    "activityDetailTitlePrivateReceived": "Private Received",
+    "@activityDetailTitlePrivateReceived": {
+      "description": "Detail sheet title for completed encrypted receive"
+    },
+    "activityDetailTitleMultisigCreated": "Multisig created",
+    "@activityDetailTitleMultisigCreated": {
+      "description": "Detail sheet title for multisig creation"
+    },
+    "activityDetailTitleMultisigCreating": "Creating multisig",
+    "@activityDetailTitleMultisigCreating": {
+      "description": "Detail sheet title while multisig creation is in progress"
+    },
+    "activityDetailTitleProposalCreated": "Proposal created",
+    "@activityDetailTitleProposalCreated": {
+      "description": "Detail sheet title for a confirmed multisig proposal creation"
+    },
+    "activityDetailTitleProposalApproved": "Proposal approved",
+    "@activityDetailTitleProposalApproved": {
+      "description": "Detail sheet title for a confirmed multisig proposal approval"
+    },
+    "activityDetailTitleProposalExecuted": "Proposal executed",
+    "@activityDetailTitleProposalExecuted": {
+      "description": "Detail sheet title for a confirmed multisig proposal execution"
+    },
+    "activityDetailTitleProposalCancelled": "Proposal cancelled",
+    "@activityDetailTitleProposalCancelled": {
+      "description": "Detail sheet title for a confirmed multisig proposal cancellation"
+    },
+    "activityDetailTitleCancelling": "Cancelling proposal",
+    "@activityDetailTitleCancelling": {
+      "description": "Detail sheet title while a multisig proposal cancellation is confirming on-chain"
+    },
+    "activityDetailTitleExecuting": "Executing proposal",
+    "@activityDetailTitleExecuting": {
+      "description": "Detail sheet title while a multisig proposal execution is confirming on-chain"
+    },
+    "activityDetailTitleProposing": "Proposing",
+    "@activityDetailTitleProposing": {
+      "description": "Detail sheet title while a multisig proposal is confirming on-chain"
+    },
+    "activityDetailProposalTransferAmount": "TRANSFER AMOUNT",
+    "@activityDetailProposalTransferAmount": {
+      "description": "Proposed transfer amount row label on proposal creation detail sheet"
+    },
+    "activityDetailStatusInProcess": "In Process",
+    "@activityDetailStatusInProcess": {
+      "description": "Status label for in-process transaction"
+    },
+    "activityDetailStatusScheduled": "Scheduled",
+    "@activityDetailStatusScheduled": {
+      "description": "Status label for scheduled transaction"
+    },
+    "activityDetailStatusCompleted": "Completed",
+    "@activityDetailStatusCompleted": {
+      "description": "Status label for completed transaction"
+    },
+    "activityDetailStatus": "STATUS",
+    "@activityDetailStatus": {
+      "description": "Status row label on detail sheet"
+    },
+    "activityDetailTo": "TO",
+    "@activityDetailTo": {
+      "description": "To row label on detail sheet"
+    },
+    "activityDetailFrom": "FROM",
+    "@activityDetailFrom": {
+      "description": "From row label on detail sheet"
+    },
+    "activitySenderEncrypted": "Encrypted",
+    "@activitySenderEncrypted": {
+      "description": "Shown in place of the sender of a wormhole receipt, in the activity list and detail sheet"
+    },
+    "activitySenderMiningReward": "Mining reward",
+    "@activitySenderMiningReward": {
+      "description": "Shown in place of the sender of a mining reward, in the activity list and detail sheet"
+    },
+    "activityDetailDate": "DATE",
+    "@activityDetailDate": {
+      "description": "Date row label on detail sheet"
+    },
+    "activityDetailNetworkFee": "NETWORK FEE",
+    "@activityDetailNetworkFee": {
+      "description": "Network fee row label on detail sheet"
+    },
+    "activityDetailWormholeDetails": "Wormhole details",
+    "@activityDetailWormholeDetails": {
+      "description": "Row in a private send's detail sheet, and title of the page listing its proof batches and nullifiers"
+    },
+    "wormholeDetailsBatch": "Batch {index} of {count}",
+    "@wormholeDetailsBatch": {
+      "description": "Heading of one proof extrinsic of a private send",
+      "placeholders": {
+        "index": {
+          "type": "int"
+        },
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "wormholeDetailsSent": "SENT",
+    "@wormholeDetailsSent": {
+      "description": "Amount one batch of a private send paid the recipient"
+    },
+    "wormholeDetailsChange": "CHANGE",
+    "@wormholeDetailsChange": {
+      "description": "Amount one batch of a private send returned to the wallet"
+    },
+    "wormholeDetailsInputs": "INPUTS",
+    "@wormholeDetailsInputs": {
+      "description": "Number of the wallet's leaves one batch consumed; each is listed by nullifier below"
+    },
+    "activityDetailTxHash": "TX HASH",
+    "@activityDetailTxHash": {
+      "description": "Transaction hash row label on detail sheet"
+    },
+    "activityDetailTxHashCopied": "Transaction hash copied to clipboard",
+    "@activityDetailTxHashCopied": {
+      "description": "Toast after copying a transaction hash from the activity detail sheet"
+    },
+    "activityDetailViewExplorer": "View in Explorer ↗",
+    "@activityDetailViewExplorer": {
+      "description": "Link to view transaction in explorer"
+    },
+    "activityDetailMultisigAddress": "MULTISIG ADDRESS",
+    "@activityDetailMultisigAddress": {
+      "description": "Multisig address row label on detail sheet"
+    },
+    "activityDetailMultisigThreshold": "THRESHOLD",
+    "@activityDetailMultisigThreshold": {
+      "description": "Approval threshold row label on multisig detail sheet"
+    },
+    "activityDetailMultisigThresholdValue": "{threshold} of {total}",
+    "@activityDetailMultisigThresholdValue": {
+      "description": "Approval threshold value on multisig detail sheet",
+      "placeholders": {
+        "threshold": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "activityDetailMultisigSignerCount": "SIGNERS",
+    "@activityDetailMultisigSignerCount": {
+      "description": "Signer count row label on multisig detail sheet"
+    },
+    "activityDetailMultisigCreator": "CREATOR",
+    "@activityDetailMultisigCreator": {
+      "description": "Creator account row label on multisig detail sheet"
+    },
+    "activityDetailMultisigCreationFee": "PALLET FEE",
+    "@activityDetailMultisigCreationFee": {
+      "description": "Multisig pallet fee row label on detail sheet"
+    },
+    "activityDetailMultisigDeposit": "RESERVED DEPOSIT",
+    "@activityDetailMultisigDeposit": {
+      "description": "Multisig reserved deposit row label on detail sheet"
+    },
+    "activityDetailMultisigFeePaidByCreator": "Paid by creator",
+    "@activityDetailMultisigFeePaidByCreator": {
+      "description": "Note when creation fee was paid by another account"
+    },
+
+    "receiveTitle": "Receive",
+    "@receiveTitle": {
+      "description": "App bar title on receive screen"
+    },
+    "receiveCopy": "Copy",
+    "@receiveCopy": {
+      "description": "Copy button on receive screen"
+    },
+    "receiveErrorLoadingAccount": "Error loading account data: {error}",
+    "@receiveErrorLoadingAccount": {
+      "description": "Error when account data fails to load on receive screen",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "receiveCopiedMessage": "Address copied to clipboard",
+    "@receiveCopiedMessage": {
+      "description": "Toast when the address is copied"
+    },
+    "receiveYourAddressLabel": "YOUR ADDRESS",
+    "@receiveYourAddressLabel": {
+      "description": "Label above the account address on the receive screen"
+    },
+    "receiveCopyAddress": "Copy Address",
+    "@receiveCopyAddress": {
+      "description": "Primary button that copies the receive address"
+    },
+    "receiveCheckphraseFootnote": "Ask the sender to confirm this phrase matches your address.",
+    "@receiveCheckphraseFootnote": {
+      "description": "Footnote under the checkphrase on the receive screen"
+    },
+
+
+
+    "settingsTitle": "Settings",
+    "@settingsTitle": {
+      "description": "App bar title on settings hub"
+    },
+    "settingsWalletTitle": "Wallet",
+    "@settingsWalletTitle": {
+      "description": "Wallet row title on settings hub"
+    },
+    "settingsWalletSubtitle": "Recovery Phrase, Reset Wallet",
+    "@settingsWalletSubtitle": {
+      "description": "Wallet row subtitle on settings hub"
+    },
+    "settingsPreferencesTitle": "Preferences",
+    "@settingsPreferencesTitle": {
+      "description": "Preferences row title on settings hub"
+    },
+    "settingsPreferencesSubtitle": "Language, currency, notifications",
+    "@settingsPreferencesSubtitle": {
+      "description": "Preferences row subtitle on settings hub"
+    },
+    "settingsAccountTypeTitle": "Add Account",
+    "@settingsAccountTypeTitle": {
+      "description": "Add account row title on settings hub"
+    },
+    "settingsAccountTypeSubtitle": "Manage your accounts",
+    "@settingsAccountTypeSubtitle": {
+      "description": "Add account row subtitle on settings hub"
+    },
+    "settingsHelpTitle": "Help & Support",
+    "@settingsHelpTitle": {
+      "description": "Help row title on settings hub"
+    },
+    "settingsHelpSubtitle": "FAQs, Contact the team",
+    "@settingsHelpSubtitle": {
+      "description": "Help row subtitle on settings hub"
+    },
+    "settingsAboutTitle": "About Quantus",
+    "@settingsAboutTitle": {
+      "description": "About row title on settings hub"
+    },
+    "settingsAboutHubSubtitle": "Version {version} ({build})",
+    "@settingsAboutHubSubtitle": {
+      "description": "About row subtitle on settings hub",
+      "placeholders": {
+        "version": {
+          "type": "String"
+        },
+        "build": {
+          "type": "String"
+        }
+      }
+    },
+
+    "settingsWalletRecoveryPhrase": "Recovery Phrase",
+    "@settingsWalletRecoveryPhrase": {
+      "description": "Recovery phrase row on wallet settings"
+    },
+    "settingsWalletRecoveryPhraseSubtitle": "View your 24-word Backup Password",
+    "@settingsWalletRecoveryPhraseSubtitle": {
+      "description": "Recovery phrase row subtitle"
+    },
+    "settingsWalletReset": "Reset Wallet",
+    "@settingsWalletReset": {
+      "description": "Reset wallet row title"
+    },
+    "settingsWalletResetSubtitle": "Removes all data from this device",
+    "@settingsWalletResetSubtitle": {
+      "description": "Reset wallet row subtitle"
+    },
+    "settingsWalletNoWalletsFound": "No wallets found",
+    "@settingsWalletNoWalletsFound": {
+      "description": "Error when no wallets exist"
+    },
+    "settingsWalletFailedToLoad": "Failed to load wallets",
+    "@settingsWalletFailedToLoad": {
+      "description": "Error when wallet list fails to load"
+    },
+
+    "settingsSelectWalletTitle": "Select Wallet",
+    "@settingsSelectWalletTitle": {
+      "description": "App bar on select wallet screen"
+    },
+    "settingsSelectWalletNoWallets": "No wallets found",
+    "@settingsSelectWalletNoWallets": {
+      "description": "Empty state on select wallet screen"
+    },
+    "settingsSelectWalletItem": "Wallet {number}",
+    "@settingsSelectWalletItem": {
+      "description": "Wallet list item label on select wallet screen",
+      "placeholders": {
+        "number": {
+          "type": "int"
+        }
+      }
+    },
+
+    "settingsRecoveryConfirmAuthReason": "Authenticate to see recovery phrase",
+    "@settingsRecoveryConfirmAuthReason": {
+      "description": "Biometric prompt when viewing recovery phrase"
+    },
+    "settingsRecoveryConfirmAuthRequired": "Authentication required to see recovery phrase",
+    "@settingsRecoveryConfirmAuthRequired": {
+      "description": "Toaster when auth fails for recovery phrase"
+    },
+
+    "settingsRecoveryPhraseTitle": "Recovery Phrase",
+    "@settingsRecoveryPhraseTitle": {
+      "description": "App bar on recovery phrase screen"
+    },
+    "settingsRecoveryPhraseDone": "Done",
+    "@settingsRecoveryPhraseDone": {
+      "description": "Done button on recovery phrase screen"
+    },
+    "settingsRecoveryAlreadyBackedUp": "I already backed up my wallet",
+    "@settingsRecoveryAlreadyBackedUp": {
+      "description": "Secondary action on the recovery phrase caution screen that dismisses the backup reminder without revealing the phrase"
+    },
+
+    "settingsResetTitle": "Reset Wallet",
+    "@settingsResetTitle": {
+      "description": "App bar on reset wallet caution screen"
+    },
+    "settingsResetAuthReason": "Authenticate to reset wallet",
+    "@settingsResetAuthReason": {
+      "description": "Biometric prompt when resetting wallet"
+    },
+    "settingsResetFailed": "Failed to reset wallet: {error}",
+    "@settingsResetFailed": {
+      "description": "Toaster when wallet reset fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "settingsResetAuthRequired": "Authentication required to reset wallet",
+    "@settingsResetAuthRequired": {
+      "description": "Toaster when auth fails for wallet reset"
+    },
+    "settingsResetCautionHeadline": "This will erase\nyour wallet",
+    "@settingsResetCautionHeadline": {
+      "description": "Headline on wallet reset caution screen"
+    },
+    "settingsResetCautionBullet1": "All wallet data will be permanently removed from this device",
+    "@settingsResetCautionBullet1": {
+      "description": "First bullet on wallet reset caution"
+    },
+    "settingsResetCautionBullet2": "Your funds stay on the blockchain but only your recovery phrase can restore access",
+    "@settingsResetCautionBullet2": {
+      "description": "Second bullet on wallet reset caution"
+    },
+    "settingsResetCautionBullet3": "Without it, your funds are gone forever",
+    "@settingsResetCautionBullet3": {
+      "description": "Third bullet on wallet reset caution"
+    },
+    "settingsResetCautionCheckbox": "I've backed up my recovery phrase",
+    "@settingsResetCautionCheckbox": {
+      "description": "Checkbox label on wallet reset caution"
+    },
+
+    "settingsPreferencesCurrency": "Currency",
+    "@settingsPreferencesCurrency": {
+      "description": "Currency row on preferences screen"
+    },
+    "settingsPreferencesCurrencySubtitle": "Fiat display preference",
+    "@settingsPreferencesCurrencySubtitle": {
+      "description": "Currency row subtitle"
+    },
+    "settingsPreferencesLanguage": "Language",
+    "@settingsPreferencesLanguage": {
+      "description": "Language row on preferences screen"
+    },
+    "settingsPreferencesLanguageSubtitle": "App display language",
+    "@settingsPreferencesLanguageSubtitle": {
+      "description": "Language row subtitle"
+    },
+    "settingsPreferencesNotifications": "Notifications",
+    "@settingsPreferencesNotifications": {
+      "description": "Notifications row on preferences"
+    },
+    "settingsPreferencesNotificationsSubtitle": "Transaction and wallet alerts",
+    "@settingsPreferencesNotificationsSubtitle": {
+      "description": "Notifications row subtitle"
+    },
+
+    "settingsCurrencyTitle": "Currency",
+    "@settingsCurrencyTitle": {
+      "description": "App bar on currency picker"
+    },
+    "settingsCurrencySearchHint": "Search",
+    "@settingsCurrencySearchHint": {
+      "description": "Search field hint on currency picker"
+    },
+    "settingsCurrencyNoMatch": "No currencies match your search",
+    "@settingsCurrencyNoMatch": {
+      "description": "Empty state when search has no results"
+    },
+    "settingsCurrencyError": "Error selecting currency: {error}",
+    "@settingsCurrencyError": {
+      "description": "Error when currency selection fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+
+    "settingsLanguageTitle": "Language",
+    "@settingsLanguageTitle": {
+      "description": "App bar on language picker"
+    },
+    "settingsLanguageSearchHint": "Search",
+    "@settingsLanguageSearchHint": {
+      "description": "Search field hint on language picker"
+    },
+    "settingsLanguageNoMatch": "No languages match your search",
+    "@settingsLanguageNoMatch": {
+      "description": "Empty state when language search has no results"
+    },
+    "settingsLanguageError": "Error selecting language: {error}",
+    "@settingsLanguageError": {
+      "description": "Error when language selection fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+
+
+
+    "settingsHelpScreenTitle": "Help & Support",
+    "@settingsHelpScreenTitle": {
+      "description": "App bar on help and support screen"
+    },
+    "settingsHelpEmail": "Email Support",
+    "@settingsHelpEmail": {
+      "description": "Email support row title"
+    },
+    "settingsHelpTelegram": "Telegram",
+    "@settingsHelpTelegram": {
+      "description": "Telegram row title"
+    },
+
+    "settingsAboutScreenTitle": "About",
+    "@settingsAboutScreenTitle": {
+      "description": "App bar on about screen"
+    },
+    "settingsAboutIntro": "Quantus is a Layer 1 blockchain secured by ML-DSA Dilithium-5, the gold standard in quantum-resistant encryption. Built for a future where classical cryptography is no longer enough. Post-quantum cryptography for everyone.",
+    "@settingsAboutIntro": {
+      "description": "Intro paragraph on about screen"
+    },
+    "settingsAboutTerms": "Terms of Service",
+    "@settingsAboutTerms": {
+      "description": "Terms of service link title"
+    },
+    "settingsAboutTermsSubtitle": "quantus.com/terms/",
+    "@settingsAboutTermsSubtitle": {
+      "description": "Terms of service link subtitle"
+    },
+    "settingsAboutPrivacy": "Privacy policy",
+    "@settingsAboutPrivacy": {
+      "description": "Privacy policy link title"
+    },
+    "settingsAboutPrivacySubtitle": "quantus.com/privacy-policy/",
+    "@settingsAboutPrivacySubtitle": {
+      "description": "Privacy policy link subtitle"
+    },
+    "settingsAboutWebsite": "Visit Website",
+    "@settingsAboutWebsite": {
+      "description": "Website link title"
+    },
+    "settingsAboutWebsiteSubtitle": "quantus.com",
+    "@settingsAboutWebsiteSubtitle": {
+      "description": "Website link subtitle"
+    },
+    "settingsAboutVersion": "Version {version} ({build})",
+    "@settingsAboutVersion": {
+      "description": "Version label on about screen",
+      "placeholders": {
+        "version": {
+          "type": "String"
+        },
+        "build": {
+          "type": "String"
+        }
+      }
+    },
+
+    "swapTitle": "Swap",
+    "@swapTitle": {
+      "description": "App bar title on swap screens"
+    },
+    "swapPoweredBy": "Powered By",
+    "@swapPoweredBy": {
+      "description": "Label above the NEAR Intents logo in the swap app bar"
+    },
+    "swapFrom": "From",
+    "@swapFrom": {
+      "description": "Label of the side the swapped funds come from"
+    },
+    "swapTo": "To",
+    "@swapTo": {
+      "description": "Label of the side the swapped funds go to"
+    },
+    "swapExternalWallet": "A wallet you control",
+    "@swapExternalWallet": {
+      "description": "Owner of the external token side of the swap form"
+    },
+    "swapRate": "Rate",
+    "@swapRate": {
+      "description": "Exchange rate label on swap screen"
+    },
+    "swapRateLabel": "1 {fromSymbol} = {rate} {toSymbol}",
+    "@swapRateLabel": {
+      "description": "Exchange rate: what one input token buys",
+      "placeholders": {
+        "fromSymbol": {
+          "type": "String"
+        },
+        "rate": {
+          "type": "String"
+        },
+        "toSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRateEstimateLabel": "1 {fromSymbol} ≈ {rate} {toSymbol}",
+    "@swapRateEstimateLabel": {
+      "description": "Exchange rate at listed prices, shown on the swap form until a quote arrives",
+      "placeholders": {
+        "fromSymbol": {
+          "type": "String"
+        },
+        "rate": {
+          "type": "String"
+        },
+        "toSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapEstimateNotice": "Estimate at the market price, before fees.",
+    "@swapEstimateNotice": {
+      "description": "Under the swap form's rate while its figures are not a quote yet"
+    },
+    "swapSlippageLabel": "Slippage {percent}%",
+    "@swapSlippageLabel": {
+      "description": "Slippage tolerance under the swap form",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "swapSlippageTitle": "Slippage",
+    "@swapSlippageTitle": {
+      "description": "Title of the slippage tolerance sheet"
+    },
+    "swapSlippageBody": "If the price moves further than this before your swap fills, it is refunded instead. A higher tolerance fills more often but can pay out less.",
+    "@swapSlippageBody": {
+      "description": "Explanation on the slippage tolerance sheet"
+    },
+    "swapSlippageCustom": "Custom",
+    "@swapSlippageCustom": {
+      "description": "Slippage tolerance option that opens a field for any tolerance"
+    },
+    "swapSlippageCustomMax": "Slippage can be at most {percent}%",
+    "@swapSlippageCustomMax": {
+      "description": "Error under the custom slippage field when the tolerance is too high",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "swapAddRecipientAddress": "Add Recipient Address",
+    "@swapAddRecipientAddress": {
+      "description": "Swap form button for a swap out of QTC"
+    },
+    "swapAddRefundAddress": "Add Refund Address",
+    "@swapAddRefundAddress": {
+      "description": "Swap form button for a swap into QTC"
+    },
+    "swapRefundTo": "Refund to",
+    "@swapRefundTo": {
+      "description": "Label of the swap form row holding the refund address of a swap into QTC"
+    },
+    "swapTokenPickerPayWith": "Pay with",
+    "@swapTokenPickerPayWith": {
+      "description": "Title of the token picker for the side that pays"
+    },
+    "swapTokenPickerReceive": "Receive",
+    "@swapTokenPickerReceive": {
+      "description": "Title of the token picker for the side that receives"
+    },
+    "swapTokenPickerLoadError": "Failed to load tokens",
+    "@swapTokenPickerLoadError": {
+      "description": "Error when token list fails to load"
+    },
+    "swapTokenPickerSearchHint": "Search token or chain",
+    "@swapTokenPickerSearchHint": {
+      "description": "Search field hint on token picker sheet"
+    },
+    "swapTokenPickerNoMatch": "No tokens match your search",
+    "@swapTokenPickerNoMatch": {
+      "description": "Empty state when the token picker search matches nothing"
+    },
+    "swapUnavailableTitle": "Swap unavailable",
+    "@swapUnavailableTitle": {
+      "description": "Title of the notice that replaces the swap form while swaps cannot be made"
+    },
+    "swapDisabledTitle": "Swap disabled",
+    "@swapDisabledTitle": {
+      "description": "Notice that replaces the swap form while NEAR Intents does not list QTC with a price; says nothing about why or when"
+    },
+    "swapUnavailableUnreachable": "NEAR Intents could not be reached.",
+    "@swapUnavailableUnreachable": {
+      "description": "Body of the swap unavailable notice when the 1Click token list fails to load; shown with a retry"
+    },
+    "swapReviewListingChanged": "The swap's terms changed. Review it again.",
+    "@swapReviewListingChanged": {
+      "description": "Toast when the configured QTC asset changed while a swap was being confirmed; the confirmation stops"
+    },
+    "swapPreflightBanner": "Preflight: {symbol} on {network} stands in for QTC. Real funds move.",
+    "@swapPreflightBanner": {
+      "description": "Banner on the swap form in the debug-only preflight mode, naming the listed token standing in for QTC",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapQuoteError": "Quote failed: {message}",
+    "@swapQuoteError": {
+      "description": "Toast when 1Click rejects a quote or a swap cannot be created",
+      "placeholders": {
+        "message": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRecipientAddressTitle": "Recipient Address",
+    "@swapRecipientAddressTitle": {
+      "description": "Title of the sheet asking where the swapped funds go"
+    },
+    "swapRefundAddressTitle": "Refund Address",
+    "@swapRefundAddressTitle": {
+      "description": "Title of the sheet asking where a failed swap is refunded"
+    },
+    "swapAddressLabel": "{symbol} Address",
+    "@swapAddressLabel": {
+      "description": "Address field label in the swap address sheet",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapAddressHint": "{network} Address",
+    "@swapAddressHint": {
+      "description": "Address field hint in the swap address sheet",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRecipientAddressNotice": "Your {symbol} will arrive at this address. Double-check it, swaps cannot be reversed.",
+    "@swapRecipientAddressNotice": {
+      "description": "Warning under the recipient address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapRefundAddressNotice": "If the swap cannot complete, your {symbol} returns to this address on {network}. Double-check it.",
+    "@swapRefundAddressNotice": {
+      "description": "Warning under the refund address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapSaveAddress": "Save for future swaps",
+    "@swapSaveAddress": {
+      "description": "Checkbox that saves the entered address"
+    },
+    "swapContinue": "Continue to Swap",
+    "@swapContinue": {
+      "description": "Button that quotes the swap with the entered address"
+    },
+    "swapSavedAddressesTitle": "Saved Addresses",
+    "@swapSavedAddressesTitle": {
+      "description": "Title of the saved swap addresses sheet"
+    },
+    "swapSavedAddressesEmpty": "No saved addresses yet",
+    "@swapSavedAddressesEmpty": {
+      "description": "Empty saved swap addresses sheet"
+    },
+    "swapReviewTitle": "Review Swap",
+    "@swapReviewTitle": {
+      "description": "Title of the swap review screen"
+    },
+    "swapYouPay": "You pay",
+    "@swapYouPay": {
+      "description": "Pay side of the swap review card"
+    },
+    "swapYouReceive": "You receive",
+    "@swapYouReceive": {
+      "description": "Receive side of the swap review card"
+    },
+    "swapReviewRecipient": "Recipient",
+    "@swapReviewRecipient": {
+      "description": "Review row: external address receiving the swap"
+    },
+    "swapReviewNetworkFee": "Network fee",
+    "@swapReviewNetworkFee": {
+      "description": "Review row and details row: chain fee of the QTC deposit"
+    },
+    "swapReviewFeeUnavailable": "Unavailable",
+    "@swapReviewFeeUnavailable": {
+      "description": "Network fee value when it could not be fetched"
+    },
+    "swapReviewFeeFailed": "Could not get the network fee.",
+    "@swapReviewFeeFailed": {
+      "description": "Error under the review rows when the fee failed"
+    },
+    "swapReviewSlippage": "Slippage allowance",
+    "@swapReviewSlippage": {
+      "description": "Review row: how far below the quote the output may land"
+    },
+    "swapReviewSlippageValue": "{amount} ({percent}%)",
+    "@swapReviewSlippageValue": {
+      "description": "An amount with the percentage it is: the slippage allowance, the swap fee",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "swapReviewGuaranteedMinimum": "Guaranteed minimum",
+    "@swapReviewGuaranteedMinimum": {
+      "description": "Review row: least the swap pays out"
+    },
+    "swapReviewSwapFee": "Swap fee",
+    "@swapReviewSwapFee": {
+      "description": "Swap form and review row: percentage fee taken from the payment"
+    },
+    "swapReviewWithdrawalFee": "Withdrawal fee",
+    "@swapReviewWithdrawalFee": {
+      "description": "Swap form and review row: fixed fee for paying the swap out on the recipient's chain"
+    },
+    "swapReviewRefundFee": "Fee if refunded",
+    "@swapReviewRefundFee": {
+      "description": "Review row: fixed fee taken from the payment when the swap fails and is refunded"
+    },
+    "swapReviewUnusedRefunded": "The payment includes the slippage allowance. Whatever the swap does not use is refunded.",
+    "@swapReviewUnusedRefunded": {
+      "description": "Review note on a swap for an exact amount out, whose payment holds a refundable buffer"
+    },
+    "swapReviewInsufficient": "Not enough {symbol} for this amount plus the network fee.",
+    "@swapReviewInsufficient": {
+      "description": "Review error when the balance cannot cover the deposit",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapReviewPriceMoved": "The price moved. Check the new amounts and confirm again.",
+    "@swapReviewPriceMoved": {
+      "description": "Toast when the live quote guarantees less than the one reviewed"
+    },
+    "swapReviewConfirm": "Confirm swap",
+    "@swapReviewConfirm": {
+      "description": "Confirm button on the swap review screen"
+    },
+    "swapActivityOverdue": "Not finished in time",
+    "@swapActivityOverdue": {
+      "description": "Home activity row state for a followed swap that is overdue"
+    },
+    "swapTooManyFollowed": "Up to {count} swaps can run at once. Wait for one to finish.",
+    "@swapTooManyFollowed": {
+      "description": "Toast on Review Swap when as many swaps as can be followed are already running",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "swapActivityAmounts": "{amountIn} → {amountOut}",
+    "@swapActivityAmounts": {
+      "description": "Title of the home activity row for the swap with 1Click; the step it is on is the subtitle",
+      "placeholders": {
+        "amountIn": {
+          "type": "String"
+        },
+        "amountOut": {
+          "type": "String"
+        }
+      }
+    },
+    "swapInProgressTitle": "Swap In Progress",
+    "@swapInProgressTitle": {
+      "description": "Title while the swap is running"
+    },
+    "swapYourePaying": "You're paying",
+    "@swapYourePaying": {
+      "description": "Pay side of the swap progress card"
+    },
+    "swapYoureReceiving": "You're receiving",
+    "@swapYoureReceiving": {
+      "description": "Receive side of the swap progress card"
+    },
+    "swapStepDeposited": "{symbol} deposited",
+    "@swapStepDeposited": {
+      "description": "First swap progress step when the user deposits from another wallet",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapStepSent": "{symbol} sent",
+    "@swapStepSent": {
+      "description": "Progress step: deposit sent",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapStepConfirming": "Confirming on {network}",
+    "@swapStepConfirming": {
+      "description": "Progress step: deposit confirming",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapStepSwapping": "Swapping",
+    "@swapStepSwapping": {
+      "description": "Progress step: solvers swapping"
+    },
+    "swapStepSending": "Sending {symbol} to {recipient}",
+    "@swapStepSending": {
+      "description": "Progress step: payout",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "recipient": {
+          "type": "String"
+        }
+      }
+    },
+    "swapProgressFooter": "Usually a few minutes. You can leave the app, the swap carries on. · via NEAR Intents",
+    "@swapProgressFooter": {
+      "description": "Footer under the swap progress bar"
+    },
+    "swapLiveBrand": "Swapping",
+    "@swapLiveBrand": {
+      "description": "Lock screen header while a swap is underway or complete"
+    },
+    "swapLiveBrandIdle": "Swap",
+    "@swapLiveBrandIdle": {
+      "description": "Lock screen header when the swap card is stale or failed"
+    },
+    "swapLiveSubmitted": "Swap submitted",
+    "@swapLiveSubmitted": {
+      "description": "Lock screen headline after the deposit is sent"
+    },
+    "swapLiveSettling": "Settling on {network}",
+    "@swapLiveSettling": {
+      "description": "Lock screen headline while the swap pays out on the destination chain",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapLiveSwapped": "Swapped",
+    "@swapLiveSwapped": {
+      "description": "Lock screen headline when the swap has paid out"
+    },
+    "swapLiveFrom": "From",
+    "@swapLiveFrom": {
+      "description": "Lock screen label for the amount paid"
+    },
+    "swapLiveTo": "To",
+    "@swapLiveTo": {
+      "description": "Lock screen label for the amount received"
+    },
+    "swapLiveChain": "Chain",
+    "@swapLiveChain": {
+      "description": "Lock screen label for the source chain"
+    },
+    "swapLiveOpenToCheck": "Open Quantus to check",
+    "@swapLiveOpenToCheck": {
+      "description": "Lock screen footer when the swap card could not be updated"
+    },
+    "swapLiveAgo": "ago",
+    "@swapLiveAgo": {
+      "description": "Lock screen suffix after how long the card has been stale"
+    },
+    "swapLiveLeft": "left",
+    "@swapLiveLeft": {
+      "description": "Lock screen suffix after the remaining swap time, as in 5 min left"
+    },
+    "swapLiveMinute": "min",
+    "@swapLiveMinute": {
+      "description": "Lock screen unit for a remaining swap time under an hour"
+    },
+    "swapLiveHour": "hr",
+    "@swapLiveHour": {
+      "description": "Lock screen unit for a remaining swap time of an hour or more"
+    },
+    "swapLiveOverdue": "Taking longer",
+    "@swapLiveOverdue": {
+      "description": "Lock screen badge once a swap has run past 1Click's time estimate"
+    },
+    "swapLiveChannel": "Swap progress",
+    "@swapLiveChannel": {
+      "description": "Android notification channel for the swap lock screen card"
+    },
+    "swapDetailsTitle": "Swap Details",
+    "@swapDetailsTitle": {
+      "description": "Title of the swap details sheet"
+    },
+    "swapDetailsRecipient": "Recipient address",
+    "@swapDetailsRecipient": {
+      "description": "Details row: address receiving the swap"
+    },
+    "swapDetailsAmountSent": "Amount sent",
+    "@swapDetailsAmountSent": {
+      "description": "Details row: deposit amount"
+    },
+    "swapDetailsExpected": "Expected",
+    "@swapDetailsExpected": {
+      "description": "Details row: quoted payout"
+    },
+    "swapDetailsDepositAddress": "Deposit address",
+    "@swapDetailsDepositAddress": {
+      "description": "Swap details row: where a swap into QTC was to be deposited"
+    },
+    "swapDetailsRequiredDeposit": "Required deposit",
+    "@swapDetailsRequiredDeposit": {
+      "description": "Swap details row: the amount a swap into QTC needed deposited"
+    },
+    "swapDetailsDepositWindowEnds": "Deposit window ends",
+    "@swapDetailsDepositWindowEnds": {
+      "description": "Swap details row: when the deposit address of a swap into QTC expires"
+    },
+    "swapDepositTitle": "Send Your Deposit",
+    "@swapDepositTitle": {
+      "description": "Title of the screen showing where to send the deposit of a swap into QTC"
+    },
+    "swapDepositSent": "I've Sent It",
+    "@swapDepositSent": {
+      "description": "Button on the deposit screen once the user has sent the deposit"
+    },
+    "swapDetailsTransaction": "Transaction",
+    "@swapDetailsTransaction": {
+      "description": "Details row: deposit transaction hash"
+    },
+    "swapCompleteTitle": "Swap Complete",
+    "@swapCompleteTitle": {
+      "description": "Title when the swap paid out"
+    },
+    "swapCompleteReceived": "Received",
+    "@swapCompleteReceived": {
+      "description": "Caption under the paid-out amount"
+    },
+    "swapCompleteTo": "To:",
+    "@swapCompleteTo": {
+      "description": "Label above where the swap paid out"
+    },
+    "swapFailedTitle": "Swap Failed",
+    "@swapFailedTitle": {
+      "description": "Title when the swap did not pay out"
+    },
+    "swapRefundedLabel": "Refunded",
+    "@swapRefundedLabel": {
+      "description": "Status label on a refunded swap"
+    },
+    "swapYouPaid": "You paid",
+    "@swapYouPaid": {
+      "description": "Pay side of a failed swap card"
+    },
+    "swapYouWereReceiving": "You were receiving",
+    "@swapYouWereReceiving": {
+      "description": "Receive side of a failed swap card"
+    },
+    "swapRefundedBody": "The swap could not be completed, so your {amount} has been returned to {destination}, minus the network fee. The {symbol} was never sent.",
+    "@swapRefundedBody": {
+      "description": "Banner on a refunded swap",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "destination": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositRefundReason": "Reason: {reason}",
+    "@swapDepositRefundReason": {
+      "description": "Refund reason reported by 1Click",
+      "placeholders": {
+        "reason": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositFailedBody": "The swap did not complete. Contact support and quote this deposit address: {address}",
+    "@swapDepositFailedBody": {
+      "description": "Body when 1Click reports the swap failed",
+      "placeholders": {
+        "address": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositIncompleteTitle": "Deposit Too Small",
+    "@swapDepositIncompleteTitle": {
+      "description": "Title when less than the quoted amount arrived"
+    },
+    "swapDepositIncompleteBody": "Less than the quoted amount arrived. It will be refunded to your refund address after the deadline.",
+    "@swapDepositIncompleteBody": {
+      "description": "Body when less than the quoted amount arrived"
+    },
+    "swapDepositExpiredTitle": "Quote Expired",
+    "@swapDepositExpiredTitle": {
+      "description": "Title when the deadline passed with no deposit"
+    },
+    "swapDepositExpiredBody": "No deposit arrived before the deadline. Do not send funds to this address anymore. Get a new quote to try again.",
+    "@swapDepositExpiredBody": {
+      "description": "Body when the deadline passed with no deposit"
+    },
+    "swapStartNew": "Start a New Swap",
+    "@swapStartNew": {
+      "description": "Button on a failed swap"
+    },
+    "swapDepositAddressCopied": "Deposit address copied to clipboard",
+    "@swapDepositAddressCopied": {
+      "description": "Toast when the deposit address is copied"
+    },
+    "swapDepositOnly": "Send {symbol} on {network} only",
+    "@swapDepositOnly": {
+      "description": "Under the deposit card; the symbol and the network are emphasised",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositDeadline": "Send before {time} or the quote expires",
+    "@swapDepositDeadline": {
+      "description": "Local time by which the deposit must arrive",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
+    },
+    "swapDepositMemo": "Memo",
+    "@swapDepositMemo": {
+      "description": "Label of the deposit memo some chains require"
+    },
+    "swapDepositMemoCopied": "Deposit memo copied to clipboard",
+    "@swapDepositMemoCopied": {
+      "description": "Toast when the deposit memo is copied"
+    },
+    "swapDepositMemoNotice": "Include this memo with your deposit. A deposit without it is not processed.",
+    "@swapDepositMemoNotice": {
+      "description": "Warning under a deposit memo"
+    },
+    "swapRequestTimedOut": "The request timed out",
+    "@swapRequestTimedOut": {
+      "description": "Why a 1Click request failed when no answer came within the time allowed"
+    },
+    "swapProgressStatusUnavailable": "The swap status can't be checked right now: {error}",
+    "@swapProgressStatusUnavailable": {
+      "description": "Notice on the progress screen while the 1Click status poll fails",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "swapStopTracking": "Stop tracking swap",
+    "@swapStopTracking": {
+      "description": "Puts a running swap away: in its details sheet, and under its notice once it is overdue"
+    },
+    "swapStopTrackingConfirmTitle": "Stop tracking this swap?",
+    "@swapStopTrackingConfirmTitle": {
+      "description": "Confirm sheet title before a running swap is put away"
+    },
+    "swapStopTrackingConfirmBody": "It carries on at NEAR Intents: the funds still arrive, or the deposit is refunded. The wallet just stops following it.",
+    "@swapStopTrackingConfirmBody": {
+      "description": "Confirm sheet body before a running swap is put away"
+    },
+    "swapProgressOverdue": "This swap has not finished in time. If it settles later, the funds still arrive, or the deposit is refunded to {refund}.",
+    "@swapProgressOverdue": {
+      "description": "Notice on the progress screen once the deposit window closed with the deposit unseen",
+      "placeholders": {
+        "refund": {
+          "type": "String"
+        }
+      }
+    },
+
+    "componentQrScannerBack": "Back",
+    "@componentQrScannerBack": {
+      "description": "Label next to the back caret on the QR scanner"
+    },
+    "componentQrScannerTorch": "Torch",
+    "@componentQrScannerTorch": {
+      "description": "Label under the torch control on the QR scanner"
+    },
+    "componentQrScannerGallery": "Gallery",
+    "@componentQrScannerGallery": {
+      "description": "Label under the control that picks a QR image from the gallery"
+    },
+    "componentQrScannerCameraUnavailable": "Camera unavailable",
+    "@componentQrScannerCameraUnavailable": {
+      "description": "Shown in the scan window when the camera could not be started"
+    },
+    "componentQrScannerCameraDenied": "Allow camera access in Settings to scan.",
+    "@componentQrScannerCameraDenied": {
+      "description": "Shown in the scan window when camera permission was denied"
+    },
+    "componentQrScannerNoCode": "No QR code found in image",
+    "@componentQrScannerNoCode": {
+      "description": "Snackbar when gallery image has no QR code"
+    },
+    "componentShare": "Share",
+    "@componentShare": {
+      "description": "Share button label on account screens"
+    },
+    "componentAddressLabel": "ADDRESS",
+    "@componentAddressLabel": {
+      "description": "Address field label on address details card"
+    },
+    "componentCheckphraseLabel": "CHECKPHRASE",
+    "@componentCheckphraseLabel": {
+      "description": "Checkphrase field label on address details card"
+    },
+    "componentCheckphraseCopied": "Checkphrase copied",
+    "@componentCheckphraseCopied": {
+      "description": "Toast when checkphrase is copied"
+    },
+    "componentNameFieldHint": "Enter a name for your account",
+    "@componentNameFieldHint": {
+      "description": "Hint text on account name field"
+    },
+    "componentAmountApproximatePrefix": "≈",
+    "@componentAmountApproximatePrefix": {
+      "description": "Prefix before a converted secondary amount"
+    },
+
+    "commonLoading": "Loading...",
+    "@commonLoading": {
+      "description": "Text for generic loading state"
+    },
+    "commonCancel": "Cancel",
+    "@commonCancel": {
+      "description": "Generic cancel button label"
+    },
+    "commonCanceling": "Canceling...",
+    "@commonCanceling": {
+      "description": "Text shown while a cancellation is in progress"
+    },
+    "commonAmountBalance": "{balance} {symbol}",
+    "@commonAmountBalance": {
+      "description": "Formatted balance with token symbol",
+      "placeholders": {
+        "balance": {
+          "type": "String"
+        },
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "commonContinue": "Continue",
+    "@commonContinue": {
+      "description": "Continue button on various screens"
+    },
+    "commonDone": "Done",
+    "@commonDone": {
+      "description": "Done button on various screens"
+    },
+    "commonClose": "Close",
+    "@commonClose": {
+      "description": "Button that closes a sheet or dialog"
+    },
+    "commonBack": "Back",
+    "@commonBack": {
+      "description": "Button that returns to the previous page"
+    },
+    "commonSave": "Save",
+    "@commonSave": {
+      "description": "Save button on sheets that apply a pick"
+    },
+    "commonPercent": "{percent}%",
+    "@commonPercent": {
+      "description": "A percentage, as a slippage option or a share of the balance",
+      "placeholders": {
+        "percent": {
+          "type": "String"
+        }
+      }
+    },
+    "commonContactSupport": "Contact Support",
+    "@commonContactSupport": {
+      "description": "Link to support from a failed swap or the Keystone mismatch screen"
+    },
+    "commonRetry": "Retry",
+    "@commonRetry": {
+      "description": "Retry action on various screens"
+    },
+    "commonTryAgain": "Try Again",
+    "@commonTryAgain": {
+      "description": "Retry label shown when a list or quote fails to load"
+    },
+
+    "redeemCancel": "Cancel",
+    "@redeemCancel": {
+      "description": "Cancel button on redeem progress"
+    },
+    "redeemClose": "Close",
+    "@redeemClose": {
+      "description": "Close button on redeem progress"
+    },
+    "encryptedSendFeeLabel": "Transaction Fee",
+    "@encryptedSendFeeLabel": {
+      "description": "Fee label for encrypted sends (wormhole volume fee)"
+    },
+    "encryptedSendAmountStep": "Use steps of 0.01 {tokenSymbol}",
+    "@encryptedSendAmountStep": {
+      "description": "Shown when an encrypted send amount is not a multiple of 0.01 token",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "encryptedSendInsufficientWithPending": "Insufficient Balance ({amount} {tokenSymbol} pending)",
+    "@encryptedSendInsufficientWithPending": {
+      "description": "Button label when an encrypted send exceeds the spendable balance while change from an earlier send is still pending",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "encryptedSendMinimum": "Encrypted sends must move at least 0.1 {tokenSymbol}",
+    "@encryptedSendMinimum": {
+      "description": "Shown when an encrypted send falls below the chain's minimum exit amount",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "encryptedSendProgressTitle": "Private Send",
+    "@encryptedSendProgressTitle": {
+      "description": "App bar title while an encrypted send is proving/submitting"
+    },
+    "encryptedSendFailedTitle": "Send Failed",
+    "@encryptedSendFailedTitle": {
+      "description": "App bar title when an encrypted send failed"
+    },
+    "encryptedSendCancelledTitle": "Send Cancelled",
+    "@encryptedSendCancelledTitle": {
+      "description": "App bar title when an encrypted send was cancelled"
+    },
+    "encryptedSendingLabel": "SENDING PRIVATELY",
+    "@encryptedSendingLabel": {
+      "description": "Status header label on encrypted send progress"
+    },
+    "encryptedSendStepPreparing": "Preparing",
+    "@encryptedSendStepPreparing": {
+      "description": "Encrypted send progress step: preparing circuits"
+    },
+    "encryptedSendStepGathering": "Gathering funds",
+    "@encryptedSendStepGathering": {
+      "description": "Encrypted send progress step: fetching on-chain state for the batch"
+    },
+    "encryptedSendStepSecuring": "Securing transaction",
+    "@encryptedSendStepSecuring": {
+      "description": "Encrypted send progress step: computing and checking nullifiers"
+    },
+    "encryptedSendStepGenerating": "Generate proofs",
+    "@encryptedSendStepGenerating": {
+      "description": "Encrypted send progress step: generating individual ZK proofs"
+    },
+    "encryptedSendStepProving": "Building privacy proof",
+    "@encryptedSendStepProving": {
+      "description": "Encrypted send progress step: aggregating ZK proofs"
+    },
+    "encryptedSendStepSubmitting": "Submitting to chain",
+    "@encryptedSendStepSubmitting": {
+      "description": "Encrypted send progress step: submitting the transaction"
+    },
+    "encryptedSendProgressFooter": "Privacy takes a moment. Please keep the app open until the transaction completes.",
+    "@encryptedSendProgressFooter": {
+      "description": "Footer text on encrypted send progress screen"
+    },
+    "encryptedSendCancelledPartial": "{amount} was already sent before cancelling. The rest remains in your account.",
+    "@encryptedSendCancelledPartial": {
+      "description": "Notice on the cancelled encrypted-send screen when some batches were already submitted",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "encryptedSendFundsSafeLabel": "Your funds are safe",
+    "@encryptedSendFundsSafeLabel": {
+      "description": "Stacked banner kicker when an encrypted send was cancelled before anything left the wallet"
+    },
+    "encryptedSendFundsSafeCaption": "Still in {account}. Nothing left your wallet.",
+    "@encryptedSendFundsSafeCaption": {
+      "description": "Stacked banner caption when an encrypted send was cancelled before anything left the wallet",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "privateSendTitle": "Private Send",
+    "@privateSendTitle": {
+      "description": "Title of the private-send notice on encrypted send recipient screen"
+    },
+    "privateSendSubtitle": "Hides the link between your account and the recipient",
+    "@privateSendSubtitle": {
+      "description": "Subtitle of the private-send notice on encrypted send recipient screen. Must not overstate the guarantee: the recipient and amount are still visible on chain, only the source linkage is hidden."
+    },
+    "encryptedSendNearIntentsTitle": "NEAR Intents address detected",
+    "@encryptedSendNearIntentsTitle": {
+      "description": "Title of the warning on the encrypted send recipient screen when the address is a 1Click (NEAR Intents) swap deposit address"
+    },
+    "encryptedSendNearIntentsDescription": "This is a single-use NEAR Intents deposit address. Use a transparent account to send to NEAR Intents.",
+    "@encryptedSendNearIntentsDescription": {
+      "description": "Body of that warning: encrypted sends to 1Click deposit addresses are refused because each address takes exactly one deposit"
+    },
+    "encryptedSendNearIntentsButton": "Can't Send to NEAR Intents",
+    "@encryptedSendNearIntentsButton": {
+      "description": "Disabled continue button label while the recipient is a NEAR Intents deposit address"
+    },
+    "sendRecipientChecking": "Verifying Address…",
+    "@sendRecipientChecking": {
+      "description": "Disabled continue button label while the recipient check (self-send, NEAR Intents) is in flight"
+    },
+    "sendRecipientCheckFailed": "Couldn't Verify Address",
+    "@sendRecipientCheckFailed": {
+      "description": "Disabled continue button label when the recipient's self-send check failed; entering the address again retries it"
+    },
+    "sendRecipientCheckFailedMessage": "Couldn't verify the address. Check your connection and try again.",
+    "@sendRecipientCheckFailedMessage": {
+      "description": "Toast on the recipient screen, and error at confirm, when the NEAR Intents lookup failed, e.g. offline"
+    },
+    "encryptedSendPlanStale": "Your encrypted balance changed while reviewing. Please go back and enter the amount again.",
+    "@encryptedSendPlanStale": {
+      "description": "Error shown when the planned inputs of an encrypted send were spent between review and confirm"
+    },
+    "mainnetMigrationTitle": "Quantus is live on *mainnet*.",
+    "@mainnetMigrationTitle": {
+      "description": "Headline of the mainnet migration checking page; the part between asterisks is highlighted"
+    },
+    "mainnetMigrationChecking": "Testnet has shut down. Checking what that means for this wallet.",
+    "@mainnetMigrationChecking": {
+      "description": "Body of the checking page"
+    },
+    "mainnetMigrationReadingHistory": "Reading testnet history",
+    "@mainnetMigrationReadingHistory": {
+      "description": "Progress label on the checking page, shown uppercase"
+    },
+    "mainnetMigrationBlocksMinedCount": "{count}",
+    "@mainnetMigrationBlocksMinedCount": {
+      "description": "Formatted number of testnet blocks mined",
+      "placeholders": {
+        "count": {
+          "type": "int",
+          "format": "decimalPattern"
+        }
+      }
+    },
+    "mainnetMigrationBlocksMined": "Blocks mined on testnet",
+    "@mainnetMigrationBlocksMined": {
+      "description": "Label under the blocks-mined number, shown uppercase"
+    },
+    "mainnetMigrationMinerTitle": "Keep this wallet.",
+    "@mainnetMigrationMinerTitle": {
+      "description": "Title for wallets that mined testnet blocks"
+    },
+    "mainnetMigrationMinerBody": "Your rewards are safe. They're tied to it and arrive after launch. Your balance starts at zero because rewards are based on blocks mined, not on your testnet balance.",
+    "@mainnetMigrationMinerBody": {
+      "description": "Body for wallets that mined testnet blocks"
+    },
+    "mainnetMigrationNotMinedTitle": "Nothing carried over.",
+    "@mainnetMigrationNotMinedTitle": {
+      "description": "Title for wallets that did not mine"
+    },
+    "mainnetMigrationNotMinedBody": "Your testnet balance stayed on testnet. Those coins were only ever for testing, so this wallet starts at zero {tokenSymbol}.",
+    "@mainnetMigrationNotMinedBody": {
+      "description": "Body for wallets that did not mine",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "mainnetMigrationUnreachableBadge": "Couldn't check",
+    "@mainnetMigrationUnreachableBadge": {
+      "description": "Badge on the page shown when the testnet check fails, shown uppercase"
+    },
+    "mainnetMigrationUnreachableTitle": "We couldn't check this wallet.",
+    "@mainnetMigrationUnreachableTitle": {
+      "description": "Title when the testnet check fails"
+    },
+    "mainnetMigrationUnreachableBody": "Testnet was unreachable, so we don't know yet whether you mined. Your balance starts at zero {tokenSymbol} either way.",
+    "@mainnetMigrationUnreachableBody": {
+      "description": "Body when the testnet check fails",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "mainnetMigrationUnreachableRewards": "If you mined, your rewards are safe. They stay tied to this wallet whether we can check today or not.",
+    "@mainnetMigrationUnreachableRewards": {
+      "description": "Reassurance when the testnet check fails"
+    },
+    "mainnetMigrationKeepWallet": "Keep this wallet",
+    "@mainnetMigrationKeepWallet": {
+      "description": "Button that keeps the existing wallet"
+    },
+    "mainnetMigrationCreateWallet": "Create a new wallet",
+    "@mainnetMigrationCreateWallet": {
+      "description": "Button that offers a fresh wallet next to the existing one"
+    },
+    "mainnetMigrationCreateDialogTitle": "Create a new wallet?",
+    "@mainnetMigrationCreateDialogTitle": {
+      "description": "Title of the confirmation before creating a new wallet"
+    },
+    "mainnetMigrationCreateDialogBody": "You'll get a new secret phrase to write down and store safely. This wallet stays on the device.",
+    "@mainnetMigrationCreateDialogBody": {
+      "description": "Body of the confirmation before creating a new wallet"
+    },
+    "mainnetMigrationCreateDialogUncheckedTitle": "We couldn't check this wallet",
+    "@mainnetMigrationCreateDialogUncheckedTitle": {
+      "description": "Banner title in the confirmation when the testnet check failed"
+    },
+    "mainnetMigrationCreateDialogUncheckedBody": "So we don't know whether you mined on testnet.",
+    "@mainnetMigrationCreateDialogUncheckedBody": {
+      "description": "Banner body in the confirmation when the testnet check failed"
+    },
+    "mainnetMigrationCreateDialogUncheckedAdvice": "If you mined, your rewards are tied to this wallet. We'd suggest keeping it and trying again later.",
+    "@mainnetMigrationCreateDialogUncheckedAdvice": {
+      "description": "Body of the confirmation when the testnet check failed"
+    },
+    "mainnetMigrationCreateDialogConfirm": "Create new wallet",
+    "@mainnetMigrationCreateDialogConfirm": {
+      "description": "Confirmation button that creates the new wallet"
+    },
+    "mainnetMigrationCreateDialogCancel": "Keep my wallet",
+    "@mainnetMigrationCreateDialogCancel": {
+      "description": "Confirmation button that keeps the existing wallet"
+    },
+    "mainnetMigrationAllSetBadge": "Mainnet",
+    "@mainnetMigrationAllSetBadge": {
+      "description": "Badge on the closing page, shown uppercase"
+    },
+    "mainnetMigrationAllSetTitle": "You're all set.",
+    "@mainnetMigrationAllSetTitle": {
+      "description": "Title of the closing page"
+    },
+    "mainnetMigrationAllSetBody": "Everything from here is real money. Add some {tokenSymbol} whenever you're ready.",
+    "@mainnetMigrationAllSetBody": {
+      "description": "Body of the closing page",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "mainnetMigrationGetTokens": "Get {tokenSymbol}",
+    "@mainnetMigrationGetTokens": {
+      "description": "Button on the closing page that opens the receive screen",
+      "placeholders": {
+        "tokenSymbol": {
+          "type": "String"
+        }
+      }
+    },
+    "mainnetMigrationGoToWallet": "Go to wallet",
+    "@mainnetMigrationGoToWallet": {
+      "description": "Button on the closing page that opens the wallet"
+    },
+    "mainnetMigrationSaveFailed": "Could not save your choice: {error}",
+    "@mainnetMigrationSaveFailed": {
+      "description": "Toaster when the migration completion flag cannot be written",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "settingsMiningRewards": "Mining Rewards",
+    "@settingsMiningRewards": {
+      "description": "Settings hub row and screen title for testnet mining rewards"
+    },
+    "settingsMiningRewardsSubtitle": "Claim your testnet mining rewards",
+    "@settingsMiningRewardsSubtitle": {
+      "description": "Settings hub row subtitle for testnet mining rewards"
+    },
+    "miningRewardsHeroTitle": "Testnet mining paid out in {symbol}.",
+    "@miningRewardsHeroTitle": {
+      "description": "Hero heading on the Airdrop entry screen",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsHeroBody": "Rewards are based on the blocks you mined on Resonance, Schrödinger, Dirac, and Planck testnets. Amounts are already set.",
+    "@miningRewardsHeroBody": {
+      "description": "Explainer under the hero heading on the Airdrop entry screen"
+    },
+    "settingsSelectWalletSection": "Wallets on the device",
+    "@settingsSelectWalletSection": {
+      "description": "Section label above the wallet list"
+    },
+    "miningRewardsCheckingAddresses": "{count, plural, =1{Checking 1 address} other{Checking {count} addresses}}",
+    "@miningRewardsCheckingAddresses": {
+      "description": "Label over the chain progress counter while the check runs",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "miningRewardsProgressOf": "of {total}",
+    "@miningRewardsProgressOf": {
+      "description": "Unit after the number of chains checked so far",
+      "placeholders": {
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "miningRewardsTotalRewards": "Total rewards",
+    "@miningRewardsTotalRewards": {
+      "description": "Label over the summed payout"
+    },
+    "miningRewardsBlocks": "{count, plural, =1{1 block} other{{count} blocks}}",
+    "@miningRewardsBlocks": {
+      "description": "Blocks mined on one testnet, under the chain name",
+      "placeholders": {
+        "count": {
+          "type": "int",
+          "format": "decimalPattern"
+        }
+      }
+    },
+    "miningRewardsNotMined": "Not mined",
+    "@miningRewardsNotMined": {
+      "description": "Chain row value when the wallet owns no row in that table"
+    },
+    "miningRewardsSheetBlocksMined": "Blocks mined",
+    "@miningRewardsSheetBlocksMined": {
+      "description": "First row of the per-chain sheet"
+    },
+    "miningRewardsSheetReward": "Reward",
+    "@miningRewardsSheetReward": {
+      "description": "Second row of the per-chain sheet"
+    },
+    "miningRewardsNoMiningTitle": "No mining on this wallet",
+    "@miningRewardsNoMiningTitle": {
+      "description": "Heading when every chain answered and none has a row for this wallet"
+    },
+    "miningRewardsNoMiningBody1": "We checked your addresses against Resonance, Schrödinger, Dirac and Planck, and found no blocks.",
+    "@miningRewardsNoMiningBody1": {
+      "description": "First paragraph of the no-mining page"
+    },
+    "miningRewardsNoMiningBody2": "If you mined with a different wallet, go back and choose it.",
+    "@miningRewardsNoMiningBody2": {
+      "description": "Second paragraph of the no-mining page"
+    },
+    "miningRewardsTryAnotherWallet": "Try another wallet",
+    "@miningRewardsTryAnotherWallet": {
+      "description": "Button on the no-mining page"
+    },
+    "miningRewardsPayToIntro": "Enter the address we should send the rewards to",
+    "@miningRewardsPayToIntro": {
+      "description": "Explainer under the total on the pay-to screen"
+    },
+    "miningRewardsUseAnotherAddress": "Use Another Address",
+    "@miningRewardsUseAnotherAddress": {
+      "description": "Secondary button on the pay-to screen"
+    },
+    "miningRewardsAnotherAddressTitle": "Another Address",
+    "@miningRewardsAnotherAddressTitle": {
+      "description": "Title of the typed-address screen"
+    },
+    "miningRewardsDestinationLabel": "Destination",
+    "@miningRewardsDestinationLabel": {
+      "description": "Label above the typed-address field"
+    },
+    "miningRewardsPasteAddressHint": "Paste {symbol} Address",
+    "@miningRewardsPasteAddressHint": {
+      "description": "Placeholder of the typed-address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsAddressAdvice": "Use an address you control. Rewards sent to an address you don't own can't be recovered.",
+    "@miningRewardsAddressAdvice": {
+      "description": "Helper under the typed-address field"
+    },
+    "miningRewardsAddressInvalid": "This isn't a valid {symbol} address. Check the last few characters.",
+    "@miningRewardsAddressInvalid": {
+      "description": "Error under the typed-address field",
+      "placeholders": {
+        "symbol": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsConfirmTitle": "Confirm Destination",
+    "@miningRewardsConfirmTitle": {
+      "description": "Title of the confirm screen"
+    },
+    "miningRewardsClaimingLabel": "Claiming",
+    "@miningRewardsClaimingLabel": {
+      "description": "Label over the amount on the confirm card"
+    },
+    "miningRewardsAmountLabel": "Amount",
+    "@miningRewardsAmountLabel": {
+      "description": "Summary row label on the confirm screen"
+    },
+    "miningRewardsPayoutLabel": "Payout",
+    "@miningRewardsPayoutLabel": {
+      "description": "Summary row label on the confirm screen"
+    },
+    "miningRewardsPayoutWindow": "Within a week",
+    "@miningRewardsPayoutWindow": {
+      "description": "How soon payouts go out, shown as the payout row value"
+    },
+    "miningRewardsChangeDetails": "Change Details",
+    "@miningRewardsChangeDetails": {
+      "description": "Secondary button on the confirm screen"
+    },
+    "miningRewardsSubmitFailedTitle": "Couldn't submit right now",
+    "@miningRewardsSubmitFailedTitle": {
+      "description": "Heading when the claim server rejected or was unreachable"
+    },
+    "miningRewardsSubmitFailedBody1": "Something went wrong reaching the network.",
+    "@miningRewardsSubmitFailedBody1": {
+      "description": "First paragraph of the submission failed page"
+    },
+    "miningRewardsSubmitFailedBody2": "Your rewards are safe. Nothing expires and there is no deadline to claim.",
+    "@miningRewardsSubmitFailedBody2": {
+      "description": "Second paragraph of the submission failed page"
+    },
+    "miningRewardsSubmitPartialTitle": "Some claims have been submitted",
+    "@miningRewardsSubmitPartialTitle": {
+      "description": "Heading when part of the batch was accepted and the rest failed"
+    },
+    "miningRewardsSubmitPartialBody": "Please try again to submit the rest.",
+    "@miningRewardsSubmitPartialBody": {
+      "description": "First paragraph under the partial-submission heading"
+    },
+    "miningRewardsSubmittedAll": "All claims have been submitted.",
+    "@miningRewardsSubmittedAll": {
+      "description": "First line of the submitted page"
+    },
+    "miningRewardsSubmittedPayingTo": "Paying to {destination}.",
+    "@miningRewardsSubmittedPayingTo": {
+      "description": "Destination line on the submitted page: an account name or a short address",
+      "placeholders": {
+        "destination": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsSubmittedNote": "Payouts go out within a week. Nothing else to do.",
+    "@miningRewardsSubmittedNote": {
+      "description": "Closing line on the submitted page"
+    },
+    "miningRewardsClaimedOn": "Claimed {date}",
+    "@miningRewardsClaimedOn": {
+      "description": "Label over the amount when the wallet already submitted its claim",
+      "placeholders": {
+        "date": {
+          "type": "String"
+        }
+      }
+    },
+    "miningRewardsPayingTo": "Paying To",
+    "@miningRewardsPayingTo": {
+      "description": "Row label on the already-claimed page"
+    },
+    "miningRewardsCheckAnotherWallet": "Check another wallet",
+    "@miningRewardsCheckAnotherWallet": {
+      "description": "Button on the already-claimed page"
+    },
+    "miningRewardsWalletsLabel": "Wallets",
+    "@miningRewardsWalletsLabel": {
+      "description": "Label over the wallet list on the mining rewards entry page"
+    },
+    "miningRewardsClaimedTag": "Claimed",
+    "@miningRewardsClaimedTag": {
+      "description": "Caption under the amount a wallet has already claimed"
+    },
+    "miningRewardsNotClaimed": "Not claimed yet",
+    "@miningRewardsNotClaimed": {
+      "description": "Wallet row value on the entry page when nothing was claimed"
+    },
+    "miningRewardsCheckEligibility": "Check eligibility",
+    "@miningRewardsCheckEligibility": {
+      "description": "Button starting the mining rewards eligibility check"
+    },
+    "miningRewardsNotClaimable": "Claim not available yet",
+    "@miningRewardsNotClaimable": {
+      "description": "Shown next to a matched address whose key era the claim server does not accept yet"
+    },
+    "miningRewardsCheckFailed": "Check failed, tap to retry",
+    "@miningRewardsCheckFailed": {
+      "description": "Shown in a chain row when its eligibility check threw"
+    },
+    "miningRewardsClaim": "Claim",
+    "@miningRewardsClaim": {
+      "description": "Button opening the claim beneficiary screen"
+    },
+    "miningRewardsSubmitClaims": "Submit Claim",
+    "@miningRewardsSubmitClaims": {
+      "description": "Button that proves ownership and submits the claims"
+    },
+    "desktopMenuSettings": "Settings…",
+    "@desktopMenuSettings": {
+      "description": "Desktop app menu item that opens Settings; the ellipsis shows it opens a sheet"
+    },
+    "desktopMenuFile": "File",
+    "@desktopMenuFile": {
+      "description": "Desktop menu bar: File menu title"
+    },
+    "desktopMenuCloseWindow": "Close Window",
+    "@desktopMenuCloseWindow": {
+      "description": "Desktop File menu item that closes the app window"
+    },
+    "desktopMenuAccount": "Account",
+    "@desktopMenuAccount": {
+      "description": "Desktop menu bar: title of the menu holding the active account's actions"
+    },
+    "desktopMenuAddAccount": "Add Account…",
+    "@desktopMenuAddAccount": {
+      "description": "Desktop Account menu item that opens the add account sheet"
+    },
+    "desktopMenuView": "View",
+    "@desktopMenuView": {
+      "description": "Desktop menu bar: View menu title"
+    },
+    "desktopMenuHideSidebar": "Hide Sidebar",
+    "@desktopMenuHideSidebar": {
+      "description": "Desktop View menu item shown while the sidebar is visible"
+    },
+    "desktopMenuShowSidebar": "Show Sidebar",
+    "@desktopMenuShowSidebar": {
+      "description": "Desktop View menu item shown while the sidebar is hidden"
+    },
+    "desktopMenuNextSidebarItem": "Next Sidebar Item",
+    "@desktopMenuNextSidebarItem": {
+      "description": "Desktop View menu item that selects the row under the selected one in the sidebar, the first after the last"
+    },
+    "desktopMenuPreviousSidebarItem": "Previous Sidebar Item",
+    "@desktopMenuPreviousSidebarItem": {
+      "description": "Desktop View menu item that selects the row above the selected one in the sidebar, the last before the first"
+    },
+    "desktopMenuRefresh": "Refresh",
+    "@desktopMenuRefresh": {
+      "description": "Desktop View menu item, and its name in Settings › Keyboard Shortcuts, that reads the balances, activity and proposals again from the network"
+    },
+    "desktopMenuWindow": "Window",
+    "@desktopMenuWindow": {
+      "description": "Desktop menu bar: Window menu title"
+    },
+    "desktopBootProtocol": "> QUANTUS PROTOCOL v1.0.0-gm",
+    "@desktopBootProtocol": {
+      "description": "Desktop boot intro, a terminal-style line: the protocol's name and version"
+    },
+    "desktopBootNistModule": "> NIST FIPS 204 MODULE LOADED {status}",
+    "@desktopBootNistModule": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusOk",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootInitializing": "> INITIALIZING {scheme}...",
+    "@desktopBootInitializing": {
+      "description": "Desktop boot intro line; {scheme} is the signature scheme's name, not translated",
+      "placeholders": {
+        "scheme": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootSignatureScheme": "> POST-QUANTUM SIGNATURE SCHEME {status}",
+    "@desktopBootSignatureScheme": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusActive",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootZkEngine": "> RECURSIVE ZK PROOF ENGINE {status}",
+    "@desktopBootZkEngine": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusReady",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootChladni": "> CHLADNI FIELD VISUALIZER {status}",
+    "@desktopBootChladni": {
+      "description": "Desktop boot intro line; {status} is desktopBootStatusLoading",
+      "placeholders": {
+        "status": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopBootStatusOk": "[OK]",
+    "@desktopBootStatusOk": {
+      "description": "Desktop boot intro: status shown in green at the end of a line"
+    },
+    "desktopBootStatusActive": "ACTIVE",
+    "@desktopBootStatusActive": {
+      "description": "Desktop boot intro: status shown in green at the end of a line"
+    },
+    "desktopBootStatusReady": "READY",
+    "@desktopBootStatusReady": {
+      "description": "Desktop boot intro: status shown in green at the end of a line"
+    },
+    "desktopBootStatusLoading": "LOADING",
+    "@desktopBootStatusLoading": {
+      "description": "Desktop boot intro: status shown in orange at the end of a line"
+    },
+    "desktopWaveModeLabel": "WAVE MODE (m,n)",
+    "@desktopWaveModeLabel": {
+      "description": "Desktop Welcome: label above the wave mode of the animated background, e.g. 2,3"
+    },
+    "desktopWaveModeHint": "MOVE CURSOR TO SHIFT FREQUENCY",
+    "@desktopWaveModeHint": {
+      "description": "Desktop Welcome: hint under the wave mode that moving the mouse changes the background's pattern"
+    },
+    "desktopWelcomeEyebrow": "Quantum-Secure Encrypted Money",
+    "@desktopWelcomeEyebrow": {
+      "description": "Desktop Welcome: short line above the headline, shown in capitals"
+    },
+    "desktopWelcomeTitleLine1": "Money quantum",
+    "@desktopWelcomeTitleLine1": {
+      "description": "Desktop Welcome: first line of the headline, continued by desktopWelcomeTitleLine2"
+    },
+    "desktopWelcomeTitleLine2": "computers can’t break.",
+    "@desktopWelcomeTitleLine2": {
+      "description": "Desktop Welcome: second line of the headline"
+    },
+    "desktopWelcomeBody": "Create a new wallet, or import one you already have.",
+    "@desktopWelcomeBody": {
+      "description": "Desktop Welcome: sentence under the headline, above the two buttons"
+    },
+    "desktopBalanceLabel": "Balance",
+    "@desktopBalanceLabel": {
+      "description": "Desktop account panel: label over the account's balance, shown in capitals"
+    },
+    "desktopImportHeadline": "Restore your wallet.",
+    "@desktopImportHeadline": {
+      "description": "Desktop Import Wallet: the headline"
+    },
+    "desktopImportTipWordCount": "12 or 24 words",
+    "@desktopImportTipWordCount": {
+      "description": "Desktop Import Wallet: first tip beside the field, shown in capitals"
+    },
+    "desktopImportTipSpaces": "Separated by spaces",
+    "@desktopImportTipSpaces": {
+      "description": "Desktop Import Wallet: second tip, shown in capitals"
+    },
+    "desktopImportTipPaste": "Paste the whole phrase at once",
+    "@desktopImportTipPaste": {
+      "description": "Desktop Import Wallet: third tip, shown in capitals"
+    },
+    "desktopImportPhraseLabel": "Recovery phrase",
+    "@desktopImportPhraseLabel": {
+      "description": "Desktop Import Wallet: label above the recovery phrase field, shown in capitals"
+    },
+    "desktopImportPaste": "Paste",
+    "@desktopImportPaste": {
+      "description": "Desktop Import Wallet: button in the field that pastes the clipboard's text into it"
+    },
+    "desktopImportWordCount": "{count, plural, =1{1 word} other{{count} words}}",
+    "@desktopImportWordCount": {
+      "description": "Desktop Import Wallet: how many words have been typed into the field, shown in capitals",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopWalletReadyHeadline": "Your wallet is ready.",
+    "@desktopWalletReadyHeadline": {
+      "description": "Desktop Wallet Created: the headline"
+    },
+    "desktopWalletReadyBody": "{account} is transparent: fast, and visible on chain. The {encrypted} is for private transactions, and slower.",
+    "@desktopWalletReadyBody": {
+      "description": "Desktop Wallet Created: sentence under the headline; {account} is the new account's name, {encrypted} is createAccountEncryptedDefaultName",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        },
+        "encrypted": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopReceiveDepositAddressLabel": "Deposit address",
+    "@desktopReceiveDepositAddressLabel": {
+      "description": "Desktop Receive sheet: label above the encrypted account's next unused deposit address, shown in capitals"
+    },
+    "desktopReceiveEncryptedNotice": "A new address once this one has been paid, so your deposits can’t be linked to each other.",
+    "@desktopReceiveEncryptedNotice": {
+      "description": "Desktop Receive sheet: notice on the encrypted account, why its deposit address changes"
+    },
+    "desktopCopied": "Copied",
+    "@desktopCopied": {
+      "description": "Desktop: what a Copy action says for a moment after it has copied"
+    },
+    "desktopApprovalNeedsMacPassword": "Set up a login password for this Mac to use this.",
+    "@desktopApprovalNeedsMacPassword": {
+      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Mac with no login password to approve with"
+    },
+    "desktopApprovalNeedsWindowsHello": "Set up Windows Hello to use this.",
+    "@desktopApprovalNeedsWindowsHello": {
+      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Windows PC without Windows Hello"
+    },
+    "desktopApprovalNeedsLinuxService": "Install Quantus Wallet’s PAM service (/etc/pam.d/quantus-wallet) to use this.",
+    "@desktopApprovalNeedsLinuxService": {
+      "description": "Desktop Settings: under Recovery Phrase and Reset Wallet on a Linux system where the file that lets the app check the login password is not installed"
+    },
+    "desktopApprovalLoginAsksMore": "This computer’s login asks for more than a password, which Quantus Wallet can’t answer yet.",
+    "@desktopApprovalLoginAsksMore": {
+      "description": "Desktop, Linux: the system's login asked for something besides the password, such as a one-time code, so approval could not be given"
+    },
+    "desktopPasswordPromptTitle": "Enter your login password",
+    "@desktopPasswordPromptTitle": {
+      "description": "Desktop, Linux: title of the dialog that asks for the computer's login password to approve an action"
+    },
+    "desktopPasswordPromptHint": "Password",
+    "@desktopPasswordPromptHint": {
+      "description": "Desktop, Linux: placeholder and screen reader name of the login password field"
+    },
+    "desktopPasswordPromptConfirm": "Confirm",
+    "@desktopPasswordPromptConfirm": {
+      "description": "Desktop, Linux: the button that submits the login password"
+    },
+    "desktopPasswordPromptWrong": "That password is not right. Try again.",
+    "@desktopPasswordPromptWrong": {
+      "description": "Desktop, Linux: under the login password field after the system refused the password"
+    },
+    "desktopApprovalFailed": "Couldn’t ask for approval: {error}",
+    "@desktopApprovalFailed": {
+      "description": "Desktop Settings: the system's approval prompt itself failed",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopRecoveryPhraseEyebrow": "Before you look",
+    "@desktopRecoveryPhraseEyebrow": {
+      "description": "Desktop Settings: small capitals over the caution shown before the recovery phrase"
+    },
+    "desktopResetEyebrow": "Cannot be undone",
+    "@desktopResetEyebrow": {
+      "description": "Desktop Settings: small capitals over the caution shown before resetting the wallet"
+    },
+    "desktopRecoveryPhraseHide": "Hide",
+    "@desktopRecoveryPhraseHide": {
+      "description": "Desktop Settings: masks the recovery phrase's words"
+    },
+    "desktopRecoveryPhraseShow": "Show",
+    "@desktopRecoveryPhraseShow": {
+      "description": "Desktop Settings: unmasks the recovery phrase's words"
+    },
+    "desktopRecoveryPhraseUnreadable": "This wallet’s recovery phrase could not be read.",
+    "@desktopRecoveryPhraseUnreadable": {
+      "description": "Desktop Settings: the stored recovery phrase is missing"
+    },
+    "desktopRecoveryPhraseCopyFailed": "Couldn’t copy the recovery phrase.",
+    "@desktopRecoveryPhraseCopyFailed": {
+      "description": "Desktop Settings: copying the recovery phrase, kept out of clipboard history, failed"
+    },
+    "desktopSendAddressHint": "Quantus address",
+    "@desktopSendAddressHint": {
+      "description": "Desktop Send: placeholder of the recipient's address field"
+    },
+    "desktopSendAddressInvalid": "This is not a Quantus address.",
+    "@desktopSendAddressInvalid": {
+      "description": "Desktop Send: under the address field when what it holds is not a valid address"
+    },
+    "desktopSendAddressSelf": "You can’t send to the account you’re sending from.",
+    "@desktopSendAddressSelf": {
+      "description": "Desktop Send: under the address field when it holds the sending account's own address"
+    },
+    "desktopSendAvailable": "Available",
+    "@desktopSendAvailable": {
+      "description": "Desktop Send: label before the balance that can be spent, under the amount field"
+    },
+    "desktopSendAmountTooMuch": "More than the {amount} you can send.",
+    "@desktopSendAmountTooMuch": {
+      "description": "Desktop Send: under the amount field when the amount and its fee exceed the balance. amount is the most that can be sent, with the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSendMaximum": "Send the maximum amount",
+    "@desktopSendMaximum": {
+      "description": "Desktop Send: checkbox under the amount field. While ticked the amount is everything the fee leaves of the balance"
+    },
+    "desktopSendTransactionFee": "Transaction fee",
+    "@desktopSendTransactionFee": {
+      "description": "Desktop Send: label of what a private send from the Encrypted account costs, on the form, the review and the receipt"
+    },
+    "desktopSendStatusStopped": "[STOPPED]",
+    "@desktopSendStatusStopped": {
+      "description": "Desktop Send: status at the end of a private send's progress line that a cancel interrupted, in the terminal's voice like [OK]"
+    },
+    "desktopSendStatusFailed": "[FAILED]",
+    "@desktopSendStatusFailed": {
+      "description": "Desktop Send: status at the end of a private send's progress line at which the send failed, in the terminal's voice like [OK]"
+    },
+    "desktopSendReview": "Review",
+    "@desktopSendReview": {
+      "description": "Desktop Send: the button that opens the review step, and that step's name in the sheet's path"
+    },
+    "desktopSendYouPaid": "You paid",
+    "@desktopSendYouPaid": {
+      "description": "Desktop Send: label of the total, amount plus fee, on the receipt shown once a send is submitted"
+    },
+    "desktopSendSubmitted": "Submitted",
+    "@desktopSendSubmitted": {
+      "description": "Desktop Send: small capitals over the receipt, once the send was handed to the network"
+    },
+    "desktopViewInExplorer": "View in Explorer",
+    "@desktopViewInExplorer": {
+      "description": "Desktop: opens a transaction in the block explorer, in the browser"
+    },
+    "desktopSendTransactionOf": "Transaction {index} of {count}",
+    "@desktopSendTransactionOf": {
+      "description": "Desktop Send: on the receipt of a private send that took several transactions, the name of one of them, before the action that opens it in the explorer",
+      "placeholders": {
+        "index": {
+          "type": "int"
+        },
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopAccountSwitchFailedTitle": "Could not switch account",
+    "@desktopAccountSwitchFailedTitle": {
+      "description": "Desktop: title of the dialog shown when an account chosen in the sidebar, the menu or by a shortcut could not be made the active account"
+    },
+    "desktopAccountSwitchFailedMessage": "{account} could not be made the active account: {error}",
+    "@desktopAccountSwitchFailedMessage": {
+      "description": "Desktop: the dialog's message when switching account failed; {account} is the account's name, {error} the reason. What was asked for after the switch is not done.",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        },
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "settingsKeyboardShortcuts": "Keyboard Shortcuts",
+    "@settingsKeyboardShortcuts": {
+      "description": "Desktop Settings: the row that opens the keyboard shortcuts, and that step's name in the sheet's path"
+    },
+    "settingsKeyboardShortcutsSubtitle": "Change the keys that open and move around the wallet",
+    "@settingsKeyboardShortcutsSubtitle": {
+      "description": "Desktop Settings: the line under Keyboard Shortcuts"
+    },
+    "desktopShortcutsToggleSidebar": "Show or Hide Sidebar",
+    "@desktopShortcutsToggleSidebar": {
+      "description": "Desktop Keyboard Shortcuts: the command that shows or hides the sidebar"
+    },
+    "desktopShortcutsAccounts": "Go to account 1 to 9",
+    "@desktopShortcutsAccounts": {
+      "description": "Desktop Keyboard Shortcuts: the row whose keys, held with a digit, make the account of that number in the sidebar active"
+    },
+    "desktopShortcutsNone": "None",
+    "@desktopShortcutsNone": {
+      "description": "Desktop Keyboard Shortcuts: shown in place of the keys of a command that has no shortcut"
+    },
+    "desktopShortcutsRecording": "Type shortcut…",
+    "@desktopShortcutsRecording": {
+      "description": "Desktop Keyboard Shortcuts: shown in a shortcut's place while it waits for new keys"
+    },
+    "desktopShortcutsRecordingHint": "Press the new keys. Esc cancels; Delete removes the shortcut.",
+    "@desktopShortcutsRecordingHint": {
+      "description": "Desktop Keyboard Shortcuts: the line under a shortcut that waits for new keys"
+    },
+    "desktopShortcutsNeedsModifierMac": "Hold Command, Option or Control with the key.",
+    "@desktopShortcutsNeedsModifierMac": {
+      "description": "Desktop Keyboard Shortcuts, macOS: why keys pressed without a modifier were not taken; the key names are as printed on the keyboard"
+    },
+    "desktopShortcutsNeedsModifierPc": "Hold Ctrl or Alt with the key.",
+    "@desktopShortcutsNeedsModifierPc": {
+      "description": "Desktop Keyboard Shortcuts, Windows and Linux: why keys pressed without a modifier were not taken; the key names are as printed on the keyboard"
+    },
+    "desktopShortcutsSystemKey": "Shortcuts with the Windows or Super key belong to the system.",
+    "@desktopShortcutsSystemKey": {
+      "description": "Desktop Keyboard Shortcuts, Windows and Linux: why keys held with the Windows (Super) key were not taken"
+    },
+    "desktopShortcutsKeyNotForMenuBar": "The menu bar cannot use that key. Press other keys.",
+    "@desktopShortcutsKeyNotForMenuBar": {
+      "description": "Desktop Keyboard Shortcuts, macOS: why keys were not taken when the key pressed (one of the number pad, for instance) cannot be a menu item's shortcut in the system's menu bar"
+    },
+    "desktopShortcutsFixedNote": "Settings, Close Window and Quit keep the system's keys.",
+    "@desktopShortcutsFixedNote": {
+      "description": "Desktop Keyboard Shortcuts: the note at the foot of the list, about the commands whose keys cannot be changed"
+    },
+    "desktopShortcutsRestoreDefaults": "Restore Defaults",
+    "@desktopShortcutsRestoreDefaults": {
+      "description": "Desktop Keyboard Shortcuts: the button that puts every shortcut back as the app shipped it"
+    },
+    "desktopShortcutsUnreadable": "Your saved shortcuts could not be read, so the defaults are in use.",
+    "@desktopShortcutsUnreadable": {
+      "description": "Desktop Keyboard Shortcuts: shown when the stored shortcuts were unreadable at start"
+    },
+    "desktopSystemQuit": "Quit",
+    "@desktopSystemQuit": {
+      "description": "Desktop: the system command that quits the app, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemHide": "Hide",
+    "@desktopSystemHide": {
+      "description": "Desktop, macOS: the system command that hides the app, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemHideOthers": "Hide Others",
+    "@desktopSystemHideOthers": {
+      "description": "Desktop, macOS: the system command that hides the other apps, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemMinimize": "Minimize",
+    "@desktopSystemMinimize": {
+      "description": "Desktop, macOS: the system command that minimizes the window, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemFullScreen": "Full Screen",
+    "@desktopSystemFullScreen": {
+      "description": "Desktop, macOS: the system command that makes the window full screen, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemCut": "Cut",
+    "@desktopSystemCut": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemCopy": "Copy",
+    "@desktopSystemCopy": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemPaste": "Paste",
+    "@desktopSystemPaste": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemSelectAll": "Select All",
+    "@desktopSystemSelectAll": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemUndo": "Undo",
+    "@desktopSystemUndo": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopSystemRedo": "Redo",
+    "@desktopSystemRedo": {
+      "description": "Desktop: the editing command, named when its keys are refused as a shortcut"
+    },
+    "desktopShortcutsUsedBy": "That shortcut is already used by {command}. Press other keys.",
+    "@desktopShortcutsUsedBy": {
+      "description": "Desktop Keyboard Shortcuts: why recorded keys were not taken; {command} is the name of the command that has them",
+      "placeholders": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopShortcutsKeptFor": "That shortcut is kept for {command}. Press other keys.",
+    "@desktopShortcutsKeptFor": {
+      "description": "Desktop Keyboard Shortcuts: why recorded keys were not taken; {command} is the system command they belong to",
+      "placeholders": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopShortcutsModifierUsedBy": "Those keys would clash with {command}.",
+    "@desktopShortcutsModifierUsedBy": {
+      "description": "Desktop Keyboard Shortcuts: why a choice of keys for the account shortcuts was not taken; {command} is the command that uses one of the resulting shortcuts",
+      "placeholders": {
+        "command": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopShortcutsSaveFailed": "The shortcut could not be saved: {error}",
+    "@desktopShortcutsSaveFailed": {
+      "description": "Desktop Keyboard Shortcuts: shown when a change could not be stored; {error} is the reason",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeCost": "Proposal cost",
+    "@desktopProposeCost": {
+      "description": "Desktop Propose: the label, under the amount, of what proposing costs the member in all (network fee, deposit and proposal fee)"
+    },
+    "desktopProposeCostPaidBy": "{cost}, paid by",
+    "@desktopProposeCostPaidBy": {
+      "description": "Desktop Propose: what proposing costs, followed by the badge and name of the member's account that pays it",
+      "placeholders": {
+        "cost": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeCostNotCovered": "{account} does not hold enough to pay the proposal cost.",
+    "@desktopProposeCostNotCovered": {
+      "description": "Desktop Propose: under the amount, when the member's own account cannot pay what proposing costs",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeMaximum": "Propose the maximum amount",
+    "@desktopProposeMaximum": {
+      "description": "Desktop Propose: the checkbox under the amount that proposes the multisig's whole balance"
+    },
+    "desktopProposeProposing": "Proposing",
+    "@desktopProposeProposing": {
+      "description": "Desktop Propose review: the small label over the amount; drawn in capitals"
+    },
+    "desktopProposeProposedBy": "Proposed by",
+    "@desktopProposeProposedBy": {
+      "description": "Desktop Propose review: the row naming the member's account that proposes"
+    },
+    "desktopProposeApprovalsNeeded": "Approvals needed",
+    "@desktopProposeApprovalsNeeded": {
+      "description": "Desktop Propose review: the row saying how many of the multisig's signers must approve"
+    },
+    "desktopProposeApprovals": "Approvals",
+    "@desktopProposeApprovals": {
+      "description": "Desktop Propose receipt: the row saying how many approvals the proposal has of those it needs"
+    },
+    "desktopProposeCountOf": "{count} of {total}",
+    "@desktopProposeCountOf": {
+      "description": "Desktop Propose: a count out of a total, as in \"2 of 3\" signers or \"1 of 2\" approvals",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "total": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopProposeExpires": "Expires",
+    "@desktopProposeExpires": {
+      "description": "Desktop Propose: the row saying when the proposal expires"
+    },
+    "desktopProposeDeposit": "Deposit",
+    "@desktopProposeDeposit": {
+      "description": "Desktop Propose review: the row of the deposit held while the proposal is open"
+    },
+    "desktopProposeFee": "Proposal fee",
+    "@desktopProposeFee": {
+      "description": "Desktop Propose review: the row of the fee the chain charges for creating a proposal"
+    },
+    "desktopProposePays": "pays",
+    "@desktopProposePays": {
+      "description": "Desktop Propose review: follows the badge and name of the member's account on the total's row, as in \"Account 1 pays\""
+    },
+    "desktopProposePaid": "paid",
+    "@desktopProposePaid": {
+      "description": "Desktop Propose receipt: follows the badge and name of the member's account on the total's row, as in \"Account 1 paid\""
+    },
+    "desktopProposeSubmit": "Submit Proposal",
+    "@desktopProposeSubmit": {
+      "description": "Desktop Propose review: the button that submits the proposal"
+    },
+    "desktopProposeProposed": "{amount} proposed",
+    "@desktopProposeProposed": {
+      "description": "Desktop Propose receipt: the headline once the network has created the proposal; the amount comes with its token symbol, as in \"250 QTC proposed\"",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeConfirming": "Confirming",
+    "@desktopProposeConfirming": {
+      "description": "Desktop Propose receipt: small capitals over the receipt while the network has not yet created the proposal"
+    },
+    "desktopProposeNotConfirmed": "Not confirmed",
+    "@desktopProposeNotConfirmed": {
+      "description": "Desktop Propose receipt: small capitals over the receipt when the wallet stopped waiting for the network to create the proposal"
+    },
+    "desktopProposeProposingAmount": "Proposing {amount}",
+    "@desktopProposeProposingAmount": {
+      "description": "Desktop Propose receipt: the headline until the network has created the proposal; the amount comes with its token symbol, as in \"Proposing 250 QTC\"",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposeWaiting": "Waiting for the network to create the proposal.",
+    "@desktopProposeWaiting": {
+      "description": "Desktop Propose receipt: the line under the headline while the proposal's transaction was broadcast and the network has not yet created the proposal"
+    },
+    "desktopFooterMainnet": "Mainnet",
+    "@desktopFooterMainnet": {
+      "description": "Desktop footer: the network the wallet is on, beside a dot that is green while online"
+    },
+    "desktopFooterTestnet": "Testnet",
+    "@desktopFooterTestnet": {
+      "description": "Desktop footer: the network the wallet is on when built for the test network"
+    },
+    "desktopFooterOffline": "Offline",
+    "@desktopFooterOffline": {
+      "description": "Desktop footer: in place of the network's name while the computer has no network"
+    },
+    "desktopFooterSyncing": "Syncing",
+    "@desktopFooterSyncing": {
+      "description": "Desktop footer: the wallet is reading its balance and activity from the network now"
+    },
+    "desktopFooterSyncedJustNow": "Synced just now",
+    "@desktopFooterSyncedJustNow": {
+      "description": "Desktop footer: the wallet's balance was read from the network less than a minute ago"
+    },
+    "desktopFooterSyncedMinutesAgo": "Synced {minutes}m ago",
+    "@desktopFooterSyncedMinutesAgo": {
+      "description": "Desktop footer: how long ago the wallet's balance was last read from the network, in minutes",
+      "placeholders": {
+        "minutes": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopFooterSyncedHoursAgo": "Synced {hours}h ago",
+    "@desktopFooterSyncedHoursAgo": {
+      "description": "Desktop footer: how long ago the wallet's balance was last read from the network, in hours",
+      "placeholders": {
+        "hours": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopFooterSyncedDaysAgo": "Synced {days}d ago",
+    "@desktopFooterSyncedDaysAgo": {
+      "description": "Desktop footer: how long ago the wallet's balance was last read from the network, in days",
+      "placeholders": {
+        "days": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopFooterSyncFailed": "Couldn't sync",
+    "@desktopFooterSyncFailed": {
+      "description": "Desktop footer: the latest read of the wallet's balance from the network failed"
+    },
+    "desktopFooterBlock": "Block {number}",
+    "@desktopFooterBlock": {
+      "description": "Desktop footer: the chain's latest block, its number already formatted with digit grouping",
+      "placeholders": {
+        "number": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopFooterVersion": "Quantus Wallet {version}",
+    "@desktopFooterVersion": {
+      "description": "Desktop footer: the app's name and version, at the footer's right end",
+      "placeholders": {
+        "version": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopActivityInProgress": "In progress",
+    "@desktopActivityInProgress": {
+      "description": "Desktop: title of the panel listing the open account's transfers still under way, above Activity"
+    },
+    "desktopActivityLoadFailed": "Couldn't load the activity",
+    "@desktopActivityLoadFailed": {
+      "description": "Desktop: shown in the Activity panel when the account's history could not be loaded, above the error"
+    },
+    "desktopActivityRefreshFailed": "Couldn't refresh the activity",
+    "@desktopActivityRefreshFailed": {
+      "description": "Desktop: a note at the top of the Activity panel when a refresh failed; the rows already shown stay under it, with Try Again beside it"
+    },
+    "desktopMarksAddress": "Address",
+    "@desktopMarksAddress": {
+      "description": "Desktop: heading of the popover shown on hovering one of the wallet's own accounts named as a sender or receiver; the account's whole address and its checkphrase are under it, with Copy beside it"
+    },
+    "desktopMarksInProgress": "{count} in progress",
+    "@desktopMarksInProgress": {
+      "description": "Desktop, read by screen readers: how many of an account's transfers are still in progress, as the count on its badge in the sidebar says",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopMarksWaitingForSignature": "{count} waiting for your signature",
+    "@desktopMarksWaitingForSignature": {
+      "description": "Desktop, read by screen readers: how many of a multisig's open proposals wait for a signature from this wallet, as the count on its badge in the sidebar says",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopActivityRunsIn": "in {time}",
+    "@desktopActivityRunsIn": {
+      "description": "Desktop: beside the Scheduled status of a reversible transfer, how long until it runs; time is like 00d:23h:41m",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopActivityTransaction": "Transaction",
+    "@desktopActivityTransaction": {
+      "description": "Desktop: title of the panel showing one transaction, and the label over its hash"
+    },
+    "desktopActivityAmount": "Amount",
+    "@desktopActivityAmount": {
+      "description": "Desktop transaction panel: the amount a multisig proposal moves"
+    },
+    "desktopActivityThreshold": "Threshold",
+    "@desktopActivityThreshold": {
+      "description": "Desktop transaction panel: how many of a new multisig's signers must approve, of how many"
+    },
+    "desktopActivitySigners": "Signers",
+    "@desktopActivitySigners": {
+      "description": "Desktop transaction panel: how many signers a new multisig has"
+    },
+    "desktopActivityCreatedBy": "Created by",
+    "@desktopActivityCreatedBy": {
+      "description": "Desktop transaction panel: the account that made a multisig"
+    },
+    "desktopActivityCreationFee": "Multisig fee",
+    "@desktopActivityCreationFee": {
+      "description": "Desktop transaction panel: the fee the chain charges for making a multisig"
+    },
+    "desktopAccountGetInfo": "Get Info",
+    "@desktopAccountGetInfo": {
+      "description": "Desktop account menu: opens the account’s Info sheet"
+    },
+    "desktopAccountCopyAddress": "Copy Address",
+    "@desktopAccountCopyAddress": {
+      "description": "Desktop account menu: copies the account’s address"
+    },
+    "desktopAccountCopyInnerHash": "Copy Inner Hash",
+    "@desktopAccountCopyInnerHash": {
+      "description": "Desktop account menu: copies the encrypted account’s inner hash"
+    },
+    "desktopAccountRename": "Rename…",
+    "@desktopAccountRename": {
+      "description": "Desktop account menu: starts renaming the account"
+    },
+    "desktopAccountShowRecoveryPhrase": "Show Recovery Phrase…",
+    "@desktopAccountShowRecoveryPhrase": {
+      "description": "Desktop account and wallet menus: opens the wallet’s recovery phrase steps"
+    },
+    "desktopAccountShowSigners": "Show Signers…",
+    "@desktopAccountShowSigners": {
+      "description": "Desktop multisig menu: opens the multisig’s Info sheet with its signers"
+    },
+    "desktopAccountDisconnectAccount": "Disconnect Account…",
+    "@desktopAccountDisconnectAccount": {
+      "description": "Desktop account menu: starts disconnecting the account"
+    },
+    "desktopAccountDisconnectHardware": "Disconnect Hardware Account…",
+    "@desktopAccountDisconnectHardware": {
+      "description": "Desktop account menu: starts disconnecting a hardware account"
+    },
+    "desktopAccountDisconnectMultisig": "Disconnect Multisig…",
+    "@desktopAccountDisconnectMultisig": {
+      "description": "Desktop multisig menu: starts disconnecting the multisig"
+    },
+    "desktopAccountAddressCopied": "Address copied",
+    "@desktopAccountAddressCopied": {
+      "description": "Desktop: shown on the account’s row after its address was copied"
+    },
+    "desktopAccountInnerHashCopied": "Inner hash copied",
+    "@desktopAccountInnerHashCopied": {
+      "description": "Desktop: shown on the encrypted account’s row after its inner hash was copied"
+    },
+    "desktopAccountCopyFailed": "Couldn’t copy: {error}",
+    "@desktopAccountCopyFailed": {
+      "description": "Desktop: shown on the account’s row when copying failed",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoTitle": "Account Info",
+    "@desktopAccountInfoTitle": {
+      "description": "Desktop Info sheet title for an account"
+    },
+    "desktopMultisigInfoTitle": "Multisig Info",
+    "@desktopMultisigInfoTitle": {
+      "description": "Desktop Info sheet title for a multisig"
+    },
+    "desktopAccountInfoAccount": "Account",
+    "@desktopAccountInfoAccount": {
+      "description": "Desktop Info sheet: label of the group with the account’s name and address"
+    },
+    "desktopAccountInfoMultisig": "Multisig",
+    "@desktopAccountInfoMultisig": {
+      "description": "Desktop Info sheet: label of the group with the multisig’s name, address and threshold"
+    },
+    "desktopAccountInfoSigners": "Signers",
+    "@desktopAccountInfoSigners": {
+      "description": "Desktop Info sheet: label of the group listing a multisig’s signers"
+    },
+    "desktopAccountInfoThisDevice": "This device",
+    "@desktopAccountInfoThisDevice": {
+      "description": "Desktop Info sheet: label of the group with what applies to this device only"
+    },
+    "desktopAccountInfoMiningRewards": "Mining rewards",
+    "@desktopAccountInfoMiningRewards": {
+      "description": "Desktop Info sheet: label of the encrypted account’s inner hash group"
+    },
+    "desktopAccountInfoName": "Name",
+    "@desktopAccountInfoName": {
+      "description": "Desktop Info sheet: the name row’s title"
+    },
+    "desktopAccountInfoNameSubtitle": "Shown only in this app",
+    "@desktopAccountInfoNameSubtitle": {
+      "description": "Desktop Info sheet: under the name row’s title"
+    },
+    "desktopAccountInfoThreshold": "Threshold",
+    "@desktopAccountInfoThreshold": {
+      "description": "Desktop Info sheet: the multisig threshold row’s title"
+    },
+    "desktopAccountInfoThresholdSubtitle": "Signatures a proposal needs before it can run",
+    "@desktopAccountInfoThresholdSubtitle": {
+      "description": "Desktop Info sheet: under the threshold row’s title"
+    },
+    "desktopAccountInfoPhraseSubtitle": "The 24 words of {wallet}, which this account is in",
+    "@desktopAccountInfoPhraseSubtitle": {
+      "description": "Desktop Info sheet: under Recovery Phrase; wallet is the wallet’s name",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoInnerHash": "Inner Hash",
+    "@desktopAccountInfoInnerHash": {
+      "description": "Desktop Info sheet: the encrypted account’s inner hash row’s title"
+    },
+    "desktopAccountInfoInnerHashCaption": "Give it to your miner as --rewards-inner-hash, and block rewards land in this account.",
+    "@desktopAccountInfoInnerHashCaption": {
+      "description": "Desktop Info sheet: what the inner hash is for"
+    },
+    "desktopAccountInfoCreator": "Creator",
+    "@desktopAccountInfoCreator": {
+      "description": "Desktop Info sheet: mark on the signer who created the multisig"
+    },
+    "desktopAccountInfoYou": "You",
+    "@desktopAccountInfoYou": {
+      "description": "Desktop Info sheet: mark on the signer that is this wallet’s account"
+    },
+    "desktopAccountInfoDisconnectAccount": "Disconnect Account",
+    "@desktopAccountInfoDisconnectAccount": {
+      "description": "Desktop Info sheet: the row that starts disconnecting the account"
+    },
+    "desktopAccountInfoDisconnectAccountSubtitle": "Stops showing {name} in this app; {wallet} keeps its recovery phrase",
+    "@desktopAccountInfoDisconnectAccountSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoDisconnectWalletSubtitle": "{name} is the last account in {wallet}, so the wallet goes with it",
+    "@desktopAccountInfoDisconnectWalletSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Account when it is the wallet’s last account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoDisconnectHardware": "Disconnect Hardware Account",
+    "@desktopAccountInfoDisconnectHardware": {
+      "description": "Desktop Info sheet: the row that starts disconnecting a hardware account"
+    },
+    "desktopAccountInfoDisconnectHardwareSubtitle": "Stops showing {name} in this app; your device keeps its keys",
+    "@desktopAccountInfoDisconnectHardwareSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Hardware Account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopAccountInfoDisconnectMultisig": "Disconnect Multisig",
+    "@desktopAccountInfoDisconnectMultisig": {
+      "description": "Desktop Info sheet: the row that starts disconnecting the multisig"
+    },
+    "desktopAccountInfoDisconnectMultisigSubtitle": "Stops showing {name} in this app; it stays on the chain",
+    "@desktopAccountInfoDisconnectMultisigSubtitle": {
+      "description": "Desktop Info sheet: under Disconnect Multisig",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectTitle": "Disconnect",
+    "@desktopDisconnectTitle": {
+      "description": "Desktop Info sheet: the Disconnect step’s name in the sheet’s path"
+    },
+    "desktopDisconnectHeadline": "Stop showing {name}?",
+    "@desktopDisconnectHeadline": {
+      "description": "Desktop Disconnect step: headline for an account, a hardware account or a multisig",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectAccountEyebrow": "Disconnect account",
+    "@desktopDisconnectAccountEyebrow": {
+      "description": "Desktop Disconnect step: small capitals over the caution for an account"
+    },
+    "desktopDisconnectAccountLine1": "{name} leaves this app; its funds stay on the blockchain",
+    "@desktopDisconnectAccountLine1": {
+      "description": "Desktop Disconnect step: first line for an account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectAccountLine2": "{wallet} keeps its recovery phrase, so you can add {name} back later",
+    "@desktopDisconnectAccountLine2": {
+      "description": "Desktop Disconnect step: second line for an account",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectHardwareEyebrow": "Disconnect hardware account",
+    "@desktopDisconnectHardwareEyebrow": {
+      "description": "Desktop Disconnect step: small capitals over the caution for a hardware account"
+    },
+    "desktopDisconnectHardwareLine2": "Your hardware wallet keeps its keys, so you can connect it again later",
+    "@desktopDisconnectHardwareLine2": {
+      "description": "Desktop Disconnect step: second line for a hardware account"
+    },
+    "desktopDisconnectMultisigEyebrow": "Disconnect multisig",
+    "@desktopDisconnectMultisigEyebrow": {
+      "description": "Desktop Disconnect step: small capitals over the caution for a multisig"
+    },
+    "desktopDisconnectMultisigLine1": "{name} leaves this app; it stays on the chain with its signers",
+    "@desktopDisconnectMultisigLine1": {
+      "description": "Desktop Disconnect step: first line for a multisig",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectMultisigLine2": "You can add it back later",
+    "@desktopDisconnectMultisigLine2": {
+      "description": "Desktop Disconnect step: second line for a multisig"
+    },
+    "desktopDisconnectWalletHeadline": "This removes {wallet}",
+    "@desktopDisconnectWalletHeadline": {
+      "description": "Desktop Disconnect step: headline when the account is its wallet’s last",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletLine1": "{name} is the last account in {wallet}, so the whole wallet goes with it",
+    "@desktopDisconnectWalletLine1": {
+      "description": "Desktop Disconnect step: first line when the account is its wallet’s last",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        },
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletLine2": "{wallet}’s recovery phrase will be deleted from this device",
+    "@desktopDisconnectWalletLine2": {
+      "description": "Desktop Disconnect step: second line when the account is its wallet’s last",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletLine3": "Its funds stay on the blockchain, but only that phrase can restore them",
+    "@desktopDisconnectWalletLine3": {
+      "description": "Desktop Disconnect step: third line when the account is its wallet’s last"
+    },
+    "desktopDisconnectWalletBackedUp": "I’ve backed up {wallet}’s recovery phrase",
+    "@desktopDisconnectWalletBackedUp": {
+      "description": "Desktop Disconnect step: the box to tick before a wallet can be deleted",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletReason": "Delete {wallet} and its recovery phrase",
+    "@desktopDisconnectWalletReason": {
+      "description": "Desktop: the reason the system shows when asking to approve deleting a wallet",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopDisconnectWalletDeclined": "Deleting {wallet} needs your approval",
+    "@desktopDisconnectWalletDeclined": {
+      "description": "Desktop Disconnect step: shown when the approval to delete a wallet was declined",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopRecoveryPhraseWalletsSubtitle": "View the 24 words of each of your {count} wallets",
+    "@desktopRecoveryPhraseWalletsSubtitle": {
+      "description": "Desktop Settings: under Recovery Phrase when there are several wallets",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopRecoveryPhraseChooseWallet": "Choose a wallet",
+    "@desktopRecoveryPhraseChooseWallet": {
+      "description": "Desktop Settings: label over the list of wallets whose recovery phrase can be shown"
+    },
+    "desktopWalletRenameFailed": "Couldn't rename the wallet",
+    "@desktopWalletRenameFailed": {
+      "description": "Desktop sidebar: under a wallet heading for a few seconds when the name typed over it could not be saved; the heading keeps its name"
+    },
+    "desktopNotificationOpenAction": "Open",
+    "@desktopNotificationOpenAction": {
+      "description": "Desktop notification on Linux: the action that opens the wallet when the notification is clicked"
+    },
+    "desktopNotificationSentTitle": "Sent {amount}",
+    "@desktopNotificationSentTitle": {
+      "description": "Desktop notification title: a send from this computer was confirmed by the chain; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationSentBody": "From {account}",
+    "@desktopNotificationSentBody": {
+      "description": "Desktop notification body: the account the confirmed send came from",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationSendNotConfirmedTitle": "Send not confirmed",
+    "@desktopNotificationSendNotConfirmedTitle": {
+      "description": "Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it"
+    },
+    "desktopNotificationSendNotConfirmedBody": "{amount} from {account} wasn’t seen on the chain in time. It may have failed, or only be late.",
+    "@desktopNotificationSendNotConfirmedBody": {
+      "description": "Desktop notification body: a send not seen on the chain in time; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationSendFailedTitle": "Send failed",
+    "@desktopNotificationSendFailedTitle": {
+      "description": "Desktop notification title: a send from this computer failed"
+    },
+    "desktopNotificationSendFailedBody": "{amount} from {account} was not sent.",
+    "@desktopNotificationSendFailedBody": {
+      "description": "Desktop notification body: a send that failed; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationProposalCreatedTitle": "Proposal created",
+    "@desktopNotificationProposalCreatedTitle": {
+      "description": "Desktop notification title: a multisig proposal made on this computer was created on the chain"
+    },
+    "desktopNotificationProposalCreatedBody": "Send {amount} from {multisig}",
+    "@desktopNotificationProposalCreatedBody": {
+      "description": "Desktop notification body: what the created proposal sends, and from which multisig; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "multisig": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationProposalNotConfirmedTitle": "Proposal not confirmed",
+    "@desktopNotificationProposalNotConfirmedTitle": {
+      "description": "Desktop notification title: a multisig proposal made on this computer was not seen on the chain in time"
+    },
+    "desktopNotificationProposalNotConfirmedBody": "The proposal to send {amount} from {multisig} wasn’t seen on the chain in time.",
+    "@desktopNotificationProposalNotConfirmedBody": {
+      "description": "Desktop notification body: a proposal not seen on the chain in time; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "multisig": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationNotAllowed": "Not allowed in System Settings",
+    "@desktopNotificationNotAllowed": {
+      "description": "Desktop Settings, Notifications row: macOS is not letting the app show notifications"
+    },
+    "desktopNotificationOpenSystemSettings": "Open System Settings",
+    "@desktopNotificationOpenSystemSettings": {
+      "description": "Desktop Settings, Notifications row: opens the Notifications pane of macOS System Settings"
+    },
+    "desktopNotificationOpenSystemSettingsFailed": "Couldn’t open System Settings",
+    "@desktopNotificationOpenSystemSettingsFailed": {
+      "description": "Desktop Settings: the Notifications pane of System Settings could not be opened"
+    },
+    "desktopNotificationUnavailable": "Unavailable: {reason}",
+    "@desktopNotificationUnavailable": {
+      "description": "Desktop Settings, Notifications row: the system's notifications cannot be used, and why",
+      "placeholders": {
+        "reason": {
+          "type": "String"
+        }
+      }
+    }
+}

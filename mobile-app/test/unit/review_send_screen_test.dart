@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/exchange_rate_service.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/exchange_rate_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_fee_notifier.dart';
+import 'package:wallet_core/send/send_screen_logic.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../extensions.dart';
@@ -24,6 +24,7 @@ import '../fakes.dart';
 /// settled fee no longer fits the balance.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
   final sender = makeAccount(1);
   final recipient = makeAccount(2);
   final spendable = BigInt.from(5) * NumberFormattingService.scaleFactorBigInt;
@@ -48,7 +49,6 @@ void main() {
         recipientAddress: recipient.accountId,
         amount: amount,
         fee: fee,
-        recipientChecksum: 'Stand-Envelope-Topic-Term-Help',
         sendAll: sendAll,
       ),
       overrides: [

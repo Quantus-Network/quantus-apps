@@ -93,6 +93,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<WormholeResult> dco_decode_list_wormhole_result(dynamic raw);
+
+  @protected
   MerkleProcessed dco_decode_merkle_processed(dynamic raw);
 
   @protected
@@ -221,6 +224,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+
+  @protected
+  List<WormholeResult> sse_decode_list_wormhole_result(SseDeserializer deserializer);
 
   @protected
   MerkleProcessed sse_decode_merkle_processed(SseDeserializer deserializer);
@@ -353,6 +359,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_wormhole_result(List<WormholeResult> self, SseSerializer serializer);
 
   @protected
   void sse_encode_merkle_processed(MerkleProcessed self, SseSerializer serializer);

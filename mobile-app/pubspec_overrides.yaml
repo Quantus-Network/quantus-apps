@@ -1,4 +1,6 @@
-# melos_managed_dependency_overrides: quantus_sdk
+# melos_managed_dependency_overrides: quantus_sdk,wallet_core
 dependency_overrides:
   quantus_sdk:
     path: ../quantus_sdk
+  wallet_core:
+    path: ../wallet_core

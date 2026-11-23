@@ -4,12 +4,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/app.dart';
 import 'package:resonance_network_wallet/app_initializer.dart';
 import 'package:resonance_network_wallet/app_lifecycle_manager.dart';
 import 'package:resonance_network_wallet/firebase_options.dart';
+import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
+import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
+import 'package:resonance_network_wallet/services/local_auth_user_approval.dart';
+import 'package:resonance_network_wallet/services/local_notifications_service.dart';
+import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:telemetrydecksdk/telemetrydecksdk.dart';
+import 'package:wallet_core/providers/wallet_core_overrides.dart';
 
 bool _initialized = false;
 
@@ -39,6 +46,8 @@ Future<void> bootstrap() async {
   await dotenv.load();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.getOptionsForEnvironment());
 
+  // Unusable offline, so recover the online state fast.
+  ConnectivityService.instanceRetryInterval = const Duration(seconds: 3);
   await QuantusSdk.init();
 
   Telemetrydecksdk.start(
@@ -48,9 +57,18 @@ Future<void> bootstrap() async {
   _initialized = true;
 }
 
+/// The mobile implementations of wallet_core's platform seams.
+List<Override> mobileWalletCoreOverrides() => walletCoreOverrides(
+  telemetry: (_) => TelemetryService(),
+  pushRegistration: (ref) => ref.watch(firebaseMessagingServiceProvider),
+  localNotifications: (ref) => ref.watch(localNotificationsServiceProvider),
+  userApproval: (ref) => LocalAuthUserApproval(ref.watch(localAuthServiceProvider)),
+);
+
 /// The root widget tree shared by production and tests.
 Widget buildApp() {
-  return const ProviderScope(
-    child: AppInitializer(child: AppLifecycleManager(child: ResonanceWalletApp())),
+  return ProviderScope(
+    overrides: mobileWalletCoreOverrides(),
+    child: const AppInitializer(child: AppLifecycleManager(child: ResonanceWalletApp())),
   );
 }

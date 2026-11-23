@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 
 class SharedAddressActionSheet extends StatefulWidget {
@@ -22,30 +21,7 @@ class SharedAddressActionSheet extends StatefulWidget {
 
 class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
   String? _checksum;
-  Future<String?>? _checksumFuture;
-  List<String>? _splittedAddress;
-
-  final HumanReadableChecksumService _checksumService = HumanReadableChecksumService();
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAccountData();
-  }
-
-  Future<void> _loadAccountData() async {
-    try {
-      setState(() {
-        _checksumFuture = _checksumService.getHumanReadableName(widget.address);
-        _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
-      });
-    } catch (e) {
-      quantusPrint('Error loading account data: $e');
-      if (mounted) {
-        setState(() {});
-      }
-    }
-  }
+  late final List<String> _splittedAddress = AddressFormattingService.splitIntoChunks(widget.address);
 
   void _copyAddress() {
     context.copyTextWithToaster(widget.address);
@@ -108,7 +84,7 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
                   border: Border.all(color: colors.borderHairline),
                 ),
                 child: Text(
-                  '${_splittedAddress?.join(" ")}',
+                  _splittedAddress.join(' '),
                   textAlign: TextAlign.left,
                   style: text.dataAddressLarge.copyWith(color: colors.textContent),
                 ),
@@ -117,68 +93,20 @@ class _SharedAddressActionSheetState extends State<SharedAddressActionSheet> {
             ],
           ),
           const SizedBox(height: 26),
-          FutureBuilder<String?>(
-            future: _checksumFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return SizedBox(
-                  height: 18,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 12,
-                        height: 12,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: colors.accentFlare),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('Loading checkphrase...', style: text.caption.copyWith(color: colors.textMuted)),
-                    ],
-                  ),
-                );
-              } else if (snapshot.hasError || !snapshot.hasData || snapshot.data == null || snapshot.data!.isEmpty) {
-                quantusPrint(
-                  'Error loading checksum name for ${widget.address}: '
-                  '${snapshot.error}',
-                );
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_checksum != null) {
-                    setState(() {
-                      _checksum = null;
-                    });
-                  }
-                });
-
-                return Text(
-                  'Name not found',
-                  style: text.body.copyWith(color: colors.textMuted),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 7,
+            children: [
+              Flexible(
+                child: CheckphraseText(
+                  widget.address,
+                  style: text.body.copyWith(color: colors.semanticLilac),
                   textAlign: TextAlign.center,
-                );
-              } else {
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  if (_checksum != snapshot.data) {
-                    setState(() {
-                      _checksum = snapshot.data!;
-                    });
-                  }
-                });
-
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  spacing: 7,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        snapshot.data!,
-                        style: text.body.copyWith(color: colors.semanticLilac),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    InkWell(onTap: _copyChecksum, child: _copyIcon(colors)),
-                  ],
-                );
-              }
-            },
+                  onResolved: (phrase) => setState(() => _checksum = phrase),
+                ),
+              ),
+              InkWell(onTap: _copyChecksum, child: _copyIcon(colors)),
+            ],
           ),
           const SizedBox(height: 26),
           SizedBox(

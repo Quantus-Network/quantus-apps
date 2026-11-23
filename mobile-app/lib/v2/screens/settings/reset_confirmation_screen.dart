@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/services/logout_service.dart';
+import 'package:resonance_network_wallet/v2/screens/welcome/logout_flow.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_caution_scaffold.dart';
 
 class ResetConfirmationScreen extends ConsumerStatefulWidget {
@@ -25,7 +25,7 @@ class _ResetConfirmationScreenState extends ConsumerState<ResetConfirmationScree
 
     if (authed && mounted) {
       try {
-        ref.read(logoutServiceProvider).logout(context);
+        logoutAndReturnToWelcome(context, ref);
       } catch (e) {
         if (mounted) {
           context.showErrorToaster(message: l10n.settingsResetFailed('$e'));

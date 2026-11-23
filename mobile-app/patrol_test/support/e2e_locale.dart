@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/models/app_locale.dart';
+import 'package:wallet_core/models/app_locale.dart';
 
 /// Resolves locale settings for E2E tests to match the running app.
 class E2eLocale {

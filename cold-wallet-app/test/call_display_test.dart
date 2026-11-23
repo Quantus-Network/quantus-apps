@@ -14,6 +14,7 @@ import 'package:quantus_cold_wallet/components/call_detail_view.dart';
 import 'package:quantus_cold_wallet/debug/debug_payloads.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/components/signer_row.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 
 final aliceId = Uint8List.fromList(List.filled(32, 0xAA));
@@ -52,7 +53,6 @@ Future<void> pumpSignScreen(WidgetTester tester, Uint8List payload) async {
         addressesProvider.overrideWith(
           (ref) => {signerAddress: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
-        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MaterialApp(
         home: Builder(
@@ -67,11 +67,12 @@ Future<void> pumpSignScreen(WidgetTester tester, Uint8List payload) async {
   await tester.pumpAndSettle();
 }
 
-AddressWithCheckphrase signerRow(WidgetTester tester) => tester.widget<AddressWithCheckphrase>(
-  find.byWidgetPredicate((widget) => widget is AddressWithCheckphrase && widget.address == signerAddress),
+SignerRow signerRow(WidgetTester tester) => tester.widget<SignerRow>(
+  find.byWidgetPredicate((widget) => widget is SignerRow && widget.address == signerAddress),
 );
 
 void main() {
+  CheckphraseText.resolveOverride = (_) async => 'check phrase';
   group('every field reaches the screen exactly once', () {
     final fixtures = <String, RuntimeCall>{
       'plain transfer': const balances_pallet.Txs().transferAllowDeath(dest: account(bobId), value: oneToken),

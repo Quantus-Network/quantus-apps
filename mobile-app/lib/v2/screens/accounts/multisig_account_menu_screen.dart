@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:resonance_network_wallet/v2/components/menu_row.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
@@ -37,19 +35,19 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
           MenuRow(
             label: l10n.accountMenuAccountName,
             value: account.name,
-            onTap: () => _openNameEditor(context, ref, account),
+            onTap: () => openNameEditor(context, ref, account),
           ),
           const SizedBox(height: 4),
           const MenuDivider(),
           const SizedBox(height: 12),
-          MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
+          MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => openAddressDetails(context, account)),
           const SizedBox(height: 4),
           const MenuDivider(),
           const SizedBox(height: 12),
           MenuRow(
             label: l10n.multisigAccountMenuDetails,
             value: l10n.multisigThresholdOf(account.threshold, account.signers.length),
-            onTap: () => _openMultisigDetails(context, account),
+            onTap: () => openDetails(context, account),
           ),
         ],
       ),
@@ -57,13 +55,13 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
         child: QuantusButton.simple(
           label: l10n.accountMenuDisconnect,
           variant: ButtonVariant.danger,
-          onTap: () => _onDisconnect(context, ref, account),
+          onTap: () => disconnect(context, ref, account),
         ),
       ),
     );
   }
 
-  Future<void> _onDisconnect(BuildContext context, WidgetRef ref, MultisigAccount account) async {
+  static Future<void> disconnect(BuildContext context, WidgetRef ref, MultisigAccount account) async {
     final l10n = ref.read(l10nProvider);
     final confirmed = await showConfirmActionSheet(
       context,
@@ -85,7 +83,7 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openNameEditor(BuildContext context, WidgetRef ref, MultisigAccount current) async {
+  static Future<void> openNameEditor(BuildContext context, WidgetRef ref, MultisigAccount current) async {
     await Navigator.of(
       context,
     ).push<void>(MaterialPageRoute(builder: (_) => EditAccountScreen.multisig(initialMultisig: current)));
@@ -93,13 +91,13 @@ class MultisigAccountMenuScreen extends ConsumerWidget {
     ref.invalidate(multisigAccountsProvider);
   }
 
-  void _openAddressDetails(BuildContext context, MultisigAccount account) {
+  static void openAddressDetails(BuildContext context, MultisigAccount account) {
     Navigator.of(
       context,
     ).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)));
   }
 
-  void _openMultisigDetails(BuildContext context, MultisigAccount account) {
+  static void openDetails(BuildContext context, MultisigAccount account) {
     Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => MultisigDetailsScreen(account: account)));
   }
 }

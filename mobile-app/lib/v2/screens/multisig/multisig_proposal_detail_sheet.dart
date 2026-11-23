@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide DecodedCallView;
 import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
-import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
-import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
-import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/multisig_expiry.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/extensions/current_route_extensions.dart';
-import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
+import 'package:wallet_core/utils/multisig_local_signers.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
@@ -286,11 +287,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
             child: DecodedCallView(call: decoded),
           )
         else if (!liveProposal.hasUndecodableCall)
-          DetailSummaryRow(
-            label: l10n.activityDetailTo,
-            value: recipient,
-            checkphrase: ref.watch(checksumNameProvider(liveProposal.recipient)).value,
-          ),
+          DetailSummaryRow(label: l10n.activityDetailTo, value: recipient, checkphraseAddress: liveProposal.recipient),
         if (isTerminal)
           DetailSummaryRow(
             label: l10n.multisigProposalAtLabel,
@@ -305,7 +302,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         DetailSummaryRow(
           label: l10n.multisigProposalProposerLabel,
           value: liveProposal.proposer,
-          checkphrase: ref.watch(checksumNameProvider(liveProposal.proposer)).value,
+          checkphraseAddress: liveProposal.proposer,
         ),
         DetailSummaryRow(
           label: l10n.multisigProposalThresholdLabel,

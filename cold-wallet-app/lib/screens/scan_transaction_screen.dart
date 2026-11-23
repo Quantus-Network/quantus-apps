@@ -1,16 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/app_version.dart';
+import 'package:quantus_cold_wallet/components/step_header.dart';
 import 'package:quantus_cold_wallet/debug/debug_calls_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_near_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 
-/// Scans a (possibly multi-part / animated) UR QR code, accumulating parts
-/// until [isCompleteUr] is satisfied, then decodes to the raw payload bytes
-/// and hands them to the signing screen. Fails loudly on decode errors.
+/// Step 1 of signing: scans the animated UR QR the hot wallet shows on the
+/// shared [AnimatedQrScanner], then hands the decoded request to the signing
+/// screen. Fails loudly on decode errors.
 class ScanTransactionScreen extends StatefulWidget {
+  /// How long without a new frame before the header swaps in the scanning
+  /// tips. Scanning never stops: the frames already collected stay, the
+  /// counter keeps going, and only Back or Cancel leaves.
+  static const stallTimeout = Duration(seconds: 3);
+
   const ScanTransactionScreen({super.key});
 
   @override
@@ -18,248 +25,106 @@ class ScanTransactionScreen extends StatefulWidget {
 }
 
 class _ScanTransactionScreenState extends State<ScanTransactionScreen> {
-  // Unrestricted: the default DetectionSpeed.normal enforces a 250ms timeout
-  // between detections, capping an animated QR at ~4 frames/second. Duplicate
-  // deliveries are cheap — parts dedupe through the set below.
-  final MobileScannerController _controller = MobileScannerController(
-    detectionSpeed: DetectionSpeed.unrestricted,
-    formats: const [BarcodeFormat.qrCode],
+  static const _labels = ScannerLabels(
+    back: 'Back',
+    torch: 'Torch',
+    gallery: 'Gallery',
+    cameraUnavailable: 'Camera unavailable',
+    cameraPermissionDenied: 'Grant camera access in Settings to scan the transaction QR.',
+    retry: 'Try again',
   );
-  final Set<String> _parts = {};
-  final Set<int> _seenSeq = {};
 
-  int? _expectedParts;
-  bool _done = false;
   String? _error;
-
-  /// The last camera failure written to the log, so a rebuild of the same
-  /// error state does not repeat it.
-  String? _loggedCameraError;
+  Timer? _stallTimer;
+  bool _stalled = false;
 
   @override
   void dispose() {
-    _controller.dispose();
+    _stallTimer?.cancel();
     super.dispose();
   }
 
-  /// Reports [reason] and drops the accumulated parts. A set that can't
-  /// complete or decode never will, and keeping it makes every replayed frame
-  /// look like a duplicate, so scanning has to start from empty.
-  void _restartAccumulation(String reason) {
-    _parts.clear();
-    _seenSeq.clear();
-    _expectedParts = null;
-    setState(() => _error = reason);
+  /// Every new frame restarts the clock; when it runs out the header shows
+  /// the tips. Armed only once a frame has arrived: with nothing received yet
+  /// there is nothing to hint about.
+  void _armStallTimer() {
+    _stallTimer?.cancel();
+    if (_stalled) setState(() => _stalled = false);
+    _stallTimer = Timer(ScanTransactionScreen.stallTimeout, () {
+      if (mounted) setState(() => _stalled = true);
+    });
   }
 
-  void _onDetect(BarcodeCapture capture) {
-    if (_done) return;
-    final code = capture.barcodes.firstOrNull?.rawValue;
-    if (code == null || !isAcceptableUrPart(code)) return;
-    // maxUrScanParts bounds the accumulation set: a hostile animation could
-    // otherwise keep emitting distinct frames and grow memory without limit.
-    // Reaching it means the set can never complete, so say so and start over
-    // instead of dropping frames in silence.
-    if (_parts.length >= maxUrScanParts) {
-      debugPrint('UR scan limit hit: $maxUrScanParts parts accumulated without completing');
-      _restartAccumulation('Too many unusable QR frames. Restart the transfer on your hot wallet.');
-      return;
-    }
-    if (!_parts.add(code)) return; // already seen this exact frame
+  Future<void> _open(Uint8List payload) async {
+    _stallTimer?.cancel();
+    final screen = switch (AnySigningRequest.decode(payload)) {
+      final SigningRequest request => SignTransactionScreen(request: request),
+      final NearSigningRequest request => SignNearTransactionScreen(
+        request: request,
+        transaction: decodeNearTransaction(transaction: request.transaction),
+      ),
+    };
+    if (!mounted) return;
+    unawaited(Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => screen)));
+  }
 
-    final sequence = urSequenceFor(code);
-    if (sequence != null) {
-      _seenSeq.add(sequence.index);
-      _expectedParts = sequence.total;
-    }
-
-    final parts = _parts.toList();
-    if (!isCompleteUr(urParts: parts)) {
-      setState(() {});
-      return;
-    }
-
-    _done = true;
-    try {
-      final screen = switch (AnySigningRequest.decode(decodeUr(urParts: parts))) {
-        final SigningRequest request => SignTransactionScreen(request: request),
-        final NearSigningRequest request => SignNearTransactionScreen(
-          request: request,
-          transaction: decodeNearTransaction(transaction: request.transaction),
-        ),
-      };
-      _controller.stop();
-      if (!mounted) return;
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => screen));
-    } catch (e) {
-      debugPrint('Rejected signing request QR: $e');
-      // Keeping the parts would make every replayed frame a duplicate, so the
-      // decode is never retried and the screen stays stuck on this error.
-      _done = false;
-      _restartAccumulation(switch (e) {
-        UnsupportedSigningRequestVersionException() => '${e.message}. $updateAppHint $currentAppVersion',
-        FormatException() => 'Not a Quantus signing request: ${e.message}',
+  void _fail(Object error) {
+    debugPrint('Rejected signing request QR: $error');
+    _stallTimer?.cancel();
+    if (!mounted) return;
+    setState(() {
+      _stalled = false;
+      _error = switch (error) {
+        UrScanLimitException() => 'Too many unusable QR frames. Restart the transfer on your hot wallet.',
+        UnsupportedSigningRequestVersionException() => '${error.message}. $updateAppHint $currentAppVersion',
+        FormatException() => 'Not a Quantus signing request: ${error.message}',
         // decodeNearTransaction reports a malformed transaction as a bare string.
-        String() => 'Could not read the NEAR transaction: $e',
-        _ => 'Failed to decode QR: $e',
-      });
-    }
+        String() => 'Could not read the NEAR transaction: $error',
+        _ => 'Failed to decode QR: $error',
+      };
+    });
   }
 
   /// Simulators have no camera, so debug builds open the catalogue of every
   /// call the signer can review and inject one directly, exercising the same
   /// review → sign path a scan would reach.
   Future<void> _openDebugCalls() {
-    // The controller is left running: MobileScanner starts and stops it with
-    // this route's lifecycle, and starting it again here is what raised
-    // controllerAlreadyInitialized on the way back.
     return Navigator.push(context, MaterialPageRoute(builder: (_) => const DebugCallsScreen()));
-  }
-
-  /// Retries a failed start. [MobileScannerController.start] folds scanner
-  /// failures into the controller's value, re-rendering this same panel with
-  /// the new reason; the controller-lifecycle errors it throws instead are
-  /// surfaced through [_error], which each retry clears so a recovered camera
-  /// never scans behind a stale failure banner.
-  Future<void> _restartCamera() async {
-    setState(() => _error = null);
-    try {
-      await _controller.start();
-    } catch (e) {
-      debugPrint('Camera could not be started: $e');
-      if (mounted) setState(() => _error = 'The camera could not be started.');
-    }
-  }
-
-  Widget _cameraError(BuildContext context, MobileScannerException error) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
-    if (_loggedCameraError != error.toString()) {
-      _loggedCameraError = error.toString();
-      debugPrint('Camera unavailable (${error.errorCode.name}): ${error.errorDetails?.message}');
-    }
-
-    return ColoredBox(
-      color: colors.bgVoid,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.no_photography_outlined, color: colors.textMuted, size: 64),
-              const SizedBox(height: 24),
-              Text(
-                'Camera unavailable',
-                style: text.titleScreen.copyWith(color: colors.textContent),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 12),
-              Text(
-                denied
-                    ? 'Grant camera access in Settings to scan the transaction QR.'
-                    : 'The camera could not be started.',
-                style: text.body.copyWith(color: colors.textMuted),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              QuantusButton.simple(label: 'Try again', width: 240, onTap: _restartCamera),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    final radius = context.radiusV3;
-    final size = MediaQuery.of(context).size;
-    final frame = (size.width - 96).clamp(220.0, 300.0);
-
-    final progress = _expectedParts == null ? null : (_seenSeq.length / _expectedParts!).clamp(0.0, 1.0);
-
-    return Scaffold(
-      backgroundColor: colors.bgVoid,
-      body: Stack(
-        children: [
-          MobileScanner(controller: _controller, onDetect: _onDetect, errorBuilder: _cameraError),
-          ValueListenableBuilder<MobileScannerState>(
-            valueListenable: _controller,
-            builder: (context, state, child) => state.error == null ? child! : const SizedBox.shrink(),
-            child: Center(
-              child: Container(
-                width: frame,
-                height: frame,
-                decoration: BoxDecoration(
-                  border: Border.all(color: colors.accentFlare, width: 2),
-                  borderRadius: radius.mdBorder,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 20,
-            left: 16,
-            right: 16,
-            child: SafeArea(
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(Icons.arrow_back, color: colors.textContent),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _controller.toggleTorch,
-                    icon: Icon(Icons.flash_on, color: colors.textContent),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 48,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (kDebugMode) ...[
-                  QuantusButton.simple(label: 'Debug calls', width: null, onTap: _openDebugCalls),
-                  const SizedBox(height: 20),
-                ],
-                Text(
-                  _error ?? 'Scan the transaction QR from your hot wallet',
-                  style: text.body.copyWith(color: _error != null ? colors.semanticEmber : colors.textContent),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                if (progress != null) ...[
-                  ClipRRect(
-                    borderRadius: radius.xsBorder,
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 6,
-                      backgroundColor: colors.bgSurface,
-                      color: colors.accentFlare,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${_seenSeq.length} / ${_expectedParts!} parts',
-                    style: text.caption.copyWith(color: colors.textMuted),
-                  ),
-                ] else if (_parts.isNotEmpty)
-                  Text('${_parts.length} parts scanned', style: text.caption.copyWith(color: colors.textMuted)),
-              ],
-            ),
-          ),
-        ],
+    return AnimatedQrScanner(
+      onComplete: _open,
+      onError: _fail,
+      onFrame: _armStallTimer,
+      labels: _labels,
+      progressLabel: 'RECEIVING TRANSACTION',
+      errorText: _error,
+      caption: StepHeader(
+        step: 1,
+        total: 3,
+        title: _stalled ? 'Not picking up new frames' : 'Scan the transaction',
+        subtitle: _stalled
+            ? "Move the two screens further apart, turn your phone's brightness up, and avoid glare."
+            : "Hold this device over your phone's screen to load the transaction.",
       ),
+      footerActions: [
+        const SizedBox(height: 20),
+        QuantusButton.simple(
+          label: 'Cancel Transaction',
+          variant: ButtonVariant.underline,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          onTap: () => Navigator.pop(context),
+        ),
+        if (kDebugMode)
+          QuantusButton.simple(
+            label: 'Debug calls',
+            variant: ButtonVariant.underline,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            onTap: _openDebugCalls,
+          ),
+      ],
     );
   }
 }

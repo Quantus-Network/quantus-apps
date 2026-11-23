@@ -8,6 +8,9 @@ void main() {
   const colors = AppColorsV3.dark();
   const text = AppTextThemeV3.standard();
 
+  setUp(() => CheckphraseText.resolveOverride = (_) async => 'alpha bravo');
+  tearDown(() => CheckphraseText.resolveOverride = null);
+
   Future<void> pumpRow(WidgetTester tester, Widget row) async {
     await tester.pumpWidget(
       MediaQuery(
@@ -70,7 +73,7 @@ void main() {
   testWidgets('stacked checkphrase is a second labeled row in lilac', (tester) async {
     await pumpRow(
       tester,
-      const DetailSummaryRow.stacked(label: 'To', value: 'qzDest', monospace: true, checkphrase: 'alpha bravo'),
+      const DetailSummaryRow.stacked(label: 'To', value: 'qzDest', monospace: true, checkphraseAddress: 'qzDest'),
     );
 
     expect(find.text('TO'), findsOneWidget);
@@ -83,7 +86,7 @@ void main() {
   testWidgets('compact checkphrase sits under the value without a second label', (tester) async {
     await pumpRow(
       tester,
-      const DetailSummaryRow(label: 'Destination', value: 'qzDest', monospace: true, checkphrase: 'alpha bravo'),
+      const DetailSummaryRow(label: 'Destination', value: 'qzDest', monospace: true, checkphraseAddress: 'qzDest'),
     );
 
     expect(find.text('DESTINATION CHECKPHRASE'), findsNothing);

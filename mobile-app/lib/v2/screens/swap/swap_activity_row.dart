@@ -2,14 +2,14 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 
 /// Pinned at the top of the home activity: one row per followed swap, newest
 /// first, except a swap still waiting for its deposit to be sent. A running
@@ -72,12 +72,7 @@ class _SwapRow extends ConsumerWidget {
     }
 
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SwapProgressScreen(swapId: swap.id, account: starter),
-        ),
-      ),
+      onTap: () => Navigator.push(context, SwapProgressScreen.route(swap.id, account: starter)),
       behavior: HitTestBehavior.opaque,
       child: Column(
         children: [

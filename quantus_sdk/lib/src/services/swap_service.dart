@@ -65,42 +65,34 @@ class SwapService {
     'confidentiality',
   ];
   static const quoteWaitingTime = Duration(seconds: 3);
-  static const statusPollInterval = Duration(seconds: 5);
+  static const statusPollInterval = Duration(seconds: 10);
   static const _savedAddressesKey = 'swap_saved_addresses';
   static const _maxSavedAddresses = 50;
-  static const _tokensCacheTtl = Duration(minutes: 10);
+  static const _tokensCacheTtl = Duration(minutes: 2);
 
   final OneClickService _api;
   final CoinGeckoService _coinGecko;
   final String _managerPublicKey;
   final String? _configuredQuantusAssetId;
   final bool _preflight;
-  final int _feeBips;
   (List<SwapToken>, SwapToken?)? _cachedListing;
   DateTime? _cachedListingAt;
 
   /// [quantusAssetId] names the listing that is QTC when its chain code does
   /// not; it comes from remote config so a surprising listing needs no update.
   /// In [preflight] it names another listed asset standing in for QTC, which
-  /// keeps its own network and decimals. [feeBips] is the app's fee on each
-  /// swap, in basis points of the input; 0 sends none.
+  /// keeps its own network and decimals.
   SwapService({
     http.Client? client,
     String endpoint = AppConstants.oneClickEndpoint,
-    String? apiKey,
     String managerPublicKey = AppConstants.oneClickManagerPublicKey,
     String? quantusAssetId,
     bool preflight = false,
-    required int feeBips,
-  }) : _api = OneClickService(client: client, endpoint: endpoint, apiKey: apiKey),
+  }) : _api = OneClickService(client: client, endpoint: endpoint),
        _coinGecko = CoinGeckoService(client: client),
        _managerPublicKey = managerPublicKey,
        _configuredQuantusAssetId = quantusAssetId,
-       _preflight = preflight,
-       _feeBips = feeBips;
-
-  Map<String, Object>? get _appFee =>
-      _feeBips > 0 ? {'recipient': AppConstants.oneClickFeeRecipient, 'fee': _feeBips} : null;
+       _preflight = preflight;
 
   /// How long a deposit on [network] has before its quote expires.
   static Duration depositWindowFor(String network) =>
@@ -116,8 +108,7 @@ class SwapService {
 
   /// QTC as 1Click lists it, with its asset id, decimals and price; null until
   /// it is listed with a price, and swaps are unavailable until then.
-  Future<SwapToken?> getListedQuantusToken({bool forceRefresh = false}) async =>
-      (await _listing(forceRefresh: forceRefresh)).$2;
+  Future<SwapToken?> getListedQuantusToken() async => (await _listing(forceRefresh: false)).$2;
 
   Future<(List<SwapToken>, SwapToken?)> _listing({required bool forceRefresh}) async {
     final now = DateTime.now();
@@ -210,7 +201,6 @@ class SwapService {
       now.add(depositWindowFor(from.network)).millisecondsSinceEpoch,
       isUtc: true,
     );
-    final fee = _appFee;
     final body = {
       'dry': dry,
       'swapType': swapType.wire,
@@ -228,7 +218,6 @@ class SwapService {
       'quoteWaitingTimeMs': quoteWaitingTime.inMilliseconds,
       'referral': AppConstants.oneClickReferral,
       'confidentiality': confidentiality,
-      if (fee != null) 'appFees': [fee],
     };
     final json = await _api.send('POST', '/v0/quote', body: body) as Map<String, dynamic>;
     final correlationId = json['correlationId'] as String?;
@@ -240,17 +229,6 @@ class SwapService {
       if (echoed[field] != body[field]) {
         throw SwapQuoteIntegrityException(
           'Quote answers a different request: $field is ${echoed[field]}, sent ${body[field]}',
-          correlationId: correlationId,
-        );
-      }
-    }
-    // 1Click adds its own fee to the echoed list, and the signature does not
-    // cover it, so the list must hold our fee as sent.
-    if (fee != null) {
-      final fees = (echoed['appFees'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
-      if (!fees.any((f) => f['recipient'] == fee['recipient'] && f['fee'] == fee['fee'])) {
-        throw SwapQuoteIntegrityException(
-          'Quote answers a different request: appFees are $fees, sent $fee',
           correlationId: correlationId,
         );
       }

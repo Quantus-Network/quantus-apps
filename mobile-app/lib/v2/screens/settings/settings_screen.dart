@@ -5,15 +5,15 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/generated/version.g.dart';
-import 'package:resonance_network_wallet/shared/utils/build_label.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/about_quantus_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/add_account_menu_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/preferences_settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/settings/scanner_debug_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/wallet_settings_screen.dart';
@@ -125,7 +125,7 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
         ),
       ),
       title: l10n.settingsAboutTitle,
-      subtitle: l10n.settingsAboutHubSubtitle(appVersion, shownBuildNumber),
+      subtitle: l10n.settingsAboutHubSubtitle(appVersion, appBuildNumber),
       page: const AboutQuantusScreenV2(),
     ),
     if (kDebugMode)
@@ -134,6 +134,13 @@ List<_SettingsHubItem> _settingsHubItems(BuildContext context, AppLocalizations 
         title: SwapDebugScreen.title,
         subtitle: SwapDebugScreen.subtitle,
         page: const SwapDebugScreen(),
+      ),
+    if (kDebugMode)
+      _SettingsHubItem(
+        leading: _settingsHubIcon(colors, icon: Icons.qr_code_scanner),
+        title: ScannerDebugScreen.title,
+        subtitle: ScannerDebugScreen.subtitle,
+        page: const ScannerDebugScreen(),
       ),
   ];
 }

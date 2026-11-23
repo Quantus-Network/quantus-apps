@@ -5,6 +5,8 @@ import 'package:quantus_cold_wallet/app.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Offline by design: the re-read only guards against being online by accident.
+  ConnectivityService.instanceRetryInterval = const Duration(seconds: 10);
   await QuantusSdk.init();
   runApp(const ProviderScope(child: ColdWalletApp()));
 }

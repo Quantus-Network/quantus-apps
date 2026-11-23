@@ -30,10 +30,10 @@ class DetailSummaryRow extends StatelessWidget {
   /// Caveat shown under the value.
   final String? note;
 
-  /// Resolved checkphrase for an address value.
+  /// Address whose checkphrase accompanies the value.
   ///
   /// Compact paints it under the value; stacked uses a second labeled row.
-  final String? checkphrase;
+  final String? checkphraseAddress;
 
   const DetailSummaryRow({
     super.key,
@@ -49,9 +49,9 @@ class DetailSummaryRow extends StatelessWidget {
     this.monospace = false,
     this.valueColor,
     this.note,
-    this.checkphrase,
+    this.checkphraseAddress,
   }) : assert(value != null || valueWidget != null),
-       assert(checkphrase == null || valueWidget == null);
+       assert(checkphraseAddress == null || valueWidget == null);
 
   factory DetailSummaryRow.review({
     Key? key,
@@ -60,7 +60,7 @@ class DetailSummaryRow extends StatelessWidget {
     Widget? valueWidget,
     int valueFlex = 3,
     TextStyle? valueStyle,
-    String? checkphrase,
+    String? checkphraseAddress,
   }) {
     return DetailSummaryRow(
       key: key,
@@ -70,7 +70,7 @@ class DetailSummaryRow extends StatelessWidget {
       valueFlex: valueFlex,
       valueStyle: valueStyle,
       padding: EdgeInsets.zero,
-      checkphrase: checkphrase,
+      checkphraseAddress: checkphraseAddress,
     );
   }
 
@@ -79,12 +79,13 @@ class DetailSummaryRow extends StatelessWidget {
   const DetailSummaryRow.stacked({
     super.key,
     required this.label,
-    required String this.value,
+    this.value,
+    this.valueWidget,
     this.monospace = false,
     this.valueColor,
     this.note,
-    this.checkphrase,
-  }) : valueWidget = null,
+    this.checkphraseAddress,
+  }) : assert(value != null || valueWidget != null),
        labelFlex = 2,
        valueFlex = 3,
        labelStyle = null,
@@ -133,10 +134,11 @@ class DetailSummaryRow extends StatelessWidget {
   }
 
   Widget _compactValue(TextStyle valueStyle, AppTextThemeV3 text, AppColorsV3 colors) {
-    if (checkphrase == null) return Text(value!, style: valueStyle, textAlign: TextAlign.right, softWrap: true);
+    final address = checkphraseAddress;
+    if (address == null) return Text(value!, style: valueStyle, textAlign: TextAlign.right, softWrap: true);
     return AddressCheckphrase(
-      address: value!,
-      checkphrase: checkphrase,
+      address: address,
+      displayAddress: value,
       addressStyle: valueStyle,
       checkphraseStyle: text.caption.copyWith(color: colors.semanticLilac),
       textAlign: TextAlign.right,
@@ -157,13 +159,13 @@ class DetailSummaryRow extends StatelessWidget {
         children: [
           Text(label.toUpperCase(), style: _labelStyle(text, colors)),
           const SizedBox(height: 6),
-          Text(value!, style: effectiveValueStyle),
+          valueWidget ?? Text(value!, style: effectiveValueStyle),
           if (note != null) ...[const SizedBox(height: 4), Text(note!, style: _noteStyle(text, colors))],
-          if (checkphrase != null) ...[
+          if (checkphraseAddress != null) ...[
             const SizedBox(height: 10),
             Text('$label checkphrase'.toUpperCase(), style: _labelStyle(text, colors)),
             const SizedBox(height: 6),
-            Text(checkphrase!, style: effectiveValueStyle.copyWith(color: colors.semanticLilac)),
+            CheckphraseText(checkphraseAddress!, style: effectiveValueStyle.copyWith(color: colors.semanticLilac)),
           ],
         ],
       ),

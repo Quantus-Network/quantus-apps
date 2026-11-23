@@ -5,10 +5,13 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 
 /// Label + value row with a copy button that shows a check mark for two
-/// seconds after the value is copied.
+/// seconds after the value is copied. Copying waits while [value] is null.
 class CopyableDataItem extends StatefulWidget {
   final String label;
-  final String value;
+  final String? value;
+
+  /// Drawn in place of [value]; [value] is still what gets copied.
+  final Widget? valueWidget;
   final String copiedMessage;
   final Color? valueColor;
   final bool enabled;
@@ -17,10 +20,11 @@ class CopyableDataItem extends StatefulWidget {
     super.key,
     required this.label,
     required this.value,
+    this.valueWidget,
     required this.copiedMessage,
     this.valueColor,
     this.enabled = true,
-  });
+  }) : assert(value != null || valueWidget != null);
 
   @override
   State<CopyableDataItem> createState() => _CopyableDataItemState();
@@ -31,8 +35,9 @@ class _CopyableDataItemState extends State<CopyableDataItem> {
   Timer? _resetTimer;
 
   void _copy() {
-    if (!widget.enabled) return;
-    context.copyTextWithToaster(widget.value, message: widget.copiedMessage);
+    final value = widget.value;
+    if (!widget.enabled || value == null) return;
+    context.copyTextWithToaster(value, message: widget.copiedMessage);
     _resetTimer?.cancel();
     setState(() => _copied = true);
     _resetTimer = Timer(const Duration(seconds: 2), () {
@@ -62,10 +67,11 @@ class _CopyableDataItemState extends State<CopyableDataItem> {
               children: [
                 Text(widget.label, style: text.labelData.copyWith(color: colors.textMuted)),
                 const SizedBox(height: 16),
-                Text(
-                  widget.value,
-                  style: text.dataAddressLarge.copyWith(color: widget.valueColor ?? colors.textContent),
-                ),
+                widget.valueWidget ??
+                    Text(
+                      widget.value!,
+                      style: text.dataAddressLarge.copyWith(color: widget.valueColor ?? colors.textContent),
+                    ),
               ],
             ),
           ),

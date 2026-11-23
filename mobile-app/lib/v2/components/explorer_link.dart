@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
-
-/// Explorer page for [path], e.g. `wormhole/<extrinsic>`.
-String explorerUrl(String path) => '${AppConstants.explorerEndpoint}/$path';
 
 /// Underlined "View in Explorer ↗" link that opens [url] in an external
 /// browser. Shared across the send terminal, POS receipt and the

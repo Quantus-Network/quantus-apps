@@ -5,20 +5,19 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_threshold_slider.dart';
 import 'package:resonance_network_wallet/v2/components/name_field.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
-import 'package:resonance_network_wallet/providers/pending_multisig_creations_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
-import 'package:resonance_network_wallet/services/multisig_submission_service.dart';
+import 'package:wallet_core/services/multisig_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 
 class AddMultisigScreen extends ConsumerStatefulWidget {
   const AddMultisigScreen({super.key});
@@ -30,7 +29,6 @@ class AddMultisigScreen extends ConsumerStatefulWidget {
 class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   final _accountName = TextEditingController();
   final _signerAddressController = TextEditingController();
-  final _checksumService = HumanReadableChecksumService();
 
   List<String> _additionalSigners = [];
   late int _threshold;
@@ -42,7 +40,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   int _predictSeq = 0;
 
   Account? _creator;
-  String? _creatorChecksum;
 
   @override
   void initState() {
@@ -54,9 +51,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     _signerAddressController.addListener(_onSignerFieldChanged);
 
     _creator = _resolveCreatorAccount();
-    if (_creator != null) {
-      _loadCreatorChecksum(_creator!.accountId);
-    }
     _threshold = MultisigService.defaultThreshold(_allSigners.length);
   }
 
@@ -73,11 +67,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     if (active is RegularAccount) return active.account;
     final accounts = ref.read(accountsProvider).value ?? [];
     return accounts.isNotEmpty ? accounts.first : null;
-  }
-
-  Future<void> _loadCreatorChecksum(String accountId) async {
-    final checksum = await _checksumService.getHumanReadableName(accountId);
-    if (mounted) setState(() => _creatorChecksum = checksum);
   }
 
   List<String> get _allSigners {
@@ -114,6 +103,12 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     }
     if (address == _creator?.accountId || _additionalSigners.contains(address)) {
       setState(() => _signerFieldError = l10n.multisigCreateDuplicateSigner);
+      return;
+    }
+    // A multisig has no key and cannot sign, so a multisig listing it as a
+    // signer could never execute from this wallet.
+    if (_reservedAddresses().contains(address)) {
+      setState(() => _signerFieldError = l10n.multisigCreateSignerIsMultisig);
       return;
     }
 
@@ -261,8 +256,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   Future<void> _createWithHardware(Account creator, MultisigCreationPreflight preflight) async {
     final l10n = ref.read(l10nProvider);
     final draft = preflight.draft;
-    final checksum = await _checksumService.getHumanReadableName(draft.accountId);
-    if (!mounted) return;
 
     final session = KeystoneSigningSession(
       account: creator,
@@ -271,7 +264,7 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
       primaryDetail: l10n.multisigCreateKeystoneAction(draft.threshold, draft.signers.length),
       secondaryLabel: l10n.multisigCreatePredictedAddressLabel,
       secondaryDetail: draft.accountId,
-      tertiaryDetail: checksum,
+      secondaryIsAddress: true,
       cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: creator.accountId, identity: 'create|${draft.accountId}'),
       telemetryPrefix: 'multisig_create_hardware',
       submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) => ref
@@ -311,7 +304,6 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
             _SignersSection(
               l10n: l10n,
               creatorAccountId: _creator?.accountId,
-              creatorChecksum: _creatorChecksum,
               additionalSigners: _additionalSigners,
               signerAddressController: _signerAddressController,
               signerFieldError: _signerFieldError,
@@ -347,7 +339,6 @@ class _SignersSection extends StatelessWidget {
   const _SignersSection({
     required this.l10n,
     required this.creatorAccountId,
-    required this.creatorChecksum,
     required this.additionalSigners,
     required this.signerAddressController,
     required this.signerFieldError,
@@ -357,7 +348,6 @@ class _SignersSection extends StatelessWidget {
 
   final AppLocalizations l10n;
   final String? creatorAccountId;
-  final String? creatorChecksum;
   final List<String> additionalSigners;
   final TextEditingController signerAddressController;
   final String? signerFieldError;
@@ -385,12 +375,7 @@ class _SignersSection extends StatelessWidget {
           Text(l10n.multisigCreateSignersSubtitle, style: text.caption.copyWith(color: colors.textMuted)),
           const SizedBox(height: 16),
           if (creatorAccountId != null)
-            MultisigSignerListTile(
-              accountId: creatorAccountId!,
-              checksum: creatorChecksum,
-              isYou: true,
-              youLabel: l10n.multisigYouLabel,
-            ),
+            MultisigSignerListTile(accountId: creatorAccountId!, isYou: true, youLabel: l10n.multisigYouLabel),
           ...additionalSigners.map(
             (address) => MultisigSignerListTile(accountId: address, onRemove: () => onRemoveSigner(address)),
           ),
@@ -423,7 +408,7 @@ class _SignersSection extends StatelessWidget {
   }
 }
 
-class _PredictedAddressSection extends ConsumerStatefulWidget {
+class _PredictedAddressSection extends StatelessWidget {
   const _PredictedAddressSection({required this.l10n, required this.isLoading, required this.address});
 
   final AppLocalizations l10n;
@@ -431,37 +416,8 @@ class _PredictedAddressSection extends ConsumerStatefulWidget {
   final String? address;
 
   @override
-  ConsumerState<_PredictedAddressSection> createState() => _PredictedAddressSectionState();
-}
-
-class _PredictedAddressSectionState extends ConsumerState<_PredictedAddressSection> {
-  String? _checksum;
-  String? _prevAddress;
-
-  Future<void> _loadChecksum() async {
-    final checksumService = ref.read(humanReadableChecksumServiceProvider);
-
-    final hasAddress = widget.address != null;
-    final isNewAddress = widget.address != _prevAddress;
-
-    if (hasAddress && isNewAddress) {
-      final name = await checksumService.getHumanReadableName(widget.address!);
-      setState(() {
-        _checksum = name;
-        _prevAddress = widget.address;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    _loadChecksum();
-    final isReady = widget.address != null && _checksum != null;
-
-    quantusPrint('[PredictedAddressSection] address: ${widget.address}');
-    quantusPrint('[PredictedAddressSection] checksum: $_checksum');
-    quantusPrint('[PredictedAddressSection] isReady: $isReady');
-
+    final address = this.address;
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
@@ -471,24 +427,17 @@ class _PredictedAddressSectionState extends ConsumerState<_PredictedAddressSecti
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            widget.l10n.multisigCreatePredictedAddressLabel,
-            style: text.labelData.copyWith(color: colors.textMuted),
-          ),
+          Text(l10n.multisigCreatePredictedAddressLabel, style: text.labelData.copyWith(color: colors.textMuted)),
           const SizedBox(height: 12),
-          if (widget.isLoading)
+          if (isLoading)
             const Skeleton(height: 20)
-          else if (isReady)
+          else if (address != null)
             AddressCheckphrase(
-              address: widget.address!,
-              checkphrase: _checksum,
+              address: address,
               addressStyle: text.dataAddressLarge.copyWith(color: colors.textContent),
             )
           else
-            Text(
-              widget.l10n.multisigCreatePredictedAddressPlaceholder,
-              style: text.caption.copyWith(color: colors.textMuted),
-            ),
+            Text(l10n.multisigCreatePredictedAddressPlaceholder, style: text.caption.copyWith(color: colors.textMuted)),
         ],
       ),
     );

@@ -1,24 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/route_intent_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/routes.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/address_input_field.dart';
-import 'package:resonance_network_wallet/v2/components/icon_badge.dart';
-import 'package:resonance_network_wallet/v2/components/info_card.dart';
-import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/components/qr_scanner_page.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 
 class SelectRecipientScreen extends ConsumerStatefulWidget {
   final SendStrategy strategy;
@@ -34,7 +32,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   final _recipientController = TextEditingController();
   final _recipientFocus = FocusNode();
 
-  final Map<String, String> _checksums = {};
   List<String> _recents = [];
   bool _hasAddressError = true;
   bool _loadingRecents = true;
@@ -44,7 +41,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   bool _checking = false;
   bool _checkFailed = false;
   String _lastRecipientText = '';
-  String? _recipientChecksum;
+  StreamSubscription<RecipientBlock?>? _blockSubscription;
 
   @override
   void initState() {
@@ -55,6 +52,7 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
 
   @override
   void dispose() {
+    _blockSubscription?.cancel();
     _recipientController.removeListener(_onRecipientChanged);
     _recipientController.dispose();
     _amountController.dispose();
@@ -63,7 +61,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   Future<void> _loadRecents() async {
-    final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final recentAddressesService = ref.read(recentAddressesServiceProvider);
 
     try {
@@ -75,11 +72,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         _recents = addresses;
         _loadingRecents = false;
       });
-      for (final addr in addresses) {
-        checksumService.getHumanReadableName(addr).then((name) {
-          if (mounted && name != null) setState(() => _checksums[addr] = name);
-        });
-      }
     } catch (e) {
       quantusPrint('SelectRecipientScreen recents: $e');
       if (mounted) setState(() => _loadingRecents = false);
@@ -92,11 +84,11 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
     final text = _recipientController.text.trim();
     if (text == _lastRecipientText && !_checkFailed) return;
     _lastRecipientText = text;
+    _blockSubscription?.cancel();
     if (text.isEmpty) {
       _amountController.clear();
       setState(() {
         _hasAddressError = true;
-        _recipientChecksum = null;
         _isPayMode = false;
         _canContinue = false;
         _block = null;
@@ -109,7 +101,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   void _lookupAddress(String address) {
-    final checksumService = ref.read(humanReadableChecksumServiceProvider);
     final substrate = ref.read(substrateServiceProvider);
     final isValid = substrate.isValidSS58Address(address);
     final wasSelfSend = _block == RecipientBlock.self;
@@ -118,42 +109,37 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       _block = null;
       _checking = isValid;
       _checkFailed = false;
-      _recipientChecksum = null;
       _canContinue = false;
     });
     if (!isValid) return;
-    // Async: encrypted sends check the address against every derived wormhole
-    // address and against 1Click's deposit addresses. Continue stays disabled
-    // until resolved.
-    widget.strategy
+    // Verdicts come as the strategy has them: the self-send check first,
+    // for encrypted sends 1Click's word on the address whenever it lands.
+    // Continue follows the latest; the subscription is cancelled on any edit.
+    _blockSubscription = widget.strategy
         .recipientBlock(ref, address)
-        .then((block) {
-          if (!mounted || _recipientController.text.trim() != address) return;
-          setState(() {
-            _block = block;
-            _checking = false;
-            _canContinue = block == null;
-          });
-          if (block == RecipientBlock.self && !wasSelfSend) {
-            context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
-          }
-        })
-        .catchError((Object e) {
-          // Only an unanswered 1Click lookup lets the send go on; a failed
-          // self-send check keeps it closed.
-          quantusPrint('SelectRecipientScreen recipient check: $e');
-          if (!mounted || _recipientController.text.trim() != address) return;
-          setState(() {
-            _checking = false;
-            _checkFailed = true;
-            _canContinue = e is RecipientLookupUnavailable;
-          });
-          context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
-        });
-    checksumService.getHumanReadableName(address).then((checksum) {
-      if (!mounted || _recipientController.text.trim() != address) return;
-      setState(() => _recipientChecksum = checksum);
-    });
+        .listen(
+          (block) {
+            if (!mounted) return;
+            setState(() {
+              _block = block;
+              _checking = false;
+              _canContinue = block == null;
+            });
+            if (block == RecipientBlock.self && !wasSelfSend) {
+              context.showWarningToaster(message: ref.read(l10nProvider).sendLogicCantSelfTransfer);
+            }
+          },
+          onError: (Object e) {
+            if (!mounted) return;
+            // A failed self-send check keeps the send closed.
+            quantusPrint('SelectRecipientScreen recipient check: $e');
+            setState(() {
+              _checking = false;
+              _checkFailed = true;
+            });
+            context.showWarningToaster(message: ref.read(l10nProvider).sendRecipientCheckFailedMessage);
+          },
+        );
   }
 
   /// Single entry point for every way a recipient is supplied (scan, paste,
@@ -196,7 +182,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
         builder: (_) => InputAmountScreen(
           strategy: widget.strategy,
           recipientAddress: address,
-          recipientChecksum: _recipientChecksum,
           initialAmount: _amountController.text,
           isPayMode: _isPayMode,
         ),
@@ -208,7 +193,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       _isPayMode = false;
 
       setState(() {
-        _recipientChecksum = null;
         _hasAddressError = true;
         _canContinue = false;
         _block = null;
@@ -306,7 +290,6 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
       focusNode: _recipientFocus,
       fieldKey: const Key(E2EKeys.sendRecipientField),
       hasValid: hasValid,
-      recipientChecksum: _recipientChecksum,
       hintText: l10n.sendSelectRecipientSearchHint(AppConstants.tokenSymbol),
       trailing: QuantusIconButton.ghost(onTap: _pasteRecipient, icon: Icons.paste, size: IconButtonSize.large),
     );
@@ -343,16 +326,12 @@ class _SelectRecipientScreenState extends ConsumerState<SelectRecipientScreen> {
   }
 
   Widget _recentRow(String address) {
-    final checksum = _checksums[address];
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: () => _onRecentTap(address),
         borderRadius: context.radiusV3.mdBorder,
-        child: checksum != null
-            ? AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)
-            : const Skeleton(height: 36),
+        child: AddressCheckphraseWithInitial(address: address),
       ),
     );
   }

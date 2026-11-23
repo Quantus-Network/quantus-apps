@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,37 +7,37 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
 import 'package:resonance_network_wallet/v2/components/shared_address_action_sheet.dart';
-import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
+import 'package:wallet_core/services/global_history_polling_service.dart';
+import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
-import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/open_accounts_management_button.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/receive/receive_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_activity_section.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/multisig_proposal_detail_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_strategy.dart';
+import 'package:wallet_core/send/encrypted_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/multisig_propose_strategy.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/send/multisig_propose_strategy.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/select_recipient_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/route_intent_providers.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_providers.dart';
 import 'package:resonance_network_wallet/v2/components/global_toast_listener.dart';
 import 'package:resonance_network_wallet/v2/screens/home/activity_section.dart';
@@ -58,6 +59,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     ref.listenManual<PaymentIntent?>(paymentIntentProvider, _onPaymentIntent);
     ref.listenManual<String?>(sharedAccountIntentProvider, _onSharedIntent);
     ref.listenManual<ProposalIntent?>(proposalIntentProvider, _onProposalIntent);
+    ref.listenManual<bool>(swapProgressIntentProvider, _onSwapProgressIntent);
     ref.listenManual<AsyncValue<DisplayAccount?>>(activeAccountProvider, (_, async) {
       if (async.value == null) return;
       // Accounts may still be loading when an intent arrives on a cold start;
@@ -100,6 +102,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     _onPaymentIntent(null, ref.read(paymentIntentProvider));
     _onSharedIntent(null, ref.read(sharedAccountIntentProvider));
     _onProposalIntent(null, ref.read(proposalIntentProvider));
+    _onSwapProgressIntent(null, ref.read(swapProgressIntentProvider));
+  }
+
+  void _onSwapProgressIntent(bool? _, bool open) {
+    if (!open || !mounted || !_isUnlocked) return;
+    if (ref.read(sendFlowActiveProvider)) {
+      ref.read(swapProgressIntentProvider.notifier).state = false;
+      quantusPrint('swap progress intent ignored: send flow active');
+      return;
+    }
+    ref.read(swapProgressIntentProvider.notifier).state = false;
+    final swap = swapOnCard(ref.read(activeSwapsProvider), clock.now());
+    if (swap == null) return;
+    final navigator = Navigator.of(context);
+    var topIsSwap = false;
+    navigator.popUntil((route) {
+      topIsSwap = route.settings.name == SwapProgressScreen.routeName && route.settings.arguments == swap.id;
+      return true;
+    });
+    if (topIsSwap) return;
+    final active = ref.read(activeAccountProvider).value;
+    navigator.push(SwapProgressScreen.route(swap.id, account: active is RegularAccount ? active.account : null));
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
@@ -256,9 +280,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         const SizedBox(height: 16),
         _buildTopBar(isBalanceHidden),
-        const SizedBox(height: 52),
+        const SizedBox(height: 40),
         _buildBalance(colors, text, l10n, isBalanceHidden),
-        const SizedBox(height: 52),
+        const SizedBox(height: 40),
         if (actions != null) ...[actions, const SizedBox(height: 40)],
         if (backupWalletIndex != null) ...[
           BackupReminderBanner(walletIndex: backupWalletIndex),
@@ -290,12 +314,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        const OpenAccountsManagementButton(),
+        const Flexible(child: OpenAccountsManagementButton()),
         Row(
           children: [
             QuantusIconButton.circular(
               style: IconButtonStyle.glass,
-              icon: isBalanceHidden ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              quantusIcon: isBalanceHidden ? QuantusIcons.eyeSlash : QuantusIcons.eye,
               onTap: _toggleBalanceHidden,
               isActive: isBalanceHidden,
               size: IconButtonSize.large,
@@ -304,7 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             QuantusIconButton.circular(
               key: const Key(E2EKeys.homeSettingsButton),
               style: IconButtonStyle.glass,
-              icon: Icons.settings_outlined,
+              quantusIcon: QuantusIcons.gear,
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreenV2())),
               size: IconButtonSize.large,
             ),
@@ -356,7 +380,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _receiveCard(AppLocalizations l10n) => _actionCard(
-    iconAsset: 'assets/v2/action_receive.svg',
+    icon: QuantusIcons.actionReceive,
     label: l10n.homeReceive,
     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReceiveScreen())),
   );
@@ -367,7 +391,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         : RegularSendStrategy(account: account);
     return _actionCard(
       key: const Key(E2EKeys.homeSendButton),
-      iconAsset: 'assets/v2/action_send.svg',
+      icon: QuantusIcons.actionSend,
       label: l10n.homeSend,
       onTap: () => startSendFlow(
         context,
@@ -378,7 +402,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _proposeCard(AppLocalizations l10n, MultisigAccount msig) => _actionCard(
-    iconAsset: 'assets/v2/action_send.svg',
+    icon: QuantusIcons.actionSend,
     label: l10n.multisigProposeTitle,
     onTap: () {
       final strategy = MultisigProposeStrategy(msig: msig);
@@ -397,7 +421,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final starter = active is RegularAccount ? active.account : null;
     if (starter == null || !ref.watch(remoteConfigProvider).swapAvailable) return null;
     return _actionCard(
-      iconAsset: 'assets/v2/action_swap.svg',
+      icon: QuantusIcons.actionSwap,
       label: l10n.homeSwap,
       isDisabled: !starter.signsLocally,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwapScreen(account: starter))),
@@ -406,13 +430,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _actionCard({
     Key? key,
-    required String iconAsset,
+    required QuantusIcons icon,
     required String label,
     required VoidCallback onTap,
     bool isDisabled = false,
   }) {
     return Expanded(
-      child: ActionCard(key: key, iconAsset: iconAsset, label: label, onTap: onTap, isDisabled: isDisabled),
+      child: ActionCard(key: key, icon: icon, label: label, onTap: onTap, isDisabled: isDisabled),
     );
   }
 }

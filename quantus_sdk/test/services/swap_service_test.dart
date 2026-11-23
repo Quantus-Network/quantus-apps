@@ -20,8 +20,6 @@ const _refund = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
 
 /// The fee 1Click adds to the echoed request of a confidential quote.
 const _oneClickFee = {'recipient': '2238fd089f1c92b206c218cd16b8676cb98964e0d50f8ab729c6396a81e07805', 'fee': 20};
-const _feeBips = 20;
-const _ourFee = {'recipient': AppConstants.oneClickFeeRecipient, 'fee': _feeBips};
 const _recipient = 'qznQKhufTDfU3szAzfgCny7wMhxUN3qjEqneiRUNgC7MjSDyG';
 
 /// Stands in for 1Click's signing key; responses the mock serves are signed with it.
@@ -72,7 +70,7 @@ Map<String, dynamic> _quoteResponse({
     'deadline': '2026-09-20T06:00:50.000Z',
     'confidentiality': 'basic',
     ...?request,
-    'appFees': [...?request?['appFees'] as List<dynamic>?, _oneClickFee],
+    'appFees': [_oneClickFee],
   },
   'timestamp': '2026-09-20T05:50:50.975Z',
   'correlationId': 'corr-1',
@@ -122,15 +120,11 @@ final _platforms = jsonEncode([
 /// [handler] answers 1Click; CoinGecko answers [marketCaps] and [_platforms].
 SwapService _service(
   Future<http.Response> Function(http.Request request) handler, {
-  String? apiKey,
   String? quantusAssetId,
   bool preflight = false,
-  int feeBips = _feeBips,
   Future<http.Response> Function(http.Request request)? marketCaps,
 }) => SwapService(
   endpoint: 'https://oneclick.test',
-  apiKey: apiKey,
-  feeBips: feeBips,
   client: MockClient(
     (r) => r.url.host != 'api.coingecko.com'
         ? handler(r)
@@ -166,13 +160,12 @@ void main() {
         request = r;
         sent = jsonDecode(r.body) as Map<String, dynamic>;
         return http.Response(jsonEncode(_quoteResponse(request: _sentRequest(r))), 200);
-      }, apiKey: 'jwt-token');
+      });
 
       final quote = await _quote(service);
 
       expect(request.method, 'POST');
       expect(request.url.toString(), 'https://oneclick.test/v0/quote');
-      expect(request.headers['X-API-Key'], 'jwt-token');
       expect(sent, {
         'dry': true,
         'swapType': 'EXACT_INPUT',
@@ -190,7 +183,6 @@ void main() {
         'quoteWaitingTimeMs': 3000,
         'referral': 'quantus',
         'confidentiality': 'basic',
-        'appFees': [_ourFee],
       });
       final deadline = DateTime.parse(sent['deadline'] as String);
       // The request deadline is sent at millisecond precision.
@@ -214,6 +206,41 @@ void main() {
       expect(quote.correlationId, 'corr-1');
       expect(quote.signature, startsWith('ed25519:'));
       expect(quote.depositAddress, isNull);
+      expect(quote.withdrawFee, BigInt.zero);
+      expect(quote.refundFee, BigInt.from(300000));
+      expect(quote.feeBps, 20);
+    });
+
+    test('adds up the fee of every recipient, and a quote that names no fee has none', () async {
+      Map<String, dynamic>? appFees;
+      final service = _service((r) async {
+        final response = _quoteResponse(request: _sentRequest(r));
+        final echoed = response['quoteRequest'] as Map<String, dynamic>;
+        if (appFees == null) {
+          echoed.remove('appFees');
+          (response['quote'] as Map<String, dynamic>)
+            ..remove('withdrawFee')
+            ..remove('refundFee');
+        } else {
+          echoed.addAll(appFees);
+        }
+        return http.Response(jsonEncode(response), 200);
+      });
+
+      final bare = await _quote(service);
+      expect(
+        (bare.withdrawFee, bare.refundFee, bare.feeBps, bare.feeAmount),
+        (BigInt.zero, BigInt.zero, 0, BigInt.zero),
+      );
+
+      appFees = {
+        'appFees': [
+          _oneClickFee,
+          {'fee': 20},
+        ],
+      };
+      final charged = await _quote(service);
+      expect((charged.feeBps, charged.feeAmount), (40, BigInt.from(40000)));
     });
 
     test('asks for a memo deposit on chains that need one', () async {
@@ -330,28 +357,6 @@ void main() {
       );
     });
 
-    test('sends no app fee at zero bips and accepts an echo without one', () async {
-      Map<String, dynamic>? sent;
-      final service = _service((r) async {
-        sent = _sentRequest(r);
-        return http.Response(jsonEncode(_signed(_quoteResponse(request: sent))), 200);
-      }, feeBips: 0);
-      await _quote(service);
-      expect(sent, isNot(contains('appFees')));
-    });
-
-    test('rejects a quote whose echoed fees leave ours out', () async {
-      final service = _service((r) async {
-        final response = _quoteResponse(request: _sentRequest(r));
-        (response['quoteRequest'] as Map<String, dynamic>)['appFees'] = [_oneClickFee];
-        return http.Response(jsonEncode(_signed(response)), 200);
-      });
-      await expectLater(
-        _quote(service),
-        throwsA(isA<SwapQuoteIntegrityException>().having((e) => e.message, 'message', contains('appFees'))),
-      );
-    });
-
     test('rejects a quote that echoes another deadline', () async {
       final service = _service(
         (r) async => http.Response(
@@ -365,7 +370,7 @@ void main() {
       );
     });
 
-    test('sends no API key header when none is configured', () async {
+    test('sends no API key header: the proxy adds it', () async {
       late http.Request request;
       final service = _service((r) async {
         request = r;
@@ -774,10 +779,12 @@ void main() {
         return http.Response(jsonEncode(body), 200, headers: {'etag': version});
       });
       expect((await service.getListedQuantusToken())!.usdPrice, 1.5);
-      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 1.5);
+      await service.getFromTokens(forceRefresh: true);
+      expect((await service.getListedQuantusToken())!.usdPrice, 1.5);
       price = 2;
       version = 'W/"v2"';
-      expect((await service.getListedQuantusToken(forceRefresh: true))!.usdPrice, 2);
+      await service.getFromTokens(forceRefresh: true);
+      expect((await service.getListedQuantusToken())!.usdPrice, 2);
       expect(sent, [null, 'W/"v1"', 'W/"v1"']);
     });
 

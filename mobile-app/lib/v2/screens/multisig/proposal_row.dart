@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/pending_multisig_approvals_provider.dart';
-import 'package:resonance_network_wallet/providers/pending_multisig_cancellations_provider.dart';
-import 'package:resonance_network_wallet/providers/pending_multisig_executions_provider.dart';
-import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
+import 'package:wallet_core/activity/multisig_activity.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:resonance_network_wallet/v2/components/proposal_list_tile.dart';
 
 class ProposalRow extends ConsumerWidget {
@@ -26,57 +26,27 @@ class ProposalRow extends ConsumerWidget {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final ids = localSignerIds.isEmpty ? const <String>[] : localSignerIds;
-    final allLocalApproved = ids.isNotEmpty && ids.every(proposal.didApprove);
-    final pendingApprovals = ref.watch(pendingMultisigApprovalsProvider);
-    final pendingApproverIds = pendingApproverIdsForProposal(
-      pendingApprovals,
-      proposal.multisigAddress,
-      proposal.id,
-      ids,
+    final wait = proposalWaitOf(
+      proposal,
+      localSignerIds: localSignerIds,
+      approvals: ref.watch(pendingMultisigApprovalsProvider),
+      executions: ref.watch(pendingMultisigExecutionsProvider),
+      cancellations: ref.watch(pendingMultisigCancellationsProvider),
     );
-    final pendingExecutions = ref.watch(pendingMultisigExecutionsProvider);
-    PendingMultisigExecutionEvent? pendingExecution;
-    for (final id in ids) {
-      pendingExecution = findPendingExecutionForProposal(pendingExecutions, proposal.multisigAddress, proposal.id, id);
-      if (pendingExecution != null) break;
-    }
-    final pendingCancellations = ref.watch(pendingMultisigCancellationsProvider);
-    PendingMultisigCancellationEvent? pendingCancellation;
-    for (final id in ids) {
-      pendingCancellation = findPendingCancellationForProposal(
-        pendingCancellations,
-        proposal.multisigAddress,
-        proposal.id,
-        id,
-      );
-      if (pendingCancellation != null) break;
-    }
-    // Show "Approving" only when every remaining local signer is already in-flight.
-    final hasUnsignedLocal = ids.any((id) => !proposal.didApprove(id));
-    final isApproving =
-        hasUnsignedLocal &&
-        pendingApproverIds.isNotEmpty &&
-        ids.every((id) {
-          return proposal.didApprove(id) || pendingApproverIds.contains(id);
-        });
-    final isExecuting = pendingExecution != null;
-    final isCancelling = pendingCancellation != null;
-    final isPending = isApproving || isExecuting || isCancelling;
-    final pendingLabel = isExecuting
-        ? l10n.activityTxExecuting
-        : isApproving
-        ? l10n.activityTxApproving
-        : isCancelling
-        ? l10n.activityTxCancelling
-        : null;
+    final pendingLabel = switch (wait) {
+      ProposalWait.executing => l10n.activityTxExecuting,
+      ProposalWait.approving => l10n.activityTxApproving,
+      ProposalWait.cancelling => l10n.activityTxCancelling,
+      ProposalWait.signed || ProposalWait.proposed || ProposalWait.closed => null,
+    };
+    final isSigned = wait == ProposalWait.signed;
 
     return ProposalListTile(
       amount: proposal.amount,
       recipientAddress: proposal.recipient,
       call: proposal.decodedCall,
       callUndecodable: proposal.hasUndecodableCall,
-      highlighted: isPending,
+      highlighted: pendingLabel != null,
       onTap: onTap,
       trailing: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -85,11 +55,11 @@ class ProposalRow extends ConsumerWidget {
             Text(pendingLabel, style: text.labelChip.copyWith(color: colors.semanticGlacier))
           else
             _statusChip(l10n, colors, text),
-          if (proposal.isOpen && !isPending) ...[
+          if (isSigned || wait == ProposalWait.proposed) ...[
             const SizedBox(height: 6),
             QuantusBadge(
-              label: allLocalApproved ? l10n.multisigStatusApproved : l10n.multisigStatusProposed,
-              tone: allLocalApproved ? BadgeTone.sage : BadgeTone.glacier,
+              label: isSigned ? l10n.multisigStatusApproved : l10n.multisigStatusProposed,
+              tone: isSigned ? BadgeTone.sage : BadgeTone.glacier,
             ),
           ],
         ],

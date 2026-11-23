@@ -3,15 +3,17 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Address with its checkphrase underneath: the one place that fixes the order.
 class AddressCheckphrase extends StatelessWidget {
+  /// The full address; the checkphrase is derived from it.
   final String address;
-  final String? checkphrase;
+
+  /// What is drawn for the address when it should not appear in full.
+  final String? displayAddress;
   final TextStyle? addressStyle;
   final TextStyle? checkphraseStyle;
   final TextAlign textAlign;
-  final bool shortenAddress;
 
-  /// Shown in place of the checkphrase while it is null or empty.
-  final Widget? placeholder;
+  /// Replaces the checkphrase line, e.g. with the name of a known account.
+  final Widget? secondary;
 
   /// Badges rendered inline after the address.
   final List<Widget> badges;
@@ -19,12 +21,11 @@ class AddressCheckphrase extends StatelessWidget {
   const AddressCheckphrase({
     super.key,
     required this.address,
-    required this.checkphrase,
+    this.displayAddress,
     this.addressStyle,
     this.checkphraseStyle,
     this.textAlign = TextAlign.start,
-    this.shortenAddress = false,
-    this.placeholder,
+    this.secondary,
     this.badges = const [],
   });
 
@@ -32,9 +33,8 @@ class AddressCheckphrase extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = context.themeTextV3;
     final colors = context.colorsV3;
-    final phrase = checkphrase;
     final addressText = Text(
-      shortenAddress ? AddressFormattingService.formatAddress(address, ellipses: '.......') : address,
+      displayAddress ?? address,
       style: addressStyle ?? text.dataAddress.copyWith(color: colors.textContent),
       textAlign: textAlign,
     );
@@ -53,17 +53,13 @@ class AddressCheckphrase extends StatelessWidget {
               for (final badge in badges) ...[const SizedBox(width: 8), badge],
             ],
           ),
-        if (phrase != null && phrase.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(
-            phrase,
-            style: checkphraseStyle ?? text.body.copyWith(color: colors.semanticLilac),
-            textAlign: textAlign,
-          ),
-        ] else if (placeholder != null) ...[
-          const SizedBox(height: 4),
-          placeholder!,
-        ],
+        const SizedBox(height: 4),
+        secondary ??
+            CheckphraseText(
+              address,
+              style: checkphraseStyle ?? text.body.copyWith(color: colors.semanticLilac),
+              textAlign: textAlign,
+            ),
       ],
     );
   }

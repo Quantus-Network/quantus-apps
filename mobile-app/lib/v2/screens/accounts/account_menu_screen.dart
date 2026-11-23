@@ -3,16 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/shared/utils/accounts_grouping.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/components/account_badge.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/utils/account_menu.dart';
 import 'package:resonance_network_wallet/v2/components/menu_row.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
-import 'package:resonance_network_wallet/v2/components/private_activity_notice.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/edit_account_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/inner_hash_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/recovery_phrase_confirmation_screen.dart';
@@ -46,20 +43,20 @@ class AccountMenuScreen extends ConsumerWidget {
           MenuRow(
             label: l10n.accountMenuAccountName,
             value: account.name,
-            onTap: isEncrypted ? null : () => _openNameEditor(context, ref, account),
+            onTap: isEncrypted ? null : () => openNameEditor(context, ref, account),
           ),
           const SizedBox(height: 4),
           const MenuDivider(),
           const SizedBox(height: 12),
           if (isEncrypted)
-            MenuRow(label: l10n.accountMenuInnerHash, onTap: () => _openInnerHash(context, account))
+            MenuRow(label: l10n.accountMenuInnerHash, onTap: () => openInnerHash(context, account))
           else
-            MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => _openAddressDetails(context, account)),
+            MenuRow(label: l10n.accountMenuAddressDetails, onTap: () => openAddressDetails(context, account)),
           if (canShowRecoveryPhrase) ...[
             const SizedBox(height: 4),
             const MenuDivider(),
             const SizedBox(height: 12),
-            MenuRow(label: l10n.accountMenuShowRecoveryPhrase, onTap: () => _openRecoveryPhrase(context, account)),
+            MenuRow(label: l10n.accountMenuShowRecoveryPhrase, onTap: () => openRecoveryPhrase(context, account)),
           ],
         ],
       ),
@@ -76,40 +73,38 @@ class AccountMenuScreen extends ConsumerWidget {
         ),
       );
     }
-    if (!_canDisconnect(ref, account)) return null;
+    if (!canDisconnect(ref, account)) return null;
     return ScaffoldBaseBottomContent(
       child: QuantusButton.simple(
         label: l10n.accountMenuDisconnect,
         variant: ButtonVariant.danger,
-        onTap: () => _onDisconnect(context, ref, account),
+        onTap: () => disconnect(context, ref, account),
       ),
     );
   }
 
-  /// Hardware accounts can always be disconnected. Software accounts can be
-  /// disconnected, except the last remaining account of the primary wallet
-  /// (index 0) — that wallet can only be removed by logging out.
-  bool _canDisconnect(WidgetRef ref, Account account) {
-    if (account.accountType == AccountType.keystone) return true;
-    if (account.accountType != AccountType.local) return false;
-    if (account.walletIndex == 0) return !_isLastInWallet(ref, account);
-    return true;
+  static DisconnectPlan? _planOf(WidgetRef ref, Account account) =>
+      disconnectPlanOf(account, ref.read(accountsProvider).requireValue);
+
+  /// Whether [account] can be disconnected; see [disconnectPlanOf].
+  static bool canDisconnect(WidgetRef ref, Account account) => _planOf(ref, account) != null;
+
+  static Future<void> disconnect(BuildContext context, WidgetRef ref, Account account) {
+    return switch (_planOf(ref, account)) {
+      DisconnectHardware() => _onDisconnectHardware(context, ref, account),
+      DisconnectAccount() => _onDisconnectAccount(context, ref, account),
+      DisconnectWallet(:final walletIndex, :final walletNumber) => _onDisconnectWallet(
+        context,
+        ref,
+        account,
+        walletIndex: walletIndex,
+        walletNumber: walletNumber,
+      ),
+      null => throw StateError('${account.accountId} cannot be disconnected'),
+    };
   }
 
-  bool _isLastInWallet(WidgetRef ref, Account account) {
-    final all = ref.read(accountsProvider).value ?? <Account>[];
-    final siblings = all.where((a) => a.walletIndex == account.walletIndex && a.accountType != AccountType.encrypted);
-    return siblings.length <= 1;
-  }
-
-  Future<void> _onDisconnect(BuildContext context, WidgetRef ref, Account account) {
-    if (account.accountType == AccountType.keystone) {
-      return _onDisconnectHardware(context, ref, account);
-    }
-    return _onDisconnectSoftware(context, ref, account);
-  }
-
-  Future<void> _onDisconnectHardware(BuildContext context, WidgetRef ref, Account account) async {
+  static Future<void> _onDisconnectHardware(BuildContext context, WidgetRef ref, Account account) async {
     final l10n = ref.read(l10nProvider);
     final confirmed = await showConfirmActionSheet(
       context,
@@ -123,28 +118,30 @@ class AccountMenuScreen extends ConsumerWidget {
     await _performRemoveAccount(context, ref, account);
   }
 
-  /// Disconnecting a software account removes just that account, unless it is
-  /// the last account in its wallet — in which case it removes the entire
-  /// wallet (and its recovery phrase) after a second confirmation.
-  Future<void> _onDisconnectSoftware(BuildContext context, WidgetRef ref, Account account) async {
+  static Future<void> _onDisconnectAccount(BuildContext context, WidgetRef ref, Account account) async {
     final l10n = ref.read(l10nProvider);
-    final allAccounts = ref.read(accountsProvider).value ?? <Account>[];
+    final confirmed = await showConfirmActionSheet(
+      context,
+      title: l10n.accountMenuDisconnectAccountTitle,
+      message: l10n.accountMenuDisconnectAccountMessage(account.name),
+      confirmLabel: l10n.accountMenuDisconnect,
+      cancelLabel: l10n.commonCancel,
+      isDestructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+    await _performRemoveAccount(context, ref, account);
+  }
 
-    if (!_isLastInWallet(ref, account)) {
-      final confirmed = await showConfirmActionSheet(
-        context,
-        title: l10n.accountMenuDisconnectAccountTitle,
-        message: l10n.accountMenuDisconnectAccountMessage(account.name),
-        confirmLabel: l10n.accountMenuDisconnect,
-        cancelLabel: l10n.commonCancel,
-        isDestructive: true,
-      );
-      if (!confirmed || !context.mounted) return;
-      await _performRemoveAccount(context, ref, account);
-      return;
-    }
-
-    final walletNumber = softwareWalletNumber(allAccounts, account.walletIndex) ?? account.walletIndex;
+  /// The last account of its wallet takes the entire wallet (and its recovery
+  /// phrase) with it, after a second confirmation.
+  static Future<void> _onDisconnectWallet(
+    BuildContext context,
+    WidgetRef ref,
+    Account account, {
+    required int walletIndex,
+    required int walletNumber,
+  }) async {
+    final l10n = ref.read(l10nProvider);
     final confirmWallet = await showConfirmActionSheet(
       context,
       title: l10n.accountMenuDisconnectWalletTitle(walletNumber),
@@ -165,10 +162,10 @@ class AccountMenuScreen extends ConsumerWidget {
     );
     if (!confirmDelete || !context.mounted) return;
 
-    await _performRemoveWallet(context, ref, account.walletIndex);
+    await _performRemoveWallet(context, ref, walletIndex);
   }
 
-  Future<void> _performRemoveAccount(BuildContext context, WidgetRef ref, Account account) async {
+  static Future<void> _performRemoveAccount(BuildContext context, WidgetRef ref, Account account) async {
     final l10n = ref.read(l10nProvider);
     try {
       await AccountsService().removeAccount(account);
@@ -180,7 +177,7 @@ class AccountMenuScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _performRemoveWallet(BuildContext context, WidgetRef ref, int walletIndex) async {
+  static Future<void> _performRemoveWallet(BuildContext context, WidgetRef ref, int walletIndex) async {
     final l10n = ref.read(l10nProvider);
     try {
       await AccountsService().removeWallet(walletIndex);
@@ -192,7 +189,7 @@ class AccountMenuScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _openNameEditor(BuildContext context, WidgetRef ref, Account current) async {
+  static Future<void> openNameEditor(BuildContext context, WidgetRef ref, Account current) async {
     await Navigator.of(
       context,
     ).push<void>(MaterialPageRoute(builder: (_) => EditAccountScreen(initialAccount: current)));
@@ -200,19 +197,19 @@ class AccountMenuScreen extends ConsumerWidget {
     ref.invalidate(accountsProvider);
   }
 
-  void _openRecoveryPhrase(BuildContext context, Account account) {
+  static void openRecoveryPhrase(BuildContext context, Account account) {
     Navigator.of(
       context,
     ).push<void>(MaterialPageRoute(builder: (_) => RecoveryPhraseConfirmationScreen(walletIndex: account.walletIndex)));
   }
 
-  void _openAddressDetails(BuildContext context, Account account) {
+  static void openAddressDetails(BuildContext context, Account account) {
     Navigator.of(
       context,
     ).push<void>(MaterialPageRoute(builder: (_) => AccountDetailsScreen(accountId: account.accountId)));
   }
 
-  void _openInnerHash(BuildContext context, Account account) {
+  static void openInnerHash(BuildContext context, Account account) {
     Navigator.of(
       context,
     ).push<void>(MaterialPageRoute(builder: (_) => InnerHashScreen(walletIndex: account.walletIndex)));

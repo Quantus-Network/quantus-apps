@@ -1,0 +1,9 @@
+#%PAM-1.0
+#
+# Quantus Wallet asks for the login password of the person at the computer
+# before it shows a recovery phrase or resets a wallet. This service lets it
+# check that password by the system's own login rules.
+#
+# Install as /etc/pam.d/quantus-wallet.
+
+auth include login

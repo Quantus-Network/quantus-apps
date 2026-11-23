@@ -37,7 +37,18 @@ class SwapQuote {
   final String? depositAddress;
   final String? depositMemo;
 
-  const SwapQuote({
+  /// 1Click's fixed fee for paying [toToken] out to the recipient, in its base
+  /// units. [amountOut] is what arrives once it is taken.
+  final BigInt withdrawFee;
+
+  /// 1Click's fixed fee for a refund, in [fromToken]'s base units, taken from
+  /// what is refunded.
+  final BigInt refundFee;
+
+  /// What the swap's fee recipients take of the payment, in basis points.
+  final int feeBps;
+
+  SwapQuote({
     required this.fromToken,
     required this.toToken,
     this.swapType = SwapType.exactInput,
@@ -56,11 +67,24 @@ class SwapQuote {
     required this.signature,
     this.depositAddress,
     this.depositMemo,
-  });
+    BigInt? withdrawFee,
+    BigInt? refundFee,
+    this.feeBps = 0,
+  }) : withdrawFee = withdrawFee ?? BigInt.zero,
+       refundFee = refundFee ?? BigInt.zero;
+
+  /// What the fee recipients take of the payment, in [fromToken]'s base units.
+  BigInt get feeAmount => minAmountIn * BigInt.from(feeBps) ~/ BigInt.from(10000);
 
   factory SwapQuote.fromJson(Map<String, dynamic> json, {required SwapToken fromToken, required SwapToken toToken}) {
     final quote = json['quote'] as Map<String, dynamic>;
     final request = json['quoteRequest'] as Map<String, dynamic>;
+    BigInt? fee(String field) {
+      final value = quote[field] as String?;
+      return value == null ? null : BigInt.parse(value);
+    }
+
+    final appFees = (request['appFees'] as List<dynamic>? ?? const []).cast<Map<String, dynamic>>();
     return SwapQuote(
       fromToken: fromToken,
       toToken: toToken,
@@ -80,6 +104,9 @@ class SwapQuote {
       signature: json['signature'] as String,
       depositAddress: quote['depositAddress'] as String?,
       depositMemo: quote['depositMemo'] as String?,
+      withdrawFee: fee('withdrawFee'),
+      refundFee: fee('refundFee'),
+      feeBps: appFees.fold(0, (sum, f) => sum + (f['fee'] as num).round()),
     );
   }
 
@@ -98,6 +125,8 @@ class SwapQuote {
         'timeEstimate': timeEstimate.inSeconds,
         'depositAddress': ?depositAddress,
         'depositMemo': ?depositMemo,
+        'withdrawFee': '$withdrawFee',
+        'refundFee': '$refundFee',
       },
       'quoteRequest': {
         'swapType': swapType.wire,
@@ -105,6 +134,9 @@ class SwapQuote {
         'refundTo': refundAddress,
         'recipient': recipient,
         'deadline': deadline,
+        'appFees': [
+          {'fee': feeBps},
+        ],
       },
       'correlationId': correlationId,
       'signature': signature,

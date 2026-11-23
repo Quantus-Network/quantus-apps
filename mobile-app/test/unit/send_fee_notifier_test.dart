@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_fee_notifier.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_fee_notifier.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 
 void main() {
   late ProviderContainer container;

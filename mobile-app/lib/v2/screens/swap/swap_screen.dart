@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/amount_box.dart';
 import 'package:resonance_network_wallet/v2/components/near_intents_attribution.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_address_sheet.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_slippage_sheet.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/token_picker_sheet.dart';
@@ -59,6 +59,10 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   String? _address;
   bool _quoting = false;
 
+  /// Bumped on every change to what a quote is for, so a quote the form
+  /// moved past while it was out opens nothing.
+  int _edits = 0;
+
   /// A purchase of QTC puts the other token on top and QTC below.
   late bool _swapOut = widget.swapOut;
 
@@ -70,7 +74,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
   @override
   void initState() {
     super.initState();
-    _amountController.addListener(() => setState(() {}));
+    _amountController.addListener(() => setState(() => _edits++));
     _amountFocus.addListener(() => setState(() {}));
     _loadTokens();
   }
@@ -109,15 +113,37 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     }
   }
 
-  /// What [from] pays and [to] receives: the amount typed on its side, and
-  /// the other at listed prices.
-  (BigInt, BigInt) _amounts(SwapToken from, SwapToken to) {
-    final typed =
-        ref
-            .read(numberFormattingServiceProvider)
-            .parseAmount(_amountController.text, decimals: (_exactOutput ? to : from).decimals) ??
-        BigInt.zero;
+  /// The amount typed, in base units of the side it is typed on.
+  BigInt _typed(SwapToken from, SwapToken to) =>
+      ref
+          .read(numberFormattingServiceProvider)
+          .parseAmount(_amountController.text, decimals: (_exactOutput ? to : from).decimals) ??
+      BigInt.zero;
+
+  /// What [from] pays and [to] receives: as [quote] prices the amount typed,
+  /// or until there is one the amount typed and the other at listed prices.
+  (BigInt, BigInt) _amounts(SwapToken from, SwapToken to, SwapQuote? quote) {
+    if (quote != null) return (quote.amountIn, quote.amountOut);
+    final typed = _typed(from, to);
     return _exactOutput ? (swapEstimateOut(typed, to, from), typed) : (typed, swapEstimateOut(typed, from, to));
+  }
+
+  /// The swap the form describes once it has an amount and the external
+  /// address; null until then.
+  SwapQuoteRequest? _request(SwapToken from, SwapToken to) {
+    final address = _address;
+    final typed = _typed(from, to);
+    if (address == null || typed == BigInt.zero) return null;
+    final own = ref.read(swapPreflightProvider)?.address ?? widget.account.accountId;
+    return (
+      from: from,
+      to: to,
+      amount: typed,
+      swapType: _exactOutput ? SwapType.exactOutput : SwapType.exactInput,
+      refundAddress: _swapOut ? own : address,
+      recipient: _swapOut ? address : own,
+      slippageBps: ref.read(swapSlippageBpsProvider),
+    );
   }
 
   void _setDirection({required bool swapOut}) {
@@ -125,14 +151,15 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     setState(() {
       _swapOut = swapOut;
       _exactOutput = false;
+      _edits++;
     });
     _amountController.clear();
   }
 
-  /// Moves typing to the other side, starting from its estimate, selected so
-  /// that typing replaces it.
-  void _typeOtherSide(SwapToken from, SwapToken to) {
-    final (amountIn, amountOut) = _amounts(from, to);
+  /// Moves typing to the other side, starting from the amount shown there,
+  /// selected so that typing replaces it.
+  void _typeOtherSide(SwapToken from, SwapToken to, SwapQuote? quote) {
+    final (amountIn, amountOut) = _amounts(from, to, quote);
     final token = _exactOutput ? from : to;
     final estimate = _exactOutput ? amountIn : amountOut;
     final text = estimate == BigInt.zero ? '' : _amountText(estimate, token);
@@ -186,6 +213,7 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       setState(() {
         if (token.network != _foreign?.network) _address = null;
         _foreign = token;
+        _edits++;
       });
     }
     if (token.isQuantus != tapped.isQuantus) _setDirection(swapOut: !_swapOut);
@@ -200,35 +228,32 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
       role: _swapOut ? SwapAddressRole.recipient : SwapAddressRole.refund,
     );
     if (address == null || !mounted) return;
-    setState(() => _address = address);
-    final (amountIn, amountOut) = _amounts(from, to);
-    if (amountIn > BigInt.zero && amountOut > BigInt.zero) await _review(from, to, address);
+    setState(() {
+      _address = address;
+      _edits++;
+    });
+    final request = _request(from, to);
+    final (amountIn, amountOut) = _amounts(from, to, null);
+    if (request != null && amountIn > BigInt.zero && amountOut > BigInt.zero) await _review(request);
   }
 
-  /// Quotes with the service of the moment, so a config change since the form
-  /// was built is seen: the service then refuses the stale QTC token. Shows
-  /// the quote's terms.
-  Future<void> _review(SwapToken from, SwapToken to, String address) async {
+  /// Shows the terms of the form's quote for [request], waiting for it while
+  /// it is out. The quote comes from the service of the moment, so a config
+  /// change since the form was built is seen: the service then refuses the
+  /// stale QTC token. The form takes no taps meanwhile, a quote the form was
+  /// edited past opens nothing, and a quote that failed is asked for again.
+  Future<void> _review(SwapQuoteRequest request) async {
+    if (_quoting) return;
     final account = widget.account;
     if (!account.signsLocally) {
       throw StateError('Swaps need a transparent account, ${account.name} is ${account.accountType.name}');
     }
-    final own = ref.read(swapPreflightProvider)?.address ?? account.accountId;
-    final (amountIn, amountOut) = _amounts(from, to);
+    final edits = _edits;
     setState(() => _quoting = true);
+    final quoted = ref.listenManual(swapFormQuoteProvider(request).future, (_, _) {});
     try {
-      final quote = await ref
-          .read(swapServiceProvider)
-          .getQuote(
-            from: from,
-            to: to,
-            amount: _exactOutput ? amountOut : amountIn,
-            swapType: _exactOutput ? SwapType.exactOutput : SwapType.exactInput,
-            refundAddress: _swapOut ? own : address,
-            recipient: _swapOut ? address : own,
-            slippageBps: ref.read(swapSlippageBpsProvider),
-          );
-      if (!mounted) return;
+      final quote = await quoted.read();
+      if (!mounted || edits != _edits) return;
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -236,11 +261,12 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
         ),
       );
     } catch (e) {
-      quantusPrint('Swap quote failed: $e');
       if (!mounted) return;
+      ref.invalidate(swapFormQuoteProvider(request));
       final l10n = ref.read(l10nProvider);
       context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(l10n, e)));
     } finally {
+      quoted.close();
       if (mounted) setState(() => _quoting = false);
     }
   }
@@ -254,21 +280,29 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final foreign = _foreign;
     final quantus = _quantus;
     final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
-    final ready = available && foreign != null && quantus != null;
     final funds = _funds();
+    final appBar = V2AppBar(
+      title: l10n.swapTitle,
+      slotWidth: NearIntentsAttribution.width,
+      trailing: const NearIntentsAttribution(),
+    );
+    if (!available || foreign == null || quantus == null) {
+      return ScaffoldBase(
+        appBar: appBar,
+        mainContent: _unavailable(l10n, colors, text, disabled: !available),
+      );
+    }
+    final from = _swapOut ? quantus : foreign;
+    final to = _swapOut ? foreign : quantus;
+    // Covered by the review, the form asks for no quotes.
+    final request = TickerMode.valuesOf(context).enabled ? _request(from, to) : null;
+    final quoted = request == null ? null : ref.watch(swapFormQuoteProvider(request));
+    final quote = quoted == null || quoted.hasError ? null : quoted.value;
 
     return ScaffoldBase(
-      appBar: V2AppBar(
-        title: l10n.swapTitle,
-        slotWidth: NearIntentsAttribution.width,
-        trailing: const NearIntentsAttribution(),
-      ),
-      mainContent: ready
-          ? _form(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, funds)
-          : _unavailable(l10n, colors, text, disabled: !available),
-      bottomContent: ready
-          ? _cta(l10n, colors, text, _swapOut ? quantus : foreign, _swapOut ? foreign : quantus, foreign, funds)
-          : null,
+      appBar: appBar,
+      mainContent: _form(l10n, colors, text, from, to, funds, quote, quoted?.error),
+      bottomContent: _cta(l10n, colors, text, from, to, foreign, funds, quote),
     );
   }
 
@@ -331,12 +365,14 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     SwapToken to,
     SwapToken foreign,
     _Funds? funds,
+    SwapQuote? quote,
   ) {
     final max = funds?.max;
     final canPay = max ?? funds?.balance.value;
-    final (amountIn, amountOut) = _amounts(from, to);
+    final (amountIn, amountOut) = _amounts(from, to, quote);
     final insufficient = canPay != null && amountIn > canPay;
     final address = _address;
+    final request = _request(from, to);
     return ScaffoldBaseBottomContent(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -370,7 +406,11 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
                 : _swapOut
                 ? l10n.swapAddRecipientAddress
                 : l10n.swapAddRefundAddress,
-            onTap: address == null ? () => _addAddress(from, to, foreign) : () => _review(from, to, address),
+            onTap: address == null
+                ? () => _addAddress(from, to, foreign)
+                : request == null
+                ? null
+                : () => _review(request),
             isLoading: _quoting,
             isDisabled: insufficient || address != null && (amountIn == BigInt.zero || amountOut == BigInt.zero),
           ),
@@ -396,10 +436,13 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     SwapToken from,
     SwapToken to,
     _Funds? funds,
+    SwapQuote? quote,
+    Object? quoteError,
   ) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final feeFailed = funds?.feeFailed;
-    final (amountIn, amountOut) = _amounts(from, to);
+    final (amountIn, amountOut) = _amounts(from, to, quote);
+    void typeOtherSide() => _typeOtherSide(from, to, quote);
     final quantus = from.isQuantus ? from : to;
     final foreign = from.isQuantus ? to : from;
     final oneQuantus = BigInt.from(10).pow(quantus.decimals);
@@ -408,110 +451,139 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     final external = l10n.swapExternalWallet;
     final standIn = ref.watch(swapPreflightProvider) == null ? null : (from.isQuantus ? from : to);
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 24),
-          if (standIn != null) ...[
-            QuantusBanner(
-              tone: BannerTone.sand,
-              message: l10n.swapPreflightBanner(standIn.symbol, standIn.networkName),
+    return AbsorbPointer(
+      absorbing: _quoting,
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 24),
+            if (standIn != null) ...[
+              QuantusBanner(
+                tone: BannerTone.sand,
+                message: l10n.swapPreflightBanner(standIn.symbol, standIn.networkName),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Container(
+              decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.pillBorder),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Column(
+                    children: [
+                      _section(
+                        colors,
+                        text,
+                        label: l10n.swapFrom,
+                        owner: _swapOut ? wallet : external,
+                        token: from,
+                        usd: swapUsdValue(amountIn, from),
+                        amount: _exactOutput
+                            ? _otherSideBox(
+                                colors,
+                                text,
+                                fmt,
+                                from,
+                                amountIn,
+                                quoted: quote != null,
+                                onTap: typeOtherSide,
+                              )
+                            : _amountField(text, from),
+                        caret: true,
+                        onTypeOtherSide: _exactOutput ? null : typeOtherSide,
+                        aside: funds == null ? null : _balanceRow(l10n, colors, text, fmt, from, funds),
+                      ),
+                      Container(height: 4, color: colors.bgVoid),
+                      _section(
+                        colors,
+                        text,
+                        label: l10n.swapTo,
+                        owner: _swapOut ? external : wallet,
+                        token: to,
+                        usd: swapUsdValue(amountOut, to),
+                        amount: _exactOutput
+                            ? _amountField(text, to)
+                            : _otherSideBox(
+                                colors,
+                                text,
+                                fmt,
+                                to,
+                                amountOut,
+                                quoted: quote != null,
+                                onTap: typeOtherSide,
+                              ),
+                        caret: false,
+                        onTypeOtherSide: _exactOutput ? typeOtherSide : null,
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () => _setDirection(swapOut: !_swapOut),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(color: colors.bgVoid, shape: BoxShape.circle),
+                      child: SvgPicture.asset(
+                        _directionIconAsset,
+                        colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-          ],
-          Container(
-            decoration: BoxDecoration(color: colors.bgSurface, borderRadius: context.radiusV3.pillBorder),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              alignment: Alignment.center,
+            if (feeFailed != null) ...[const SizedBox(height: 12), feeFailed],
+            const SizedBox(height: 12),
+            Row(
               children: [
-                Column(
-                  children: [
-                    _section(
-                      colors,
-                      text,
-                      label: l10n.swapFrom,
-                      owner: _swapOut ? wallet : external,
-                      token: from,
-                      usd: swapUsdValue(amountIn, from),
-                      amount: _exactOutput
-                          ? _estimateBox(colors, text, fmt, from, amountIn, onTap: () => _typeOtherSide(from, to))
-                          : _amountField(text, from),
-                      caret: true,
-                      onTypeOtherSide: _exactOutput ? null : () => _typeOtherSide(from, to),
-                      aside: funds == null ? null : _balanceRow(l10n, colors, text, fmt, from, funds),
+                if (quote != null || priced)
+                  Expanded(
+                    child: Text(
+                      (quote != null ? l10n.swapRateLabel : l10n.swapRateEstimateLabel)(
+                        quantus.symbol,
+                        fmt.formatAmount(
+                          quote != null ? swapQuoteRate(quote) : swapEstimateOut(oneQuantus, quantus, foreign),
+                          decimals: foreign.decimals,
+                        ),
+                        foreign.symbol,
+                      ),
+                      style: text.bodyEmphasis.copyWith(color: colors.textMuted2),
                     ),
-                    Container(height: 4, color: colors.bgVoid),
-                    _section(
-                      colors,
-                      text,
-                      label: l10n.swapTo,
-                      owner: _swapOut ? external : wallet,
-                      token: to,
-                      usd: swapUsdValue(amountOut, to),
-                      amount: _exactOutput
-                          ? _amountField(text, to)
-                          : _estimateBox(colors, text, fmt, to, amountOut, onTap: () => _typeOtherSide(from, to)),
-                      caret: false,
-                      onTypeOtherSide: _exactOutput ? () => _typeOtherSide(from, to) : null,
-                    ),
-                  ],
-                ),
+                  )
+                else
+                  const Spacer(),
                 GestureDetector(
-                  onTap: () => _setDirection(swapOut: !_swapOut),
-                  child: Container(
-                    width: 48,
-                    height: 48,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(color: colors.bgVoid, shape: BoxShape.circle),
-                    child: SvgPicture.asset(
-                      _directionIconAsset,
-                      colorFilter: ColorFilter.mode(colors.textContent, BlendMode.srcIn),
-                    ),
+                  onTap: () => showSwapSlippageSheet(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.swapSlippageLabel(slippagePercentLabel(ref.watch(swapSlippageBpsProvider))),
+                        style: text.bodyEmphasis.copyWith(color: colors.textMuted2),
+                      ),
+                      const SizedBox(width: 8),
+                      _dot(colors, _slippageIconAsset),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-          if (feeFailed != null) ...[const SizedBox(height: 12), feeFailed],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (priced)
-                Expanded(
-                  child: Text(
-                    l10n.swapRateLabel(
-                      quantus.symbol,
-                      fmt.formatAmount(swapEstimateOut(oneQuantus, quantus, foreign), decimals: foreign.decimals),
-                      foreign.symbol,
-                    ),
-                    style: text.bodyEmphasis.copyWith(color: colors.textMuted2),
-                  ),
-                )
-              else
-                const Spacer(),
-              GestureDetector(
-                onTap: () => showSwapSlippageSheet(context),
-                behavior: HitTestBehavior.opaque,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      l10n.swapSlippageLabel(slippagePercentLabel(ref.watch(swapSlippageBpsProvider))),
-                      style: text.bodyEmphasis.copyWith(color: colors.textMuted2),
-                    ),
-                    const SizedBox(width: 8),
-                    _dot(colors, _slippageIconAsset),
-                  ],
-                ),
-              ),
+            const SizedBox(height: 8),
+            if (quote != null)
+              SwapQuoteFeeRows(quote: quote)
+            else if (quoteError != null)
+              _note(text, l10n.swapQuoteError(describeSwapError(l10n, quoteError)), colors.semanticEmber)
+            else if (priced)
+              _note(text, l10n.swapEstimateNotice, colors.textMuted),
+            if (_address case final address?) ...[
+              const SizedBox(height: 20),
+              _addressRow(l10n, colors, text, address, onTap: () => _addAddress(from, to, foreign)),
             ],
-          ),
-          if (_address case final address?) ...[
-            const SizedBox(height: 20),
-            _addressRow(l10n, colors, text, address, onTap: () => _addAddress(from, to, foreign)),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -718,23 +790,39 @@ class _SwapScreenState extends ConsumerState<SwapScreen> {
     );
   }
 
-  /// The side not typed on: its amount at listed prices; a tap types there.
-  Widget _estimateBox(
+  /// What the form says under the rate: that its figures are an estimate, or
+  /// why the quote failed.
+  Widget _note(AppTextThemeV3 text, String message, Color color) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Text(message, style: text.caption.copyWith(color: color)),
+    );
+  }
+
+  /// The side not typed on: its [amount] as [quoted], or dimmed while it is
+  /// only an estimate at listed prices; a tap types there.
+  Widget _otherSideBox(
     AppColorsV3 colors,
     AppTextThemeV3 text,
     NumberFormattingService fmt,
     SwapToken token,
-    BigInt estimate, {
+    BigInt amount, {
+    required bool quoted,
     required VoidCallback onTap,
   }) {
+    final color = quoted
+        ? colors.textContent
+        : amount > BigInt.zero
+        ? colors.textMuted
+        : colors.textMuted2;
     return GestureDetector(
       onTap: onTap,
       child: AmountBox(
         width: _amountBoxWidth,
         height: _rowHeight,
         child: Text(
-          fmt.formatAmount(estimate, decimals: token.decimals),
-          style: text.amountInline.copyWith(color: estimate > BigInt.zero ? colors.textContent : colors.textMuted2),
+          fmt.formatAmount(amount, decimals: token.decimals),
+          style: text.amountInline.copyWith(color: color),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

@@ -594,4 +594,78 @@ void main() {
       expect(withFee.totalCost, withFee.palletFee + withFee.networkFee);
     });
   });
+
+  group('what is still scheduled to or from accounts', () {
+    Map<String, dynamic> scheduled(String id, {required String from, required String to}) => {
+      'id': id,
+      'amount': '1000',
+      'timestamp': '2026-11-20T10:00:00Z',
+      'from': {'id': from},
+      'to': {'id': to},
+      'txId': '0x$id',
+      'scheduledAt': '2026-11-21T10:00:00Z',
+      'block': {'height': 7, 'hash': '0xblock'},
+      'extrinsic': {'id': '7-1'},
+    };
+
+    test('reads the scheduled transfers\' own table, on plain columns, one variable per account, in pages', () {
+      final query = ChainHistoryService.buildStillScheduledQuery(accountCount: 2, withCursor: false);
+
+      expect(query, contains('scheduled_reversible_transfer('));
+      expect(query, isNot(contains('account_event')));
+      expect(query, contains(r'$account0: String!, $account1: String!'));
+      expect(query, contains(r'$after: timestamptz!'));
+      expect(query, contains(r'{scheduled_at: {_gt: $after}}'));
+      expect(query, contains(r'{from_id: {_in: [$account0, $account1]}}'));
+      expect(query, contains(r'{to_id: {_in: [$account0, $account1]}}'));
+      expect(query, contains(r'limit: $limit'));
+      expect(query, contains('order_by: {id: asc}'));
+      // No predicate reaches through a relation.
+      final where = query.substring(query.indexOf('where:'), query.indexOf('order_by:'));
+      for (final relation in ['from: {', 'to: {', 'block: {', 'extrinsic: {', 'event: {']) {
+        expect(where, isNot(contains(relation)), reason: relation);
+      }
+
+      final next = ChainHistoryService.buildStillScheduledQuery(accountCount: 2, withCursor: true);
+      expect(next, contains(r'$afterId: String!'));
+      expect(next, contains(r'{id: {_gt: $afterId}}'));
+    });
+
+    test('finds which of them were executed or cancelled by the scheduled transfer\'s id, a plain column', () {
+      final query = ChainHistoryService.buildSettledScheduledQuery(idCount: 2);
+
+      expect(query, contains(r'$id0: String!, $id1: String!'));
+      expect(query, contains(r'executed_reversible_transfer(where: {scheduled_transfer_id: {_in: [$id0, $id1]}})'));
+      expect(query, contains(r'cancelled_reversible_transfer(where: {scheduled_transfer_id: {_in: [$id0, $id1]}})'));
+    });
+
+    test('what is still scheduled leaves out what was executed and what was cancelled', () {
+      final still = ChainHistoryService.stillScheduledOf(
+        [
+          scheduled('executed', from: 'qzA', to: 'qzB'),
+          scheduled('cancelled', from: 'qzB', to: 'qzC'),
+          scheduled('waiting', from: 'qzC', to: 'qzA'),
+        ],
+        {
+          'executed': [
+            {'scheduledTransfer': 'executed'},
+          ],
+          'cancelled': [
+            {'scheduledTransfer': 'cancelled'},
+          ],
+        },
+      );
+
+      expect(still.map((transfer) => transfer.id), ['waiting']);
+      expect(still.single.status, ReversibleTransferStatus.SCHEDULED);
+      expect((still.single.from, still.single.to), ('qzC', 'qzA'));
+    });
+
+    test('no account to ask about is a mistake, not an empty answer', () {
+      expect(
+        () => ChainHistoryService.buildStillScheduledQuery(accountCount: 0, withCursor: false),
+        throwsArgumentError,
+      );
+    });
+  });
 }

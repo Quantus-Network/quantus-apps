@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/utils/account_menu.dart';
 import 'package:resonance_network_wallet/v2/components/name_field.dart';
 
 class EditAccountScreen extends ConsumerStatefulWidget {
@@ -30,7 +31,7 @@ class EditAccountScreenState extends ConsumerState<EditAccountScreen> {
   final _accountsService = AccountsService();
   bool _saving = false;
 
-  bool get _isDisabled => _controller.text.trim().isEmpty;
+  bool get _isDisabled => nameEditOf(widget._initialName, _controller.text) is NameBlank;
 
   @override
   void initState() {
@@ -46,15 +47,17 @@ class EditAccountScreenState extends ConsumerState<EditAccountScreen> {
   }
 
   Future<void> _save() async {
-    final name = _controller.text.trim();
-    if (name.isEmpty) {
-      final l10n = ref.read(l10nProvider);
-      context.showErrorToaster(message: l10n.editAccountNameEmpty);
-      return;
-    }
-    if (name == widget._initialName) {
-      if (mounted) Navigator.of(context).pop();
-      return;
+    final String name;
+    switch (nameEditOf(widget._initialName, _controller.text)) {
+      case NameBlank():
+        final l10n = ref.read(l10nProvider);
+        context.showErrorToaster(message: l10n.editAccountNameEmpty);
+        return;
+      case NameUnchanged():
+        if (mounted) Navigator.of(context).pop();
+        return;
+      case NameChanged(name: final changed):
+        name = changed;
     }
     setState(() => _saving = true);
     try {

@@ -5,20 +5,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/components/amount_display_with_conversion.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
+import 'package:resonance_network_wallet/v2/components/multisig_expiry_value.dart';
 import 'package:resonance_network_wallet/v2/components/split_card.dart';
 import 'package:resonance_network_wallet/v2/screens/send/encrypted_send_progress_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_review.dart';
+import 'package:wallet_core/send/send_review_row.dart';
+import 'package:wallet_core/send/send_screen_logic.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 
 class ReviewSendScreen extends ConsumerStatefulWidget {
@@ -26,7 +28,6 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
   final String recipientAddress;
   final BigInt amount;
   final SendFee fee;
-  final String recipientChecksum;
   final bool isPayMode;
 
   /// Max send: the amount is whatever the settled fee leaves of the spendable
@@ -39,7 +40,6 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
     required this.recipientAddress,
     required this.amount,
     required this.fee,
-    required this.recipientChecksum,
     this.isPayMode = false,
     this.sendAll = false,
   });
@@ -60,43 +60,17 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
 
   SendFeeState get _feeState => ref.read(_feeProvider);
 
-  /// Latest fee the flow has, falling back to the one this screen opened with.
-  SendFee get _fee => _feeState.fee ?? widget.fee;
-
   BigInt? get _spendable => ref.read(widget.strategy.spendableBalanceProvider).value;
 
-  BigInt get _amount {
-    final spendable = _spendable;
-    if (!widget.sendAll || spendable == null) return widget.amount;
-    return SendScreenLogic.calculateMaxSendableAmount(
-      balance: spendable,
-      networkFee: widget.strategy.feeChargedToBalance(_fee),
-    );
-  }
-
-  BigInt get _feeCharged => widget.strategy.feeChargedToBalance(_fee);
-
-  /// The settled fee priced exactly this send.
-  bool get _feeApplies =>
-      _feeState.settled && widget.strategy.feeApplies(_fee, amount: _amount, sendAll: widget.sendAll);
-
-  /// A max send is sized by its fee. An ordinary send only needs its exact fee
-  /// when the amount leaves less than one more fee of headroom: a quote for a
-  /// nearby amount differs from the exact fee by a few bytes' worth, far less
-  /// than a whole fee, so anything with that headroom cannot fail on the fee.
-  bool get _needsExactFee {
-    if (widget.sendAll) return true;
-    final spendable = _spendable;
-    return spendable != null && _amount + _feeCharged * BigInt.two > spendable;
-  }
-
-  bool get _waitingForFee => _needsExactFee && !_feeApplies;
-
-  /// Re-checked here because a max amount is recomputed from the settled fee
-  /// and can fall below the minimum, and the balance can move.
-  AmountStatus get _amountStatus => SendScreenLogic.getAmountStatus(_amount, _spendable ?? BigInt.zero, _feeCharged);
-
-  bool get _confirmBlocked => _waitingForFee || _amountStatus != AmountStatus.valid;
+  /// The send as the fee and the balance leave it now.
+  SendReview get _review => SendReview.of(
+    widget.strategy,
+    feeState: _feeState,
+    openedWith: widget.fee,
+    spendable: _spendable,
+    enteredAmount: widget.amount,
+    sendAll: widget.sendAll,
+  );
 
   @override
   void initState() {
@@ -115,15 +89,23 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   }
 
   void _prefetchSignPayload() {
+    final review = _review;
     unawaited(
       widget.strategy
-          .prefetchSignPayload(ref, recipientAddress: _recipient, amount: _amount, fee: _fee, sendAll: widget.sendAll)
+          .prefetchSignPayload(
+            ref,
+            recipientAddress: _recipient,
+            amount: review.amount,
+            fee: review.fee,
+            sendAll: widget.sendAll,
+          )
           .catchError((Object e) => quantusPrint('Keystone payload prefetch failed: $e')),
     );
   }
 
   Future<void> _confirmSend() async {
-    if (_confirmBlocked) {
+    final review = _review;
+    if (review.confirmBlocked) {
       quantusPrint('Confirm ignored: the fee no longer allows this send');
       return;
     }
@@ -137,9 +119,8 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       outcome = await widget.strategy.submit(
         ref,
         recipientAddress: _recipient,
-        recipientChecksum: widget.recipientChecksum,
-        amount: _amount,
-        fee: _fee,
+        amount: review.amount,
+        fee: review.fee,
         isPayMode: widget.isPayMode,
         sendAll: widget.sendAll,
       );
@@ -196,13 +177,12 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     // Watched for rebuilds; the getters above read the same providers.
     ref.watch(_feeProvider);
     ref.watch(widget.strategy.spendableBalanceProvider);
-    final feeState = _feeState;
-    final fee = _fee;
-    final amount = _amount;
-    final feeApplies = _feeApplies;
-    final waitingForFee = _waitingForFee;
-    final amountStatus = _amountStatus;
-    final feeFailed = waitingForFee && feeState.failed;
+    final review = _review;
+    final fee = review.fee;
+    final amount = review.amount;
+    final feeApplies = review.feeApplies;
+    final amountStatus = review.amountStatus;
+    final feeFailed = review.feeFailed;
     final message = amountStatus != AmountStatus.valid
         ? SendScreenLogic.getButtonText(
             l10n: l10n,
@@ -239,14 +219,15 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: widget.strategy.reviewRows(
-                  context,
-                  ref,
-                  recipientAddress: widget.recipientAddress,
-                  amount: amount,
-                  fee: fee,
-                  feeIsEstimate: !feeApplies,
-                  sendAll: widget.sendAll,
+                children: _summaryRows(
+                  widget.strategy.reviewRows(
+                    ref,
+                    recipientAddress: widget.recipientAddress,
+                    amount: amount,
+                    fee: fee,
+                    feeIsEstimate: !feeApplies,
+                    sendAll: widget.sendAll,
+                  ),
                 ),
               ),
             ),
@@ -270,11 +251,39 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           label: strings.reviewConfirmLabel,
           variant: ButtonVariant.primary,
           isLoading: _submitting,
-          isDisabled: _submitting || _confirmBlocked,
+          isDisabled: _submitting || review.confirmBlocked,
           onTap: _confirmSend,
         ),
       ),
     );
+  }
+
+  /// The strategy's summary rows as this screen draws them, with a gap above,
+  /// between and below: seven high, or four once there are more than four
+  /// rows, as a multisig proposal has.
+  List<Widget> _summaryRows(List<SendReviewRow> rows) {
+    final gap = SizedBox(height: rows.length > 4 ? 4.0 : 7.0);
+    return [
+      gap,
+      for (final row in rows) ...[
+        switch (row) {
+          SendReviewText(:final label, :final value) => DetailSummaryRow.review(label: label, value: value),
+          SendReviewThreshold(:final label, :final text) => DetailSummaryRow.review(label: label, value: text),
+          SendReviewAddress(:final label, :final address) => DetailSummaryRow.review(
+            label: label,
+            value: address,
+            checkphraseAddress: address,
+            valueFlex: 4,
+          ),
+          SendReviewExpiry(:final label, :final expiry) => DetailSummaryRow.review(
+            label: label,
+            valueWidget: MultisigExpiryValue(parts: expiry),
+            valueFlex: 4,
+          ),
+        },
+        gap,
+      ],
+    ];
   }
 
   Widget _heroCard(AppLocalizations l10n, SendStrings strings, CurrencyDisplayState approxDisplay) {
@@ -296,11 +305,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
         children: [
           Text(l10n.sendReviewTo, style: sectionLabelStyle),
           const SizedBox(height: 16),
-          AddressCheckphraseWithInitial(
-            recipientChecksum: widget.recipientChecksum,
-            recipientAddress: widget.recipientAddress,
-            showFullAddress: true,
-          ),
+          AddressCheckphraseWithInitial(address: widget.recipientAddress, showFullAddress: true),
         ],
       ),
     );

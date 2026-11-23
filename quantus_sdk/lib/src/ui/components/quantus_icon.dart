@@ -7,10 +7,21 @@ enum QuantusIcons {
   kebab('assets/icons/kebab.svg'),
   chevronRight('assets/icons/chevron_right.svg'),
   chevronLeft('assets/icons/chevron_left.svg'),
+  close('assets/icons/close.svg'),
   caretDown('assets/icons/caret_down.svg'),
+  caretLeft('assets/icons/caret_left.svg'),
+  caretUpDown('assets/icons/caret_up_down.svg'),
+  flashlight('assets/icons/flashlight.svg'),
+  imageSquare('assets/icons/image_square.svg'),
+  eye('assets/icons/eye.svg'),
+  eyeSlash('assets/icons/eye_slash.svg'),
+  gear('assets/icons/gear.svg'),
   plus('assets/icons/plus.svg'),
   swapVertical('assets/icons/swap_vertical.svg'),
-  lock('assets/icons/lock.svg');
+  lock('assets/icons/lock.svg'),
+  actionReceive('assets/icons/action_receive.svg'),
+  actionSend('assets/icons/action_send.svg'),
+  actionSwap('assets/icons/action_swap.svg');
 
   const QuantusIcons(this.assetPath);
 

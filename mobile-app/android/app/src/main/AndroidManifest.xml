@@ -6,6 +6,10 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- Notifications permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Install-time. Required before Android will promote a Live Update. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <!-- Biometric permission -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
     <!-- Local notification permission -->
@@ -41,6 +45,13 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="quantus" android:host="swap" />
+            </intent-filter>
+
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -51,6 +62,26 @@
                 <data android:scheme="https" android:host="www.quantus.com" android:pathPrefix="/pay" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".SwapLiveActivityService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+        <receiver
+            android:name=".SwapLiveActivityReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".SwapLivePushReceiver"
+            android:exported="true"
+            android:permission="com.google.android.c2dm.permission.SEND">
+            <intent-filter>
+                <action android:name="com.google.android.c2dm.intent.RECEIVE" />
+            </intent-filter>
+        </receiver>
+        <provider
+            android:name=".SwapLiveActivityInitProvider"
+            android:authorities="${applicationId}.swap_live_activity_init"
+            android:exported="false" />
 
         <!-- Local notifications -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />

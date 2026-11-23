@@ -5,7 +5,7 @@
 		<key>NSCameraUsageDescription</key>
 		<string>Camera access is required to scan transaction QR codes for signing.</string>
 		<key>NSFaceIDUsageDescription</key>
-		<string>Face ID is used to unlock your cold wallet.</string>
+		<string>Face ID unlocks your cold wallet and protects its signing key.</string>
 		<key>CADisableMinimumFrameDurationOnPhone</key>
 		<true/>
 		<key>CFBundleDevelopmentRegion</key>

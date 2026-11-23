@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,9 +5,13 @@ import 'package:quantus_sdk/quantus_sdk.dart' hide CallFieldView;
 import 'package:quantus_cold_wallet/app_version.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
 import 'package:quantus_cold_wallet/components/call_detail_view.dart';
-import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
+import 'package:quantus_cold_wallet/components/review_card.dart';
+import 'package:quantus_cold_wallet/components/signer_row.dart';
 import 'package:quantus_cold_wallet/components/signing_refusal_view.dart';
+import 'package:quantus_cold_wallet/components/step_header.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/screens/signing_review_state.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 /// Reviews a scanned signing payload and, on approval, produces the signature QR.
 ///
@@ -26,12 +28,9 @@ class SignTransactionScreen extends ConsumerStatefulWidget {
   ConsumerState<SignTransactionScreen> createState() => _SignTransactionScreenState();
 }
 
-class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
+class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> with SigningReviewState {
   ParsedPayload? _parsed;
   FormatException? _parseError;
-  Uint8List? _signed;
-  bool _signing = false;
-  String? _error;
 
   @override
   void initState() {
@@ -44,61 +43,28 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     }
   }
 
-  void _sign() {
-    final keypair = keypairFor(ref, widget.request.signer);
-    if (keypair == null) {
-      setState(() => _error = 'Wallet is locked — unlock and try again. Nothing was signed.');
-      return;
-    }
-    setState(() {
-      _signing = true;
-      _error = null;
-    });
-
-    try {
-      final parsed = _parsed;
-      if (parsed == null) {
-        setState(() {
-          _signing = false;
-          _error = 'Cannot sign an undecoded payload.';
-        });
-        return;
-      }
-      // Returns signature ++ publicKey; the hot wallet reads the scheme off its
-      // length and rebuilds the extrinsic via submitExtrinsicWithExternalSignature.
-      final signed = signMessageWithPubkey(
-        keypair: keypair,
-        message: QuantusSigningPayload.signablePayload(widget.request.payload),
-        specVersion: parsed.extensions.specVersion,
-      );
-      setState(() {
-        _signing = false;
-        _signed = signed;
-      });
-    } catch (e) {
-      setState(() {
-        _signing = false;
-        _error = 'Signing failed: $e';
-      });
-    }
-  }
+  /// Returns signature ++ publicKey; the hot wallet reads the scheme off its
+  /// length and rebuilds the extrinsic via submitExtrinsicWithExternalSignature.
+  void _sign(ParsedPayload parsed) => approve(
+    widget.request.signer,
+    (keypair) => signMessageWithPubkey(
+      keypair: keypair,
+      message: QuantusSigningPayload.signablePayload(widget.request.payload),
+      specVersion: parsed.extensions.specVersion,
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final parseError = _parseError;
     if (parseError != null) return _parseErrorView(context, parseError);
-    if (!ref.watch(addressesProvider).containsKey(widget.request.signer)) {
+    final account = ref.watch(addressesProvider)[widget.request.signer];
+    if (account == null) {
       return _errorView(
         context,
         title: 'Account not in this wallet',
         message: 'The requested signer account does not exist in this cold wallet.',
         detail: AddressWithCheckphrase(label: 'Requested signer', address: widget.request.signer),
-      );
-    }
-    if (_signed != null) {
-      return SignatureQrView(
-        signed: _signed!,
-        instruction: 'Scan this with your hot wallet to broadcast the transaction.',
       );
     }
     return _reviewView(context, _parsed!);
@@ -130,31 +96,51 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
   }
 
   Widget _errorView(BuildContext context, {required String title, required String message, required Widget detail}) =>
-      SigningRefusalView(appBarTitle: 'Sign Transaction', title: title, message: message, detail: detail);
+      SigningRefusalView(appBarTitle: 'Sign', title: title, message: message, detail: detail);
 
   Widget _reviewView(BuildContext context, ParsedPayload parsed) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Review & Sign'),
+      appBar: const V2AppBar(title: 'Sign'),
       mainContent: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 8),
-            if (!parsed.specMatchesBundled) _specDriftBanner(context, parsed.extensions),
-            // The headline is an opinionated human summary (SEND / REVERSIBLE
-            // SEND / …) by design; the exact pallet · call chain is the Call
-            // line in the Advanced sheet. See [DecodedCall.actionTitle].
-            Text(parsed.call.actionTitle, style: text.titleScreen.copyWith(color: colors.accentFlare)),
-            ..._callBody(parsed.call),
-            const SizedBox(height: 20),
+            const StepHeader(
+              step: 2,
+              total: 3,
+              title: "Check your phone's screen",
+              subtitle: 'Before approving here, make sure your phone shows exactly this:',
+            ),
+            const SizedBox(height: 24),
+            if (!parsed.specMatchesBundled) ...[_specDriftBanner(parsed.extensions), const SizedBox(height: 16)],
+            ReviewCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // The headline is an opinionated human summary (SEND / REVERSIBLE
+                  // SEND / …) by design; the exact pallet · call chain is the Call
+                  // line in the Advanced sheet. See [DecodedCall.actionTitle].
+                  Text(parsed.call.actionTitle, style: text.titleScreen.copyWith(color: colors.accentFlare)),
+                  ..._callBody(parsed.call),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            const QuantusBanner(
+              tone: BannerTone.ember,
+              message:
+                  "If the amount or address on your phone is different from what's shown here, reject it on this "
+                  'device.',
+            ),
+            const SizedBox(height: 24),
             _advancedSection(context, parsed),
-            if (_error != null) ...[
+            if (signError != null) ...[
               const SizedBox(height: 16),
               Text(
-                _error!,
+                signError!,
                 style: text.caption.copyWith(color: colors.semanticEmber),
                 textAlign: TextAlign.center,
               ),
@@ -164,18 +150,22 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: QuantusButton.simple(
-                label: 'Cancel',
-                variant: ButtonVariant.staged,
-                onTap: () => Navigator.popUntil(context, (r) => r.isFirst),
-              ),
+            QuantusButton.simple(
+              label: 'Approve and Sign',
+              padding: coldButtonPadding,
+              isLoading: signing,
+              onTap: signing ? null : () => _sign(parsed),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: QuantusButton.simple(label: 'Sign', isLoading: _signing, onTap: _signing ? null : _sign),
+            const SizedBox(height: 8),
+            QuantusButton.simple(
+              label: "It doesn't match",
+              variant: ButtonVariant.underline,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              textStyle: text.bodyEmphasis.copyWith(color: colors.semanticEmber),
+              onTap: reject,
             ),
           ],
         ),
@@ -198,7 +188,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         !call.fields.any(
           (f) => f is ValueField && f.kind == ValueKind.address && !identical(f, transfer!.recipientField),
         );
-    final signer = AddressWithCheckphrase(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
+    final signer = SignerRow(label: fromSigner ? 'From' : 'Signed by', address: signerAddress);
 
     if (!call.isWrapper) return [...callSummaryBody(call), signer];
 
@@ -225,7 +215,7 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
         children: [
           Text('ADVANCED', style: text.labelData.copyWith(color: colors.textMuted)),
           const SizedBox(width: 6),
-          Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+          QuantusIcon(QuantusIcons.chevronRight, size: 18, color: colors.textMuted),
         ],
       ),
     );
@@ -249,42 +239,18 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> {
     ];
   }
 
-  Widget _specDriftBanner(BuildContext context, SignedExtensions ext) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colors.semanticEmber.useOpacity(0.12),
-        borderRadius: context.radiusV3.mdBorder,
-        border: Border.all(color: colors.semanticEmber),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.warning_amber_rounded, color: colors.semanticEmber, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Built for a different runtime', style: text.bodyEmphasis.copyWith(color: colors.semanticEmber)),
-                const SizedBox(height: 4),
-                Text(
-                  'This payload targets spec ${ext.specVersion} / tx version ${ext.transactionVersion}, but this '
-                  'wallet decodes spec ${AppConstants.bundledSpecVersion} / tx version '
-                  '${AppConstants.bundledTransactionVersion}. Across runtime versions the same index can mean a '
-                  'different call, so the parameters below may be mislabelled. Update the cold wallet before signing '
-                  'anything you cannot verify another way.',
-                  style: text.caption.copyWith(color: colors.textMuted),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+  /// A warning only: a signer who verified the transaction another way must
+  /// still be able to sign it.
+  Widget _specDriftBanner(SignedExtensions ext) {
+    return QuantusBanner(
+      tone: BannerTone.ember,
+      label: 'Built for a different runtime',
+      message:
+          'This payload targets spec ${ext.specVersion} / tx version ${ext.transactionVersion}, but this '
+          'wallet decodes spec ${AppConstants.bundledSpecVersion} / tx version '
+          '${AppConstants.bundledTransactionVersion}. Across runtime versions the same index can mean a '
+          'different call, so the parameters below may be mislabelled. Update the cold wallet before signing '
+          'anything you cannot verify another way.',
     );
   }
 

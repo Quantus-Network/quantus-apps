@@ -67,8 +67,8 @@ android {
 
     buildTypes {
         release {
-            // Use the release signing config
-            signingConfig = signingConfigs.release
+            // CI passes -PunsignedRelease=true and signs in a separate job.
+            signingConfig = project.findProperty('unsignedRelease') == 'true' ? null : signingConfigs.release
             // TODO: You might want to enable ProGuard/R8 for code shrinking and obfuscation
             // minifyEnabled true
             // shrinkResources true
@@ -94,6 +94,7 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    testImplementation 'junit:junit:4.13.2'
 
     // Patrol native automation: AndroidX Test Orchestrator runs each Dart test
     // in its own instrumentation invocation (required by ANDROIDX_TEST_ORCHESTRATOR).

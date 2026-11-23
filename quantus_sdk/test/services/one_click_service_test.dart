@@ -12,7 +12,6 @@ void main() {
   var requests = 0;
 
   OneClickService service(int status, Object body) => OneClickService(
-    apiKey: 'partner-jwt',
     client: MockClient((request) async {
       captured = request;
       requests++;
@@ -30,9 +29,8 @@ void main() {
     };
     expect(await service(200, history).isDepositAddress(_address), isTrue);
     final uri = captured!.url;
-    expect(uri.toString(), startsWith('https://1click.chaindefuser.com/v0/account/history?'));
+    expect(uri.toString(), startsWith('https://oneclick.quantus.com/v0/account/history?'));
     expect(uri.queryParameters, {'depositAddress': _address, 'depositType': 'ORIGIN_CHAIN', 'limit': '1'});
-    expect(captured!.headers['X-API-Key'], 'partner-jwt');
   });
 
   test('an address without history is not a deposit address', () async {
@@ -55,15 +53,21 @@ void main() {
     expect(requests, 2);
   });
 
-  test('a lookup without a partner key is refused before any request', () async {
-    final keyless = OneClickService(
-      client: MockClient((_) async {
-        requests++;
-        return http.Response('{"items": []}', 200);
-      }),
-    );
-    await expectLater(keyless.isDepositAddress(_address), throwsStateError);
-    expect(requests, 0);
+  test('a known deposit address is one that was confirmed, never asked for', () async {
+    final deposits = service(200, {
+      'items': [
+        {'depositAddress': _address},
+      ],
+    });
+    expect(deposits.isKnownDepositAddress(_address), isFalse);
+    await deposits.isDepositAddress(_address);
+    expect(deposits.isKnownDepositAddress(_address), isTrue);
+    expect(deposits.isKnownDepositAddress('qzOther'), isFalse);
+    expect(requests, 1);
+
+    final refused = service(403, {'message': 'History is invite-only for now'});
+    await expectLater(refused.isDepositAddress(_address), throwsA(isA<SwapApiException>()));
+    expect(refused.isKnownDepositAddress(_address), isFalse);
   });
 
   test('a refused lookup throws instead of answering', () async {

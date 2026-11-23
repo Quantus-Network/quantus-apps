@@ -26,7 +26,7 @@ void main() {
                       children: [
                         for (final label in labels)
                           Expanded(
-                            child: ActionCard(iconAsset: 'assets/icons/plus.svg', label: label, onTap: () {}),
+                            child: ActionCard(icon: QuantusIcons.plus, label: label, onTap: () {}),
                           ),
                       ],
                     ),

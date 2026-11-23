@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/utils/multisig_local_signers.dart';
+import 'package:wallet_core/utils/multisig_local_signers.dart';
 
 Account _account(String id, {String name = 'A'}) => Account(walletIndex: 0, index: 0, name: name, accountId: id);
 

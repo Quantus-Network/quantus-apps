@@ -4,8 +4,76 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 
 import '../fixtures/active_swap_fixture.dart';
+
+/// Preferences that refuse to store chosen keys, the way the Linux and
+/// Windows backends answer a write the disk rejects: `false`, no error. As
+/// they do, it keeps a refused value in memory, and the next write that is
+/// stored puts everything in memory on the disk.
+class _RejectingStore extends InMemorySharedPreferencesStore {
+  _RejectingStore() : super.empty();
+
+  /// The keys whose writes are refused, as the app names them.
+  final rejected = <String>{};
+
+  /// The keys whose writes fail outright, as a backend that throws does.
+  final failing = <String>{};
+
+  bool _isFailing(String key) => failing.contains(key.replaceFirst('flutter.', ''));
+
+  /// How many more writes are stored before the disk refuses every write;
+  /// null when it has no such outage.
+  int? storesBeforeOutage;
+
+  /// What is in memory and not yet on the disk: a value with its type, or
+  /// null for a key that was removed.
+  final _unstored = <String, (String, Object)?>{};
+
+  /// The app quits and the next one starts with a disk that stores again:
+  /// what was only in memory is gone.
+  void restart() {
+    _unstored.clear();
+    rejected.clear();
+    failing.clear();
+    storesBeforeOutage = null;
+  }
+
+  bool _isRejected(String key) {
+    if (storesBeforeOutage case final left?) {
+      if (left == 0) return true;
+      storesBeforeOutage = left - 1;
+    }
+    return rejected.contains(key.replaceFirst('flutter.', ''));
+  }
+
+  Future<bool> _store() async {
+    for (final MapEntry(:key, :value) in _unstored.entries) {
+      if (value == null) {
+        await super.remove(key);
+      } else {
+        await super.setValue(value.$1, key, value.$2);
+      }
+    }
+    _unstored.clear();
+    return true;
+  }
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async {
+    if (_isFailing(key)) throw StateError('the disk is gone');
+    _unstored[key] = (valueType, value);
+    return _isRejected(key) ? false : _store();
+  }
+
+  @override
+  Future<bool> remove(String key) async {
+    if (_isFailing(key)) throw StateError('the disk is gone');
+    _unstored[key] = null;
+    return _isRejected(key) ? false : _store();
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -121,6 +189,45 @@ void main() {
       expect(accounts.first.name, 'Updated Name');
     });
 
+    test('updateAccount refreshes the active account snapshot after a rename', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      await settingsService.setActiveAccount(RegularAccount(account1));
+
+      await settingsService.updateAccount(account1.copyWith(name: 'Renamed account'));
+
+      final active = (await settingsService.getActiveAccount())!;
+      expect(active.account.name, 'Renamed account');
+    });
+
+    test('updateAccount keeps the active snapshot when another account is renamed', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      await settingsService.setActiveAccount(RegularAccount(account1));
+
+      await settingsService.updateAccount(account2.copyWith(name: 'Renamed account'));
+
+      final active = (await settingsService.getActiveAccount())!;
+      expect(active.account.name, account1.name);
+    });
+
+    test('updateMultisigAccount refreshes the active account snapshot after a rename', () async {
+      final msig = MultisigAccount(
+        name: 'Msig',
+        accountId: 'msig_1',
+        signers: [account1.accountId],
+        threshold: 1,
+        nonce: BigInt.zero,
+        myMemberAccountId: account1.accountId,
+      );
+      await settingsService.addMultisigAccount(msig);
+      await settingsService.setActiveAccount(MultisigDisplayAccount(msig));
+
+      await settingsService.updateMultisigAccount(msig.copyWith(name: 'Renamed account'));
+
+      final active = (await settingsService.getActiveAccount())!;
+      expect(active, isA<MultisigDisplayAccount>());
+      expect(active.account.name, 'Renamed account');
+    });
+
     test('setActiveAccount and getActiveAccount should work correctly', () async {
       // Arrange
       await settingsService.initialize();
@@ -185,6 +292,65 @@ void main() {
       // Assert
       // It should fall back to the first account in the remaining list
       expect(activeAccount.account.accountId, account1.accountId);
+    });
+
+    group('preferences where active_account_id names another account than the active snapshot', () {
+      setUp(() async {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('active_display_account', jsonEncode(RegularAccount(account2).toJson()));
+        await prefs.setString('active_account_id', account1.accountId);
+      });
+
+      test('removeAccount replaces the account the snapshot holds', () async {
+        await settingsService.saveAccounts([account1, account2]);
+
+        await settingsService.removeAccount(account2);
+
+        expect((await settingsService.getActiveAccount())!.account.accountId, account1.accountId);
+      });
+
+      test('removeWallet replaces the account the snapshot holds', () async {
+        FlutterSecureStorage.setMockInitialValues({});
+        final inWallet1 = account2.copyWith(walletIndex: 1);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('active_display_account', jsonEncode(RegularAccount(inWallet1).toJson()));
+        await settingsService.saveAccounts([account1, inWallet1]);
+
+        await settingsService.removeWallet(1);
+
+        expect((await settingsService.getActiveAccount())!.account.accountId, account1.accountId);
+      });
+    });
+
+    test('preferences with only active_account_id still select that account, and removing it picks another', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('active_account_id', account2.accountId);
+
+      expect((await settingsService.getActiveAccount())!.account.accountId, account2.accountId);
+
+      await settingsService.removeAccount(account2);
+
+      expect((await settingsService.getActiveAccount())!.account.accountId, account1.accountId);
+    });
+
+    test('removing a regular account while a multisig is active keeps the multisig active', () async {
+      await settingsService.saveAccounts([account1, account2]);
+      await settingsService.setActiveAccount(RegularAccount(account2));
+      final msig = MultisigAccount(
+        name: 'Msig',
+        accountId: 'msig_1',
+        signers: [account1.accountId],
+        threshold: 1,
+        nonce: BigInt.zero,
+        myMemberAccountId: account1.accountId,
+      );
+      await settingsService.addMultisigAccount(msig);
+      await settingsService.setActiveAccount(MultisigDisplayAccount(msig));
+
+      await settingsService.removeAccount(account2);
+
+      expect((await settingsService.getActiveAccount())!.account.accountId, msig.accountId);
     });
 
     test('getNextFreeAccountIndex returns 0 for an empty wallet', () async {
@@ -333,6 +499,250 @@ void main() {
 
       expect(migrated.getActiveSwaps().map((s) => s.id), [swap.id]);
       expect((await SharedPreferences.getInstance()).getString('active_swap_v1'), isNull);
+    });
+  });
+
+  group('setActiveAccount, when the account cannot be stored', () {
+    const main = Account(walletIndex: 0, index: 0, name: 'Main', accountId: 'id_main');
+    const savings = Account(walletIndex: 0, index: 1, name: 'Savings', accountId: 'id_savings');
+    const unknown = Account(walletIndex: 0, index: 2, name: 'Unknown', accountId: 'id_unknown');
+
+    late _RejectingStore store;
+    late SettingsService settings;
+
+    /// The settings as an app started now would read them from [store].
+    Future<SettingsService> reopened() async {
+      SharedPreferences.resetStatic();
+      final reopened = SettingsService();
+      await reopened.initialize();
+      return reopened;
+    }
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      store = _RejectingStore();
+      SharedPreferencesStorePlatform.instance = store;
+      settings = SettingsService();
+      await settings.initialize();
+      await settings.saveAccounts([main, savings]);
+      await settings.setActiveAccount(const RegularAccount(main));
+    });
+
+    /// The settings as the next app reads them, started before anything this
+    /// one held only in memory reached the disk.
+    Future<SettingsService> restarted() {
+      store.restart();
+      return reopened();
+    }
+
+    /// Switches to [account], and says whether the switch was reported done.
+    Future<bool> switchTo(Account account) async {
+      try {
+        await settings.setActiveAccount(RegularAccount(account));
+        return true;
+      } on Exception {
+        return false;
+      }
+    }
+
+    test(
+      'throws when the system rejects the write of active_display_account, and Main stays the active account',
+      () async {
+        store.rejected.add('active_display_account');
+
+        await expectLater(
+          settings.setActiveAccount(const RegularAccount(savings)),
+          throwsA(isA<Exception>().having((e) => '$e', 'message', contains('Could not save active_display_account'))),
+        );
+
+        expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
+        expect((await settings.getActiveRegularAccount())!.accountId, main.accountId);
+
+        store.rejected.clear();
+        // What a later write puts on the disk is still Main.
+        await settings.saveAccounts([main, savings]);
+        expect((await (await reopened()).getActiveAccount())!.account.accountId, main.accountId);
+      },
+    );
+
+    test('a switch does not depend on active_account_id: the selection is one write', () async {
+      store.rejected.add('active_account_id');
+
+      await settings.setActiveAccount(const RegularAccount(savings));
+
+      expect((await settings.getActiveAccount())!.account.accountId, savings.accountId);
+      expect((await (await restarted()).getActiveAccount())!.account.accountId, savings.accountId);
+    });
+
+    for (final stored in [0, 1, 2]) {
+      group('when the disk stops storing after $stored writes of a switch and stays down through its rollback', () {
+        setUp(() => store.storesBeforeOutage = stored);
+
+        test('the app started next has the account the switch reported', () async {
+          final reported = await switchTo(savings) ? savings : main;
+
+          expect((await settings.getActiveAccount())!.account.accountId, reported.accountId);
+          expect((await (await restarted()).getActiveAccount())!.account.accountId, reported.accountId);
+        });
+
+        test('removing Savings in the app started next leaves Main active', () async {
+          await switchTo(savings);
+          final next = await restarted();
+
+          await next.removeAccount(savings);
+
+          expect((await next.getActiveAccount())!.account.accountId, main.accountId);
+          expect((await (await restarted()).getActiveAccount())!.account.accountId, main.accountId);
+        });
+      });
+    }
+
+    test('throws the write\'s own error when the write of active_display_account fails outright, and Main stays '
+        'the active account', () async {
+      store.failing.add('active_display_account');
+
+      await expectLater(
+        settings.setActiveAccount(const RegularAccount(savings)),
+        throwsA(isA<StateError>().having((e) => e.message, 'message', 'the disk is gone')),
+      );
+
+      expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
+      expect((await settings.getActiveRegularAccount())!.accountId, main.accountId);
+      expect((await (await restarted()).getActiveAccount())!.account.accountId, main.accountId);
+    });
+
+    test('an account that does not exist leaves Main the active account', () async {
+      await expectLater(settings.setActiveAccount(const RegularAccount(unknown)), throwsException);
+
+      expect((await settings.getActiveAccount())!.account.accountId, main.accountId);
+      expect((await (await reopened()).getActiveAccount())!.account.accountId, main.accountId);
+    });
+
+    test('once the system stores again, the account is switched and kept', () async {
+      store.rejected.add('active_display_account');
+      await expectLater(settings.setActiveAccount(const RegularAccount(savings)), throwsException);
+      store.rejected.clear();
+
+      await settings.setActiveAccount(const RegularAccount(savings));
+
+      expect((await settings.getActiveAccount())!.account.accountId, savings.accountId);
+      expect((await (await reopened()).getActiveAccount())!.account.accountId, savings.accountId);
+    });
+  });
+
+  group('setString, when the system rejects the write', () {
+    late _RejectingStore store;
+    late SettingsService settings;
+
+    /// The settings as an app started now would read them from [store].
+    Future<SettingsService> reopened() async {
+      SharedPreferences.resetStatic();
+      final reopened = SettingsService();
+      await reopened.initialize();
+      return reopened;
+    }
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      store = _RejectingStore();
+      SharedPreferencesStorePlatform.instance = store;
+      settings = SettingsService();
+      await settings.initialize();
+    });
+
+    test('throws, naming the key, and the key holds what it held', () async {
+      await settings.setString('shortcuts', 'old');
+      store.rejected.add('shortcuts');
+
+      await expectLater(
+        settings.setString('shortcuts', 'new'),
+        throwsA(isA<Exception>().having((e) => '$e', 'message', contains('Could not save shortcuts'))),
+      );
+
+      expect(settings.getString('shortcuts'), 'old');
+    });
+
+    test('a key that held nothing holds nothing after', () async {
+      store.rejected.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+
+      expect(settings.getString('shortcuts'), isNull);
+    });
+
+    test('what a later write puts on the disk is not the text that was refused', () async {
+      await settings.setString('shortcuts', 'old');
+      store.rejected.add('shortcuts');
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+      store.rejected.clear();
+
+      await settings.setString('other', 'stored');
+
+      final read = await reopened();
+      expect(read.getString('shortcuts'), 'old');
+      expect(read.getString('other'), 'stored');
+    });
+
+    test('when the write fails outright, the error is its own and the key holds what it held', () async {
+      await settings.setString('shortcuts', 'old');
+      store.failing.add('shortcuts');
+
+      // Putting the old text back is a write that fails too; the error
+      // reported is still the first one.
+      await expectLater(
+        settings.setString('shortcuts', 'new'),
+        throwsA(isA<StateError>().having((e) => e.message, 'message', 'the disk is gone')),
+      );
+
+      expect(settings.getString('shortcuts'), 'old');
+      store.failing.clear();
+      await settings.setString('other', 'stored');
+      expect((await reopened()).getString('shortcuts'), 'old');
+    });
+
+    test('when the write fails outright on a key that held nothing, it holds nothing after', () async {
+      store.failing.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsStateError);
+
+      expect(settings.getString('shortcuts'), isNull);
+      expect(settings.getValue('shortcuts'), isNull);
+    });
+
+    test('a value of another type than text can be read as it is, and replaced by text', () async {
+      await (await SharedPreferences.getInstance()).setInt('shortcuts', 7);
+
+      expect(settings.getValue('shortcuts'), 7);
+      // Read as text it is still an error, as it always was.
+      expect(() => settings.getString('shortcuts'), throwsA(isA<TypeError>()));
+
+      await settings.setString('shortcuts', 'new');
+
+      expect(settings.getValue('shortcuts'), 'new');
+      expect((await reopened()).getString('shortcuts'), 'new');
+    });
+
+    test('a value of another type is put back when the text meant to replace it is refused', () async {
+      await (await SharedPreferences.getInstance()).setInt('shortcuts', 7);
+      store.rejected.add('shortcuts');
+
+      await expectLater(settings.setString('shortcuts', 'new'), throwsException);
+      expect(settings.getValue('shortcuts'), 7);
+
+      store.rejected.clear();
+      await settings.setString('other', 'stored');
+      expect((await reopened()).getValue('shortcuts'), 7);
+    });
+
+    test('getValue answers nothing for a key that holds nothing', () {
+      expect(settings.getValue('shortcuts'), isNull);
+    });
+
+    test('a write the system stores is read back, now and at the next start', () async {
+      await settings.setString('shortcuts', 'new');
+
+      expect(settings.getString('shortcuts'), 'new');
+      expect((await reopened()).getString('shortcuts'), 'new');
     });
   });
 }

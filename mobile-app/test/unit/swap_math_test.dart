@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 
 const _wnear = SwapToken(assetId: 'nep141:wrap.near', symbol: 'WNEAR', network: 'NEAR', decimals: 24, usdPrice: 2.51);
 const _usdc = SwapToken(assetId: 'nep141:usdc.omft.near', symbol: 'USDC', network: 'ETH', decimals: 6, usdPrice: 1);

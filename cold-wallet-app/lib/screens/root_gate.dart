@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/home_screen.dart';
+import 'package:quantus_cold_wallet/screens/migrate_vault_screen.dart';
 import 'package:quantus_cold_wallet/screens/welcome_screen.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
 /// Routes the app to setup, lock, or home based on the wallet status.
 class RootGate extends ConsumerWidget {
@@ -22,6 +25,8 @@ class RootGate extends ConsumerWidget {
         );
       case WalletStatus.needsSetup:
         return const WelcomeScreen();
+      case WalletStatus.needsMigration:
+        return const MigrateVaultScreen();
       // When locked, the home route renders underneath the full-screen
       // LockOverlay (see app.dart) until the user unlocks.
       case WalletStatus.locked:
@@ -47,7 +52,7 @@ class _InitError extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, size: 64, color: colors.semanticEmber),
+                ColdIcon(ColdIcons.warningCircle, size: 64, color: colors.semanticEmber),
                 const SizedBox(height: 24),
                 Text(
                   'Storage error',
@@ -63,6 +68,7 @@ class _InitError extends ConsumerWidget {
                 const SizedBox(height: 32),
                 QuantusButton.simple(
                   label: 'Retry',
+                  padding: coldButtonPadding,
                   onTap: () => ref.read(walletControllerProvider.notifier).retryInit(),
                 ),
               ],

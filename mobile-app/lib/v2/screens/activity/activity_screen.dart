@@ -4,14 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/skeleton.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/active_account_transactions_provider.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/services/global_history_polling_service.dart';
-import 'package:resonance_network_wallet/services/transaction_service.dart';
+import 'package:wallet_core/activity/activity_dates.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/global_history_polling_service.dart';
+import 'package:wallet_core/services/transaction_service.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/tx_item.dart';
 import 'package:resonance_network_wallet/v2/screens/activity/transaction_detail_sheet.dart';
 
@@ -122,7 +122,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
               if (all.isEmpty) {
                 return _scrollableMessage(l10n.activityEmpty, text.bodyLarge.copyWith(color: colors.textMuted));
               }
-              final grouped = _groupByDate(all, l10n, appLocale.numberFormatLocale);
+              final grouped = activityDaysOf(all, l10n, appLocale.numberFormatLocale);
               final showLoadMoreFooter = pagination != null && pagination.isLoading && pagination.hasMore;
 
               return _buildRefreshableContent(
@@ -144,7 +144,7 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (i > 0) const SizedBox(height: 32),
-                        Text(group.label, style: text.headingRow.copyWith(color: colors.textMuted)),
+                        Text(group.label.toUpperCase(), style: text.headingRow.copyWith(color: colors.textMuted)),
                         ...group.transactions.mapIndexed((index, tx) {
                           final itemData = TxItemData.from(
                             tx,
@@ -204,26 +204,4 @@ class _ActivityScreenState extends ConsumerState<ActivityScreen> {
       child: child,
     );
   }
-
-  List<_DateGroup> _groupByDate(List<TransactionEvent> transactions, AppLocalizations l10n, String localeName) {
-    final Map<String, List<TransactionEvent>> groups = {};
-    final Map<String, String> labelMap = {};
-
-    for (final tx in transactions) {
-      final local = tx.timestamp.toLocal();
-      final day = DateTime(local.year, local.month, local.day);
-      final key = '${day.year}-${day.month}-${day.day}';
-      groups.putIfAbsent(key, () => []);
-      groups[key]!.add(tx);
-      labelMap.putIfAbsent(key, () => dateGroupLabel(tx.timestamp, l10n, localeName));
-    }
-
-    return groups.entries.map((e) => _DateGroup(label: labelMap[e.key]!.toUpperCase(), transactions: e.value)).toList();
-  }
-}
-
-class _DateGroup {
-  final String label;
-  final List<TransactionEvent> transactions;
-  const _DateGroup({required this.label, required this.transactions});
 }

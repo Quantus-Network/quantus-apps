@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 
 /// The steps a swap goes through, as the progress screen lists them; a
 /// deposit made [byHand] is deposited rather than sent.

@@ -1,9 +1,11 @@
 name: quantus_workspace
 packages:
   - mobile-app
+  - desktop-app
   - miner-app
   - cold-wallet-app
   - quantus_sdk
+  - wallet_core
 
 ide:
   intellij:
@@ -14,6 +16,8 @@ command:
     # Parallel pub get races on checking out shared git dependencies
     # (human_checksum) into the cold pub cache in CI: dart-lang/pub#3404.
     runPubGetInParallel: false
+    # Fail instead of rewriting pubspec.lock; changing dependencies takes an explicit --no-enforce-lockfile.
+    enforceLockfile: true
 
 # Only path-based overrides go here. Melos 6.x propagates these to each
 # package's pubspec_overrides.yaml during bootstrap. Hosted-package version
@@ -22,6 +26,8 @@ command:
 dependency_overrides:
   quantus_sdk:
     path: ./quantus_sdk
+  wallet_core:
+    path: ./wallet_core
 
 # Dependency placement convention:
 #
@@ -53,6 +59,8 @@ dependency_overrides:
 #   flash                ^3.1.1
 #   collection           ^1.19.1
 #   telemetrydecksdk     ^4.0.0
+#   share_plus           ^13.1.0
+#   local_auth           ^3.0.1
 #   flutter_lints        ^6.0.0
 
 scripts:
@@ -60,6 +68,11 @@ scripts:
   analyze:
     description: Analyze all packages in the workspace (matches CI)
     run: melos exec --concurrency=1 -- "flutter analyze . --fatal-infos"
+
+  # Analyze, then the mobile suite, printing only failures and a verdict
+  check:
+    description: Analyze all packages and run the mobile suite; prints only what failed
+    run: bash scripts/check.sh
 
   # Format all packages
   format:
@@ -78,7 +91,9 @@ scripts:
     description: Run tests in all packages the way CI does
     run: |
       melos exec --concurrency=1 --scope="quantus_sdk" -- "flutter test --exclude-tags=native"
+      melos exec --concurrency=1 --scope="wallet_core" -- "flutter test"
       melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
+      melos exec --concurrency=1 --scope="quantus_desktop_wallet" -- "flutter test"
       melos exec --concurrency=1 --scope="quantus_cold_wallet" -- "flutter test"
 
   # Get dependencies for all packages

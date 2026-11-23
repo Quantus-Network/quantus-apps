@@ -2,7 +2,8 @@ use crate::signing_context;
 use qp_poseidon_core::{hash_bytes, hash_to_bytes, serialization::bytes_to_digest};
 pub use qp_rusty_crystals_hdwallet::HDLatticeError;
 use qp_rusty_crystals_hdwallet::{
-    derive_wormhole_from_mnemonic, mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64,
+    derive_wormhole_from_mnemonic, generate_wormhole_from_seed, mnemonic_to_seed, SensitiveBytes32,
+    SensitiveBytes64, WormholePair,
 };
 use sp_core::crypto::{AccountId32, Ss58Codec};
 use std::convert::AsRef;
@@ -139,12 +140,48 @@ pub struct WormholeResult {
 #[flutter_rust_bridge::frb(sync)]
 pub fn derive_wormhole(mnemonic_str: String, path: &str) -> Result<WormholeResult, HDLatticeError> {
     let pair = derive_wormhole_from_mnemonic(&mnemonic_str, None, path)?;
-    let account = AccountId32::new(*pair.address());
-    Ok(WormholeResult {
-        address: account.to_ss58check(),
+    Ok(wormhole_result(&pair))
+}
+
+/// Wormhole key pairs at every path in `paths`, stretching the BIP39 seed
+/// (PBKDF2, 2048 rounds) once instead of once per path. Not `sync`: runs on
+/// the bridge's worker pool so a scan of many addresses never blocks the UI
+/// isolate. `mnemonic_to_seed` consumes and zeroizes the mnemonic.
+pub fn derive_wormhole_batch(
+    mnemonic_str: String,
+    paths: Vec<String>,
+) -> Result<Vec<WormholeResult>, HDLatticeError> {
+    let mut seed = SensitiveBytes64::zeroed();
+    mnemonic_to_seed(mnemonic_str, None, &mut seed)?;
+    paths
+        .iter()
+        .map(|path| Ok(wormhole_result(&generate_wormhole_from_seed(&seed, path)?)))
+        .collect()
+}
+
+/// Like [`derive_wormhole_batch`] but returns only the addresses, for
+/// discovery scans that never need the secrets.
+pub fn derive_wormhole_addresses(
+    mnemonic_str: String,
+    paths: Vec<String>,
+) -> Result<Vec<String>, HDLatticeError> {
+    let mut seed = SensitiveBytes64::zeroed();
+    mnemonic_to_seed(mnemonic_str, None, &mut seed)?;
+    paths
+        .iter()
+        .map(|path| {
+            let pair = generate_wormhole_from_seed(&seed, path)?;
+            Ok(AccountId32::new(*pair.address()).to_ss58check())
+        })
+        .collect()
+}
+
+fn wormhole_result(pair: &WormholePair) -> WormholeResult {
+    WormholeResult {
+        address: AccountId32::new(*pair.address()).to_ss58check(),
         first_hash: pair.first_hash().to_vec(),
         secret: pair.secret().as_bytes().to_vec(),
-    })
+    }
 }
 
 /// Convert a first_hash (rewards preimage) to its corresponding wormhole address.
@@ -289,6 +326,30 @@ mod tests {
 
     fn derived(path: &str, scheme: DilithiumScheme) -> Keypair {
         generate_derived_keypair(TEST_MNEMONIC.to_string(), path, scheme).expect("derive")
+    }
+
+    #[test]
+    fn test_wormhole_batch_matches_single_derivation() {
+        set_prefix();
+        let paths: Vec<String> = [(0, 0), (0, 1), (0, 7), (1, 0), (1, 3)]
+            .iter()
+            .map(|(change, index)| format!("m/44'/189189189'/0'/{change}'/{index}'"))
+            .collect();
+        let batch = derive_wormhole_batch(TEST_MNEMONIC.to_string(), paths.clone()).expect("batch");
+        let addresses =
+            derive_wormhole_addresses(TEST_MNEMONIC.to_string(), paths.clone()).expect("addresses");
+        assert_eq!(batch.len(), paths.len());
+        assert_eq!(addresses.len(), paths.len());
+        for (i, path) in paths.iter().enumerate() {
+            let single = derive_wormhole(TEST_MNEMONIC.to_string(), path).expect("single");
+            assert_eq!(batch[i].address, single.address, "address at {path}");
+            assert_eq!(
+                batch[i].first_hash, single.first_hash,
+                "first_hash at {path}"
+            );
+            assert_eq!(batch[i].secret, single.secret, "secret at {path}");
+            assert_eq!(addresses[i], single.address, "address-only at {path}");
+        }
     }
 
     #[test]

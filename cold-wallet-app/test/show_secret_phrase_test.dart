@@ -3,13 +3,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/settings_screen.dart';
 import 'package:quantus_cold_wallet/screens/show_secret_phrase_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _mnemonic = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+import 'fakes/wallet_fakes.dart';
+
+class _PresenceController extends WalletController {
+  _PresenceController({required this.confirms});
+
+  final bool confirms;
+  int checks = 0;
+
+  @override
+  WalletState build() =>
+      const WalletState(status: WalletStatus.unlocked, mnemonic: testMnemonic, biometricEnabled: true);
+
+  @override
+  Future<bool> confirmPresence() async {
+    checks++;
+    return confirms;
+  }
+}
 
 /// The Argon2id unlock runs on the real event loop, which the fake-async test
 /// clock cannot drive (and the in-flight spinner never settles); poll with
@@ -24,23 +40,8 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
-  testWidgets('the secret phrase is gated by the password and starts hidden', (tester) async {
-    FlutterSecureStorage.setMockInitialValues({});
+  Future<void> pumpSettings(WidgetTester tester, ProviderContainer container) async {
     SharedPreferences.setMockInitialValues({});
-
-    final container = ProviderContainer();
-    addTearDown(container.dispose);
-    await tester.runAsync(
-      () => container
-          .read(walletControllerProvider.notifier)
-          .createWallet(
-            mnemonic: _mnemonic,
-            password: 'alpha',
-            enableBiometric: false,
-            accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)],
-          ),
-    );
-
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
@@ -49,20 +50,22 @@ void main() {
         ),
       ),
     );
+    await tester.pump();
+  }
+
+  testWidgets('the secret phrase is gated by a fresh device-key read and starts hidden', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final container = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth())]);
+    addTearDown(container.dispose);
+    await tester.runAsync(() async {
+      await awaitInit(container);
+      await container
+          .read(walletControllerProvider.notifier)
+          .createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: true);
+    });
+    await pumpSettings(tester, container);
 
     await tester.tap(find.text('Show secret phrase'));
-    await tester.pumpAndSettle();
-    expect(find.text('Enter password'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), 'wrong');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
-    await _pumpUntilFound(tester, find.text('Incorrect password'));
-    expect(find.byType(ShowSecretPhraseScreen), findsNothing);
-
-    await tester.enterText(find.byType(TextField), 'alpha');
-    await tester.tap(find.text('Continue'));
-    await tester.pump();
     await _pumpUntilFound(tester, find.byType(ShowSecretPhraseScreen));
     await tester.pumpAndSettle();
 
@@ -83,20 +86,29 @@ void main() {
     expect(find.byType(ShowSecretPhraseScreen), findsNothing);
   });
 
+  testWidgets('a dismissed prompt keeps the phrase closed', (tester) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    final controller = _PresenceController(confirms: false);
+    final container = ProviderContainer(overrides: [walletControllerProvider.overrideWith(() => controller)]);
+    addTearDown(container.dispose);
+    await pumpSettings(tester, container);
+
+    await tester.tap(find.text('Show secret phrase'));
+    await tester.pumpAndSettle();
+
+    expect(controller.checks, 1);
+    expect(find.byType(ShowSecretPhraseScreen), findsNothing);
+    expect(find.text('Could not confirm it is you.'), findsOneWidget);
+    // Let the toast time out so no timer outlives the test.
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('locking mid-view clears and re-hides the phrase', (tester) async {
     FlutterSecureStorage.setMockInitialValues({});
-
-    final container = ProviderContainer();
+    final controller = _PresenceController(confirms: true);
+    final container = ProviderContainer(overrides: [walletControllerProvider.overrideWith(() => controller)]);
     addTearDown(container.dispose);
-    final controller = container.read(walletControllerProvider.notifier);
-    await tester.runAsync(
-      () => controller.createWallet(
-        mnemonic: _mnemonic,
-        password: 'alpha',
-        enableBiometric: false,
-        accounts: [ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)],
-      ),
-    );
 
     await tester.pumpWidget(
       UncontrolledProviderScope(

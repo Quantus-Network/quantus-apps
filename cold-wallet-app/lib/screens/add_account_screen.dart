@@ -5,13 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/address_with_checkphrase.dart';
+import 'package:quantus_cold_wallet/components/advanced_section.dart';
 import 'package:quantus_cold_wallet/components/scheme_picker.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
+import 'package:quantus_cold_wallet/screens/rename_account_screen.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 enum _Derivation { accountIndex, fullPath }
 
-/// Chooses which account the vault's seed phrase derives next, and adds it.
+/// Names the account the vault's seed phrase derives next, and adds it. Which
+/// account that is sits under ADVANCED: index or path, and signature type.
 ///
 /// A screen rather than a sheet: the number pad covers most of a phone, and on
 /// a sheet it covered the very field being edited along with the button that
@@ -28,6 +32,7 @@ class AddAccountScreen extends ConsumerStatefulWidget {
 class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   static const _previewDelay = Duration(milliseconds: 250);
 
+  late final TextEditingController _name;
   late final TextEditingController _index;
   final _path = TextEditingController();
 
@@ -51,7 +56,9 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   @override
   void initState() {
     super.initState();
+    _name = TextEditingController(text: _nextFreeLabel());
     _index = TextEditingController(text: '${_firstFreeIndex()}');
+    _name.addListener(_onInputChanged);
     _index.addListener(_onInputChanged);
     _path.addListener(_onInputChanged);
     _previewPath = _account?.derivationPath;
@@ -60,6 +67,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
   @override
   void dispose() {
     _previewDebounce?.cancel();
+    _name.dispose();
     _index.dispose();
     _path.dispose();
     super.dispose();
@@ -78,29 +86,22 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     }
   }
 
-  Set<String> get _takenLabels => {for (final account in ref.read(accountsProvider)) account.label};
-
-  /// `Account 3` for a path that follows no template this wallet numbers.
+  /// `Account 3` for the slot at index 2, or the next name in that numbering
+  /// nobody holds.
   String _nextFreeLabel() {
-    final taken = _takenLabels;
-    for (var ordinal = 1; ; ordinal++) {
+    final taken = {for (final account in ref.read(accountsProvider)) account.label};
+    for (var ordinal = _firstFreeIndex() + 1; ; ordinal++) {
       final label = 'Account $ordinal';
       if (!taken.contains(label)) return label;
     }
   }
 
-  ColdAccount? get _account => switch (_mode) {
-    _Derivation.accountIndex => _indexedAccount,
-    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _nextFreeLabel(), scheme: _scheme),
-  };
+  String get _label => _name.text.trim();
 
-  /// Labelled by its index unless that name is taken, as it is once the wallet
-  /// holds the same index at the other scheme.
-  ColdAccount? get _indexedAccount {
-    final account = ColdAccount.atIndexText(_index.text, scheme: _scheme);
-    if (account == null || !_takenLabels.contains(account.label)) return account;
-    return account.withLabel(_nextFreeLabel());
-  }
+  ColdAccount? get _account => switch (_mode) {
+    _Derivation.accountIndex => ColdAccount.atIndexText(_index.text, scheme: _scheme)?.withLabel(_label),
+    _Derivation.fullPath => ColdAccount.atPath(_path.text, label: _label, scheme: _scheme),
+  };
 
   /// The account already holding this derivation, if any. Adding it twice would
   /// put two rows with one address in the list.
@@ -181,6 +182,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     final text = context.themeTextV3;
     final account = _account;
     final duplicate = _duplicate;
+    final nameError = nameTakenMessage(ref, _label);
 
     return GestureDetector(
       // The number pad has no return key, so tapping the page must dismiss it.
@@ -193,25 +195,36 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 8),
-              Text(
-                'Every account comes from the same recovery phrase. Choose which one to add.',
-                style: text.body.copyWith(color: colors.textMuted),
+              Text('Name this account', style: text.titleScreen.copyWith(color: colors.textContent)),
+              const SizedBox(height: 16),
+              QuantusTextField(
+                controller: _name,
+                hint: 'Account name',
+                error: nameError,
+                showClearButton: true,
+                textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 24),
-              SegmentedControls<_Derivation>(
-                selectedValue: _mode,
-                onChanged: _setMode,
-                items: const [
-                  SegmentedControlItem(value: _Derivation.accountIndex, label: 'Account index'),
-                  SegmentedControlItem(value: _Derivation.fullPath, label: 'Derivation path'),
+              const SizedBox(height: 12),
+              Text(accountNameHelper, style: text.caption.copyWith(color: colors.textMuted)),
+              const SizedBox(height: 32),
+              AdvancedSection(
+                children: [
+                  SegmentedControls<_Derivation>(
+                    selectedValue: _mode,
+                    onChanged: _setMode,
+                    items: const [
+                      SegmentedControlItem(value: _Derivation.accountIndex, label: 'Account index'),
+                      SegmentedControlItem(value: _Derivation.fullPath, label: 'Derivation path'),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  if (_mode == _Derivation.accountIndex) _indexField(context) else _pathField(context),
+                  const SizedBox(height: 24),
+                  SchemePicker(value: _scheme, onChanged: _setScheme),
+                  const SizedBox(height: 24),
+                  _preview(context, account, duplicate),
                 ],
               ),
-              const SizedBox(height: 24),
-              if (_mode == _Derivation.accountIndex) _indexField(context) else _pathField(context),
-              const SizedBox(height: 24),
-              SchemePicker(value: _scheme, onChanged: _setScheme),
-              const SizedBox(height: 24),
-              _preview(context, account, duplicate),
               if (_error != null) ...[
                 const SizedBox(height: 16),
                 Text(
@@ -226,9 +239,10 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
         ),
         bottomContent: ScaffoldBaseBottomContent(
           child: QuantusButton.simple(
-            label: 'Done',
+            label: 'Create Account',
+            padding: coldButtonPadding,
             isLoading: _adding,
-            isDisabled: account == null || duplicate != null,
+            isDisabled: account == null || duplicate != null || _label.isEmpty || nameError != null,
             onTap: _add,
           ),
         ),
@@ -251,7 +265,11 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
       ),
       child: Row(
         children: [
-          _StepperButton(icon: Icons.remove_rounded, onTap: () => _stepIndex(-1), semanticLabel: 'Previous account'),
+          _StepperButton(
+            glyph: Container(width: 12, height: 1.5, color: colors.textContent),
+            onTap: () => _stepIndex(-1),
+            semanticLabel: 'Previous account',
+          ),
           Expanded(
             child: TextField(
               controller: _index,
@@ -262,7 +280,11 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
               decoration: const InputDecoration(border: InputBorder.none, isCollapsed: true),
             ),
           ),
-          _StepperButton(icon: Icons.add_rounded, onTap: () => _stepIndex(1), semanticLabel: 'Next account'),
+          _StepperButton(
+            glyph: QuantusIcon(QuantusIcons.plus, size: 22, color: colors.textContent),
+            onTap: () => _stepIndex(1),
+            semanticLabel: 'Next account',
+          ),
         ],
       ),
     );
@@ -272,51 +294,31 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: colors.bgSurface,
-        borderRadius: context.radiusV3.mdBorder,
-        border: Border.all(color: colors.borderHairline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('DERIVATION PATH', style: text.labelMonogram.copyWith(color: colors.textMuted)),
-          const SizedBox(height: 6),
-          TextField(
-            controller: _path,
-            onChanged: (path) {
-              _userChangedPath = true;
-              // Typing a path whose last element names a scheme snaps the picker
-              // to it; picking afterwards overrides it.
-              final named = ColdAccount.schemeOfPath(path);
-              if (named != null) setState(() => _scheme = named);
-            },
-            autocorrect: false,
-            enableSuggestions: false,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusScope.of(context).unfocus(),
-            // Wraps: a path longer than the field would otherwise scroll its
-            // own start out of sight, and a path half-read is not verified.
-            maxLines: null,
-            keyboardType: TextInputType.text,
-            style: text.dataAddressLarge.copyWith(
-              color: colors.textContent,
-              fontFamily: AppTextThemeV3.fontFamilySecondary,
-            ),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              isCollapsed: true,
-              hintText: HdWalletService.pathForIndex(0, _scheme),
-              hintStyle: text.dataAddressLarge.copyWith(
-                color: colors.textMuted,
-                fontFamily: AppTextThemeV3.fontFamilySecondary,
-              ),
-            ),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('DERIVATION PATH', style: text.labelMonogram.copyWith(color: colors.textMuted)),
+        const SizedBox(height: 8),
+        QuantusTextField(
+          controller: _path,
+          onChanged: (path) {
+            _userChangedPath = true;
+            // Typing a path whose last element names a scheme snaps the picker
+            // to it; picking afterwards overrides it.
+            final named = ColdAccount.schemeOfPath(path);
+            if (named != null) setState(() => _scheme = named);
+          },
+          autocorrect: false,
+          enableSuggestions: false,
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => FocusScope.of(context).unfocus(),
+          // Wraps: a path longer than the field would otherwise scroll its
+          // own start out of sight, and a path half-read is not verified.
+          maxLines: null,
+          keyboardType: TextInputType.text,
+          hint: HdWalletService.pathForIndex(0, _scheme),
+        ),
+      ],
     );
   }
 
@@ -353,7 +355,6 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(account.label, style: text.headingRow.copyWith(color: colors.textContent)),
           Text(path, style: text.caption.copyWith(color: colors.textMuted)),
           const SizedBox(height: 4),
           address.when(
@@ -396,16 +397,14 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
 }
 
 class _StepperButton extends StatelessWidget {
-  final IconData icon;
+  final Widget glyph;
   final VoidCallback onTap;
   final String semanticLabel;
 
-  const _StepperButton({required this.icon, required this.onTap, required this.semanticLabel});
+  const _StepperButton({required this.glyph, required this.onTap, required this.semanticLabel});
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-
     return Semantics(
       button: true,
       label: semanticLabel,
@@ -413,7 +412,7 @@ class _StepperButton extends StatelessWidget {
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         // 44pt: the smallest target a finger hits reliably.
-        child: SizedBox(width: 44, height: 44, child: Icon(icon, size: 22, color: colors.textContent)),
+        child: SizedBox(width: 44, height: 44, child: Center(child: glyph)),
       ),
     );
   }

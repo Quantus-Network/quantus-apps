@@ -2,16 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/connectivity_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
-import 'package:resonance_network_wallet/services/history_polling_manager.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
-
-/// Provider that holds the current app lifecycle state
-final appLifecycleStateProvider = StateProvider<AppLifecycleState>((ref) => AppLifecycleState.resumed);
+import 'package:wallet_core/services/history_polling_manager.dart';
+import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 
 /// App lifecycle listener that manages polling based on app state
 class AppLifecycleManager extends ConsumerStatefulWidget {
@@ -25,7 +21,11 @@ class AppLifecycleManager extends ConsumerStatefulWidget {
 
 class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with WidgetsBindingObserver {
   // Track if we have already performed background/pause actions to avoid duplicates
-  // as the OS can cycle through multiple states (inactive -> hidden -> paused)
+  // as the OS can cycle through multiple states (inactive -> hidden -> paused).
+  // Never seeded from the launch state: iOS reports `inactive` until the app is
+  // activated, and a cold start whose prompt was answered before that `resumed`
+  // arrived would otherwise be treated as a resume from background and prompt
+  // again.
   bool _isBackgrounded = false;
 
   // A real backgrounding during a system auth prompt is kept from the unlock
@@ -37,10 +37,6 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
-    // Initialize background state
-    final currentState = WidgetsBinding.instance.lifecycleState ?? AppLifecycleState.resumed;
-    _isBackgrounded = currentState != AppLifecycleState.resumed;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final localAuthNotifier = ref.read(localAuthProvider.notifier);
@@ -129,7 +125,7 @@ class _AppLifecycleManagerState extends ConsumerState<AppLifecycleManager> with 
         localAuthNotifier.recordBackgroundTime();
       } else {
         if (authInProgress && state != AppLifecycleState.inactive) _locationStale = true;
-        quantusPrint('$state - already backgrounded, skipping actions');
+        quantusPrint('$state - ${authInProgress ? "auth prompt" : "already backgrounded"}, skipping actions');
       }
     }
   }

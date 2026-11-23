@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/components/address_checkphrase_with_initial.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_reject_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signature_scan_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
 
 /// Step 2/3 of Keystone signing: shows what the device screen should display,
@@ -51,11 +51,12 @@ class KeystoneVerifyScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const KeystoneStepLabel(current: 2, total: 3),
-            const SizedBox(height: 12),
-            Text(l10n.keystoneVerifyTitle, style: text.headingRow.copyWith(color: colors.textContent)),
-            const SizedBox(height: 8),
-            Text(l10n.keystoneVerifyInstruction, style: text.caption.copyWith(color: colors.textMuted)),
+            KeystoneStepHeader(
+              current: 2,
+              total: 3,
+              title: l10n.keystoneVerifyTitle,
+              instruction: l10n.keystoneVerifyInstruction,
+            ),
             const SizedBox(height: 24),
             _summaryCard(context, l10n, colors, text),
             const SizedBox(height: 24),
@@ -82,7 +83,6 @@ class KeystoneVerifyScreen extends ConsumerWidget {
   Widget _summaryCard(BuildContext context, AppLocalizations l10n, AppColorsV3 colors, AppTextThemeV3 text) {
     final labelStyle = text.labelData.copyWith(color: colors.textMuted);
     final address = session.secondaryDetail?.trim();
-    final checksum = session.tertiaryDetail;
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -101,8 +101,8 @@ class KeystoneVerifyScreen extends ConsumerWidget {
           if (address != null) ...[
             Text((session.secondaryLabel ?? l10n.sendReviewTo).toUpperCase(), style: labelStyle),
             const SizedBox(height: 16),
-            if (checksum != null)
-              AddressCheckphraseWithInitial(recipientChecksum: checksum, recipientAddress: address)
+            if (session.secondaryIsAddress)
+              AddressCheckphraseWithInitial(address: address)
             else
               Text(address, style: text.dataAddressLarge.copyWith(color: colors.textContent)),
           ],

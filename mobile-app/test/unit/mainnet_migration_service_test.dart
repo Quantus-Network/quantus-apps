@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/services/mainnet_migration_service.dart';
+import 'package:wallet_core/services/mainnet_migration_service.dart';
 
 import '../fakes.dart';
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/ur_qr_panel.dart';
 import 'package:quantus_cold_wallet/providers/ur_qr_providers.dart';
+import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 
 /// Shows one account's full ML-DSA-65 public key, as an animated UR QR and
 /// as selectable text with a copy control.
@@ -89,7 +90,7 @@ class PublicKeyExportScreen extends StatelessWidget {
         ),
       ),
       bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: 'Done', onTap: () => Navigator.pop(context)),
+        child: QuantusButton.simple(label: 'Done', padding: coldButtonPadding, onTap: () => Navigator.pop(context)),
       ),
     );
   }

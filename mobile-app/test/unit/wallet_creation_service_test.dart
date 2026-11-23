@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/services/wallet_creation_service.dart';
+import 'package:wallet_core/services/wallet_creation_service.dart';
 
 @GenerateNiceMocks([MockSpec<SettingsService>(), MockSpec<AccountsService>(), MockSpec<AccountDiscoveryService>()])
 import 'wallet_creation_service_test.mocks.dart';

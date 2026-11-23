@@ -59,4 +59,66 @@ void main() {
   test('every endpoint failing surfaces the server error', () {
     expect(_service({_first: 502, _second: 503}).post(body: '{}'), throwsA(isA<EndpointServerError>()));
   });
+
+  group('query() retries a transient failure', () {
+    /// Fails the first [failures] requests the given way, then answers.
+    GraphQlEndpointService flaky(int failures, http.Response Function() failure) {
+      var calls = 0;
+      return GraphQlEndpointService.forUrls(
+        [_first],
+        client: MockClient((request) async {
+          calls++;
+          if (calls <= failures) return failure();
+          return http.Response(
+            jsonEncode({
+              'data': {'calls': calls},
+            }),
+            200,
+          );
+        }),
+      );
+    }
+
+    http.Response serverError() => http.Response('bad gateway', 502);
+    http.Response statementTimeout() => http.Response(
+      jsonEncode({
+        'errors': [
+          {
+            'message': 'database query error',
+            'extensions': {'path': r'$', 'code': 'unexpected'},
+          },
+        ],
+      }),
+      200,
+    );
+    http.Response badQuery() => http.Response(
+      jsonEncode({
+        'errors': [
+          {
+            'message': "field 'nope' not found",
+            'extensions': {'code': 'validation-failed'},
+          },
+        ],
+      }),
+      200,
+    );
+
+    test('a 5xx from every endpoint is retried', () async {
+      final data = await flaky(2, serverError).query(document: '{ x }');
+      expect(data['calls'], 3);
+    });
+
+    test('a statement timeout is retried', () async {
+      final data = await flaky(1, statementTimeout).query(document: '{ x }');
+      expect(data['calls'], 2);
+    });
+
+    test('an error the query caused is not retried', () async {
+      await expectLater(flaky(1, badQuery).query(document: '{ x }'), throwsA(isA<Exception>()));
+    });
+
+    test('a 5xx that outlasts every retry is surfaced', () async {
+      await expectLater(flaky(10, serverError).query(document: '{ x }'), throwsA(isA<EndpointServerError>()));
+    });
+  });
 }

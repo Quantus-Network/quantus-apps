@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/connect_keystone_screen.dart';
 
 /// Intro screen for adding a cold wallet account.

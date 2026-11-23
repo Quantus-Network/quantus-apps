@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/encrypted_send_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/encrypted_send_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/wormhole_progress_steps.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/send/wormhole_steps.dart';
 import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 
 /// Renders an encrypted send driven by [encryptedSendControllerProvider]: the
@@ -116,12 +117,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
               _buildStatusHeader(colors, text, l10n),
               const SizedBox(height: 24),
               WormholeProgressSteps(
-                steps: [
-                  (1, l10n.encryptedSendStepPreparing),
-                  (4, l10n.encryptedSendStepGenerating),
-                  (5, l10n.encryptedSendStepProving),
-                  (6, l10n.encryptedSendStepSubmitting),
-                ],
+                steps: encryptedSendSteps(l10n),
                 stepProgress: send.stepProgress,
                 currentStep: send.currentStep,
                 done: false,
@@ -144,7 +140,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
   Widget _buildStatusHeader(AppColorsV3 colors, AppTextThemeV3 text, AppLocalizations l10n) {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final amountLabel = fmt.formatBalance(widget.plan.amountToken, maxDecimals: 2, addSymbol: true);
-    final shortAddr = AddressFormattingService.formatAddress(widget.recipientAddress.trim());
+    final recipient = widget.recipientAddress.trim();
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
@@ -156,7 +152,7 @@ class _EncryptedSendProgressScreenState extends ConsumerState<EncryptedSendProgr
           const SizedBox(height: 16),
           Text(amountLabel, style: text.amountHero.copyWith(color: colors.textContent)),
           const SizedBox(height: 16),
-          AddressCheckphrase(address: shortAddr, checkphrase: widget.terminal.recipientChecksum),
+          AddressCheckphrase(address: recipient, displayAddress: AddressFormattingService.formatAddress(recipient)),
         ],
       ),
     );

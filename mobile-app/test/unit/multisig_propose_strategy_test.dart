@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
-import 'package:resonance_network_wallet/v2/screens/send/multisig_propose_strategy.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/multisig_propose_strategy.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 
 import '../fakes.dart';
 
@@ -35,14 +35,9 @@ void main() {
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts)),
       ],
     );
-    return MultisigProposeStrategy(msig: msig).submit(
-      ref,
-      recipientAddress: other.accountId,
-      recipientChecksum: 'checksum',
-      amount: BigInt.from(1000),
-      fee: fee,
-      isPayMode: false,
-    );
+    return MultisigProposeStrategy(
+      msig: msig,
+    ).submit(ref, recipientAddress: other.accountId, amount: BigInt.from(1000), fee: fee, isPayMode: false);
   }
 
   testWidgets('a keystone member is handed to the signing session instead of signing locally', (tester) async {

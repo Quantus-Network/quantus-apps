@@ -4,12 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_cache.dart';
-import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_session.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_verify_screen.dart';
 
@@ -125,11 +124,12 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const KeystoneStepLabel(current: 1, total: 3),
-            const SizedBox(height: 12),
-            Text(l10n.keystoneSignTitle, style: text.headingRow.copyWith(color: colors.textContent)),
-            const SizedBox(height: 8),
-            Text(l10n.keystoneSignInstruction, style: text.caption.copyWith(color: colors.textMuted)),
+            KeystoneStepHeader(
+              current: 1,
+              total: 3,
+              title: l10n.keystoneSignTitle,
+              instruction: l10n.keystoneSignInstruction,
+            ),
             const SizedBox(height: 32),
             Center(child: _buildQr(colors, text)),
             if (session.primaryDetail != null || session.secondaryDetail != null) ...[
@@ -159,7 +159,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final secondary = session.secondaryDetail?.trim();
-    final displaySecondary = secondary != null && SubstrateService().isValidSS58Address(secondary)
+    final displaySecondary = secondary != null && session.secondaryIsAddress
         ? AddressFormattingService.formatAddress(secondary)
         : secondary;
 
@@ -179,7 +179,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
           DetailSummaryRow(
             label: (session.secondaryLabel ?? l10n.sendReviewTo).toUpperCase(),
             value: displaySecondary!,
-            checkphrase: session.tertiaryDetail,
+            checkphraseAddress: session.secondaryIsAddress ? secondary : null,
             monospace: true,
           ),
       ],

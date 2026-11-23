@@ -1,5 +1,5 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/shared/utils/polling_refresh_scope.dart';
+import 'package:wallet_core/utils/polling_refresh_scope.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

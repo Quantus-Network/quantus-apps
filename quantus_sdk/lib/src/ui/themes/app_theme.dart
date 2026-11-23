@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 class AppTheme {
-  static ThemeData darkTheme(BuildContext context) {
+  /// [text] is the type scale: the standard one for phones, or
+  /// [AppTextThemeV3.desktop] for the desktop apps.
+  static ThemeData darkTheme(BuildContext context, {AppTextThemeV3 text = const AppTextThemeV3.standard()}) {
     const colors = AppColorsV3.dark();
-    const text = AppTextThemeV3.standard();
     const radius = AppRadiusV3.standard();
 
     return ThemeData(
@@ -42,7 +43,7 @@ class AppTheme {
         filled: true,
         fillColor: Colors.transparent,
       ),
-      extensions: const [colors, text, radius],
+      extensions: [colors, text, radius],
     );
   }
 }

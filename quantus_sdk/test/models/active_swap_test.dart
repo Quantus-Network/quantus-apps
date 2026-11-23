@@ -38,6 +38,9 @@ void main() {
     expect(quote.signature, 'ed25519:sig');
     expect(quote.depositAddress, 'qzdeposit');
     expect(quote.depositMemo, '4183920');
+    expect(quote.withdrawFee, BigInt.from(300000));
+    expect(quote.refundFee, BigInt.from(2000000000));
+    expect(quote.feeBps, 40);
     expect(kept.accountId, 'qzaccount');
     expect(kept.accountName, 'Account 1');
     expect(kept.startedAt.isAtSameMomentAs(now), isTrue);
@@ -68,15 +71,59 @@ void main() {
     expect(ActiveSwap.fromJson(jsonDecode(jsonEncode(done.toJson()))).settledAt, done.settledAt);
   });
 
-  test('a swap is overdue once its deposit is unseen at the deadline, or unsettled an hour past it', () {
-    final past = deadline.add(const Duration(seconds: 1));
-    final late = deadline.add(ActiveSwap.finishGrace).add(const Duration(seconds: 1));
-    expect(swap(SwapStatus.pendingDeposit).overdue(past), isTrue);
-    expect(swap(SwapStatus.pendingDeposit).overdue(deadline.subtract(const Duration(seconds: 1))), isFalse);
-    expect(swap(SwapStatus.knownDepositTx).overdue(past), isFalse);
-    expect(swap(SwapStatus.processing).overdue(late), isTrue);
+  test('a swap is overdue once it is unsettled ten minutes past its deadline, whatever its status', () {
+    final graceEnds = deadline.add(ActiveSwap.finishGrace);
+    final late = graceEnds.add(const Duration(seconds: 1));
+    expect(ActiveSwap.finishGrace, const Duration(minutes: 10));
+    for (final status in [SwapStatus.pendingDeposit, SwapStatus.knownDepositTx, SwapStatus.processing]) {
+      expect(swap(status).overdue(graceEnds), isFalse, reason: '$status');
+      expect(swap(status).overdue(late), isTrue, reason: '$status');
+    }
     expect(swap(SwapStatus.success).overdue(late), isFalse);
-    expect(swap(SwapStatus.processing).inProgressAt(past), isTrue);
+    expect(swap(SwapStatus.processing).inProgressAt(graceEnds), isTrue);
     expect(swap(SwapStatus.processing).inProgressAt(late), isFalse);
+  });
+
+  group('depositSeenAt', () {
+    ActiveSwap move(ActiveSwap from, SwapStatus status, Duration after) => from.withOrder(
+      SwapOrder(quote: from.order.quote, status: status),
+      now: now.add(after),
+    );
+
+    test('deposit is not seen while pending', () {
+      final pending = move(swap(SwapStatus.pendingDeposit), SwapStatus.pendingDeposit, const Duration(seconds: 5));
+      expect(pending.depositSeenAt, isNull);
+    });
+
+    test('first status past pending records when the deposit was seen', () {
+      final known = move(swap(SwapStatus.pendingDeposit), SwapStatus.knownDepositTx, const Duration(minutes: 1));
+      expect(known.depositSeenAt, now.add(const Duration(minutes: 1)));
+    });
+
+    test('deposit-seen time is kept through later statuses', () {
+      final known = move(swap(SwapStatus.pendingDeposit), SwapStatus.knownDepositTx, const Duration(minutes: 1));
+      final processing = move(known, SwapStatus.processing, const Duration(minutes: 2));
+      final done = move(processing, SwapStatus.success, const Duration(minutes: 3));
+      expect(processing.depositSeenAt, now.add(const Duration(minutes: 1)));
+      expect(done.depositSeenAt, now.add(const Duration(minutes: 1)));
+      expect(done.withPollError('down').depositSeenAt, now.add(const Duration(minutes: 1)));
+    });
+
+    test('a swap first seen at processing still records it', () {
+      final processing = move(swap(SwapStatus.pendingDeposit), SwapStatus.processing, const Duration(minutes: 4));
+      expect(processing.depositSeenAt, now.add(const Duration(minutes: 4)));
+    });
+
+    test('deposit-seen time survives a restart', () {
+      final known = move(swap(SwapStatus.pendingDeposit), SwapStatus.knownDepositTx, const Duration(minutes: 1));
+      final kept = ActiveSwap.fromJson(jsonDecode(jsonEncode(known.toJson())));
+      expect(kept.depositSeenAt, now.add(const Duration(minutes: 1)));
+    });
+
+    test('a swap saved before this change still loads', () {
+      final json = jsonDecode(jsonEncode(swap(SwapStatus.processing).toJson())) as Map<String, dynamic>;
+      json.remove('depositSeenAt');
+      expect(ActiveSwap.fromJson(json).depositSeenAt, isNull);
+    });
   });
 }

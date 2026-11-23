@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/send/input_amount_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/regular_send_strategy.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../fakes.dart';
@@ -13,6 +13,7 @@ import '../fakes.dart';
 /// viewport: a short phone scrolls rather than overflowing.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help';
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -34,7 +35,6 @@ void main() {
       ProviderScope(
         overrides: [
           settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(makeAccount(1)))),
-          humanReadableChecksumServiceProvider.overrideWithValue(FakeHumanReadableChecksumService()),
           effectiveBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(BigInt.from(5000000000000))),
           substrateServiceProvider.overrideWithValue(FakeSubstrateService(fee: BigInt.from(12964885))),
           balancesServiceProvider.overrideWithValue(FakeBalancesService()),

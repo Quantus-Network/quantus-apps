@@ -2,24 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/utils/account_menu.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 
 class MultisigDetailsScreen extends ConsumerWidget {
   const MultisigDetailsScreen({super.key, required this.account});
 
   final MultisigAccount account;
-
-  List<String> _orderedSigners() {
-    final creator = account.creator;
-    if (creator == null || !account.signers.contains(creator)) {
-      return List<String>.from(account.signers);
-    }
-    final rest = account.signers.where((id) => id != creator).toList();
-    return [creator, ...rest];
-  }
 
   String? _localAccountName(WidgetRef ref, String accountId) {
     final accounts = ref.watch(accountsProvider).value;
@@ -33,7 +25,7 @@ class MultisigDetailsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
-    final signers = _orderedSigners();
+    final signers = orderedSignersOf(account);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.multisigAccountMenuDetailsTitle),

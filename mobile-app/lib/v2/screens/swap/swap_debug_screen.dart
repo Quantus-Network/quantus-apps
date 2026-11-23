@@ -2,16 +2,16 @@ import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/providers/account_providers.dart';
-import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
-import 'package:resonance_network_wallet/services/swap_harness_service.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/services/swap_harness_service.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_divider.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/settings_tappable_row.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 
 /// Debug builds only: every screen of the swap in and swap out flows, in the
@@ -100,6 +100,7 @@ class SwapDebugScreen extends ConsumerWidget {
           accountName: account.name,
           startedAt: now.subtract(age),
           settledAt: order.status.isFinal ? now : null,
+          depositSeenAt: order.status == SwapStatus.pendingDeposit ? null : now,
           depositByHand: !swapOut,
           depositTxHash: swapOut ? SwapHarnessService.txHash : null,
           depositFee: swapOut ? unit ~/ BigInt.from(50) : null,
@@ -111,12 +112,7 @@ class SwapDebugScreen extends ConsumerWidget {
       return _Step(name, description, (context, ref) {
         final swap = seed();
         ref.read(activeSwapsProvider.notifier).start(swap);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => SwapProgressScreen(swapId: swap.id, account: account),
-          ),
-        );
+        Navigator.push(context, SwapProgressScreen.route(swap.id, account: account));
       }, seed: seed);
     }
 

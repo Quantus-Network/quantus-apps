@@ -64,12 +64,14 @@ dependencies:
 
   qr_flutter: ^4.1.0
   flutter_svg: ^2.3.0
+  mobile_scanner: ^7.2.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   path_provider_platform_interface: ^2.1.0
   plugin_platform_interface: ^2.1.0
+  shared_preferences_platform_interface: ^2.4.2
   integration_test:
     sdk: flutter
   flutter_lints: ^6.0.0

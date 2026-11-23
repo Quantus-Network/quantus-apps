@@ -4,22 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/currency_display_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_screen_logic.dart';
-import 'package:resonance_network_wallet/v2/screens/send/send_strategy.dart';
-import 'package:resonance_network_wallet/shared/utils/amount_input_logic.dart';
-import 'package:resonance_network_wallet/shared/utils/print.dart';
+import 'package:wallet_core/send/send_screen_logic.dart';
+import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/utils/amount_input_logic.dart';
 
 class InputAmountScreen extends ConsumerStatefulWidget {
   final SendStrategy strategy;
   final String recipientAddress;
-  final String? recipientChecksum;
   final String? initialAmount;
   final bool isPayMode;
 
@@ -27,7 +25,6 @@ class InputAmountScreen extends ConsumerStatefulWidget {
     super.key,
     required this.strategy,
     required this.recipientAddress,
-    this.recipientChecksum,
     this.initialAmount,
     this.isPayMode = false,
   });
@@ -40,7 +37,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
   final _amountController = TextEditingController();
   final _amountFocus = FocusNode();
 
-  String? _recipientChecksum;
   BigInt _amount = BigInt.zero;
   bool _sendAll = false;
 
@@ -70,11 +66,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         _amountController.text = _amountInputLogic.formatTokenAmount(token);
       }
     }
-    _recipientChecksum = widget.recipientChecksum;
-    ref.read(humanReadableChecksumServiceProvider).getHumanReadableName(widget.recipientAddress.trim()).then((name) {
-      if (!mounted) return;
-      setState(() => _recipientChecksum = name);
-    });
   }
 
   @override
@@ -141,10 +132,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final feeState = ref.read(_feeProvider(_amount));
     final fee = feeState.fee;
     final l10n = ref.read(l10nProvider);
-    if (_recipientChecksum == null) {
-      context.showErrorToaster(message: l10n.sendInputAmountChecksumRequired);
-      return;
-    }
     if (fee == null) {
       context.showErrorToaster(message: widget.strategy.strings(l10n).feeFetchFailedMessage);
       return;
@@ -161,7 +148,6 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
           recipientAddress: widget.recipientAddress,
           amount: _amount,
           fee: fee,
-          recipientChecksum: _recipientChecksum!,
           isPayMode: widget.isPayMode,
           sendAll: _sendAll,
         ),
@@ -191,10 +177,12 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
       balance.value ?? BigInt.zero,
       widget.strategy.feeChargedToBalance(fee),
     );
+    // An unknown balance is not a shortfall: the button is disabled below
+    // without claiming the amount is unaffordable.
+    final shortfallUnknown = !balance.hasValue && amountStatus == AmountStatus.insufficientBalance;
     final affordabilityError = fee == null ? null : widget.strategy.affordabilityError(ref, fee, l10n);
     final btnDisabled =
         fee == null ||
-        _recipientChecksum == null ||
         !balance.hasValue ||
         widget.strategy.extraBalancesLoading(ref) ||
         affordabilityError != null ||
@@ -206,7 +194,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
         );
     final btnText =
         affordabilityError ??
-        (amountStatus == AmountStatus.valid
+        (amountStatus == AmountStatus.valid || shortfallUnknown
             ? strings.reviewButtonLabel
             : SendScreenLogic.getButtonText(
                 l10n: l10n,
@@ -260,7 +248,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
               children: [
                 Text(strings.amountRecipientCardLabel, style: text.labelData.copyWith(color: colors.textMuted)),
                 const SizedBox(height: 16),
-                AddressCheckphrase(address: shortAddr, checkphrase: _recipientChecksum),
+                AddressCheckphrase(address: addr, displayAddress: shortAddr),
               ],
             ),
           ),
@@ -384,6 +372,7 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
     final formattingService = ref.read(numberFormattingServiceProvider);
     final feePayerProvider = widget.strategy.feePayerBalanceProvider;
     final feePayerLabel = widget.strategy.feePayerBalanceLabel(l10n);
+    final pendingProvider = widget.strategy.pendingBalanceProvider;
     final mutedBody = text.body.copyWith(color: colors.textMuted);
 
     return ScaffoldBaseBottomContent(
@@ -412,6 +401,8 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
                           loading: () => Text('...', style: mutedBody),
                           error: (_, _) => Text('—', style: mutedBody),
                         ),
+                        if (pendingProvider != null)
+                          _pendingBalance(l10n, pendingProvider, formattingService, mutedBody),
                       ],
                     ),
                   ),
@@ -447,6 +438,24 @@ class _InputAmountScreenState extends ConsumerState<InputAmountScreen> {
             onTap: _openReview,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _pendingBalance(
+    AppLocalizations l10n,
+    ProviderListenable<AsyncValue<BigInt>> provider,
+    NumberFormattingService fmt,
+    TextStyle style,
+  ) {
+    final pending = ref.watch(provider).value ?? BigInt.zero;
+    if (pending <= BigInt.zero) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Text(
+        '${l10n.sendInputAmountPending} ${l10n.commonAmountBalance(fmt.formatBalance(pending), AppConstants.tokenSymbol)}',
+        key: const Key(E2EKeys.sendInputAmountPending),
+        style: style,
       ),
     );
   }

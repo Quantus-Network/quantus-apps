@@ -1,20 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// 28pt glass chevron with a [hitSize] square tap target; the visual sits at
-/// the left edge so the extra area extends right, above and below it.
+/// Glass circle of [size] holding a chevron, or another [icon], inside a
+/// [hitSize] square tap target; the visual sits at the left edge so the extra
+/// area extends right, above and below it.
 class AppBackButton extends StatelessWidget {
   static const double hitSize = 48;
 
   final VoidCallback? onTap;
+  final QuantusIcons icon;
+  final double size;
+  final double iconSize;
 
-  const AppBackButton({super.key, this.onTap});
+  const AppBackButton({
+    super.key,
+    this.onTap,
+    this.icon = QuantusIcons.chevronLeft,
+    this.size = 28,
+    this.iconSize = 24,
+  });
 
   @override
   Widget build(BuildContext context) {
-    const double containerSize = 28;
-    const double iconSize = 24;
-
     return GestureDetector(
       onTap: onTap ?? () => Navigator.pop(context),
       behavior: HitTestBehavior.opaque,
@@ -24,11 +31,11 @@ class AppBackButton extends StatelessWidget {
         child: Align(
           alignment: Alignment.centerLeft,
           child: GlassButtonBase(
-            buttonHeight: containerSize,
-            buttonWidth: containerSize,
-            borderRadius: BorderRadius.circular(containerSize / 2),
-            padding: const EdgeInsets.all(2),
-            child: QuantusIcon(QuantusIcons.chevronLeft, size: iconSize, color: context.colorsV3.textContent),
+            buttonHeight: size,
+            buttonWidth: size,
+            borderRadius: BorderRadius.circular(size / 2),
+            padding: EdgeInsets.all((size - iconSize) / 2),
+            child: QuantusIcon(icon, size: iconSize, color: context.colorsV3.textContent),
           ),
         ),
       ),

@@ -7,12 +7,16 @@ import 'package:quantus_cold_wallet/components/lock_screen.dart';
 /// locked, so it covers any pushed route (Show Key, Sign) — not just the home
 /// route — after the app is backgrounded.
 class LockOverlay extends ConsumerWidget {
-  const LockOverlay({super.key});
+  /// The Navigator this overlay sits beside, which the reset returns to its
+  /// first route.
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  const LockOverlay({super.key, required this.navigatorKey});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final status = ref.watch(walletControllerProvider.select((s) => s.status));
     if (status != WalletStatus.locked) return const SizedBox.shrink();
-    return const Positioned.fill(child: LockScreen());
+    return Positioned.fill(child: LockScreen(navigatorKey: navigatorKey));
   }
 }

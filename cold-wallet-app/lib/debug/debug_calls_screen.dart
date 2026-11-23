@@ -96,16 +96,16 @@ class DebugCallsScreen extends ConsumerWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => screen())),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: colors.borderHairline)),
         ),
         child: Row(
           children: [
             Expanded(
-              child: Text(label, style: text.body.copyWith(color: colors.textContent)),
+              child: Text(label, style: text.headingRow.copyWith(color: colors.textContent)),
             ),
-            Icon(Icons.chevron_right, size: 18, color: colors.textMuted),
+            QuantusIcon(QuantusIcons.chevronRight, size: 18, color: colors.textMuted),
           ],
         ),
       ),

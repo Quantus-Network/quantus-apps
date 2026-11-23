@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/connectivity_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/connectivity_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:resonance_network_wallet/v2/screens/mining_rewards/mining_rewards_address_screen.dart';
 
@@ -18,13 +18,9 @@ class _Substrate extends Fake implements SubstrateService {
   bool isValidSS58Address(String address) => address == _valid;
 }
 
-class _Checksums extends Fake implements HumanReadableChecksumService {
-  @override
-  Future<String?> getHumanReadableName(String address, {upperCase = true}) async => 'CHECK PHRASE';
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  CheckphraseText.resolveOverride = (_) async => 'CHECK PHRASE';
   final l10n = lookupAppLocalizations(const Locale('en'));
 
   Future<void> pump(WidgetTester tester) => tester.pumpApp(
@@ -34,7 +30,6 @@ void main() {
       l10nProvider.overrideWithValue(l10n),
       settingsServiceProvider.overrideWithValue(FakeSettingsService()),
       substrateServiceProvider.overrideWithValue(_Substrate()),
-      humanReadableChecksumServiceProvider.overrideWithValue(_Checksums()),
     ],
   );
 

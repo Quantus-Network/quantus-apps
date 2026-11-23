@@ -1,0 +1,189 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/one_click_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/send_review_row.dart';
+import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/services/user_approval.dart';
+
+/// Spend plan — and so the fee — for an amount from the wallet's current
+/// UTXO set. Derived from whatever [encryptedStateProvider] holds, including
+/// the previous state during a background rescan, so typing never waits on
+/// the chain: the volume fee and quantum come from the shipped metadata.
+final encryptedSendFeeProvider = Provider.autoDispose.family<AsyncValue<SendFee>, (int walletIndex, BigInt amount)>((
+  ref,
+  key,
+) {
+  final (walletIndex, amount) = key;
+  return ref.watch(encryptedStateProvider(walletIndex)).whenData<SendFee>((s) => planEncryptedFee(s.utxos, amount));
+});
+
+EncryptedFee planEncryptedFee(List<WormholeUtxo> utxos, BigInt amount) {
+  if (amount <= BigInt.zero) return const EncryptedFee();
+  if (amount % wormholeScaleFactor != BigInt.zero) {
+    return const EncryptedFee(blocker: EncryptedSendBlocker.notQuantized);
+  }
+  try {
+    return EncryptedFee(
+      plan: selectWormholeInputs(utxos: utxos, amountToken: amount),
+    );
+  } on InsufficientEncryptedFunds {
+    return const EncryptedFee(blocker: EncryptedSendBlocker.insufficient);
+  }
+}
+
+/// ZK-private transfer from an encrypted (wormhole) account. Coin selection
+/// runs as the fee is derived; submission hands the plan to the proving
+/// progress screen via [SendNeedsProving].
+class EncryptedSendStrategy extends SendStrategy {
+  final Account account;
+
+  const EncryptedSendStrategy({required this.account});
+
+  @override
+  bool get showPrivateSendNotice => true;
+
+  @override
+  String? get sourceAccountId => account.accountId;
+
+  /// All derived wormhole addresses (receive and change rotate through the HD
+  /// sequence) are this account — not just the index-0 [Account.accountId].
+  /// A 1Click deposit address is refused once 1Click confirms it: it takes
+  /// one deposit, the one its quote expects, and a private send to it strands
+  /// the funds. The lookup never holds the send up.
+  @override
+  Stream<RecipientBlock?> recipientBlock(WidgetRef ref, String address) async* {
+    if (address == account.accountId ||
+        await ref.read(encryptedAccountServiceProvider(account.walletIndex)).ownsAddress(address)) {
+      yield RecipientBlock.self;
+      return;
+    }
+    yield null;
+    if (await isOneClickDepositAddress(ref, address)) yield RecipientBlock.oneClickDeposit;
+  }
+
+  @override
+  SendStrings strings(AppLocalizations l10n) => SendStrings(
+    flowTitle: l10n.sendTitle,
+    recipientSectionLabel: l10n.sendSelectRecipientSendTo,
+    amountRecipientCardLabel: l10n.sendInputAmountSendTo,
+    feeLabel: l10n.encryptedSendFeeLabel,
+    feeFetchFailedMessage: l10n.multisigProposeFeeFetchFailed,
+    reviewButtonLabel: l10n.sendLogicReviewSend,
+    reviewHeroLabel: l10n.sendReviewSending,
+    reviewConfirmLabel: l10n.sendReviewConfirm,
+  );
+
+  @override
+  ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider =>
+      encryptedSpendableProvider(account.walletIndex);
+
+  @override
+  ProviderListenable<AsyncValue<BigInt>> get displayBalanceProvider => encryptedAvailableProvider(account.walletIndex);
+
+  @override
+  ProviderListenable<AsyncValue<BigInt>> get pendingBalanceProvider => encryptedPendingProvider(account.walletIndex);
+
+  @override
+  bool extraBalancesLoading(WidgetRef ref) => false;
+
+  @override
+  BigInt feeChargedToBalance(SendFee? fee) => BigInt.zero;
+
+  @override
+  ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount}) =>
+      encryptedSendFeeProvider((account.walletIndex, amount)).select(SendFeeState.fromAsync);
+
+  @override
+  void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
+      ref.invalidate(encryptedStateProvider(account.walletIndex));
+
+  @override
+  String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) {
+    return switch ((fee as EncryptedFee).blocker) {
+      null => null,
+      EncryptedSendBlocker.notQuantized => l10n.encryptedSendAmountStep(AppConstants.tokenSymbol),
+      EncryptedSendBlocker.insufficient => _insufficientLabel(ref, l10n),
+    };
+  }
+
+  String _insufficientLabel(WidgetRef ref, AppLocalizations l10n) {
+    final pending = ref.watch(encryptedPendingProvider(account.walletIndex)).value ?? BigInt.zero;
+    if (pending <= BigInt.zero) return l10n.sendLogicInsufficientBalance;
+    final fmt = ref.read(numberFormattingServiceProvider);
+    return l10n.encryptedSendInsufficientWithPending(fmt.formatBalance(pending), AppConstants.tokenSymbol);
+  }
+
+  @override
+  List<SendReviewRow> reviewRows(
+    WidgetRef ref, {
+    required String recipientAddress,
+    required BigInt amount,
+    required SendFee fee,
+    bool feeIsEstimate = false,
+    bool sendAll = false,
+  }) {
+    final l10n = ref.watch(l10nProvider);
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    final feeAmount = fee.displayFee;
+
+    String amt(BigInt v) =>
+        l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
+
+    return [
+      SendReviewText(l10n.sendReviewTo, recipientAddress.trim(), kind: SendReviewRowKind.recipient),
+      SendReviewText(l10n.sendReviewAmount, amt(amount), kind: SendReviewRowKind.amount),
+      SendReviewText(l10n.encryptedSendFeeLabel, amt(feeAmount), kind: SendReviewRowKind.fee),
+      SendReviewText(l10n.sendReviewYouPay, amt(amount + feeAmount), kind: SendReviewRowKind.total),
+    ];
+  }
+
+  @override
+  Future<SendOutcome> submit(
+    WidgetRef ref, {
+    required String recipientAddress,
+    required BigInt amount,
+    required SendFee fee,
+    required bool isPayMode,
+    bool sendAll = false,
+  }) async {
+    final l10n = ref.read(l10nProvider);
+    final plan = (fee as EncryptedFee).plan;
+    if (plan == null) {
+      throw StateError('Encrypted send reached submit without a spend plan');
+    }
+    // The plan is frozen at estimate time and its amountToken is what the
+    // recipient is provably paid — it must match the confirmed amount.
+    if (plan.amountToken != amount) {
+      throw StateError('Encrypted send plan amount ${plan.amountToken} does not match confirmed amount $amount');
+    }
+    // Every input leaf pays the recipient through its own exit, so a plan of
+    // several inputs makes several deposits, which a single-use 1Click
+    // deposit address cannot take. Only an answer 1Click has given by now
+    // counts; it is never waited for, and read again once the user has
+    // approved, since it may land while the prompt is open.
+    final recipient = recipientAddress.trim();
+    bool refused() => plan.inputCount > 1 && isKnownOneClickDepositAddress(ref, recipient);
+    if (refused()) return SendFailed(l10n.encryptedSendNearIntentsDescription);
+
+    final approval = await ref.read(userApprovalProvider).approve(reason: l10n.sendReviewAuthReason);
+    if (approval != ApprovalResult.approved) return SendFailed(l10n.sendReviewAuthRequired);
+    if (refused()) return SendFailed(l10n.encryptedSendNearIntentsDescription);
+
+    return SendNeedsProving(
+      account: account,
+      plan: plan,
+      amount: amount,
+      terminal: buildSentTerminalContent(
+        l10n,
+        ref.read(numberFormattingServiceProvider),
+        recipient: recipient,
+        amount: amount,
+        isPayMode: isPayMode,
+      ),
+    );
+  }
+}

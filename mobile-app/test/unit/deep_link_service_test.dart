@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:wallet_core/providers/route_intent_providers.dart';
 import 'package:resonance_network_wallet/services/deep_link_service.dart';
 
 void main() {
@@ -42,6 +42,12 @@ void main() {
       handle('https://www.quantus.com/pay?to=qzpyxSr48YN9EQe2ito734iCReTXjnungmNCSY4Yph1YznEda');
 
       expect(container.read(paymentIntentProvider), isNull);
+    });
+
+    test('a swap live activity link asks home to open the swap', () {
+      handle('quantus://swap');
+
+      expect(container.read(swapProgressIntentProvider), isTrue);
     });
 
     test('ignores unrelated links', () {

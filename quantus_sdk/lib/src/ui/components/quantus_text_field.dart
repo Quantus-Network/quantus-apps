@@ -27,6 +27,23 @@ class QuantusTextField extends StatefulWidget {
   final bool expands;
   final double? height;
 
+  /// A row drawn inside the field's border, under the text. Only for a field
+  /// that [expands], whose height leaves room for it.
+  final Widget? footer;
+
+  /// The space between the border and the text, in place of the field's own
+  /// 14 all round. A single-line field of a set [height] centres its text, so
+  /// it needs only the sides.
+  final EdgeInsets? padding;
+
+  /// The text's style, in place of the theme's large data text. The hint
+  /// follows it, in its own colour.
+  final TextStyle? textStyle;
+
+  /// The fill and the corners of the box, in place of the field's own.
+  final Color? fillColor;
+  final BorderRadius? borderRadius;
+
   const QuantusTextField({
     super.key,
     required this.controller,
@@ -49,8 +66,14 @@ class QuantusTextField extends StatefulWidget {
     this.maxLines = 1,
     this.expands = false,
     this.height,
+    this.footer,
+    this.padding,
+    this.textStyle,
+    this.fillColor,
+    this.borderRadius,
   }) : assert(!showClearButton || trailing == null, 'showClearButton and trailing are mutually exclusive'),
-       assert(!expands || (maxLines == null && height != null), 'expands needs maxLines: null and an explicit height');
+       assert(!expands || (maxLines == null && height != null), 'expands needs maxLines: null and an explicit height'),
+       assert(footer == null || expands, 'a footer needs a field that expands');
 
   @override
   State<QuantusTextField> createState() => _QuantusTextFieldState();
@@ -116,10 +139,32 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
-    final textStyle = context.themeTextV3.dataAddressLarge.copyWith(color: colors.textContent);
-    final hintStyle = context.themeTextV3.dataAddressLarge.copyWith(color: colors.textMuted);
+    final baseStyle = widget.textStyle ?? context.themeTextV3.dataAddressLarge;
+    final textStyle = baseStyle.copyWith(color: colors.textContent);
+    final hintStyle = baseStyle.copyWith(color: colors.textMuted);
     final showClear = widget.showClearButton && widget.controller.text.isNotEmpty;
     final extra = showClear ? _QuantusTextFieldClearButton(onTap: widget.controller.clear) : widget.trailing;
+    final footer = widget.footer;
+    final padding = widget.padding ?? EdgeInsets.fromLTRB(14, 14, 14, footer == null ? 14 : 10);
+    final textField = TextField(
+      controller: widget.controller,
+      focusNode: _focusNode,
+      enabled: widget.enabled,
+      obscureText: widget.obscureText,
+      enableSuggestions: widget.enableSuggestions,
+      keyboardType: widget.keyboardType,
+      inputFormatters: widget.inputFormatters,
+      textInputAction: widget.textInputAction,
+      textCapitalization: widget.textCapitalization,
+      autocorrect: widget.autocorrect,
+      maxLines: widget.maxLines,
+      expands: widget.expands,
+      onChanged: widget.onChanged,
+      onSubmitted: widget.onSubmitted,
+      cursorColor: colors.accentFlare,
+      style: textStyle,
+      decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,36 +176,24 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
               width: double.infinity,
               height: widget.height,
               constraints: widget.height == null ? const BoxConstraints(minHeight: 48) : null,
-              padding: EdgeInsets.only(
-                left: 14,
-                right: extra == null ? 14 : _trailingReserve(extra),
-                top: 14,
-                bottom: 14,
-              ),
+              // One line in a box of a set height sits in its middle.
+              alignment: widget.height != null && !_isMultiline ? Alignment.centerLeft : null,
+              padding: extra == null ? padding : padding.copyWith(right: _trailingReserve(extra)),
               decoration: BoxDecoration(
-                color: colors.bgSurface,
-                borderRadius: context.radiusV3.mdBorder,
+                color: widget.fillColor ?? colors.bgSurface,
+                borderRadius: widget.borderRadius ?? context.radiusV3.mdBorder,
                 border: Border.all(color: _borderColor(colors), width: 1),
               ),
-              child: TextField(
-                controller: widget.controller,
-                focusNode: _focusNode,
-                enabled: widget.enabled,
-                obscureText: widget.obscureText,
-                enableSuggestions: widget.enableSuggestions,
-                keyboardType: widget.keyboardType,
-                inputFormatters: widget.inputFormatters,
-                textInputAction: widget.textInputAction,
-                textCapitalization: widget.textCapitalization,
-                autocorrect: widget.autocorrect,
-                maxLines: widget.maxLines,
-                expands: widget.expands,
-                onChanged: widget.onChanged,
-                onSubmitted: widget.onSubmitted,
-                cursorColor: colors.accentFlare,
-                style: textStyle,
-                decoration: InputDecoration.collapsed(hintText: widget.hint, hintStyle: hintStyle),
-              ),
+              child: footer == null
+                  ? textField
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: textField),
+                        const SizedBox(height: 10),
+                        footer,
+                      ],
+                    ),
             ),
             if (extra != null)
               _isMultiline

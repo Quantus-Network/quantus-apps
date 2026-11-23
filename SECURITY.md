@@ -30,6 +30,9 @@ coordinate a fix and disclosure with you.
 
 If you used AI tooling to find or write up the report, please say so.
 
+**We do not accept PDF files.** Write the report as plain text or Markdown in
+the advisory or email body, and attach code or logs as text files.
+
 ## Our commitment (safe harbor)
 
 We consider security research conducted in good faith under this policy to be
@@ -78,3 +81,6 @@ are determined solely by Quantus Network.
 
 Only the latest release is supported; security fixes are delivered in new
 versions. Please keep your installation up to date.
+
+To check that an Android APK was built from this repository, see
+[ANDROID_RELEASES.md](ANDROID_RELEASES.md).

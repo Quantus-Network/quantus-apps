@@ -8,7 +8,6 @@ void main() {
 
   const colors = AppColorsV3.dark();
   const text = AppTextThemeV3.standard();
-  const radius = AppRadiusV3.standard();
 
   Future<void> pumpScan(WidgetTester tester) async {
     await tester.pumpWidget(
@@ -19,28 +18,63 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('uses v3 overlay, frame, and instruction tokens', (tester) async {
+  testWidgets('shows the shared scanner with the step header, the bracket frame and the receiving panel', (
+    tester,
+  ) async {
     await pumpScan(tester);
 
-    expect(tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor, colors.bgVoid);
+    expect(find.byType(QuantusScanner), findsOneWidget);
+    expect(find.text('Back'), findsOneWidget);
+    expect(find.text('Torch'), findsOneWidget);
+    expect(find.text('Gallery'), findsNothing);
+    expect(tester.widget<Text>(find.text('STEP 1/3')).style?.color, colors.accentFlare);
+    expect(tester.widget<Text>(find.text('Scan the transaction')).style?.fontSize, text.titleScreen.fontSize);
+    expect(find.text("Hold this device over your phone's screen to load the transaction."), findsOneWidget);
 
-    final instruction = tester.widget<Text>(find.textContaining('Scan the transaction QR from your hot wallet'));
-    expect(instruction.style?.color, colors.textContent);
-    expect(instruction.style?.fontSize, text.body.fontSize);
+    final painter =
+        tester
+                .widget<CustomPaint>(find.byWidgetPredicate((w) => w is CustomPaint && w.painter is ScanFramePainter))
+                .painter
+            as ScanFramePainter;
+    expect(painter.accent, colors.accentFlare);
 
-    expect(tester.widget<Icon>(find.byIcon(Icons.arrow_back)).color, colors.textContent);
-    expect(tester.widget<Icon>(find.byIcon(Icons.flash_on)).color, colors.textContent);
+    final label = tester.widget<Text>(find.text('RECEIVING TRANSACTION'));
+    expect(label.style?.color, colors.textMuted);
+    expect(label.style?.fontFamily, AppTextThemeV3.fontFamilySecondary);
+    final bar = tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator));
+    expect(bar.color, colors.accentFlare);
+    expect(bar.minHeight, 4);
 
-    final frame = tester.widgetList<Container>(find.byType(Container)).firstWhere((container) {
-      final decoration = container.decoration;
-      return decoration is BoxDecoration && decoration.border != null;
-    });
-    final decoration = frame.decoration! as BoxDecoration;
-    expect((decoration.border as Border?)?.top.color, colors.accentFlare);
-    expect(decoration.borderRadius, radius.mdBorder);
+    final cancel = tester.widget<Text>(find.text('Cancel Transaction'));
+    expect(cancel.style?.decoration, TextDecoration.underline);
+    expect(find.text('Debug calls'), findsOneWidget);
+    expect(find.byType(Icon), findsNothing, reason: 'the cold wallet draws no Material icons');
+  });
 
-    final debugLabel = tester.widget<Text>(find.text('Debug calls'));
-    expect(debugLabel.style?.color, colors.textVoid);
-    expect(debugLabel.style?.fontSize, text.headingRow.fontSize);
+  testWidgets('keeps the torch clear of the receiving panel on a small phone', (tester) async {
+    tester.view.physicalSize = const Size(360, 640);
+    tester.view.devicePixelRatio = 1;
+    tester.view.padding = const FakeViewPadding(top: 20);
+    addTearDown(tester.view.reset);
+
+    await pumpScan(tester);
+
+    final frame = tester.getRect(find.byWidgetPredicate((w) => w is CustomPaint && w.painter is ScanFramePainter));
+    final subtitle = find.text("Hold this device over your phone's screen to load the transaction.");
+    expect(frame.top, greaterThanOrEqualTo(tester.getRect(subtitle).bottom));
+
+    final controls = tester.getRect(find.byType(ScannerControl));
+    expect(controls.top, greaterThanOrEqualTo(frame.bottom));
+    expect(controls.bottom, lessThanOrEqualTo(tester.getRect(find.byType(ScanProgress)).top));
+  });
+
+  testWidgets('shows no scanning tips before any frame has arrived', (tester) async {
+    await pumpScan(tester);
+
+    await tester.pump(ScanTransactionScreen.stallTimeout * 2);
+
+    expect(find.text('Scan the transaction'), findsOneWidget);
+    expect(find.text('Not picking up new frames'), findsNothing);
+    expect(find.text('RECEIVING TRANSACTION'), findsOneWidget);
   });
 }

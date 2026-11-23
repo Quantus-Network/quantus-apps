@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/providers/route_intent_providers.dart';
+import 'package:wallet_core/providers/route_intent_providers.dart';
 
 void main() {
   group('PaymentIntent.tryParseUrl', () {

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 
 /// Pay/receive summary of a swap, shared by the review, progress and failed screens.
 class SwapAmountsCard extends ConsumerWidget {
@@ -120,6 +120,40 @@ class SwapFeeFailedRow extends ConsumerWidget {
           ),
         ),
         LinkButton(label: l10n.commonRetry, onTap: onRetry),
+      ],
+    );
+  }
+}
+
+/// The fees [quote]'s amounts already hold: what its fee recipients take of
+/// the payment, and 1Click's fixed fee for paying out. A fee the quote does
+/// not carry has no row.
+class SwapQuoteFeeRows extends ConsumerWidget {
+  final SwapQuote quote;
+
+  const SwapQuoteFeeRows({super.key, required this.quote});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    final fmt = ref.watch(numberFormattingServiceProvider);
+    return Column(
+      children: [
+        if (quote.feeBps > 0)
+          SwapDetailRow(
+            label: l10n.swapReviewSwapFee,
+            value: l10n.swapReviewSlippageValue(
+              formatSwapAmount(l10n, fmt, quote.feeAmount, quote.fromToken),
+              slippagePercentLabel(quote.feeBps),
+            ),
+            monoLabel: true,
+          ),
+        if (quote.withdrawFee > BigInt.zero)
+          SwapDetailRow(
+            label: l10n.swapReviewWithdrawalFee,
+            value: formatSwapAmount(l10n, fmt, quote.withdrawFee, quote.toToken),
+            monoLabel: true,
+          ),
       ],
     );
   }

@@ -1,23 +1,26 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/l10n/app_localizations.dart';
-import 'package:resonance_network_wallet/providers/active_swaps_provider.dart';
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/remote_config_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:resonance_network_wallet/providers/swap_live_activity_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
 import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
-import 'package:resonance_network_wallet/shared/utils/account_utils.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_providers.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
@@ -28,6 +31,8 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 /// deposit is sent; a running swap left by going back is still followed. Its
 /// details sheet, or the notice once it is overdue, offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
+  static const routeName = 'swap-progress';
+
   /// The followed swap to show, by [ActiveSwap.id].
   final String swapId;
 
@@ -37,6 +42,13 @@ class SwapProgressScreen extends ConsumerStatefulWidget {
 
   const SwapProgressScreen({super.key, required this.swapId, this.account});
 
+  /// The route showing the swap with [swapId], named with it so a tap on the
+  /// lock-screen card can tell whether that swap is already on top.
+  static MaterialPageRoute<void> route(String swapId, {Account? account}) => MaterialPageRoute(
+    settings: RouteSettings(name: routeName, arguments: swapId),
+    builder: (_) => SwapProgressScreen(swapId: swapId, account: account),
+  );
+
   @override
   ConsumerState<SwapProgressScreen> createState() => _SwapProgressScreenState();
 }
@@ -45,6 +57,34 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
   /// What was shown last: it stays on screen while the route leaves after
   /// the swap was put away.
   ActiveSwap? _shown;
+
+  late final SwapProgressVisible _progressVisible;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressVisible = ref.read(swapProgressVisibleProvider.notifier);
+    _setProgressVisible(true);
+  }
+
+  @override
+  void dispose() {
+    _setProgressVisible(false);
+    super.dispose();
+  }
+
+  /// Applies [visible] once the current build or unmount has finished.
+  /// Riverpod rejects a provider write from initState or dispose, and [ref]
+  /// is already unsafe once dispose starts.
+  void _setProgressVisible(bool visible) {
+    final progressVisible = _progressVisible;
+    unawaited(
+      Future<void>.microtask(() {
+        if (visible && !mounted) return;
+        progressVisible.set(visible);
+      }),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -453,7 +493,9 @@ class _SwapFailed extends ConsumerWidget {
 
 /// Where to send the external token for a swap into QTC, or the stand-in for
 /// a swap out of it in preflight. "I've sent it" moves the swap on to its
-/// progress, where 1Click's own sighting of the deposit is awaited.
+/// progress, where 1Click's own sighting of the deposit is awaited. Leaving
+/// before that drops the swap: funds sent to the address later are still
+/// swapped by 1Click and arrive on their own.
 class _SwapDeposit extends ConsumerWidget {
   static const _addressWidth = 186.0;
   static const _networkLogoSize = 48.0;

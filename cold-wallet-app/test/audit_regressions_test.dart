@@ -37,7 +37,6 @@ Future<void> pumpRequest(WidgetTester tester, SigningRequest request) async {
         addressesProvider.overrideWith(
           (ref) => {wallet: ColdAccount(label: 'Account 1', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
-        checksumNameProvider.overrideWith((ref, address) async => 'check phrase'),
       ],
       child: MaterialApp(
         home: Builder(
@@ -58,7 +57,7 @@ void expectFailedClosed(WidgetTester tester) {
   expect(tester.takeException(), isNull);
   expect(find.text('Nothing was signed.'), findsOneWidget);
   expect(
-    find.widgetWithText(QuantusButton, 'Sign'),
+    find.widgetWithText(QuantusButton, 'Approve and Sign'),
     findsNothing,
     reason: 'the screen offered a way to sign a payload it could not read',
   );
@@ -99,6 +98,7 @@ Future<void> expectRefused(
 }
 
 void main() {
+  CheckphraseText.resolveOverride = (_) async => 'check phrase';
   group('#88483 — a call padded with a trailing byte is not the call it decodes to', () {
     testWidgets('a multisig approval carrying a padded inner call is refused', (tester) async {
       // The pallet stores all 44 bytes and executes the 43-byte transfer inside
@@ -224,7 +224,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.textContaining('does not exist in this cold wallet'), findsOneWidget);
-      expect(find.widgetWithText(QuantusButton, 'Sign'), findsNothing);
+      expect(find.widgetWithText(QuantusButton, 'Approve and Sign'), findsNothing);
     });
   });
 
@@ -258,7 +258,7 @@ void main() {
 
         expect(tester.takeException(), isNull);
         expect(
-          find.widgetWithText(QuantusButton, 'Sign'),
+          find.widgetWithText(QuantusButton, 'Approve and Sign'),
           findsNothing,
           reason: '${call.label} reached a signable screen',
         );

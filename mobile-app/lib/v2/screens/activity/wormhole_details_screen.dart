@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:resonance_network_wallet/providers/l10n_provider.dart';
-import 'package:resonance_network_wallet/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:resonance_network_wallet/v2/components/detail_row.dart';
 import 'package:resonance_network_wallet/v2/components/explorer_link.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
@@ -61,7 +62,7 @@ class WormholeDetailsScreen extends ConsumerWidget {
                   value: amount(input.amount),
                 ),
               const SizedBox(height: 8),
-              Center(child: ExplorerLink(url: explorerUrl('transactions/wormhole/${batch.extrinsicId}'))),
+              Center(child: ExplorerLink(url: wormholeExplorerUrl(batch.extrinsicId))),
             ],
           );
         },
