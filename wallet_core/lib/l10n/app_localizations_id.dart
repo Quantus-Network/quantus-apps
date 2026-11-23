@@ -3225,4 +3225,17 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopStatusItemQuit(String appName) {
     return 'Keluar dari $appName';
   }
+
+  @override
+  String get desktopQuitPendingTitle => 'Transaksi Masih Berjalan';
+
+  @override
+  String get desktopQuitPendingBody =>
+      'Keluar sekarang dapat membuat transaksi tidak selesai. Dompet dapat menyelesaikannya dulu, lalu keluar dengan sendirinya.';
+
+  @override
+  String get desktopQuitFinishFirst => 'Selesaikan, Lalu Keluar';
+
+  @override
+  String get desktopQuitNow => 'Keluar Sekarang';
 }

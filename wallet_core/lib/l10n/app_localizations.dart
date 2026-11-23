@@ -5803,6 +5803,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quit {appName}'**
   String desktopStatusItemQuit(String appName);
+
+  /// Desktop dialog when the person quits while a send or multisig action is still under way: its title
+  ///
+  /// In en, this message translates to:
+  /// **'A Transaction Is Still Under Way'**
+  String get desktopQuitPendingTitle;
+
+  /// Desktop dialog when the person quits with work under way: what quitting now risks and what the app can do instead
+  ///
+  /// In en, this message translates to:
+  /// **'Quitting now could leave it unfinished. The wallet can finish first, then quit on its own.'**
+  String get desktopQuitPendingBody;
+
+  /// Desktop dialog when quitting with work under way: hides the window, finishes the work, then quits
+  ///
+  /// In en, this message translates to:
+  /// **'Finish, Then Quit'**
+  String get desktopQuitFinishFirst;
+
+  /// Desktop dialog when quitting with work under way: quits at once, even though work is under way
+  ///
+  /// In en, this message translates to:
+  /// **'Quit Now'**
+  String get desktopQuitNow;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

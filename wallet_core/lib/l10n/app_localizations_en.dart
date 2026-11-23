@@ -3220,4 +3220,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopStatusItemQuit(String appName) {
     return 'Quit $appName';
   }
+
+  @override
+  String get desktopQuitPendingTitle => 'A Transaction Is Still Under Way';
+
+  @override
+  String get desktopQuitPendingBody =>
+      'Quitting now could leave it unfinished. The wallet can finish first, then quit on its own.';
+
+  @override
+  String get desktopQuitFinishFirst => 'Finish, Then Quit';
+
+  @override
+  String get desktopQuitNow => 'Quit Now';
 }
