@@ -63,9 +63,30 @@ void TestAFrameOfAnotherSizeIsPresentedWhole() {
   CHECK(Shows(buffer.Present(), large, 2, 2));
 }
 
+// The texture is reused from one preview to the next.
+void TestAfterAResetItPresentsBlackAgain() {
+  CameraTextureBuffer buffer;
+  const std::vector<uint8_t> frame = {1, 2, 3, 4};
+  buffer.Update(frame.data(), 1, 1);
+  buffer.Present();
+  buffer.Reset();
+  CHECK(Shows(buffer.Present(), {0, 0, 0, 255}, 1, 1));
+}
+
+void TestAResetLeavesThePixelsBeingPresentedAlone() {
+  CameraTextureBuffer buffer;
+  const std::vector<uint8_t> frame = {1, 2, 3, 4, 5, 6, 7, 8};
+  buffer.Update(frame.data(), 2, 1);
+  const PresentedFrame presented = buffer.Present();
+  buffer.Reset();
+  CHECK(Shows(presented, frame, 2, 1));
+}
+
 }  // namespace
 
 int main() {
+  TestAfterAResetItPresentsBlackAgain();
+  TestAResetLeavesThePixelsBeingPresentedAlone();
   TestBeforeTheFirstFrameItPresentsOneOpaqueBlackPixel();
   TestTheFirstFrameReplacesThePlaceholder();
   TestPresentedPixelsSurviveALaterFrame();

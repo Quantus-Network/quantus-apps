@@ -34,6 +34,14 @@ public:
         has_frame_ = true;
     }
 
+    // Forgets the last frame so a new preview does not start on it. Leaves the
+    // presented pixels alone, as the raster thread may still be reading them.
+    void Reset()
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        has_frame_ = false;
+    }
+
     // Called on the Flutter raster thread. The returned pixels stay valid until
     // the next call, because the capture thread never touches them. Flutter
     // paints before the first camera frame and crashes on a texture that reports

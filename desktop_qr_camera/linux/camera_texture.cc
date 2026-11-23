@@ -53,3 +53,8 @@ void camera_texture_update_frame(CameraTexture *texture, const uint8_t *rgba, ui
 {
     texture->buffer->Update(rgba, width, height);
 }
+
+void camera_texture_reset(CameraTexture *texture)
+{
+    texture->buffer->Reset();
+}

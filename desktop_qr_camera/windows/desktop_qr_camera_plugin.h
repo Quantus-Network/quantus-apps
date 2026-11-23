@@ -33,7 +33,7 @@ class DesktopQrCameraPlugin : public flutter::Plugin {
 
   Camera camera_;
   flutter::TextureRegistrar* texture_registrar_;
-  std::unique_ptr<TextureHandler> texture_handler_;
+  std::shared_ptr<TextureHandler> texture_handler_;
 };
 
 }  // namespace desktop_qr_camera

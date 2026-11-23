@@ -38,8 +38,7 @@ void DesktopQrCameraPlugin::ReleaseCamera() {
   // down.
   camera_.Release();
   if (texture_handler_) {
-    texture_handler_->UnregisterTexture();
-    texture_handler_ = nullptr;
+    TextureHandler::Retire(std::move(texture_handler_));
   }
 }
 
@@ -56,7 +55,7 @@ void DesktopQrCameraPlugin::HandleMethodCall(const flutter::MethodCall<flutter::
       result->Error(CameraStatusCode(status));
     }
   } else if (method == "startPreview") {
-    auto handler = std::make_unique<TextureHandler>(texture_registrar_);
+    auto handler = std::make_shared<TextureHandler>(texture_registrar_);
     const int64_t texture_id = handler->RegisterTexture();
     if (texture_id < 0) {
       result->Error(CameraStatusCode(CameraStatus::kFailed), "Failed to register texture");
@@ -68,7 +67,7 @@ void DesktopQrCameraPlugin::HandleMethodCall(const flutter::MethodCall<flutter::
       frames->UpdateBuffer(rgba, static_cast<int>(width), static_cast<int>(height));
     });
     if (!started) {
-      handler->UnregisterTexture();
+      TextureHandler::Retire(std::move(handler));
       result->Error(CameraStatusCode(CameraStatus::kFailed), "The camera is not open");
       return;
     }

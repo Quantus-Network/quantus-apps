@@ -17,4 +17,7 @@ G_END_DECLS
 // Thread-safe; called from the camera capture thread.
 void camera_texture_update_frame(CameraTexture *texture, const uint8_t *rgba, uint32_t width, uint32_t height);
 
+// Forgets the last frame, so a new preview starts black.
+void camera_texture_reset(CameraTexture *texture);
+
 #endif // CAMERA_TEXTURE_H

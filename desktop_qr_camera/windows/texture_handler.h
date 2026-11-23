@@ -21,13 +21,17 @@ namespace desktop_qr_camera
     public:
         explicit TextureHandler(flutter::TextureRegistrar *texture_registrar)
             : texture_registrar_(texture_registrar) {}
-        ~TextureHandler();
 
         TextureHandler(const TextureHandler &) = delete;
         TextureHandler &operator=(const TextureHandler &) = delete;
 
         int64_t RegisterTexture();
-        void UnregisterTexture();
+
+        // Unregisters the texture and lets go of the handler. Flutter removes a
+        // texture in a task on the raster thread, which may be painting it
+        // until then, so the handler stays alive until that task has run.
+        static void Retire(std::shared_ptr<TextureHandler> handler);
+
         bool TextureRegistered() const { return texture_id_ >= 0; }
         int64_t texture_id() const { return texture_id_; }
 

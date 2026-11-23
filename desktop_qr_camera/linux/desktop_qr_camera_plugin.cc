@@ -20,7 +20,11 @@ struct _DesktopQrCameraPlugin {
   GObject parent_instance;
   Camera* camera;
   FlTextureRegistrar* texture_registrar;
+  // Reused by every preview and never freed. The raster thread reads a texture
+  // without holding a reference and Linux offers no way to wait for it, so
+  // freeing one after unregistering could pull it out from under a paint.
   CameraTexture* texture;
+  gboolean texture_registered;
   gint mark_pending;
 };
 
@@ -30,7 +34,7 @@ G_DEFINE_TYPE(DesktopQrCameraPlugin, desktop_qr_camera_plugin, g_object_get_type
 // which holds a reference to the plugin until it has run.
 static gboolean mark_frame_available_cb(gpointer user_data) {
   DesktopQrCameraPlugin* self = DESKTOP_QR_CAMERA_PLUGIN(user_data);
-  if (self->texture_registrar != nullptr && self->texture != nullptr) {
+  if (self->texture_registrar != nullptr && self->texture_registered) {
     fl_texture_registrar_mark_texture_frame_available(self->texture_registrar, FL_TEXTURE(self->texture));
   }
   g_atomic_int_set(&self->mark_pending, 0);
@@ -42,10 +46,10 @@ static void release_camera(DesktopQrCameraPlugin* self) {
   // down.
   if (self->camera != nullptr) self->camera->Release();
 
-  if (self->texture_registrar != nullptr && self->texture != nullptr) {
+  if (self->texture_registrar != nullptr && self->texture_registered) {
     fl_texture_registrar_unregister_texture(self->texture_registrar, FL_TEXTURE(self->texture));
+    self->texture_registered = FALSE;
   }
-  g_clear_object(&self->texture);
 }
 
 static FlMethodResponse* error_response(CameraStatus status, const char* message = nullptr) {
@@ -53,14 +57,17 @@ static FlMethodResponse* error_response(CameraStatus status, const char* message
 }
 
 static FlMethodResponse* start_preview(DesktopQrCameraPlugin* self) {
-  g_autoptr(CameraTexture) texture = camera_texture_new();
-  if (!fl_texture_registrar_register_texture(self->texture_registrar, FL_TEXTURE(texture))) {
-    return error_response(CameraStatus::kFailed, "Failed to register texture");
+  if (self->texture_registered) {
+    return error_response(CameraStatus::kFailed, "The preview is already running");
   }
 
   // Set before the capture thread starts, which reads it through the plugin.
-  g_clear_object(&self->texture);
-  self->texture = CAMERA_TEXTURE(g_object_ref(texture));
+  if (self->texture == nullptr) self->texture = camera_texture_new();
+  camera_texture_reset(self->texture);
+  if (!fl_texture_registrar_register_texture(self->texture_registrar, FL_TEXTURE(self->texture))) {
+    return error_response(CameraStatus::kFailed, "Failed to register texture");
+  }
+  self->texture_registered = TRUE;
 
   CameraTexture* frames = self->texture;
   DesktopQrCameraPlugin* plugin = self;
@@ -74,7 +81,7 @@ static FlMethodResponse* start_preview(DesktopQrCameraPlugin* self) {
   });
   if (!started) {
     fl_texture_registrar_unregister_texture(self->texture_registrar, FL_TEXTURE(self->texture));
-    g_clear_object(&self->texture);
+    self->texture_registered = FALSE;
     return error_response(CameraStatus::kFailed, "The camera is not open");
   }
 
@@ -135,6 +142,7 @@ static void desktop_qr_camera_plugin_init(DesktopQrCameraPlugin* self) {
   self->camera = new Camera();
   self->texture_registrar = nullptr;
   self->texture = nullptr;
+  self->texture_registered = FALSE;
   self->mark_pending = 0;
 }
 

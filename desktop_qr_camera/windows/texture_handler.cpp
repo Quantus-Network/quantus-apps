@@ -5,20 +5,6 @@
 namespace desktop_qr_camera
 {
 
-    TextureHandler::~TextureHandler()
-    {
-        // The texture might still be processed by the raster thread while the
-        // destructor is called. Lock the mutex for safe destruction.
-        const std::lock_guard<std::mutex> lock(buffer_mutex_);
-        if (texture_registrar_ && texture_id_ >= 0)
-        {
-            texture_registrar_->UnregisterTexture(texture_id_);
-        }
-        texture_id_ = -1;
-        texture_ = nullptr;
-        texture_registrar_ = nullptr;
-    }
-
     int64_t TextureHandler::RegisterTexture()
     {
         if (!texture_registrar_ || TextureRegistered())
@@ -36,15 +22,23 @@ namespace desktop_qr_camera
         return texture_id_;
     }
 
-    void TextureHandler::UnregisterTexture()
+    void TextureHandler::Retire(std::shared_ptr<TextureHandler> handler)
     {
-        const std::lock_guard<std::mutex> lock(buffer_mutex_);
-        if (texture_registrar_ && texture_id_ >= 0)
+        int64_t texture_id;
         {
-            texture_registrar_->UnregisterTexture(texture_id_);
+            // Waits for a paint in progress. Later paints find no texture.
+            const std::lock_guard<std::mutex> lock(handler->buffer_mutex_);
+            texture_id = handler->texture_id_;
+            handler->texture_id_ = -1;
         }
-        texture_id_ = -1;
-        texture_ = nullptr;
+        if (texture_id < 0)
+        {
+            return;
+        }
+
+        // Outside the lock: the registrar runs the callback at once when the
+        // engine has stopped.
+        handler->texture_registrar_->UnregisterTexture(texture_id, [handler]() {});
     }
 
     void TextureHandler::UpdateBuffer(const unsigned char *rgbaData, int width, int height)

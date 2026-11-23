@@ -97,6 +97,10 @@ jobs:
           clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
             -I linux test/native/camera_texture_buffer_test.cpp -o "$RUNNER_TEMP/camera_texture_buffer_test"
           "$RUNNER_TEMP/camera_texture_buffer_test"
+          clang++ -std=c++17 -Wall -Wextra -Wno-unused-parameter -Werror -pthread \
+            -fsanitize=address,undefined -I test/native/fake_flutter -I windows \
+            test/native/texture_handler_test.cpp windows/texture_handler.cpp -o "$RUNNER_TEMP/texture_handler_test"
+          "$RUNNER_TEMP/texture_handler_test"
 
       # The only run of the login password check against a real libpam. The
       # app's PAM service is installed as its package will install it, and the
