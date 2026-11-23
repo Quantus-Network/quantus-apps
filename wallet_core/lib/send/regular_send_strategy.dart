@@ -6,11 +6,12 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
+import 'package:wallet_core/utils/recipient_rememberer.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
@@ -216,8 +217,7 @@ class RegularSendStrategy extends SendStrategy {
           cacheKey: _hardwareCacheKey(recipient, amount, sendAll: sendAll),
           telemetryPrefix: 'send_transfer_hardware',
           submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
-            final poller = ref.read(pendingTransactionPollingServiceProvider);
-            final session = poller.session;
+            final rememberRecipient = recipientRememberer(ref.read);
             final hash = await ref
                 .read(transactionSubmissionServiceProvider)
                 .submitExternallySignedTransfer(
@@ -229,13 +229,7 @@ class RegularSendStrategy extends SendStrategy {
                   unsignedData: unsignedData,
                   signatureWithPublicKey: signatureWithPublicKey,
                 );
-            if (poller.session == session) {
-              unawaited(
-                RecentAddressesService()
-                    .addAddress(recipient)
-                    .catchError((Object error) => quantusPrint('Failed to save recent address: $error')),
-              );
-            }
+            rememberRecipient(recipient);
             return hash;
           },
         ),
@@ -243,8 +237,7 @@ class RegularSendStrategy extends SendStrategy {
       );
     }
 
-    final poller = ref.read(pendingTransactionPollingServiceProvider);
-    final session = poller.session;
+    final rememberRecipient = recipientRememberer(ref.read);
     try {
       final hash = await submitLocal(
         ref,
@@ -254,13 +247,7 @@ class RegularSendStrategy extends SendStrategy {
         sendAll: sendAll,
       );
       if (hash == null) return SendFailed(l10n.sendReviewAuthRequired);
-      if (poller.session == session) {
-        unawaited(
-          RecentAddressesService()
-              .addAddress(recipient)
-              .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
-        );
-      }
+      rememberRecipient(recipient);
       return SendSubmitted(terminal.copyWith(explorerUrl: explorerUrl('transactions/$hash')));
     } catch (e) {
       quantusPrint('Transfer failed: $e');
@@ -281,13 +268,13 @@ class RegularSendStrategy extends SendStrategy {
     FutureOr<bool> Function()? proceed,
   }) async {
     if (account.signsWithHardware) throw StateError('Account ${account.accountId} signs with hardware');
-    final poller = ref.read(pendingTransactionPollingServiceProvider);
-    final session = poller.session;
+    final session = ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     final approval = await ref.read(userApprovalProvider).approve(reason: ref.read(l10nProvider).sendReviewAuthReason);
     if (approval != ApprovalResult.approved) return null;
     final stillWantedAfterApproval = proceed == null || await proceed();
     if (!stillWantedAfterApproval) return null;
-    if (poller.session != session) throw StateError('The wallet was reset while this transfer awaited approval');
+    if (!session.isCurrent(ticket)) throw StateError('The wallet was reset while this transfer awaited approval');
     return ref
         .read(transactionSubmissionServiceProvider)
         .balanceTransfer(

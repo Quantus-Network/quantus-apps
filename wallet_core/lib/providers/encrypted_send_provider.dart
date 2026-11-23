@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/recipient_rememberer.dart';
 
 /// Where an encrypted send operation currently stands.
 enum EncryptedSendPhase {
@@ -121,6 +122,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
     final walletIndex = account.walletIndex;
     final service = ref.read(encryptedAccountServiceProvider(walletIndex));
     _service = service;
+    final rememberRecipient = recipientRememberer(ref.read);
 
     try {
       // The plan pays exactly its own amountToken — refuse to prove a plan
@@ -169,11 +171,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
         return;
       }
 
-      unawaited(
-        RecentAddressesService()
-            .addAddress(recipientAddress)
-            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
-      );
+      rememberRecipient(recipientAddress);
       state = state.copyWith(phase: EncryptedSendPhase.succeeded, txHashes: result.txHashes);
     } on ClaimCancelled {
       // Nothing was submitted.

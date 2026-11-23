@@ -26,6 +26,7 @@ import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/services/push_registration.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 final logoutServiceProvider = Provider<LogoutService>((ref) => LogoutService(ref));
 
@@ -46,6 +47,7 @@ class LogoutService {
     await _ref.read(substrateServiceProvider).logout();
     // The wipe removed the saved choice; the live one must not outlast it.
     _ref.invalidate(notificationConfigProvider);
+    _ref.read(walletSessionProvider).finishReset();
     _stopPollers();
     // After the pollers, which could add another. Left in place, the old
     // wallet's list would be saved back with the next notification.

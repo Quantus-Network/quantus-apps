@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 import 'package:wallet_core/utils/tx_filter_family_provider.dart';
 
@@ -15,14 +16,6 @@ class PendingTransactionPollingService {
   /// How long a send is watched for. Not found by then, it is removed
   /// from the pending sends without being marked found or failed.
   static const timeout = Duration(minutes: 5);
-
-  /// Moves on with [stopAll]: a search already running then answers for a
-  /// session that has ended, and what it finds is dropped.
-  int _session = 0;
-
-  /// The wallet session now running. Taken before asynchronous work on a send
-  /// and compared after it, it tells whether a reset came in between.
-  int get session => _session;
 
   PendingTransactionPollingService(this._ref);
 
@@ -68,8 +61,9 @@ class PendingTransactionPollingService {
   }
 
   Future<void> _search(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) async {
-    final session = _session;
     try {
+      final session = _ref.read(walletSessionProvider);
+      final ticket = session.ticket;
       final historyService = _ref.read(chainHistoryServiceProvider);
       final hash = pendingTx.extrinsicHash;
       final TransactionEvent? result;
@@ -90,7 +84,7 @@ class PendingTransactionPollingService {
         );
       }
 
-      if (session != _session) return;
+      if (!_ref.mounted || !session.isCurrent(ticket)) return;
 
       if (result != null) {
         quantusPrint('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
@@ -114,10 +108,8 @@ class PendingTransactionPollingService {
     }
   }
 
-  /// Cancels all active polling timers and drops what a search still running
-  /// finds (e.g. on logout).
+  /// Cancels all active polling timers (e.g. on logout).
   void stopAll() {
-    _session++;
     for (final timer in _timers.values) {
       timer.cancel();
     }
