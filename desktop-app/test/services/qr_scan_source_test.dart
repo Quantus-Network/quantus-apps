@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:desktop_qr_camera/desktop_qr_camera.dart';
 import 'package:flutter/material.dart';
