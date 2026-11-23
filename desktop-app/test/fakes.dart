@@ -218,6 +218,19 @@ class FakeWalletStorage extends FakeSettingsService {
   /// When set, the check for a wallet fails with this.
   Object? hasWalletError;
 
+  /// When set, reading a recovery phrase waits for this first.
+  Future<void>? mnemonicGate;
+
+  /// How many times a recovery phrase was read.
+  int mnemonicReads = 0;
+
+  @override
+  Future<String?> getMnemonic(int walletIndex) async {
+    mnemonicReads++;
+    if (mnemonicGate case final gate?) await gate;
+    return super.getMnemonic(walletIndex);
+  }
+
   /// How many times the device was asked whether it has a wallet.
   int hasWalletChecks = 0;
 

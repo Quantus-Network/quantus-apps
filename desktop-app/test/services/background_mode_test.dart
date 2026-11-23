@@ -72,8 +72,9 @@ Future<_Opened> _open(
   FakeUserApproval? approval,
   FakeNotificationPlugin? notifications,
   bool realLogout = false,
+  FakeWalletDevice? onDevice,
 }) async {
-  final device = FakeWalletDevice()..realLogout = realLogout;
+  final device = (onDevice ?? FakeWalletDevice())..realLogout = realLogout;
   if (hasWallet) device.store(const [mainAccount, savingsAccount], mnemonic: _words.join(' '));
   device.storage.locale = locale;
   final window = FakeBackgroundWindow();
@@ -386,6 +387,97 @@ void main() {
       expect(find.byKey(SettingsSheet.phraseGridKey), findsNothing);
       expect(tester.takeException(), isNull);
     });
+
+    for (final (sheet, openCaution, rowKey) in <(String, Future<void> Function(WidgetTester, _Opened), Key)>[
+      (
+        'Settings',
+        (tester, opened) async {
+          opened.container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
+          await tester.pumpAndSettle();
+          await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+        },
+        SettingsSheet.recoveryPhraseRowKey,
+      ),
+      (
+        'Account Info',
+        (tester, opened) async {
+          await opened.container.read(accountManagerProvider).openInfo(mainAccount);
+          await tester.pumpAndSettle();
+          await _tap(tester, _inSheet(find.byKey(AccountInfoSheet.recoveryPhraseRowKey)));
+        },
+        AccountInfoSheet.recoveryPhraseRowKey,
+      ),
+    ]) {
+      /// Presses the close button, with [finish] answering before the frame
+      /// that takes the caution away; then the window comes back, and the
+      /// phrase needs a new approval, which still works.
+      Future<void> expectNotRestored(
+        WidgetTester tester,
+        _Opened opened,
+        FakeUserApproval approval,
+        VoidCallback finish, {
+        VoidCallback? whileClosed,
+      }) async {
+        final closing = opened.window.pressCloseButton();
+        finish();
+        await tester.idle();
+        await tester.pump();
+        await closing;
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(SettingsSheet.phraseGridKey), findsNothing);
+        whileClosed?.call();
+
+        opened.window.reopen();
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(SettingsSheet.phraseGridKey), findsNothing);
+        expect(approval.reasons, hasLength(1));
+
+        approval.answer = () async => ApprovalResult.approved;
+        await _tap(tester, _inSheet(find.byKey(rowKey)));
+        await _tap(tester, find.byKey(SettingsSheet.continueKey));
+
+        expect(approval.reasons, hasLength(2));
+        expect(find.byKey(SettingsSheet.phraseGridKey), findsOneWidget);
+      }
+
+      testOnMac('in $sheet, an approval answering before the closing frame is dropped, the phrase unread', (
+        tester,
+      ) async {
+        final answer = Completer<ApprovalResult>();
+        final approval = FakeUserApproval()..answer = () => answer.future;
+        final device = FakeWalletDevice();
+        final opened = await _open(tester, approval: approval, onDevice: device);
+        await openCaution(tester, opened);
+        await tester.tap(find.byKey(SettingsSheet.continueKey));
+        await tester.pump();
+        final readsBefore = device.storage.mnemonicReads;
+
+        await expectNotRestored(
+          tester,
+          opened,
+          approval,
+          () => answer.complete(ApprovalResult.approved),
+          whileClosed: () => expect(device.storage.mnemonicReads, readsBefore),
+        );
+      });
+
+      testOnMac('in $sheet, a phrase read finishing before the closing frame is dropped', (tester) async {
+        final read = Completer<void>();
+        final approval = FakeUserApproval();
+        final device = FakeWalletDevice();
+        final opened = await _open(tester, approval: approval, onDevice: device);
+        // Held only from here: the app reads the phrase as it starts, too.
+        device.storage.mnemonicGate = read.future;
+        await openCaution(tester, opened);
+        await tester.tap(find.byKey(SettingsSheet.continueKey));
+        await tester.pump();
+        expect(approval.reasons, hasLength(1));
+
+        await expectNotRestored(tester, opened, approval, read.complete);
+      });
+    }
 
     testOnMac('copied is still cleared from the clipboard on time with the window closed', (tester) async {
       final calls = <String>[];

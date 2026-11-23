@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/recovery_phrase_grid.dart';
@@ -42,7 +43,14 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
   bool _isBusy = false;
   String? _error;
 
+  /// The request under way. The window closing moves it on at once: this step
+  /// stays mounted until the next frame, and an answer landing before that
+  /// frame must not bring the phrase back.
+  int _request = 0;
+
   Future<void> _continue() async {
+    final request = ++_request;
+    bool isStale() => !mounted || request != _request;
     final l10n = ref.read(l10nProvider);
     setState(() {
       _isBusy = true;
@@ -55,7 +63,7 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
       reason: l10n.settingsRecoveryConfirmAuthReason,
       declined: l10n.settingsRecoveryConfirmAuthRequired,
     );
-    if (!mounted) return;
+    if (isStale()) return;
     if (refusal != null) {
       setState(() {
         _isBusy = false;
@@ -70,7 +78,7 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
     } catch (e) {
       quantusPrint('Reading the recovery phrase failed: $e');
     }
-    if (!mounted) return;
+    if (isStale()) return;
     if (phrase == null) {
       setState(() {
         _isBusy = false;
@@ -83,6 +91,11 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<bool>(windowClosedProvider, (_, isClosed) {
+      if (!isClosed || !_isBusy) return;
+      _request++;
+      quantusPrint('The window closed while the recovery phrase was being asked for: the request is dropped');
+    });
     final l10n = ref.watch(l10nProvider);
 
     return Column(
