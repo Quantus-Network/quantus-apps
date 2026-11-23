@@ -22,9 +22,15 @@ import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/app_locale.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
+import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -65,8 +71,9 @@ Future<_Opened> _open(
   String locale = 'en',
   FakeUserApproval? approval,
   FakeNotificationPlugin? notifications,
+  bool realLogout = false,
 }) async {
-  final device = FakeWalletDevice();
+  final device = FakeWalletDevice()..realLogout = realLogout;
   if (hasWallet) device.store(const [mainAccount, savingsAccount], mnemonic: _words.join(' '));
   device.storage.locale = locale;
   final window = FakeBackgroundWindow();
@@ -266,6 +273,20 @@ void main() {
       expect(container.read(windowClosedProvider), isFalse);
     });
 
+    testOnMac('closing a window already off the screen waits for no frame', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+      addTearDown(() => tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+
+      var finished = false;
+      unawaited(window.pressCloseButton().then((_) => finished = true));
+      await tester.idle();
+
+      expect(finished, isTrue);
+      expect(container.read(windowClosedProvider), isTrue);
+    });
+
     testOnMac('a menu command that opens a sheet brings the window forward', (tester) async {
       final (:window, :container, exits: _) = await _open(tester);
       await _pressClose(tester, window);
@@ -384,6 +405,170 @@ void main() {
     });
   });
 
+  group('staying awake', () {
+    PendingTransactionEvent send() => PendingTransactionEvent(
+      tempId: 'tx-1',
+      from: mainAccount.accountId,
+      to: 'qzBob',
+      amount: BigInt.one,
+      fee: BigInt.zero,
+      timestamp: DateTime(2026),
+    );
+
+    PendingMultisigProposalEvent proposal() => PendingMultisigProposalEvent(
+      tempId: 'proposal-1',
+      multisigAddress: 'qzTeam',
+      proposerId: mainAccount.accountId,
+      recipient: 'qzBob',
+      amount: BigInt.one,
+      deposit: BigInt.zero,
+      expiryBlock: 100,
+      palletFee: BigInt.zero,
+    );
+
+    testOnMac('with nothing under way it is never asked for', (tester) async {
+      final (:window, container: _, exits: _) = await _open(tester);
+
+      expect(window.stayAwake, isEmpty);
+    });
+
+    testOnMac('is held while a send is watched, and let go when it settles', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      container.read(pendingTransactionsProvider.notifier).add(send());
+      await tester.pump();
+      expect(window.stayAwake, [true]);
+
+      container.read(pendingTransactionsProvider.notifier).remove('tx-1');
+      await tester.pump();
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is held while a proposal is watched, and let go when it settles', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      container.read(pendingMultisigProposalsProvider.notifier).add(proposal());
+      await tester.pump();
+      expect(window.stayAwake, [true]);
+
+      container.read(pendingMultisigProposalsProvider.notifier).remove('proposal-1');
+      await tester.pump();
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is held while an approval is watched, and let go when it settles', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      container
+          .read(pendingMultisigApprovalsProvider.notifier)
+          .add(
+            PendingMultisigApprovalEvent(
+              id: 'approval-1',
+              multisigAddress: 'qzTeam',
+              proposalId: 1,
+              approverId: mainAccount.accountId,
+              submittedAt: DateTime(2026),
+            ),
+          );
+      await tester.pump();
+      expect(window.stayAwake, [true]);
+
+      container.read(pendingMultisigApprovalsProvider.notifier).remove('approval-1');
+      await tester.pump();
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is held while an execution is watched, and let go when it settles', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+      final execution = PendingMultisigExecutionEvent(
+        tempId: 'execution-1',
+        multisigAddress: 'qzTeam',
+        proposalId: 1,
+        executorId: mainAccount.accountId,
+        recipient: 'qzBob',
+        amount: BigInt.one,
+      );
+
+      container.read(pendingMultisigExecutionsProvider.notifier).add(execution);
+      await tester.pump();
+      expect(window.stayAwake, [true]);
+
+      container.read(pendingMultisigExecutionsProvider.notifier).remove(execution.id);
+      await tester.pump();
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is held while a cancellation is watched, and let go when it settles', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+      final cancellation = PendingMultisigCancellationEvent(
+        tempId: 'cancellation-1',
+        multisigAddress: 'qzTeam',
+        proposalId: 1,
+        proposerId: mainAccount.accountId,
+        recipient: 'qzBob',
+        amount: BigInt.one,
+      );
+
+      container.read(pendingMultisigCancellationsProvider.notifier).add(cancellation);
+      await tester.pump();
+      expect(window.stayAwake, [true]);
+
+      container.read(pendingMultisigCancellationsProvider.notifier).remove(cancellation.id);
+      await tester.pump();
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is held once, until the last of several settles', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      container.read(pendingTransactionsProvider.notifier).add(send());
+      container.read(pendingMultisigProposalsProvider.notifier).add(proposal());
+      await tester.pump();
+      container.read(pendingTransactionsProvider.notifier).remove('tx-1');
+      await tester.pump();
+      expect(window.stayAwake, [true]);
+
+      container.read(pendingMultisigProposalsProvider.notifier).remove('proposal-1');
+      await tester.pump();
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is held with the Send sheet open, where a private send is proved', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      container.read(shellSheetProvider.notifier).open(ShellSheet.send);
+      await tester.pumpAndSettle();
+      expect(window.stayAwake, [true]);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      expect(container.read(shellSheetProvider), isNull);
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnMac('is let go by a wallet reset', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final (:window, :container, exits: _) = await _open(tester, realLogout: true);
+      container.read(pendingTransactionsProvider.notifier).add(send());
+      await tester.pump();
+      expect(window.stayAwake, [true]);
+
+      await container.read(walletPresenceProvider.notifier).wipeWallet();
+      await tester.pumpAndSettle();
+
+      expect(window.stayAwake, [true, false]);
+    });
+
+    testOnWindowsAndLinux('Windows and Linux are asked nothing', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      container.read(pendingTransactionsProvider.notifier).add(send());
+      await tester.pump();
+
+      expect(window.stayAwake, isEmpty);
+    });
+  });
+
   group('the native side', () {
     late List<MethodCall> sent;
 
@@ -431,6 +616,13 @@ void main() {
       await const BackgroundWindow().hide();
 
       expect(sent.single.method, 'hideWindow');
+    });
+
+    test('is asked to stay awake', () async {
+      await const BackgroundWindow().setStayAwake(true);
+
+      expect(sent.single.method, 'setStayAwake');
+      expect(sent.single.arguments, {'isAwake': true});
     });
 
     test('is answered only once the app is ready for the window to close', () async {

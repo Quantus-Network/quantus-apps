@@ -12,6 +12,11 @@ import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
+import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
 /// What the window is to do when closed: keep the app running while there is
@@ -25,6 +30,19 @@ final backgroundModeRequestProvider = Provider<BackgroundModeRequest>((ref) {
   );
 });
 
+/// Whether something is under way that a slowed-down app would be late for:
+/// a send or a multisig action being watched for on the chain, or the Send
+/// sheet, where a private send is proved.
+final stayAwakeProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(pendingTransactionsProvider).isNotEmpty ||
+      ref.watch(pendingMultisigProposalsProvider).isNotEmpty ||
+      ref.watch(pendingMultisigApprovalsProvider).isNotEmpty ||
+      ref.watch(pendingMultisigExecutionsProvider).isNotEmpty ||
+      ref.watch(pendingMultisigCancellationsProvider).isNotEmpty ||
+      ref.watch(shellSheetProvider) == ShellSheet.send,
+);
+
 /// Keeps the app running with its window closed, where the platform can
 /// ([supportsBackgroundMode]). Elsewhere closing the window quits the app.
 class BackgroundMode {
@@ -37,6 +55,7 @@ class BackgroundMode {
       (_, request) => unawaited(_reported(_window.configure(request))),
       fireImmediately: true,
     );
+    _ref.listen<bool>(stayAwakeProvider, (_, isAwake) => unawaited(_reported(_window.setStayAwake(isAwake))));
     // A menu still works with the window closed, and what it opens must show.
     _ref.listen<ShellSheet?>(shellSheetProvider, (_, sheet) {
       if (sheet != null && _ref.read(windowClosedProvider)) unawaited(_reported(_window.bringToFront()));

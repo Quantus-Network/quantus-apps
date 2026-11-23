@@ -23,6 +23,10 @@ class BackgroundWindow {
   /// Takes the window off the screen and leaves the app running.
   Future<void> hide() => WindowChrome.channel.invokeMethod<void>('hideWindow');
 
+  /// Asks macOS not to slow the app down (App Nap) while [isAwake].
+  Future<void> setStayAwake(bool isAwake) =>
+      WindowChrome.channel.invokeMethod<void>('setStayAwake', {'isAwake': isAwake});
+
   /// Shows the window again, in front of the other apps' windows.
   Future<void> bringToFront() => const WindowChrome().bringToFront();
 

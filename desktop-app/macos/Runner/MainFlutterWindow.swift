@@ -35,6 +35,10 @@ class MainFlutterWindow: NSWindow {
 
   private lazy var statusItem = BackgroundStatusItem(onOpen: { [weak self] in self?.bringToFront() })
 
+  /// Held while something is under way that App Nap would make the app late
+  /// for. The computer may still go to sleep.
+  private var stayAwakeActivity: NSObjectProtocol?
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.flutterViewController = flutterViewController
@@ -81,6 +85,13 @@ class MainFlutterWindow: NSWindow {
         result(nil)
       case "hideWindow":
         self?.hideKeepingAppRunning()
+        result(nil)
+      case "setStayAwake":
+        guard let arguments = call.arguments as? [String: Any], let isAwake = arguments["isAwake"] as? Bool else {
+          result(FlutterError(code: "arguments", message: "setStayAwake needs isAwake", details: nil))
+          return
+        }
+        self?.setStayAwake(isAwake)
         result(nil)
       default:
         result(FlutterMethodNotImplemented)
@@ -198,6 +209,17 @@ class MainFlutterWindow: NSWindow {
     guard hidesAfterFullScreen else { return }
     hidesAfterFullScreen = false
     self.orderOut(nil)
+  }
+
+  private func setStayAwake(_ isAwake: Bool) {
+    if isAwake {
+      guard stayAwakeActivity == nil else { return }
+      stayAwakeActivity = ProcessInfo.processInfo.beginActivity(
+        options: .userInitiatedAllowingIdleSystemSleep, reason: "Watching a transaction on the chain")
+    } else if let activity = stayAwakeActivity {
+      ProcessInfo.processInfo.endActivity(activity)
+      stayAwakeActivity = nil
+    }
   }
 
   /// Shows the window in front of the other apps' windows, minimized, hidden

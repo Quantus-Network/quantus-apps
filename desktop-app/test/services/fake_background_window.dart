@@ -11,6 +11,9 @@ class FakeBackgroundWindow implements BackgroundWindow {
   /// `hide` and `bringToFront`, in the order asked.
   final calls = <String>[];
 
+  /// Each request to stay awake (true) or that it is no longer needed (false).
+  final stayAwake = <bool>[];
+
   /// When set, configuring the window fails with this.
   Object? configureError;
 
@@ -31,6 +34,9 @@ class FakeBackgroundWindow implements BackgroundWindow {
     if (hideError case final error?) throw error;
     calls.add('hide');
   }
+
+  @override
+  Future<void> setStayAwake(bool isAwake) async => stayAwake.add(isAwake);
 
   @override
   Future<void> bringToFront() async {
