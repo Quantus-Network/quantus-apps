@@ -2954,11 +2954,11 @@ abstract class AppLocalizations {
   /// **'Help & Support'**
   String get settingsHelpScreenTitle;
 
-  /// Email support row title
+  /// Discord support row title
   ///
   /// In en, this message translates to:
-  /// **'Email Support'**
-  String get settingsHelpEmail;
+  /// **'Discord'**
+  String get settingsHelpDiscord;
 
   /// Telegram row title
   ///
@@ -3865,6 +3865,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact Support'**
   String get commonContactSupport;
+
+  /// Warning against impostors, shown wherever the app sends someone to the support Discord
+  ///
+  /// In en, this message translates to:
+  /// **'Support will never DM you first or ask for your recovery phrase.'**
+  String get commonSupportScamWarning;
 
   /// Retry action on various screens
   ///

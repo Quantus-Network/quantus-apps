@@ -25,7 +25,6 @@ import 'package:wallet_core/services/swap_harness_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 import 'package:resonance_network_wallet/v2/components/search_field.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
@@ -2393,11 +2392,15 @@ void main() {
       expect(find.byType(SwapScreen), findsOneWidget);
     });
 
-    testWidgets('Contact Support on a failed swap opens Help & Support', (tester) async {
+    testWidgets('Contact Support on a failed swap opens Discord, with the warning against impostors', (tester) async {
+      final opened = recordOpenedUrls();
       await pumpOrder(tester, SwapOrder(quote: liveQuote, status: SwapStatus.failed));
+
+      expect(find.text(l10n.commonSupportScamWarning), findsOneWidget);
       await tester.tap(find.text(l10n.commonContactSupport));
       await settle(tester);
-      expect(find.byType(HelpAndSupportScreenV2), findsOneWidget);
+
+      expect(opened, ['https://discord.gg/Ba9nTGUdgF']);
     });
 
     testWidgets('shows the deposit address and exact amount while a swap in waits', (tester) async {

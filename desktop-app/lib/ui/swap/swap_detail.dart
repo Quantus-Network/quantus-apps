@@ -446,12 +446,13 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
             onTap: () => unawaited(_startNew()),
           ),
         ToolbarAction.symbol(
-          symbol: CupertinoIcons.envelope,
+          symbol: CupertinoIcons.chat_bubble,
           label: l10n.commonContactSupport,
-          onPressed: () =>
-              unawaited(ref.read(openExternalUrlProvider)(Uri.parse('mailto:${AppConstants.emailSupport}'))),
+          onPressed: () => unawaited(ref.read(openExternalUrlProvider)(Uri.parse(AppConstants.discordSupportUrl))),
         ),
       ], spacing: 14),
+      const SizedBox(height: 10),
+      Text(l10n.commonSupportScamWarning, style: text.caption.copyWith(color: colors.textMuted)),
       const SizedBox(height: 14),
       _attribution(page),
     ];

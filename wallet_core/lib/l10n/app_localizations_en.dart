@@ -1559,7 +1559,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Help & Support';
 
   @override
-  String get settingsHelpEmail => 'Email Support';
+  String get settingsHelpDiscord => 'Discord';
 
   @override
   String get settingsHelpTelegram => 'Telegram';
@@ -2076,6 +2076,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Contact Support';
+
+  @override
+  String get commonSupportScamWarning => 'Support will never DM you first or ask for your recovery phrase.';
 
   @override
   String get commonRetry => 'Retry';
