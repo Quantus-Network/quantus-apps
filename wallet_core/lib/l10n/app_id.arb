@@ -883,5 +883,9 @@
   "desktopSwapRefundAddressOn": "Alamat refund di {network}",
   "desktopSwapMaximum": "Swap jumlah maksimum",
   "desktopSwapAccountAvailable": "{account} · {amount} tersedia",
-  "desktopSwapLoadingTokens": "Memuat token"
+  "desktopSwapLoadingTokens": "Memuat token",
+  "desktopNotificationNotAllowed": "Tidak diizinkan di Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettings": "Buka Pengaturan Sistem",
+  "desktopNotificationOpenSystemSettingsFailed": "Tidak dapat membuka Pengaturan Sistem",
+  "desktopNotificationUnavailable": "Tidak tersedia: {reason}"
 }

@@ -134,6 +134,15 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   Future<void> clearActiveSwap() async => activeSwap = null;
+
+  @override
+  Future<void> clearSelectedAppLocale() async => locale = null;
+
+  @override
+  String? getSelectedFiatCurrency() => null;
+
+  @override
+  Future<void> clearSelectedFiatCurrency() async {}
 }
 
 class FakeAccountsService extends Fake implements AccountsService {
@@ -435,6 +444,12 @@ class _FakeSubstrateService extends Fake implements SubstrateService {
 
   @override
   Future<String> generateMnemonic() => device!.generateMnemonic();
+
+  @override
+  Future<void> logout() async {
+    device!.logouts++;
+    device!._wipeStorage();
+  }
 
   @override
   bool isValidSS58Address(String address) => chain.isValidAddress(address);
@@ -752,13 +767,7 @@ class _WipingLogoutService extends Fake implements LogoutService {
   Future<void> logout() async {
     if (device.logoutError case final error?) throw error;
     device.logouts++;
-    device.storage
-      ..accounts.clear()
-      ..mnemonics.clear()
-      ..pendingScans.clear()
-      ..bools.clear()
-      ..strings.clear()
-      ..activeAccount = null;
+    device._wipeStorage();
   }
 }
 
@@ -795,6 +804,17 @@ class FakeWalletDevice {
   /// When set, wiping the wallet fails with this.
   Object? logoutError;
 
+  /// Wipes through the real [LogoutService], for a test of what it resets.
+  bool realLogout = false;
+
+  void _wipeStorage() => storage
+    ..accounts.clear()
+    ..mnemonics.clear()
+    ..pendingScans.clear()
+    ..bools.clear()
+    ..strings.clear()
+    ..activeAccount = null;
+
   /// Puts a software wallet with [accounts] on the device.
   void store(List<Account> accounts, {String? mnemonic = 'a stored recovery phrase'}) {
     storage.accounts.addAll(accounts);
@@ -812,7 +832,7 @@ class FakeWalletDevice {
     substrateServiceProvider.overrideWithValue(_FakeSubstrateService(chain, device: this)),
     ...chain.overrides(substrate: false),
     accountDiscoveryServiceProvider.overrideWithValue(_FakeAccountDiscoveryService(this)),
-    logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
+    if (!realLogout) logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
     remoteConfigProvider.overrideWith(
       (ref) => RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults)),
     ),

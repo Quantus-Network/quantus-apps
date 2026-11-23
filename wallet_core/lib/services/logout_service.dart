@@ -5,6 +5,7 @@ import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/mining_rewards_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
@@ -39,6 +40,8 @@ class LogoutService {
     // old wallet's swap back, and nothing of it may reach the next session.
     await _ref.read(activeSwapProvider.notifier).clear();
     await _ref.read(substrateServiceProvider).logout();
+    // The wipe removed the saved choice; the live one must not outlast it.
+    _ref.invalidate(notificationConfigProvider);
     _stopPollers();
     _ref.read(pendingTransactionsProvider.notifier).clear();
     await _ref.read(pendingMultisigCreationsProvider.notifier).clear();
