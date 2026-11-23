@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:desktop_qr_camera/desktop_qr_camera.dart';
 import 'package:flutter/material.dart';
@@ -346,7 +348,11 @@ void main() {
     setUp(() {
       original = MobileScannerPlatform.instance;
       MobileScannerPlatform.instance = MethodChannelMobileScanner();
-      native = _NativeScanner();
+      native = _NativeScanner(
+        commitsFailedConfiguration: _failedConfigurationPaths(
+          _resolvedScannerSwift(),
+        ).every((path) => path.contains('commitConfiguration()')),
+      );
       messenger.setMockMethodCallHandler(methods, native.handle);
       messenger.setMockStreamHandler(events, MockStreamHandler.inline(onListen: (_, _) {}));
     });
@@ -369,6 +375,13 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     }
+
+    test('the Swift this app builds commits its configuration on both failed inputs', () {
+      final paths = _failedConfigurationPaths(_resolvedScannerSwift());
+
+      expect(paths, hasLength(2));
+      expect(paths, everyElement(contains('commitConfiguration()')));
+    });
 
     testWidgets('a start with no camera releases the native session, and a retry works', (tester) async {
       final scan = await mounted(tester);
@@ -433,14 +446,42 @@ void main() {
   });
 }
 
-/// The plugin's Swift side as 7.2.0 has it. A failed start keeps what it
-/// allocated, and only `stop` frees it. `stop` reads its force flag as a Bool
-/// while Dart sends a map, so the flag never counts there.
+/// The Swift of the `mobile_scanner` this app resolves and builds.
+String _resolvedScannerSwift() {
+  final configFile = File('.dart_tool/package_config.json').absolute;
+  final config = jsonDecode(configFile.readAsStringSync()) as Map<String, dynamic>;
+  final package = (config['packages'] as List).cast<Map<String, dynamic>>().singleWhere(
+    (package) => package['name'] == 'mobile_scanner',
+  );
+  final root = Directory.fromUri(configFile.uri.resolve(package['rootUri'] as String)).path;
+  return File('$root/darwin/mobile_scanner/Sources/mobile_scanner/MobileScannerPlugin.swift').readAsStringSync();
+}
+
+/// The code of each way native `start` gives up after beginning its session's
+/// configuration, up to its `return`.
+List<String> _failedConfigurationPaths(String swift) {
+  final start = swift.substring(swift.indexOf('func start('));
+  final begun = start.indexOf('beginConfiguration()');
+  final running = start.indexOf('startRunning()');
+  final parts = start.substring(begun, running).split(RegExp(r'\breturn\b'));
+  return parts.sublist(0, parts.length - 1);
+}
+
+/// The plugin's Swift side. A failed start keeps what it allocated, and only
+/// `stop` frees it. `stop` reads its force flag as a Bool while Dart sends a
+/// map, so the flag never counts there. Whether a failed input leaves the
+/// configuration open is read from the real Swift
+/// ([commitsFailedConfiguration]): stopping an open one raises an Objective-C
+/// exception, which in the real app ends the process.
 class _NativeScanner {
+  _NativeScanner({required this.commitsFailedConfiguration});
+
+  final bool commitsFailedConfiguration;
   bool hasCamera = false;
   bool inputFails = false;
   bool hasDevice = false;
   bool hasSession = false;
+  bool isConfiguring = false;
   int? texture;
 
   bool get _stopped => !hasDevice || !hasSession;
@@ -458,7 +499,12 @@ class _NativeScanner {
         hasSession = true;
         if (!hasCamera) throw PlatformException(code: 'MOBILE_SCANNER_NO_CAMERA_ERROR');
         hasDevice = true;
-        if (inputFails) throw PlatformException(code: 'MOBILE_SCANNER_CAMERA_ERROR');
+        isConfiguring = true;
+        if (inputFails) {
+          isConfiguring = !commitsFailedConfiguration;
+          throw PlatformException(code: 'MOBILE_SCANNER_CAMERA_ERROR');
+        }
+        isConfiguring = false;
         return <String, Object?>{
           'textureId': texture,
           'size': {'width': 1280.0, 'height': 720.0},
@@ -467,6 +513,7 @@ class _NativeScanner {
         };
       case 'stop':
         if (!_paused && _stopped) return null;
+        if (isConfiguring) throw PlatformException(code: 'NSGenericException');
         hasDevice = false;
         hasSession = false;
         texture = null;
