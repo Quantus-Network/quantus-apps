@@ -85,6 +85,50 @@ void main() {
     });
   });
 
+  group('when the native plugin is missing', () {
+    final isPlainFailure = throwsA(
+      isA<QrCameraException>().having((e) => e.failure, 'failure', QrCameraFailure.failed),
+    );
+
+    test('opening is a plain failure', () async {
+      native.answers.remove('open');
+
+      await expectLater(camera.start(), isPlainFailure);
+    });
+
+    test('it can start again afterwards', () async {
+      final open = native.answers.remove('open')!;
+      await expectLater(camera.start(), isPlainFailure);
+
+      native.answers['open'] = open;
+
+      expect(await camera.start(), 7);
+    });
+
+    test('a failed start still reports its own failure when releasing is missing too', () async {
+      native.answers['open'] = () => throw PlatformException(code: 'busy');
+      native.answers.remove('release');
+
+      await expectLater(
+        camera.start(),
+        throwsA(isA<QrCameraException>().having((e) => e.failure, 'failure', QrCameraFailure.busy)),
+      );
+    });
+
+    test('reading is a plain failure', () async {
+      await camera.start();
+
+      await expectLater(camera.readFrame(), isPlainFailure);
+    });
+
+    test('stopping is a plain failure', () async {
+      await camera.start();
+      native.answers.remove('release');
+
+      await expectLater(camera.stop(), isPlainFailure);
+    });
+  });
+
   group('frames', () {
     setUp(() async => camera.start());
 

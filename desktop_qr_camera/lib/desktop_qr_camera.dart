@@ -95,12 +95,7 @@ class QrCamera {
   /// [QrCameraException] when the camera has failed.
   Future<QrCameraFrame?> readFrame() async {
     if (!_isRunning) return null;
-    final Object? answer;
-    try {
-      answer = await _channel.invokeMethod<Object?>('captureFrame');
-    } on PlatformException catch (error) {
-      throw _exceptionOf(error);
-    }
+    final answer = await _call<Object?>('captureFrame');
     return _isRunning ? _frameOf(answer) : null;
   }
 
@@ -113,16 +108,13 @@ class QrCamera {
   Future<int> _open(int thisStart) async {
     _needsRelease = true;
     try {
-      await _channel.invokeMethod<void>('open');
-      final texture = await _channel.invokeMethod<Object?>('startPreview');
+      await _call<void>('open');
+      final texture = await _call<Object?>('startPreview');
       if (texture is! int) {
         throw QrCameraException(QrCameraFailure.failed, detail: 'The preview gave no texture: $texture');
       }
       _isRunning = _wantedStart == thisStart;
       return texture;
-    } on PlatformException catch (error) {
-      await _releaseAfterFailure(thisStart);
-      throw _exceptionOf(error);
     } on QrCameraException {
       await _releaseAfterFailure(thisStart);
       rethrow;
@@ -132,11 +124,7 @@ class QrCamera {
   Future<void> _release() async {
     if (!_needsRelease) return;
     _needsRelease = false;
-    try {
-      await _channel.invokeMethod<void>('release');
-    } on PlatformException catch (error) {
-      throw _exceptionOf(error);
-    }
+    await _call<void>('release');
   }
 
   /// Releases what a failed start left. The failure that started this is the
@@ -147,6 +135,18 @@ class QrCamera {
       await _release();
     } on QrCameraException catch (error) {
       debugPrint('The camera could not be released after a failed start: $error');
+    }
+  }
+
+  /// Calls the native side, turning every way it can fail into a
+  /// [QrCameraException].
+  static Future<T?> _call<T>(String method) async {
+    try {
+      return await _channel.invokeMethod<T>(method);
+    } on PlatformException catch (error) {
+      throw _exceptionOf(error);
+    } on MissingPluginException catch (error) {
+      throw QrCameraException(QrCameraFailure.failed, detail: error.message);
     }
   }
 
