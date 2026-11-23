@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/services/background_window.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
@@ -28,6 +29,7 @@ import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
+import 'services/fake_background_window.dart';
 import 'services/fake_notification_plugin.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
@@ -1255,6 +1257,7 @@ Future<void> pumpShell(
   bool realPolling = false,
   FakeNetwork? network,
   FakeNotificationPlugin? notifications,
+  FakeBackgroundWindow? backgroundWindow,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -1274,6 +1277,7 @@ Future<void> pumpShell(
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
         ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
         notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
+        backgroundWindowProvider.overrideWithValue(backgroundWindow ?? FakeBackgroundWindow()),
       ],
     ),
   );

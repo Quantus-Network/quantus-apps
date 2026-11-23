@@ -7,6 +7,15 @@ class AppDelegate: FlutterAppDelegate {
     return true
   }
 
+  /// A click on the Dock icon brings back a window that was closed with the
+  /// app still running.
+  override func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+    if !flag {
+      (mainFlutterWindow as? MainFlutterWindow)?.bringToFront()
+    }
+    return true
+  }
+
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
   }

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
@@ -175,6 +176,18 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   group('a Transparent send from this computer', () {
+    test('confirmed while the window is closed still notifies', () async {
+      final (:container, :notifications, telemetry: _) = await _open(platform: TargetPlatform.macOS);
+      await container.read(desktopLocalNotificationsProvider.notifier).requestPermission();
+      _broadcast(container);
+      container.read(windowClosedProvider.notifier).set(true);
+
+      _found(container);
+      await _settleDown();
+
+      expect(_shown(notifications), [('Sent 12.5 QTC', 'From Main')]);
+    });
+
     test('that the chain confirms notifies that it was sent, with the amount and the account it came from', () async {
       final (:container, :notifications, telemetry: _) = await _open();
 

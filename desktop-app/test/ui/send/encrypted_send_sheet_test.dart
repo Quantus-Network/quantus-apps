@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
@@ -11,6 +13,7 @@ import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -164,6 +167,23 @@ Future<void> _report(WidgetTester tester, FakeEncryptedSendController proving, E
 }
 
 void main() {
+  testOnMac('closing the window leaves a private send being proved running', (tester) async {
+    final proving = await _startSend(tester);
+    expect(proving.starts, hasLength(1));
+    await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+
+    final closing = ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(backgroundModeProvider).closeWindow();
+    await tester.pump();
+    await closing;
+    await tester.pumpAndSettle();
+
+    expect(proving.cancels, 0);
+    expect(proving.wasDisposed, isFalse);
+    expect(find.byKey(SendSheet.stepKey(5)), findsOneWidget);
+  });
+
   group('the form', () {
     testOnMac('opens titled Send for the Encrypted account and says the send is private', (tester) async {
       await _openSend(tester);

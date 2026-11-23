@@ -26,6 +26,13 @@ class MainFlutterWindow: NSWindow {
   /// until its mouse-up.
   private var isHeaderPressInFlutter = false
 
+  /// Whether closing the window leaves the app running. The app says so once
+  /// it has started; until then, closing the window quits it.
+  private var keepsRunning = false
+
+  /// Whether the window is to leave the screen once it is out of full screen.
+  private var hidesAfterFullScreen = false
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.flutterViewController = flutterViewController
@@ -56,6 +63,18 @@ class MainFlutterWindow: NSWindow {
       case "bringToFront":
         self?.bringToFront()
         result(nil)
+      case "setBackgroundMode":
+        guard let arguments = call.arguments as? [String: Any],
+          let keepRunning = arguments["keepRunning"] as? Bool
+        else {
+          result(FlutterError(code: "arguments", message: "setBackgroundMode needs keepRunning", details: nil))
+          return
+        }
+        self?.keepsRunning = keepRunning
+        result(nil)
+      case "hideWindow":
+        self?.hideKeepingAppRunning()
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -77,6 +96,9 @@ class MainFlutterWindow: NSWindow {
       NotificationCenter.default.addObserver(
         self, selector: #selector(layoutTrafficLights), name: name, object: self)
     }
+    NotificationCenter.default.addObserver(
+      self, selector: #selector(finishHidingAfterFullScreen), name: NSWindow.didExitFullScreenNotification,
+      object: self)
 
     super.awakeFromNib()
 
@@ -130,9 +152,52 @@ class MainFlutterWindow: NSWindow {
     }
   }
 
-  /// Shows the window in front of the other apps' windows, minimized or
-  /// hidden as it may be: a notification was clicked.
-  private func bringToFront() {
+  /// The close button. With the app to keep running, the app first takes off
+  /// the screen what must not be there when the window returns, and the
+  /// window then leaves. If the app cannot do that, the window closes for
+  /// real, which quits the app.
+  override func performClose(_ sender: Any?) {
+    guard keepsRunning, let windowChannel else {
+      super.performClose(sender)
+      return
+    }
+    windowChannel.invokeMethod("windowWillClose", arguments: nil) { [weak self] answer in
+      guard let self else { return }
+      if answer is FlutterError || (answer as? NSObject) === FlutterMethodNotImplemented {
+        NSLog("MainFlutterWindow: the app did not get ready for its window to close, so it quits: \(String(describing: answer))")
+        self.closeAndQuit(sender)
+        return
+      }
+      self.hideKeepingAppRunning()
+    }
+  }
+
+  private func closeAndQuit(_ sender: Any?) {
+    super.performClose(sender)
+  }
+
+  /// Takes the window off the screen, the app still running. A window in
+  /// full screen comes out of it first, or its empty space would stay.
+  private func hideKeepingAppRunning() {
+    if self.styleMask.contains(.fullScreen) {
+      hidesAfterFullScreen = true
+      self.toggleFullScreen(nil)
+      return
+    }
+    self.orderOut(nil)
+  }
+
+  @objc private func finishHidingAfterFullScreen() {
+    guard hidesAfterFullScreen else { return }
+    hidesAfterFullScreen = false
+    self.orderOut(nil)
+  }
+
+  /// Shows the window in front of the other apps' windows, minimized, hidden
+  /// or closed as it may be: a notification, the Dock icon or the menu bar
+  /// icon was clicked.
+  func bringToFront() {
+    hidesAfterFullScreen = false
     NSApp.unhide(nil)
     if self.isMiniaturized {
       self.deminiaturize(nil)
@@ -143,6 +208,7 @@ class MainFlutterWindow: NSWindow {
     } else {
       NSApp.activate(ignoringOtherApps: true)
     }
+    windowChannel?.invokeMethod("windowDidOpen", arguments: nil)
   }
 
   /// Moves the window with the mouse press the app's header just received.

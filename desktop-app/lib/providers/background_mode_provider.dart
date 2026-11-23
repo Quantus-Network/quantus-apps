@@ -33,3 +33,13 @@ class KeepRunningNotifier extends Notifier<bool> {
     }
   }
 }
+
+/// Whether the window is closed with the app still running.
+final windowClosedProvider = NotifierProvider<WindowClosedNotifier, bool>(WindowClosedNotifier.new);
+
+class WindowClosedNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool isClosed) => state = isClosed;
+}
