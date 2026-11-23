@@ -49,13 +49,18 @@ class _SwapAddressSheetState extends ConsumerState<_SwapAddressSheet> {
 
   /// Hands the address back, once it is kept when asked. While it is being
   /// kept Continue is busy, and a sheet dismissed or covered meanwhile pops
-  /// nothing when the save completes.
+  /// nothing when the save completes. An address that cannot be kept is said,
+  /// and the sheet stays.
   Future<void> _continue() async {
     final address = _address;
     if (_save) {
       setState(() => _saving = true);
       try {
         await ref.read(swapServiceProvider).saveAddress(widget.token.network, address);
+      } catch (e) {
+        quantusPrint('Swap address failed to be saved: $e');
+        if (mounted) context.showErrorToaster(message: ref.read(l10nProvider).swapSaveAddressFailed);
+        return;
       } finally {
         if (mounted) setState(() => _saving = false);
       }

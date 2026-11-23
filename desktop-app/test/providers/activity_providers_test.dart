@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
@@ -64,6 +65,45 @@ void main() {
       expect(container.read(inspectorWidthProvider), 380);
       expect(telemetry.errors, ['The saved transaction panel width is unreadable']);
     });
+  });
+
+  testWidgets('the swap stays open while it is followed, and is no longer once it is put away', (tester) async {
+    final container = ProviderContainer(
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwap = fakeActiveSwap(),
+        balances: oneTokenEach,
+      ),
+    );
+    container.listen(openedActivityViewProvider, (_, _) {});
+    await tester.pump(const Duration(milliseconds: 20));
+
+    container.read(openedActivityProvider.notifier).open(const OpenedSwap());
+    expect(container.read(openedActivityViewProvider), const OpenedSwap());
+
+    await container.read(activeSwapProvider.notifier).clear();
+    expect(container.read(openedActivityViewProvider), isNull);
+
+    container.dispose();
+    await tester.pump(const Duration(minutes: 1));
+  });
+
+  testWidgets('with no swap, nothing of one is open', (tester) async {
+    final container = ProviderContainer(
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: oneTokenEach,
+      ),
+    );
+    container.listen(openedActivityViewProvider, (_, _) {});
+    await tester.pump(const Duration(milliseconds: 20));
+
+    container.read(openedActivityProvider.notifier).open(const OpenedSwap());
+    expect(container.read(openedActivityViewProvider), isNull);
+
+    container.dispose();
+    await tester.pump(const Duration(minutes: 1));
   });
 
   testWidgets('rows are kept over a reload only for their own account: one still loading shows as loading', (

@@ -16,3 +16,13 @@ class SwapPreflight {
       ? SwapPreflight(assetId: AppConstants.swapPreflightAssetId, address: AppConstants.swapPreflightAddress)
       : null;
 }
+
+/// Stops an app from starting on SWAP_PREFLIGHT_* dart-defines it must not
+/// run with: a stand-in [assetId] outside a debug build, since real builds
+/// swap QTC only, or one with no [address] to take the account's place.
+/// Called before anything else starts.
+void checkSwapPreflightDefines({required String assetId, required String address, required bool isDebugBuild}) {
+  if (assetId.isEmpty) return;
+  if (!isDebugBuild) throw StateError('SWAP_PREFLIGHT_ASSET is for debug builds only');
+  if (address.isEmpty) throw StateError('SWAP_PREFLIGHT_ASSET needs SWAP_PREFLIGHT_ADDRESS');
+}

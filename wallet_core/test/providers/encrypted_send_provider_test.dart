@@ -8,6 +8,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 import '../fakes.dart';
 
@@ -161,6 +162,41 @@ void main() {
       .start(account: account, plan: plan, amount: amount, recipientAddress: _recipient);
 
   Future<void> cancel(ProviderContainer container) => container.read(encryptedSendControllerProvider.notifier).cancel();
+
+  group('the recipient among the recent addresses', () {
+    Future<(ProviderSubscription<EncryptedSendState>, Future<void>, ProviderContainer)> sendHeldAtStartup() async {
+      service.startup = Completer<void>();
+      final fresh = _state(utxos, loadedAt: DateTime.now());
+      final container = await containerWith([Future.value(fresh), Future.value(fresh)]);
+      final send = container.listen(encryptedSendControllerProvider, (_, _) {});
+      final finished = start(container);
+      await service.reachedStartup.future;
+      return (send, finished, container);
+    }
+
+    test('a send finishing after a wallet reset does not save it', () async {
+      final (send, finished, container) = await sendHeldAtStartup();
+
+      container.read(walletSessionProvider).finishReset();
+      service.startup!.complete();
+      await finished;
+      await pumpEventQueue();
+
+      expect(send.read().phase, EncryptedSendPhase.succeeded);
+      expect(await RecentAddressesService().getAddresses(), isEmpty);
+    });
+
+    test('a send finishing with no reset saves it', () async {
+      final (send, finished, _) = await sendHeldAtStartup();
+
+      service.startup!.complete();
+      await finished;
+      await pumpEventQueue();
+
+      expect(send.read().phase, EncryptedSendPhase.succeeded);
+      expect(await RecentAddressesService().getAddresses(), [_recipient]);
+    });
+  });
 
   test('a cancel during the scan before the send starts no send', () async {
     final refresh = Completer<EncryptedAccountState>();

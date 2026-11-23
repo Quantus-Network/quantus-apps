@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -113,6 +114,19 @@ void main() {
 
       expect(substrate.logoutCalls, 1);
       expect(push.calls, isEmpty);
+    });
+
+    test('puts a turned-off notifications switch back on', () async {
+      final container = containerWith(remoteNotifications: false);
+      await container
+          .read(notificationConfigProvider.notifier)
+          .updateConfig(container.read(notificationConfigProvider).copyWith(enabled: false));
+      // The wipe clears everything saved, this setting with it.
+      await (await SharedPreferences.getInstance()).clear();
+
+      await container.read(logoutServiceProvider).logout();
+
+      expect(container.read(notificationConfigProvider).enabled, isTrue);
     });
   });
 }

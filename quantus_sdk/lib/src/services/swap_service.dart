@@ -24,6 +24,14 @@ class SwapQuoteIntegrityException implements Exception {
   String toString() => 'SwapQuoteIntegrityException($correlationId): $message';
 }
 
+/// A change to the saved swap addresses that storage did not take.
+class SwapSavedAddressesWriteException implements Exception {
+  const SwapSavedAddressesWriteException();
+
+  @override
+  String toString() => 'The change could not be written to storage';
+}
+
 /// Client for the NEAR Intents 1Click API. A quote names a deposit address on
 /// the origin chain; whatever the user sends there before the deadline is
 /// swapped by solvers and paid out to the recipient, or refunded. Nothing in
@@ -462,7 +470,26 @@ class SwapService {
     final prefs = await SharedPreferences.getInstance();
     final key = _savedAddressesStorageKey(network);
     final addresses = [address, ...?prefs.getStringList(key)?.where((a) => a != address)];
-    await prefs.setStringList(key, addresses.take(_maxSavedAddresses).toList());
+    await _writeSavedAddresses(prefs, key, addresses.take(_maxSavedAddresses).toList());
+  }
+
+  /// Forgets [address] on [network]; nothing changes when it was not saved.
+  Future<void> removeSavedAddress(String network, String address) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = _savedAddressesStorageKey(network);
+    final saved = prefs.getStringList(key);
+    if (saved == null || !saved.contains(address)) return;
+    await _writeSavedAddresses(prefs, key, saved.where((a) => a != address).toList());
+  }
+
+  /// Saves [addresses] under [key]. A write storage refuses throws, once what
+  /// was saved before is put back: the preferences keep an edit in memory even
+  /// when it never reached storage, and reloading them gives that same edit.
+  Future<void> _writeSavedAddresses(SharedPreferences prefs, String key, List<String> addresses) async {
+    final before = prefs.getStringList(key);
+    if (await prefs.setStringList(key, addresses)) return;
+    await (before == null ? prefs.remove(key) : prefs.setStringList(key, before));
+    throw const SwapSavedAddressesWriteException();
   }
 
   Future<List<String>> getSavedAddresses(String network) async {
