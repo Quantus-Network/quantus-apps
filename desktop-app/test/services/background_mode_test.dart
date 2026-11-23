@@ -15,6 +15,7 @@ import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
+import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
@@ -26,6 +27,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/app_locale.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
@@ -1118,6 +1120,124 @@ void main() {
 
       expect(await requestQuit(tester), AppExitResponse.exit);
       expect(find.text(title), findsNothing);
+    });
+  });
+
+  group('an Encrypted send handed to the node', () {
+    const hash = '0xencrypted';
+
+    Future<_Opened> handedOver(
+      WidgetTester tester,
+      FakeNotificationPlugin notifications, {
+      FakeWalletDevice? device,
+      bool realLogout = false,
+    }) async {
+      final opened = await _open(tester, onDevice: device, notifications: notifications, realLogout: realLogout);
+      opened.container
+          .read(ownActivityNotificationsProvider)
+          .onEncryptedSendEnded(
+            account: mainAccount,
+            amount: oneToken,
+            send: EncryptedSendState(phase: EncryptedSendPhase.succeeded, txHashes: const [hash]),
+          );
+      await tester.pump();
+      return opened;
+    }
+
+    testOnMac('closing waits for the chain and the Sent notification, then quits', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final device = FakeWalletDevice();
+      final (:window, :container, :exits) = await handedOver(tester, notifications, device: device);
+
+      await _pressClose(tester, window);
+      await tester.pump(const Duration(seconds: 6));
+      expect(container.read(windowClosedProvider), isTrue);
+      expect(exits, isEmpty);
+
+      device.chain.indexedTransfers[hash] = TransferEvent(
+        id: 'indexed-encrypted',
+        from: mainAccount.accountId,
+        to: 'qzBob',
+        amount: oneToken,
+        timestamp: DateTime(2026),
+        fee: BigInt.zero,
+        extrinsicHash: hash,
+        blockNumber: 10,
+        blockHash: '0xblock',
+      );
+      // The next search, five seconds after the last.
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pump();
+      expect(notifications.shown.single.title, startsWith('Sent'));
+      expect(exits, isEmpty);
+
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('the app stays while the account reloads, before the notification', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final device = FakeWalletDevice();
+      final (:window, container: _, :exits) = await handedOver(tester, notifications, device: device);
+      await _pressClose(tester, window);
+      final reload = device.holdEncryptedState = Completer<void>();
+      device.chain.indexedTransfers[hash] = TransferEvent(
+        id: 'indexed-encrypted',
+        from: mainAccount.accountId,
+        to: 'qzBob',
+        amount: oneToken,
+        timestamp: DateTime(2026),
+        fee: BigInt.zero,
+        extrinsicHash: hash,
+        blockNumber: 10,
+        blockHash: '0xblock',
+      );
+
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(notifications.shown, isEmpty);
+      expect(exits, isEmpty);
+
+      reload.complete();
+      await tester.pump();
+      expect(notifications.shown.single.title, startsWith('Sent'));
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('one the chain never shows is said so, and then the app quits', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final (:window, container: _, :exits) = await handedOver(tester, notifications);
+
+      await _pressClose(tester, window);
+      await tester.pump(const Duration(minutes: 4));
+      expect(exits, isEmpty);
+
+      await tester.pump(const Duration(minutes: 1, seconds: 10));
+      await tester.pump();
+      expect(notifications.shown.single.title, 'Send not confirmed');
+
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('Quit Now still quits at once', (tester) async {
+      final (window: _, :container, :exits) = await handedOver(tester, FakeNotificationPlugin());
+
+      container.read(backgroundModeProvider).quitNow();
+
+      expect(exits, ['forced']);
+    });
+
+    testOnMac('a wallet reset lets the app go', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final (window: _, :container, exits: _) = await handedOver(tester, FakeNotificationPlugin(), realLogout: true);
+      expect(container.read(pendingWorkProvider), isTrue);
+
+      await container.read(walletPresenceProvider.notifier).wipeWallet();
+      await tester.pumpAndSettle();
+
+      expect(container.read(pendingWorkProvider), isFalse);
     });
   });
 

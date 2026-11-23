@@ -899,8 +899,15 @@ class FakeWalletDevice {
       (ref, walletIndex) =>
           AsyncValue.data(encryptedDeposits.isEmpty ? oneToken : _encryptedState(walletIndex).balance),
     ),
-    encryptedStateProvider.overrideWith((ref, walletIndex) => _encryptedState(walletIndex)),
+    encryptedStateProvider.overrideWith((ref, walletIndex) {
+      final held = holdEncryptedState;
+      if (held == null) return _encryptedState(walletIndex);
+      return held.future.then((_) => _encryptedState(walletIndex));
+    }),
   ];
+
+  /// When set, reading an Encrypted account waits for it.
+  Completer<void>? holdEncryptedState;
 
   EncryptedAccountState _encryptedState(int walletIndex) => EncryptedAccountState(
     accountId: 'qzEncrypted$walletIndex',

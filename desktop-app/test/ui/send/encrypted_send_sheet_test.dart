@@ -273,8 +273,20 @@ void main() {
       expect(container(tester).read(pendingWorkProvider), isFalse);
     });
 
+    testOnMac('still counts once the proving succeeds, with no gap: the chain has yet to show the send', (
+      tester,
+    ) async {
+      final proving = await _startSend(tester, notifications: FakeNotificationPlugin(grants: false));
+      await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+
+      proving.report(EncryptedSendState(phase: EncryptedSendPhase.succeeded, txHashes: const ['0xabc']));
+
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+      await tester.pumpAndSettle();
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+    });
+
     for (final (ending, state) in [
-      ('succeeds', EncryptedSendState(phase: EncryptedSendPhase.succeeded, txHashes: const ['0xabc'])),
       ('fails', EncryptedSendState(phase: EncryptedSendPhase.failed, errorMessage: 'no')),
       ('is cancelled', EncryptedSendState(phase: EncryptedSendPhase.cancelled)),
       ('goes stale', EncryptedSendState(phase: EncryptedSendPhase.planStale)),

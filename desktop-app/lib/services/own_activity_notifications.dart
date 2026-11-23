@@ -198,6 +198,8 @@ class OwnActivityNotifications {
         }
         final watched = _EncryptedSend(account: account, amount: amount, hashes: send.txHashes);
         _encryptedSends[watched.lastHash] = watched;
+        // Work under way until its notification is on its way.
+        _ref.read(workHoldsProvider.notifier).hold(watched);
         _encryptedSendWatch.startPolling(null, watched);
       case EncryptedSendPhase.failed:
         // Some of its batches may have paid before it failed; only the
@@ -246,17 +248,25 @@ class OwnActivityNotifications {
       return false;
     }
     if (_encryptedSends.remove(send.lastHash) == null || !_ref.mounted) return true;
-    await _reloadEncryptedState(send.account.walletIndex);
-    if (!_ref.mounted) return true;
-    _notifyFrom(
-      send.account.accountId,
-      id: send.lastHash,
-      extrinsicHash: send.lastHash,
-      amount: send.amount,
-      title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
-      body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
-    );
+    try {
+      await _reloadEncryptedState(send.account.walletIndex);
+      if (!_ref.mounted) return true;
+      _notifyFrom(
+        send.account.accountId,
+        id: send.lastHash,
+        extrinsicHash: send.lastHash,
+        amount: send.amount,
+        title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
+        body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
+      );
+    } finally {
+      _releaseEncryptedSend(send);
+    }
     return true;
+  }
+
+  void _releaseEncryptedSend(_EncryptedSend send) {
+    if (_ref.mounted) _ref.read(workHoldsProvider.notifier).release(send);
   }
 
   /// Reads the account's state again, for a click on the notification to find
@@ -277,18 +287,23 @@ class OwnActivityNotifications {
   void _giveUpOnEncryptedSend(String id) {
     final send = _encryptedSends.remove(id);
     if (send == null) return;
-    _notifyFrom(
-      send.account.accountId,
-      id: send.lastHash,
-      extrinsicHash: send.lastHash,
-      amount: send.amount,
-      title: (l10n, _) => l10n.desktopNotificationSendNotConfirmedTitle,
-      body: (l10n, amount, account) => l10n.desktopNotificationSendNotConfirmedBody(amount, account),
-    );
+    try {
+      _notifyFrom(
+        send.account.accountId,
+        id: send.lastHash,
+        extrinsicHash: send.lastHash,
+        amount: send.amount,
+        title: (l10n, _) => l10n.desktopNotificationSendNotConfirmedTitle,
+        body: (l10n, amount, account) => l10n.desktopNotificationSendNotConfirmedBody(amount, account),
+      );
+    } finally {
+      _releaseEncryptedSend(send);
+    }
   }
 
   void _stopWatchingEncryptedSends() {
     _encryptedSendWatch.stopAll();
+    _encryptedSends.values.forEach(_releaseEncryptedSend);
     _encryptedSends.clear();
   }
 
