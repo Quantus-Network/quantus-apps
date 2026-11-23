@@ -567,9 +567,12 @@ class TransactionSubmissionService {
       final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
       quantusPrint('submission hash: $extrinsicHash');
 
-      // It went out for a wallet that a reset has since wiped: nothing of it
-      // may reach the next session.
-      if (!session.stillCurrent(ticket, dropping: 'tracking send $extrinsicHash')) return extrinsicHash;
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would remove it in time.
+      if (!session.stillCurrent(ticket, dropping: 'tracking send $extrinsicHash')) {
+        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+        return extrinsicHash;
+      }
 
       _ref
           .read(pendingTransactionsProvider.notifier)

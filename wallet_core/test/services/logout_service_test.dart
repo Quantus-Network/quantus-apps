@@ -1122,6 +1122,32 @@ void main() {
         watched.container.read(pendingTransactionPollingServiceProvider).stopAll();
         watched.container.dispose();
       });
+
+      testWidgets('a broadcast that answered during it leaves no row stuck as pending', (tester) async {
+        final watched = await wallet(tester);
+        final accepted = Completer<Uint8List>();
+        final pending = _pendingSend('tx-1');
+        watched.container.read(pendingTransactionsProvider.notifier).add(pending);
+        final submission = watched.container
+            .read(transactionSubmissionServiceProvider)
+            .submitAndTrackTransaction(() => accepted.future, pending);
+        final wipe = watched.bed.substrate.holdWipe = Completer<void>();
+        watched.bed.substrate.logoutError = StateError('the wipe failed');
+
+        final logout = watched.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        accepted.complete(Uint8List.fromList([1]));
+        expect(await submission, '0x01');
+        wipe.complete();
+        await expectLater(logout, throwsStateError);
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pump();
+
+        expect(watched.indexer.reads, 0);
+        expect(watched.container.read(pendingTransactionsProvider), isEmpty);
+        expect(watched.bed.droppedByReset.single, contains('0x01'));
+        watched.container.dispose();
+      });
     });
 
     group('a proposal going out', () {
