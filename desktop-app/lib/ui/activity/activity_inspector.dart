@@ -8,6 +8,7 @@ import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/chain_status_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
+import 'package:quantus_desktop_wallet/ui/activity/inspector_parts.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
@@ -17,6 +18,7 @@ import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/summary_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_detail.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/activity/activity_detail.dart';
 import 'package:wallet_core/activity/activity_facts.dart';
@@ -30,8 +32,8 @@ import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
 
 /// The panel at the window's right that shows what is open: a transaction,
-/// as Send's receipt shows one, or a multisig's proposal, read only. ✕
-/// closes it.
+/// as Send's receipt shows one, a multisig's proposal, read only, or the
+/// swap being followed. ✕ closes it.
 class ActivityInspector extends ConsumerWidget {
   const ActivityInspector({super.key, this.isFocused = false});
 
@@ -47,7 +49,11 @@ class ActivityInspector extends ConsumerWidget {
     if (opened == null) throw StateError('The panel at the right was drawn with nothing open in it.');
 
     return Panel(
-      title: opened is OpenedProposal ? l10n.multisigProposalTitle : l10n.desktopActivityTransaction,
+      title: switch (opened) {
+        OpenedTransaction() => l10n.desktopActivityTransaction,
+        OpenedProposal() => l10n.multisigProposalTitle,
+        OpenedSwap() => l10n.swapTitle,
+      },
       isFocused: isFocused,
       trailing: ToolbarAction.symbol(
         key: closeKey,
@@ -62,53 +68,12 @@ class ActivityInspector extends ConsumerWidget {
           switch (opened) {
             OpenedTransaction(:final tx) => _TransactionDetail(tx: tx),
             OpenedProposal(:final proposal) => _ProposalDetail(proposal: proposal),
+            OpenedSwap() => const SwapDetail(),
           },
         ],
       ),
     );
   }
-}
-
-/// A small label in capitals, as Send's receipt heads its blocks.
-TextStyle _capsStyle(BuildContext context, {Color? color}) => context.themeTextV3.dataAddress.copyWith(
-  height: 1,
-  letterSpacing: 2.4,
-  color: color ?? context.colorsV3.textMuted2,
-);
-
-/// The amount a page leads with, or a dash for none.
-Widget _headline(BuildContext context, String text) => Text(
-  text,
-  style: context.themeTextV3.titleHero.copyWith(
-    fontSize: 26,
-    height: 1.05,
-    letterSpacing: -0.65,
-    color: context.colorsV3.textWhite,
-  ),
-);
-
-/// A line of the status: its mark, its word in capitals, and what follows.
-Widget _statusLine(BuildContext context, {Widget? mark, required String label, required Color color, String? after}) {
-  final caps = _capsStyle(context, color: color);
-  return SizedBox(
-    height: 14,
-    child: Row(
-      children: [
-        if (mark != null) ...[mark, const SizedBox(width: 8)],
-        CapsText(label, style: caps),
-        if (after != null) ...[
-          const SizedBox(width: 12),
-          Text(
-            after,
-            style: context.themeTextV3.body.copyWith(
-              color: context.colorsV3.textMuted,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
-        ],
-      ],
-    ),
-  );
 }
 
 /// Who: one of the wallet's own accounts by its badge and name, else the
@@ -117,17 +82,13 @@ Widget _account(BaseAccount? own, String address) => own == null
     ? DesktopAddressCheckphrase(address: address, isCompact: true)
     : AccountLabel(account: own, revealsAddress: true);
 
-/// A row's label, quiet.
-Widget _label(BuildContext context, String text) =>
-    Text(text, style: context.themeTextV3.body.copyWith(color: context.colorsV3.textMuted));
-
 /// An account under its [label]: one of the wallet's own by its badge and
 /// name at the line's end; any other by its whole address, too long to share
 /// the line, under the label.
 Widget _accountRow(BuildContext context, String label, BaseAccount? own, String address) {
   if (own != null) {
     return SummaryRow(
-      label: _label(context, label),
+      label: inspectorLabel(context, label),
       value: AccountLabel(account: own, revealsAddress: true),
     );
   }
@@ -136,7 +97,7 @@ Widget _accountRow(BuildContext context, String label, BaseAccount? own, String 
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _label(context, label),
+        inspectorLabel(context, label),
         const SizedBox(height: 6),
         DesktopAddressCheckphrase(address: address, isCompact: true),
       ],
@@ -213,22 +174,24 @@ class _TransactionDetail extends ConsumerWidget {
         tx is TransferEvent || tx is PendingTransactionEvent || tx is ReversibleTransferEvent || tx is MinerRewardEvent;
 
     final status = switch (detail.status) {
-      ActivityStatus.completed => _statusLine(
+      ActivityStatus.completed => inspectorStatusLine(
         context,
         mark: Icon(CupertinoIcons.checkmark_alt, size: 13, color: colors.semanticSage),
         label: detail.status.label(l10n),
         color: colors.semanticSage,
       ),
       // Waiting has a part that moves, unless the system asks for none.
-      ActivityStatus.inProcess => _statusLine(
+      ActivityStatus.inProcess => inspectorStatusLine(
         context,
         mark: MediaQuery.disableAnimationsOf(context)
             ? null
-            : TerminalSpinner(style: _capsStyle(context, color: colors.semanticGlacier).copyWith(letterSpacing: 0)),
+            : TerminalSpinner(
+                style: inspectorCapsStyle(context, color: colors.semanticGlacier).copyWith(letterSpacing: 0),
+              ),
         label: detail.status.label(l10n),
         color: colors.semanticGlacier,
       ),
-      ActivityStatus.scheduled => _statusLine(
+      ActivityStatus.scheduled => inspectorStatusLine(
         context,
         mark: Icon(CupertinoIcons.clock, size: 13, color: colors.semanticGlacier),
         label: detail.status.label(l10n),
@@ -254,7 +217,7 @@ class _TransactionDetail extends ConsumerWidget {
     final rows = <Widget>[
       if (isTransfer && detail.isSend) ...[
         SummaryRow(
-          label: _label(context, l10n.activityTxFrom),
+          label: inspectorLabel(context, l10n.activityTxFrom),
           value: AccountLabel(account: account, revealsAddress: true),
         ),
         if (fee != null) ...[
@@ -265,7 +228,7 @@ class _TransactionDetail extends ConsumerWidget {
         ],
       ] else if (isTransfer)
         SummaryRow(
-          label: _label(context, l10n.activityTxTo),
+          label: inspectorLabel(context, l10n.activityTxTo),
           value: AccountLabel(account: account, revealsAddress: true),
         )
       else
@@ -278,7 +241,7 @@ class _TransactionDetail extends ConsumerWidget {
       children: [
         status,
         const SizedBox(height: 14),
-        _headline(context, amount == null ? '—' : money(amount)),
+        inspectorHeadline(context, amount == null ? '—' : money(amount)),
         const SizedBox(height: 10),
         Text(
           '${detail.title} · ${DatetimeFormattingService.formatTxDateTime(tx.timestamp)}',
@@ -288,7 +251,7 @@ class _TransactionDetail extends ConsumerWidget {
           const SizedBox(height: 24),
           CapsText(
             party.kind == ActivityFactKind.to ? l10n.sendTxSubmittedToLabel : l10n.activityTxFrom,
-            style: _capsStyle(context).copyWith(letterSpacing: 1.4),
+            style: inspectorCapsStyle(context).copyWith(letterSpacing: 1.4),
           ),
           const SizedBox(height: 10),
           who(party.who),
@@ -304,7 +267,7 @@ class _TransactionDetail extends ConsumerWidget {
               Expanded(
                 child: CapsText(
                   l10n.desktopActivityTransaction,
-                  style: _capsStyle(context).copyWith(letterSpacing: 1.4),
+                  style: inspectorCapsStyle(context).copyWith(letterSpacing: 1.4),
                 ),
               ),
               CopyAction(text: hash, copyLabel: l10n.receiveCopy, copiedLabel: l10n.desktopCopied),
@@ -398,14 +361,14 @@ class _ProposalDetail extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _statusLine(
+        inspectorStatusLine(
           context,
           mark: Icon(mark, size: 12, color: color),
           label: label,
           color: color,
         ),
         const SizedBox(height: 14),
-        _headline(context, money(proposal.amount)),
+        inspectorHeadline(context, money(proposal.amount)),
         const SizedBox(height: 10),
         Text(
           '${l10n.multisigProposalTitle} · ${DatetimeFormattingService.formatTxDateTime(proposal.createdAt)}',
@@ -413,7 +376,7 @@ class _ProposalDetail extends ConsumerWidget {
         ),
         if (proposal.recipient.isNotEmpty) ...[
           const SizedBox(height: 24),
-          CapsText(l10n.sendTxSubmittedToLabel, style: _capsStyle(context).copyWith(letterSpacing: 1.4)),
+          CapsText(l10n.sendTxSubmittedToLabel, style: inspectorCapsStyle(context).copyWith(letterSpacing: 1.4)),
           const SizedBox(height: 10),
           _account(own[proposal.recipient], proposal.recipient),
         ],
@@ -421,11 +384,11 @@ class _ProposalDetail extends ConsumerWidget {
         const MenuDivider(),
         const SizedBox(height: 4),
         SummaryRow(
-          label: _label(context, l10n.activityTxMultisigLabel),
+          label: inspectorLabel(context, l10n.activityTxMultisigLabel),
           value: AccountLabel(account: account, revealsAddress: true),
         ),
         SummaryRow(
-          label: _label(context, l10n.desktopProposeApprovals),
+          label: inspectorLabel(context, l10n.desktopProposeApprovals),
           value: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -437,7 +400,7 @@ class _ProposalDetail extends ConsumerWidget {
         ),
         if (expiry != null)
           SummaryRow(
-            label: _label(context, l10n.desktopProposeExpires),
+            label: inspectorLabel(context, l10n.desktopProposeExpires),
             value: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

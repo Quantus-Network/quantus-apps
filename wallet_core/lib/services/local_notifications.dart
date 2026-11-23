@@ -8,6 +8,10 @@ import 'package:wallet_core/utils/unbound_seam.dart';
 abstract interface class LocalNotifications {
   /// Shows [notification] now, or at its schedule time when it has a valid one.
   Future<void> showOrScheduleNotification(NotificationData notification);
+
+  /// Cancels what the system still holds for this app, so that nothing of a
+  /// wallet that was wiped appears afterwards.
+  Future<void> cancelAll();
 }
 
 final localNotificationsProvider = Provider<LocalNotifications>(

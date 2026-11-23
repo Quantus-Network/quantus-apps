@@ -12,6 +12,7 @@ import 'package:quantus_desktop_wallet/ui/receive/receive_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_titles.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
@@ -20,7 +21,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 /// hangs from the title bar: a title row with a way out, then the sheet's
 /// own content. A sheet that acts on the active account names it in the
 /// title row. Each feature fills in its own sheet as it arrives; one with
-/// steps of its own (Send, Settings) draws its own title row.
+/// steps of its own (Send, Swap, Settings) draws its own title row.
 class ShellSheetView extends ConsumerWidget {
   const ShellSheetView({super.key, required this.sheet, this.importWallet});
 
@@ -74,6 +75,7 @@ class ShellSheetView extends ConsumerWidget {
             ShellSheet.settings => const SettingsSheet(),
             ShellSheet.accountInfo => const AccountInfoSheet(),
             ShellSheet.send || ShellSheet.propose => const SendSheet(),
+            ShellSheet.swap => const SwapSheet(),
             ShellSheet.importWallet => ImportWalletSheet(importWallet: importWallet!),
             _ => _TitledSheet(
               title: sheetTitle(ref.watch(l10nProvider), sheet),

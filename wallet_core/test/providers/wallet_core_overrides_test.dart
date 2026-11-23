@@ -29,6 +29,9 @@ class _PushRegistration implements PushRegistration {
 class _LocalNotifications implements LocalNotifications {
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async {}
+
+  @override
+  Future<void> cancelAll() async {}
 }
 
 class _UserApproval implements UserApproval {
