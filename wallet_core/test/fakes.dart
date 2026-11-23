@@ -113,6 +113,12 @@ class FakeSettingsService extends Fake implements SettingsService {
 
   @override
   Future<List<MultisigAccount>> getMultisigAccounts() async => const [];
+
+  /// The multisigs saved since the test began.
+  final savedMultisigs = <MultisigAccount>[];
+
+  @override
+  Future<void> addMultisigAccount(MultisigAccount account) async => savedMultisigs.add(account);
 }
 
 /// The accounts of [settings], plus the encrypted account the real service
@@ -289,12 +295,16 @@ class FakeLocalNotifications implements LocalNotifications {
   int cancelAllCalls = 0;
   Object? cancelAllError;
 
+  /// When set, cancelling waits for it, as a platform call does.
+  Completer<void>? holdCancel;
+
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async => shown.add(notification);
 
   @override
   Future<void> cancelAll() async {
     cancelAllCalls++;
+    await holdCancel?.future;
     if (cancelAllError case final error?) throw error;
   }
 }

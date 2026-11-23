@@ -9,6 +9,7 @@ import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/services/multisig_creation_reconciliation.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 class MultisigCreationPollingService {
   final Ref _ref;
@@ -66,8 +67,11 @@ class MultisigCreationPollingService {
     if (!_inFlight.add(key)) return;
 
     try {
+      final session = _ref.read(walletSessionProvider);
+      final ticket = session.ticket;
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigIndexed(key);
+      if (!session.isCurrent(ticket)) return;
       if (exists) {
         await _confirmCreation(record.draft, key, record.networkFee);
       } else {
@@ -90,8 +94,11 @@ class MultisigCreationPollingService {
     if (!_inFlight.add(key)) return;
 
     try {
+      final session = _ref.read(walletSessionProvider);
+      final ticket = session.ticket;
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigIndexed(draft.accountId);
+      if (!session.isCurrent(ticket)) return;
       if (!exists) {
         quantusPrint('[MultisigCreationPoller] not on-chain yet: ${draft.accountId}');
         return;

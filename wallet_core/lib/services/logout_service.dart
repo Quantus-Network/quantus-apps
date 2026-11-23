@@ -71,7 +71,6 @@ class LogoutService {
     // After the pollers, which could add another. Left in place, the old
     // wallet's list would be saved back with the next notification.
     _ref.invalidate(notificationProvider);
-    await _cancelSystemNotifications();
     _ref.read(pendingTransactionsProvider.notifier).clear();
     await _ref.read(pendingMultisigCreationsProvider.notifier).clear();
     _ref.read(pendingMultisigProposalsProvider.notifier).clear();
@@ -93,6 +92,9 @@ class LogoutService {
     _ref.read(multisigAccountsProvider.notifier).reset();
     _ref.invalidate(discoveredMultisigsProvider);
     _ref.read(keystoneSignCacheProvider.notifier).reset();
+    // After everything above: this waits on the platform, and a failed locale
+    // or currency reset below must not leave the old notifications showing.
+    await _cancelSystemNotifications();
     await _ref.read(selectedAppLocaleProvider.notifier).reset();
     await _ref.read(selectedFiatCurrencyProvider.notifier).reset();
   }

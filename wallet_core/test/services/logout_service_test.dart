@@ -7,13 +7,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/notification_models.dart';
+import 'package:wallet_core/models/pending_multisig_creation_record.dart';
+import 'package:wallet_core/providers/global_toast_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/providers/notification_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
+import 'package:wallet_core/services/multisig_creation_polling_service.dart';
 import 'package:wallet_core/services/multisig_proposal_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
@@ -84,6 +88,33 @@ class _Multisigs extends Fake implements MultisigService {
     required int expiryBlock,
   }) => accepted.future;
 }
+
+/// Whether the indexer knows a multisig: [indexed], or what [held] completes
+/// with while it is set.
+class _Creations extends Fake implements MultisigService {
+  Completer<bool>? held;
+  bool indexed = false;
+
+  @override
+  Future<bool> isMultisigIndexed(String multisigAddress) async => await held?.future ?? indexed;
+}
+
+typedef _Creating = ({
+  WalletTestBed bed,
+  _Creations chain,
+  MultisigCreationPollingService poller,
+  ProviderContainer container,
+});
+
+final _oldMultisig = MultisigAccount(
+  name: 'Old multisig',
+  accountId: 'qzOldMultisig',
+  signers: const ['qzA', 'qzB'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'qzA',
+  creator: 'qzA',
+);
 
 typedef _Watched = ({WalletTestBed bed, _Indexer indexer, ProviderContainer container});
 
@@ -290,6 +321,139 @@ void main() {
       // What comes after it in the reset still ran.
       expect(container.read(pendingTransactionsProvider), isEmpty);
       container.dispose();
+    });
+  });
+
+  group('a multisig being created at a reset', () {
+    /// A wallet waiting for the indexer to answer about a multisig it created.
+    Future<_Creating> creating(WidgetTester tester, {bool expired = false}) async {
+      final bed = WalletTestBed();
+      final chain = _Creations()..held = Completer<bool>();
+      final container = ProviderContainer(
+        overrides: [...bed.overrides, multisigServiceProvider.overrideWithValue(chain)],
+      );
+      final poller = container.read(multisigCreationPollingServiceProvider);
+      await tester.pump();
+      final submittedAt = expired ? DateTime.now().subtract(const Duration(hours: 1)) : DateTime.now();
+      final record = PendingMultisigCreationRecord(
+        draft: _oldMultisig,
+        networkFee: BigInt.zero,
+        submittedAt: submittedAt,
+      );
+      await container.read(pendingMultisigCreationsProvider.notifier).add(record.toEvent(), _oldMultisig);
+      container.read(multisigAccountsProvider);
+      await tester.pump();
+      if (expired) {
+        unawaited(poller.resumePendingCreations());
+      } else {
+        poller.startPolling(_oldMultisig);
+      }
+      await tester.pump();
+      return (bed: bed, chain: chain, poller: poller, container: container);
+    }
+
+    void expectNothingOfIt(_Creating creation) {
+      expect(creation.bed.settings.savedMultisigs, isEmpty);
+      expect(creation.bed.pushRegistration.registeredAddresses, isEmpty);
+      expect(creation.container.read(globalToastProvider), isNull);
+    }
+
+    testWidgets('one confirmed during the wipe is not saved, registers no push and shows no toast', (tester) async {
+      final creation = await creating(tester);
+      final wipe = creation.bed.substrate.holdWipe = Completer<void>();
+
+      final logout = creation.container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      creation.chain.held!.complete(true);
+      await tester.pump();
+      await tester.pump();
+
+      expectNothingOfIt(creation);
+      wipe.complete();
+      await logout;
+      await tester.pump();
+      expectNothingOfIt(creation);
+      creation.container.dispose();
+    });
+
+    testWidgets('one confirmed during the cancel of the system notifications is not saved either', (tester) async {
+      final creation = await creating(tester);
+      final cancel = creation.bed.localNotifications.holdCancel = Completer<void>();
+
+      final logout = creation.container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      expect(creation.bed.localNotifications.cancelAllCalls, 1);
+      creation.chain.held!.complete(true);
+      await tester.pump();
+      await tester.pump();
+
+      expectNothingOfIt(creation);
+      cancel.complete();
+      await logout;
+      await tester.pump();
+      creation.container.dispose();
+    });
+
+    testWidgets('the system notifications are cancelled only after the pending work is cleared', (tester) async {
+      final creation = await creating(tester);
+      final cancel = creation.bed.localNotifications.holdCancel = Completer<void>();
+
+      final logout = creation.container.read(logoutServiceProvider).logout();
+      await tester.pump();
+
+      expect(creation.bed.localNotifications.cancelAllCalls, 1);
+      expect(creation.container.read(pendingMultisigCreationsProvider), isEmpty);
+      cancel.complete();
+      creation.chain.held!.complete(false);
+      await logout;
+      await tester.pump();
+      creation.container.dispose();
+    });
+
+    for (final indexed in [true, false]) {
+      testWidgets('an expired one recovered during the reset (indexed: $indexed) saves and says nothing', (
+        tester,
+      ) async {
+        final creation = await creating(tester, expired: true);
+        final wipe = creation.bed.substrate.holdWipe = Completer<void>();
+
+        final logout = creation.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        creation.chain.held!.complete(indexed);
+        await tester.pump();
+        await tester.pump();
+
+        expectNothingOfIt(creation);
+        wipe.complete();
+        await logout;
+        await tester.pump();
+        creation.container.dispose();
+      });
+    }
+
+    testWidgets('after a wipe that failed, one still confirms on the next poll', (tester) async {
+      final creation = await creating(tester);
+      final wipe = creation.bed.substrate.holdWipe = Completer<void>();
+      creation.bed.substrate.logoutError = StateError('the wipe failed');
+
+      final logout = creation.container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      creation.chain.held!.complete(true);
+      await tester.pump();
+      expect(creation.bed.settings.savedMultisigs, isEmpty);
+      wipe.complete();
+      await expectLater(logout, throwsStateError);
+
+      creation.chain
+        ..held = null
+        ..indexed = true;
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pump();
+
+      expect(creation.bed.settings.savedMultisigs.single.accountId, _oldMultisig.accountId);
+      expect(creation.bed.pushRegistration.registeredAddresses, [_oldMultisig.accountId]);
+      expect(creation.container.read(globalToastProvider)?.type, ToastType.success);
+      creation.container.dispose();
     });
   });
 
@@ -572,12 +736,11 @@ void main() {
         proposal.bed.substrate.logoutError = StateError('the wipe failed');
 
         final logout = proposal.container.read(logoutServiceProvider).logout();
-        final failed = expectLater(logout, throwsStateError);
         await tester.pump();
         proposal.chain.accepted.complete(Uint8List.fromList([1]));
         expect(await proposal.sent, '0x01');
         wipe.complete();
-        await failed;
+        await expectLater(logout, throwsStateError);
         await tester.pump();
 
         expect(proposal.indexer.proposalReads, 0);
