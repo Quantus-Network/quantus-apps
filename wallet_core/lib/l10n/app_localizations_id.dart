@@ -3203,6 +3203,62 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get desktopSwapAwaitingDeposit => 'Menunggu deposit';
+
+  @override
+  String get desktopSwapWaitingForDeposit => 'Menunggu deposit Anda';
+
+  @override
+  String desktopSwapUntil(String time) {
+    return 'hingga $time';
+  }
+
+  @override
+  String get desktopSwapFor => 'Untuk';
+
+  @override
+  String desktopSwapAmountOnNetwork(String amount, String network) {
+    return '$amount di $network';
+  }
+
+  @override
+  String desktopSwapForAmountOnNetwork(String amount, String network) {
+    return 'untuk $amount di $network';
+  }
+
+  @override
+  String desktopSwapRecipientOn(String network) {
+    return 'Penerima di $network';
+  }
+
+  @override
+  String get desktopSwapTheRecipient => 'penerima';
+
+  @override
+  String desktopSwapSendAmount(String amount) {
+    return 'Kirim $amount';
+  }
+
+  @override
+  String get desktopSwapCancel => 'Batalkan Swap';
+
+  @override
+  String get desktopSwapViewDeposit => 'Lihat Deposit';
+
+  @override
+  String desktopSwapReceived(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String desktopSwapCompleteBody(String amount) {
+    return 'Swap $amount Anda selesai.';
+  }
+
+  @override
+  String get desktopSwapPoweredByNearIntents => 'Didukung oleh NEAR Intents';
+
+  @override
   String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';
 
   @override

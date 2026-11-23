@@ -4699,6 +4699,103 @@
         }
       }
     },
+    "desktopSwapAwaitingDeposit": "Awaiting deposit",
+    "@desktopSwapAwaitingDeposit": {
+      "description": "Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet"
+    },
+    "desktopSwapWaitingForDeposit": "Waiting for your deposit",
+    "@desktopSwapWaitingForDeposit": {
+      "description": "Desktop swap row: what a swap awaiting its deposit is waiting for"
+    },
+    "desktopSwapUntil": "until {time}",
+    "@desktopSwapUntil": {
+      "description": "Desktop swap: the time by which a deposit must be sent, after its status",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapFor": "For",
+    "@desktopSwapFor": {
+      "description": "Desktop swap row: label before what the swap is for"
+    },
+    "desktopSwapAmountOnNetwork": "{amount} on {network}",
+    "@desktopSwapAmountOnNetwork": {
+      "description": "Desktop swap: an amount with its token symbol and the network the token is on",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapForAmountOnNetwork": "for {amount} on {network}",
+    "@desktopSwapForAmountOnNetwork": {
+      "description": "Desktop swap panel: what the amount in the headline is swapped for; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapRecipientOn": "Recipient on {network}",
+    "@desktopSwapRecipientOn": {
+      "description": "Desktop swap panel: heading over the address a swap pays out at",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapTheRecipient": "the recipient",
+    "@desktopSwapTheRecipient": {
+      "description": "Desktop swap: who a swap pays out to, as the last step names it (Sending USDC to the recipient)"
+    },
+    "desktopSwapSendAmount": "Send {amount}",
+    "@desktopSwapSendAmount": {
+      "description": "Desktop swap panel: headline of a swap awaiting its deposit; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapCancel": "Cancel Swap",
+    "@desktopSwapCancel": {
+      "description": "Desktop swap panel: button that drops a swap whose deposit was not sent"
+    },
+    "desktopSwapViewDeposit": "View Deposit",
+    "@desktopSwapViewDeposit": {
+      "description": "Desktop swap panel: opens the deposit's transaction in the explorer"
+    },
+    "desktopSwapReceived": "{amount} received",
+    "@desktopSwapReceived": {
+      "description": "Desktop swap panel: headline of a completed swap; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapCompleteBody": "Your swap of {amount} is complete.",
+    "@desktopSwapCompleteBody": {
+      "description": "Desktop swap panel: line under a completed swap's headline; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapPoweredByNearIntents": "Powered by NEAR Intents",
+    "@desktopSwapPoweredByNearIntents": {
+      "description": "Desktop swap: attribution to NEAR Intents"
+    },
     "desktopNotificationNotAllowed": "Not allowed in System Settings",
     "@desktopNotificationNotAllowed": {
       "description": "Desktop Settings, Notifications row: macOS is not letting the app show notifications"
