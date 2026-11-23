@@ -28,6 +28,8 @@ dependencies:
   clock: ^1.1.1
 
   # Platform
+  # The camera on Windows and Linux: our own copy, see its README.
+  desktop_qr_camera:
   ffi: ^2.2.0
   # The same version as the phone's.
   flutter_local_notifications: ^21.0.0

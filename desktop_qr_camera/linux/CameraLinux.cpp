@@ -1,553 +1,282 @@
-#include "include/Camera.h"
-#include <iostream>
-#include <vector>
-#include <string>
-#include <map>
-#include <cstring>
+#include "camera.h"
+
+#include <errno.h>
+#include <fcntl.h>
+#include <linux/videodev2.h>
 #include <poll.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
-unsigned char clamp(double value, double min, double max)
-{
-    if (value < min)
-        return static_cast<unsigned char>(min);
-    if (value > max)
-        return static_cast<unsigned char>(max);
-    return static_cast<unsigned char>(value);
+#include <algorithm>
+#include <cstring>
+#include <string>
+#include <utility>
+
+#include "yuy2.h"
+
+namespace desktop_qr_camera {
+
+namespace {
+
+constexpr uint32_t kWantedWidth = 1280;
+constexpr uint32_t kWantedHeight = 720;
+constexpr unsigned int kBufferCount = 4;
+// Webcams often take every second node, the others carrying metadata.
+constexpr int kDevicesToTry = 64;
+constexpr int kPollMilliseconds = 200;
+
+CameraStatus StatusOf(int error) {
+  switch (error) {
+    case EACCES:
+    case EPERM:
+      return CameraStatus::kPermissionDenied;
+    case EBUSY:
+      return CameraStatus::kBusy;
+    case ENOENT:
+    case ENODEV:
+    case ENXIO:
+      return CameraStatus::kNoCamera;
+    default:
+      return CameraStatus::kFailed;
+  }
 }
 
-void ConvertYUY2ToRGB(const unsigned char *yuy2Data, unsigned char *rgbData, int width, int height)
-{
-    int rgbIndex = 0;
-    for (int i = 0; i < width * height * 2; i += 4)
-    {
-        // Extract YUV values
-        unsigned char y1 = yuy2Data[i];
-        unsigned char u = yuy2Data[i + 1];
-        unsigned char y2 = yuy2Data[i + 2];
-        unsigned char v = yuy2Data[i + 3];
-
-        rgbData[rgbIndex++] = clamp(y1 + 1.402 * (v - 128), 0.0, 255.0);
-        rgbData[rgbIndex++] = clamp(y1 - 0.344136 * (u - 128) - 0.714136 * (v - 128), 0.0, 255.0);
-        rgbData[rgbIndex++] = clamp(y1 + 1.772 * (u - 128), 0.0, 255.0);
-
-        // Convert second pixel (Y2, U, V) to RGB
-        rgbData[rgbIndex++] = clamp(y2 + 1.402 * (v - 128), 0.0, 255.0);
-        rgbData[rgbIndex++] = clamp(y2 - 0.344136 * (u - 128) - 0.714136 * (v - 128), 0.0, 255.0);
-        rgbData[rgbIndex++] = clamp(y2 + 1.772 * (u - 128), 0.0, 255.0);
-    }
+// An ioctl that a signal interrupted is retried, as V4L2 expects.
+int Control(int fd, unsigned long request, void* argument) {
+  int result;
+  do {
+    result = ioctl(fd, request, argument);
+  } while (result == -1 && errno == EINTR);
+  return result;
 }
 
-void ConvertYUY2ToRGBA(const unsigned char *yuy2Data, unsigned char *rgbaData, int width, int height)
-{
-    int rgbaIndex = 0;
-    for (int i = 0; i < width * height * 2; i += 4)
-    {
-        unsigned char y1 = yuy2Data[i];
-        unsigned char u = yuy2Data[i + 1];
-        unsigned char y2 = yuy2Data[i + 2];
-        unsigned char v = yuy2Data[i + 3];
-
-        rgbaData[rgbaIndex++] = clamp(y1 + 1.402 * (v - 128), 0.0, 255.0);
-        rgbaData[rgbaIndex++] = clamp(y1 - 0.344136 * (u - 128) - 0.714136 * (v - 128), 0.0, 255.0);
-        rgbaData[rgbaIndex++] = clamp(y1 + 1.772 * (u - 128), 0.0, 255.0);
-        rgbaData[rgbaIndex++] = 255;
-
-        rgbaData[rgbaIndex++] = clamp(y2 + 1.402 * (v - 128), 0.0, 255.0);
-        rgbaData[rgbaIndex++] = clamp(y2 - 0.344136 * (u - 128) - 0.714136 * (v - 128), 0.0, 255.0);
-        rgbaData[rgbaIndex++] = clamp(y2 + 1.772 * (u - 128), 0.0, 255.0);
-        rgbaData[rgbaIndex++] = 255;
-    }
+bool CapturesVideo(int fd) {
+  struct v4l2_capability capability;
+  std::memset(&capability, 0, sizeof(capability));
+  if (Control(fd, VIDIOC_QUERYCAP, &capability) != 0) return false;
+  // device_caps describes this node; capabilities the whole physical device,
+  // which would also match a webcam's metadata node.
+  const uint32_t caps =
+      (capability.capabilities & V4L2_CAP_DEVICE_CAPS) ? capability.device_caps : capability.capabilities;
+  return (caps & V4L2_CAP_VIDEO_CAPTURE) != 0 && (caps & V4L2_CAP_STREAMING) != 0;
 }
 
-bool Camera::Open(int cameraIndex)
-{
-    std::string devicePath = "/dev/video" + std::to_string(cameraIndex);
-    fd = open(devicePath.c_str(), O_RDWR);
-    if (fd < 0)
-    {
-        perror("Error opening video device");
-        return false;
+}  // namespace
+
+CameraStatus Camera::Open() {
+  Release();
+  failure_.store(CameraStatus::kOk);
+
+  // A node the user may not open says why, unless a usable camera follows it.
+  CameraStatus blocked = CameraStatus::kNoCamera;
+  for (int i = 0; i < kDevicesToTry && fd_ < 0; i++) {
+    const std::string path = "/dev/video" + std::to_string(i);
+    const int fd = open(path.c_str(), O_RDWR | O_NONBLOCK | O_CLOEXEC);
+    if (fd < 0) {
+      const CameraStatus status = StatusOf(errno);
+      if (status != CameraStatus::kNoCamera) blocked = status;
+      continue;
     }
-
-    struct v4l2_capability cap;
-    if (ioctl(fd, VIDIOC_QUERYCAP, &cap) < 0)
-    {
-        perror("Error querying device capabilities");
-        close(fd);
-        return false;
+    if (CapturesVideo(fd)) {
+      fd_ = fd;
+    } else {
+      close(fd);
     }
+  }
+  if (fd_ < 0) return blocked;
 
-    std::cout << "Driver: " << cap.driver << "\nCard: " << cap.card << std::endl;
-
-    struct v4l2_format fmt;
-    memset(&fmt, 0, sizeof(fmt));
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width = frameWidth;
-    fmt.fmt.pix.height = frameHeight;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-
-    if (ioctl(fd, VIDIOC_S_FMT, &fmt) < 0)
-    {
-        perror("Error setting resolution");
-        return false;
+  CameraStatus status = ChooseFormat();
+  if (status == CameraStatus::kOk) status = MapBuffers();
+  if (status == CameraStatus::kOk) {
+    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (Control(fd_, VIDIOC_STREAMON, &type) != 0) {
+      status = StatusOf(errno);
+    } else {
+      capture_started_ = true;
     }
-
-    // The driver may negotiate a different resolution than requested; keep
-    // the members in sync with what was actually granted.
-    frameWidth = fmt.fmt.pix.width;
-    frameHeight = fmt.fmt.pix.height;
-
-    if (!InitDevice() || !StartCapture())
-    {
-        Release();
-        return false;
-    }
-
-    return true;
+  }
+  if (status != CameraStatus::kOk) Release();
+  return status;
 }
 
-void Camera::Release()
-{
-    StopCaptureLoop();
+CameraStatus Camera::ChooseFormat() {
+  struct v4l2_format format;
+  std::memset(&format, 0, sizeof(format));
+  format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  format.fmt.pix.width = kWantedWidth;
+  format.fmt.pix.height = kWantedHeight;
+  format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+  format.fmt.pix.field = V4L2_FIELD_NONE;
+  if (Control(fd_, VIDIOC_S_FMT, &format) != 0) {
+    return errno == EBUSY ? CameraStatus::kBusy : CameraStatus::kUnsupported;
+  }
 
-    {
-        std::lock_guard<std::mutex> lock(cacheMutex);
-        cachedRgba.clear();
-        cachedRgba.shrink_to_fit();
-    }
+  // The driver answers with what it can do, which may be another format.
+  const uint32_t width = format.fmt.pix.width;
+  const uint32_t height = format.fmt.pix.height;
+  if (format.fmt.pix.pixelformat != V4L2_PIX_FMT_YUYV) return CameraStatus::kUnsupported;
+  if (width == 0 || height == 0 || width > kMaxFrameSide || height > kMaxFrameSide || width % 2 != 0) {
+    return CameraStatus::kUnsupported;
+  }
+  const size_t row_bytes = static_cast<size_t>(width) * 2;
+  const size_t stride = format.fmt.pix.bytesperline == 0 ? row_bytes : format.fmt.pix.bytesperline;
+  if (stride < row_bytes) return CameraStatus::kUnsupported;
 
-    StopCapture();
-    UninitDevice();
-    if (fd >= 0)
-    {
-        close(fd);
-        fd = -1;
-    }
+  width_ = width;
+  height_ = height;
+  stride_ = stride;
+  return CameraStatus::kOk;
 }
 
-bool Camera::StartCaptureLoop(FrameCallback callback)
-{
-    if (fd < 0 || streaming.load())
-        return false;
+CameraStatus Camera::MapBuffers() {
+  struct v4l2_requestbuffers request;
+  std::memset(&request, 0, sizeof(request));
+  request.count = kBufferCount;
+  request.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  request.memory = V4L2_MEMORY_MMAP;
+  if (Control(fd_, VIDIOC_REQBUFS, &request) != 0) return StatusOf(errno);
+  if (request.count == 0) return CameraStatus::kUnsupported;
 
-    frameCallback = std::move(callback);
-    streaming.store(true);
-    captureThread = std::thread(&Camera::CaptureLoop, this);
-    return true;
+  buffers_.reserve(request.count);
+  for (unsigned int i = 0; i < request.count; i++) {
+    struct v4l2_buffer buffer;
+    std::memset(&buffer, 0, sizeof(buffer));
+    buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buffer.memory = V4L2_MEMORY_MMAP;
+    buffer.index = i;
+    if (Control(fd_, VIDIOC_QUERYBUF, &buffer) != 0) return StatusOf(errno);
+
+    void* start = mmap(nullptr, buffer.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, buffer.m.offset);
+    if (start == MAP_FAILED) return StatusOf(errno);
+    // Only what was really mapped is listed, so only that is ever unmapped.
+    buffers_.push_back({start, buffer.length});
+
+    if (Control(fd_, VIDIOC_QBUF, &buffer) != 0) return StatusOf(errno);
+  }
+  return CameraStatus::kOk;
 }
 
-void Camera::StopCaptureLoop()
-{
-    streaming.store(false);
-    if (captureThread.joinable())
-    {
-        captureThread.join();
-    }
-    frameCallback = nullptr;
+void Camera::UnmapBuffers() {
+  for (const MappedBuffer& buffer : buffers_) munmap(buffer.start, buffer.length);
+  buffers_.clear();
 }
 
-void Camera::CaptureLoop()
-{
-    std::vector<unsigned char> rgba(static_cast<size_t>(frameWidth) * frameHeight * 4);
+void Camera::Release() {
+  streaming_.store(false);
+  if (capture_thread_.joinable()) capture_thread_.join();
+  frame_callback_ = nullptr;
 
-    while (streaming.load())
-    {
-        // Wait for a frame with a timeout so StopCaptureLoop() stays responsive.
-        struct pollfd pfd;
-        pfd.fd = fd;
-        pfd.events = POLLIN;
-        pfd.revents = 0;
+  {
+    std::lock_guard<std::mutex> lock(frame_mutex_);
+    newest_luma_.clear();
+  }
 
-        int ready = poll(&pfd, 1, 200);
-        if (ready <= 0 || !(pfd.revents & POLLIN))
-            continue;
-
-        struct v4l2_buffer buf;
-        memset(&buf, 0, sizeof(buf));
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-
-        if (ioctl(fd, VIDIOC_DQBUF, &buf) < 0)
-        {
-            if (streaming.load())
-            {
-                perror("Capture loop: failed to dequeue buffer");
-            }
-            break;
-        }
-
-        ConvertYUY2ToRGBA(reinterpret_cast<unsigned char *>(buffers[buf.index].start), rgba.data(), frameWidth, frameHeight);
-
-        if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
-        {
-            perror("Capture loop: failed to queue buffer");
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(cacheMutex);
-            cachedRgba = rgba;
-        }
-
-        if (frameCallback)
-        {
-            frameCallback(rgba.data(), (int)frameWidth, (int)frameHeight);
-        }
+  if (fd_ >= 0) {
+    if (capture_started_) {
+      enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+      Control(fd_, VIDIOC_STREAMOFF, &type);
+      capture_started_ = false;
     }
-
-    streaming.store(false);
+    UnmapBuffers();
+    close(fd_);
+    fd_ = -1;
+  }
+  width_ = 0;
+  height_ = 0;
+  stride_ = 0;
 }
 
-bool Camera::SetResolution(int width, int height)
-{
-    if (fd == -1)
-    {
-        std::cerr << "Device not opened." << std::endl;
-        return false;
-    }
+bool Camera::StartCaptureLoop(FrameCallback callback) {
+  if (fd_ < 0 || !capture_started_ || streaming_.load()) return false;
+  // A loop that ended on its own has left a thread to join.
+  if (capture_thread_.joinable()) capture_thread_.join();
 
-    // Changing the format while buffers are queued and the stream is on is
-    // unsafe: the mmap'd buffers are sized for the old format and the
-    // capture loop converts with frameWidth/frameHeight, so a mid-stream
-    // switch reads/writes out of bounds. Tear the pipeline down first and
-    // rebuild it at the new size.
-    bool wasStreaming = streaming.load();
-    FrameCallback savedCallback = frameCallback;
-    if (wasStreaming)
-    {
-        StopCaptureLoop();
-    }
-
-    uint32_t oldWidth = frameWidth;
-    uint32_t oldHeight = frameHeight;
-
-    StopCapture();  // STREAMOFF
-    UninitDevice(); // munmap
-
-    // Free the driver-side buffers; most drivers require this before S_FMT
-    // with a different size.
-    struct v4l2_requestbuffers req;
-    memset(&req, 0, sizeof(req));
-    req.count = 0;
-    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    req.memory = V4L2_MEMORY_MMAP;
-    ioctl(fd, VIDIOC_REQBUFS, &req);
-
-    struct v4l2_format fmt;
-    memset(&fmt, 0, sizeof(fmt));
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    fmt.fmt.pix.width = width;
-    fmt.fmt.pix.height = height;
-    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-
-    bool success = false;
-    if (ioctl(fd, VIDIOC_S_FMT, &fmt) == 0)
-    {
-        // Save the actual resolution set by the device
-        frameWidth = fmt.fmt.pix.width;
-        frameHeight = fmt.fmt.pix.height;
-        success = InitDevice() && StartCapture();
-    }
-
-    if (!success)
-    {
-        // Roll back to the previous format so the camera keeps working.
-        memset(&fmt, 0, sizeof(fmt));
-        fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        fmt.fmt.pix.width = oldWidth;
-        fmt.fmt.pix.height = oldHeight;
-        fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-        if (ioctl(fd, VIDIOC_S_FMT, &fmt) == 0)
-        {
-            frameWidth = fmt.fmt.pix.width;
-            frameHeight = fmt.fmt.pix.height;
-            if (InitDevice() && StartCapture() && wasStreaming)
-            {
-                StartCaptureLoop(savedCallback);
-            }
-        }
-        return false;
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(cacheMutex);
-        cachedRgba.clear(); // discard stale frames at the old size
-    }
-
-    if (wasStreaming)
-    {
-        StartCaptureLoop(savedCallback);
-    }
-
-    return true;
+  frame_callback_ = std::move(callback);
+  streaming_.store(true);
+  capture_thread_ = std::thread(&Camera::CaptureLoop, this);
+  return true;
 }
 
-FrameData Camera::CaptureFrame()
-{
-    // While the preview stream is running, serve the latest cached frame
-    // instead of dequeuing a new buffer.
-    if (streaming.load())
-    {
-        FrameData frame;
-        frame.width = frameWidth;
-        frame.height = frameHeight;
-        frame.rgbData = nullptr;
+void Camera::StoreLuma(const std::vector<uint8_t>& luma) {
+  std::lock_guard<std::mutex> lock(frame_mutex_);
+  newest_luma_ = luma;
+}
 
-        std::lock_guard<std::mutex> lock(cacheMutex);
-        if (cachedRgba.empty())
-        {
-            return frame;
-        }
+void Camera::CaptureLoop() {
+  const size_t pixels = static_cast<size_t>(width_) * height_;
+  std::vector<uint8_t> rgba(pixels * 4);
+  std::vector<uint8_t> luma(pixels);
 
-        frame.size = static_cast<size_t>(frameWidth) * frameHeight * 3;
-        frame.rgbData = new unsigned char[frame.size];
+  while (streaming_.load()) {
+    // A timeout keeps Release() responsive when the camera stalls.
+    struct pollfd waiting;
+    waiting.fd = fd_;
+    waiting.events = POLLIN;
+    waiting.revents = 0;
+    const int ready = poll(&waiting, 1, kPollMilliseconds);
+    if (ready < 0) {
+      if (errno == EINTR) continue;
+      failure_.store(CameraStatus::kStopped);
+      break;
+    }
+    if (ready == 0) continue;
+    if (waiting.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+      failure_.store(CameraStatus::kStopped);
+      break;
+    }
+    if (!(waiting.revents & POLLIN)) continue;
 
-        const unsigned char *src = cachedRgba.data();
-        unsigned char *dst = frame.rgbData;
-        for (size_t i = 0, j = 0; j < frame.size; i += 4, j += 3)
-        {
-            dst[j] = src[i];
-            dst[j + 1] = src[i + 1];
-            dst[j + 2] = src[i + 2];
-        }
-        return frame;
+    struct v4l2_buffer buffer;
+    std::memset(&buffer, 0, sizeof(buffer));
+    buffer.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buffer.memory = V4L2_MEMORY_MMAP;
+    if (Control(fd_, VIDIOC_DQBUF, &buffer) != 0) {
+      if (errno == EAGAIN) continue;
+      if (streaming_.load()) failure_.store(CameraStatus::kStopped);
+      break;
+    }
+    if (buffer.index >= buffers_.size()) {
+      failure_.store(CameraStatus::kStopped);
+      break;
     }
 
-    struct v4l2_buffer buf;
-    memset(&buf, 0, sizeof(buf));
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
+    const MappedBuffer& mapped = buffers_[buffer.index];
+    // Some drivers leave bytesused at zero; the mapping is then the limit.
+    const size_t available = buffer.bytesused == 0 ? mapped.length : std::min<size_t>(buffer.bytesused, mapped.length);
+    const bool converted = (buffer.flags & V4L2_BUF_FLAG_ERROR) == 0 &&
+                           ConvertYuy2(static_cast<const uint8_t*>(mapped.start), available, stride_, width_, height_,
+                                       rgba.data(), rgba.size(), luma.data(), luma.size());
 
-    // Dequeue a buffer from the video capture queue
-    if (ioctl(fd, VIDIOC_DQBUF, &buf) < 0)
-    {
-        perror("Failed to dequeue buffer");
-        return {};
+    if (Control(fd_, VIDIOC_QBUF, &buffer) != 0) {
+      if (streaming_.load()) failure_.store(CameraStatus::kStopped);
+      break;
     }
+    if (!converted) continue;
 
-    // FILE *file = fopen("raw_frame.yuyv", "wb");
-    // fwrite(buffers[buf.index].start, 1, buffers[buf.index].length, file);
-    // fclose(file);
+    StoreLuma(luma);
+    if (frame_callback_) frame_callback_(rgba.data(), width_, height_);
+  }
 
-    // Prepare FrameData structure
-    FrameData frame;
-    frame.width = frameWidth;
-    frame.height = frameHeight;
-    frame.size = frameWidth * frameHeight * 3; // 3 bytes per pixel (RGB)
-    frame.rgbData = new unsigned char[frame.size];
+  streaming_.store(false);
+}
 
-    // Convert YUYV to RGB
-    ConvertYUY2ToRGB(reinterpret_cast<unsigned char *>(buffers[buf.index].start), frame.rgbData, frameWidth, frameHeight);
-
-    // Requeue the buffer
-    if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
-    {
-        perror("Failed to queue buffer");
-    }
-
+LumaFrame Camera::CaptureFrame() {
+  LumaFrame frame;
+  const CameraStatus failure = failure_.load();
+  if (failure != CameraStatus::kOk) {
+    frame.status = failure;
     return frame;
+  }
+  if (!streaming_.load()) {
+    frame.status = CameraStatus::kStopped;
+    return frame;
+  }
+  frame.width = width_;
+  frame.height = height_;
+  std::lock_guard<std::mutex> lock(frame_mutex_);
+  frame.luma.swap(newest_luma_);
+  return frame;
 }
 
-bool Camera::InitDevice()
-{
-    struct v4l2_requestbuffers req;
-    memset(&req, 0, sizeof(req));
-    req.count = 4;
-    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    req.memory = V4L2_MEMORY_MMAP;
-
-    if (ioctl(fd, VIDIOC_REQBUFS, &req) < 0)
-    {
-        perror("Failed to request buffers");
-        return false;
-    }
-
-    buffers = new Buffer[req.count];
-    bufferCount = req.count;
-
-    for (unsigned int i = 0; i < bufferCount; ++i)
-    {
-        struct v4l2_buffer buf;
-        memset(&buf, 0, sizeof(buf));
-        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory = V4L2_MEMORY_MMAP;
-        buf.index = i;
-
-        if (ioctl(fd, VIDIOC_QUERYBUF, &buf) < 0)
-        {
-            perror("Failed to query buffer");
-            return false;
-        }
-
-        buffers[i].length = buf.length;
-        buffers[i].start = mmap(nullptr, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, buf.m.offset);
-
-        if (buffers[i].start == MAP_FAILED)
-        {
-            perror("Failed to map buffer");
-            return false;
-        }
-
-        if (ioctl(fd, VIDIOC_QBUF, &buf) < 0)
-        {
-            perror("Failed to queue buffer");
-            return false;
-        }
-    }
-    return true;
-}
-
-void Camera::UninitDevice()
-{
-    if (buffers)
-    {
-        for (unsigned int i = 0; i < bufferCount; ++i)
-        {
-            munmap(buffers[i].start, buffers[i].length);
-        }
-        delete[] buffers;
-        buffers = nullptr;
-    }
-}
-
-bool Camera::StartCapture()
-{
-    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    return ioctl(fd, VIDIOC_STREAMON, &type) >= 0;
-}
-
-void Camera::StopCapture()
-{
-    enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    ioctl(fd, VIDIOC_STREAMOFF, &type);
-}
-
-std::vector<MediaTypeInfo> Camera::ListSupportedMediaTypes()
-{
-    std::vector<MediaTypeInfo> mediaTypes;
-
-    if (fd == -1)
-    {
-        std::cerr << "Device not opened.\n";
-        return mediaTypes;
-    }
-
-    struct v4l2_fmtdesc fmt;
-    memset(&fmt, 0, sizeof(fmt));
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-    while (ioctl(fd, VIDIOC_ENUM_FMT, &fmt) == 0)
-    {
-        struct v4l2_frmsizeenum frmsize;
-        memset(&frmsize, 0, sizeof(frmsize));
-        frmsize.pixel_format = fmt.pixelformat;
-
-        // Iterate over supported frame sizes for this format
-        while (ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) == 0)
-        {
-            MediaTypeInfo info = {};
-            info.width = 0;
-            info.height = 0;
-
-            // Handle discrete frame sizes
-            if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE)
-            {
-                info.width = frmsize.discrete.width;
-                info.height = frmsize.discrete.height;
-            }
-            // Handle stepwise frame sizes
-            else if (frmsize.type == V4L2_FRMSIZE_TYPE_STEPWISE)
-            {
-                // Use the minimum resolution as an example
-                info.width = frmsize.stepwise.min_width;
-                info.height = frmsize.stepwise.min_height;
-            }
-
-            // Copy the format description
-            strncpy(info.subtypeName, reinterpret_cast<const char *>(fmt.description), sizeof(info.subtypeName) - 1);
-            info.subtypeName[sizeof(info.subtypeName) - 1] = '\0'; // Ensure null-termination
-
-            mediaTypes.push_back(info);
-            frmsize.index++;
-        }
-
-        fmt.index++;
-    }
-
-    if (mediaTypes.empty())
-    {
-        std::cerr << "No supported media types found.\n";
-    }
-
-    return mediaTypes;
-}
-
-std::vector<CaptureDeviceInfo> ListCaptureDevices()
-{
-    std::vector<CaptureDeviceInfo> devices;
-
-    // Scan for /dev/videoX devices
-    for (int i = 0; i < 10; ++i) // Check first 10 devices (can be increased if needed)
-    {
-        std::string devicePath = "/dev/video" + std::to_string(i);
-
-        // Open the device
-        int fd = open(devicePath.c_str(), O_RDWR | O_NONBLOCK, 0);
-        if (fd == -1)
-        {
-            continue; // Skip if the device cannot be opened
-        }
-
-        // Query device capabilities
-        struct v4l2_capability cap;
-        if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0)
-        {
-            // Check if it's a video capture device
-            if (cap.capabilities & V4L2_CAP_VIDEO_CAPTURE)
-            {
-                CaptureDeviceInfo deviceInfo = {};
-
-                // Copy the friendly name directly into the `friendlyName` buffer
-                strncpy(deviceInfo.friendlyName, reinterpret_cast<const char *>(cap.card), sizeof(deviceInfo.friendlyName) - 1);
-
-                // Null-terminate the friendlyName string
-                deviceInfo.friendlyName[sizeof(deviceInfo.friendlyName) - 1] = '\0';
-
-                devices.push_back(deviceInfo);
-            }
-        }
-
-        // Close the device
-        close(fd);
-    }
-
-    return devices;
-}
-
-void ReleaseFrame(FrameData &frame)
-{
-    if (frame.rgbData)
-    {
-        delete[] frame.rgbData;
-        frame.rgbData = nullptr;
-        frame.size = 0;
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Save a frame as a JPEG image using the STB library
-// https://github.com/nothings/stb/blob/master/stb_image_write.h
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "include/stb_image_write.h"
-void saveFrameAsJPEG(const unsigned char *data, int width, int height, const std::string &filename)
-{
-    // Simple image saving using STB library or another JPEG encoding method
-    if (stbi_write_jpg(filename.c_str(), width, height, 3, data, 90))
-    {
-        std::cout << "Saved frame to " << filename << std::endl;
-    }
-    else
-    {
-        std::cerr << "Error saving frame as JPEG." << std::endl;
-    }
-}
-///////////////////////////////////////////////////////////////////////////////
+}  // namespace desktop_qr_camera

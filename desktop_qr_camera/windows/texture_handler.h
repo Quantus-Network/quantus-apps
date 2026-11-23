@@ -8,7 +8,7 @@
 #include <mutex>
 #include <vector>
 
-namespace flutter_lite_camera
+namespace desktop_qr_camera
 {
 
     // Wraps a flutter::PixelBufferTexture. The camera capture thread pushes
@@ -48,6 +48,6 @@ namespace flutter_lite_camera
         uint32_t frame_height_ = 0;
     };
 
-} // namespace flutter_lite_camera
+} // namespace desktop_qr_camera
 
 #endif // TEXTURE_HANDLER_H

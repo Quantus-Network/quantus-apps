@@ -193,6 +193,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.4"
+  desktop_qr_camera:
+    dependency: "direct main"
+    description:
+      path: "../desktop_qr_camera"
+      relative: true
+    source: path
+    version: "0.1.0"
   ed25519_edwards:
     dependency: transitive
     description:

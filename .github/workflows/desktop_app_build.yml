@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - 'desktop-app/**'
+      - 'desktop_qr_camera/**'
       - '.github/workflows/desktop_app_build.yml'
 
 permissions:
@@ -40,8 +41,9 @@ jobs:
           brew install cocoapods || brew reinstall cocoapods
           pod --version
 
+      # Fails if a package no longer matches the hash in the committed lockfile.
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
         working-directory: ./desktop-app
 
       - name: Build macOS debug
@@ -79,9 +81,18 @@ jobs:
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
 
+      # Fails if a package no longer matches the hash in the committed lockfile.
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
         working-directory: ./desktop-app
+
+      # Every camera frame on Windows and Linux goes through this conversion.
+      - name: Check the camera frame conversion under the sanitizers
+        working-directory: ./desktop_qr_camera
+        run: |
+          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+            -I native test/native/yuy2_test.cpp -o "$RUNNER_TEMP/yuy2_test"
+          "$RUNNER_TEMP/yuy2_test"
 
       # The only run of the login password check against a real libpam. The
       # app's PAM service is installed as its package will install it, and the
@@ -116,8 +127,9 @@ jobs:
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
 
+      # Fails if a package no longer matches the hash in the committed lockfile.
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
         working-directory: ./desktop-app
 
       - name: Build Windows debug

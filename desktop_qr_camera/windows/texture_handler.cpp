@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace flutter_lite_camera
+namespace desktop_qr_camera
 {
 
     TextureHandler::~TextureHandler()
@@ -100,4 +100,4 @@ namespace flutter_lite_camera
         return flutter_desktop_pixel_buffer_.get();
     }
 
-} // namespace flutter_lite_camera
+} // namespace desktop_qr_camera

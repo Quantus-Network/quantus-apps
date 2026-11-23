@@ -4,25 +4,22 @@
 cmake_minimum_required(VERSION 3.10)
 
 # Project-level configuration.
-set(PROJECT_NAME "flutter_lite_camera")
+set(PROJECT_NAME "desktop_qr_camera")
 project(${PROJECT_NAME} LANGUAGES CXX)
 
 # This value is used when generating builds using this plugin, so it must
 # not be changed.
-set(PLUGIN_NAME "flutter_lite_camera_plugin")
-
-# Any new source files that you add to the plugin should be added here.
-list(APPEND PLUGIN_SOURCES
-  "flutter_lite_camera_plugin.cc"
-  "camera_texture.cc"
-  "camera_texture.h"
-)
+set(PLUGIN_NAME "desktop_qr_camera_plugin")
 
 # Define the plugin library target. Its name must not be changed (see comment
 # on PLUGIN_NAME above).
 add_library(${PLUGIN_NAME} SHARED
   "CameraLinux.cpp"
-  ${PLUGIN_SOURCES}
+  "desktop_qr_camera_plugin.cc"
+  "camera_texture.cc"
+  "camera_texture.h"
+  "../native/camera.h"
+  "../native/yuy2.h"
 )
 
 # Apply a standard set of build settings that are configured in the
@@ -41,13 +38,15 @@ target_compile_definitions(${PLUGIN_NAME} PRIVATE FLUTTER_PLUGIN_IMPL)
 # dependencies here.
 target_include_directories(${PLUGIN_NAME} INTERFACE
   "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(${PLUGIN_NAME} PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/../native")
 target_link_libraries(${PLUGIN_NAME} PRIVATE flutter)
 target_link_libraries(${PLUGIN_NAME} PRIVATE PkgConfig::GTK)
 
 # List of absolute paths to libraries that should be bundled with the plugin.
 # This list could contain prebuilt libraries, or libraries created by an
 # external build triggered from this build file.
-set(flutter_lite_camera_bundled_libraries
+set(desktop_qr_camera_bundled_libraries
   ""
   PARENT_SCOPE
 )
