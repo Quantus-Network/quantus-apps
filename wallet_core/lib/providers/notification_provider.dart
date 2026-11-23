@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/services/local_notifications.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
+import 'package:wallet_core/utils/provider_reader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Maximum number of notifications to keep (FIFO)
@@ -22,6 +24,17 @@ final notificationProvider = StateNotifierProvider<NotificationNotifier, List<No
 
   return NotificationNotifier(localNotifications, notificationConfig);
 });
+
+/// Adds the notification [resolve] answers with, unless the wallet was reset
+/// while it was being resolved: it would be saved into the wiped storage, or
+/// scheduled to fire in the next wallet.
+Future<void> addResolvedNotification(ProviderReader read, Future<NotificationData?> Function() resolve) async {
+  final session = read(walletSessionProvider);
+  final ticket = session.ticket;
+  final notification = await resolve();
+  if (notification == null || !session.isCurrent(ticket)) return;
+  await read(notificationProvider.notifier).addNotification(notification);
+}
 
 /// Notifier that manages notification state with persistence and streams
 class NotificationNotifier extends StateNotifier<List<NotificationData>> {

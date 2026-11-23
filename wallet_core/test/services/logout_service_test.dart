@@ -324,6 +324,98 @@ void main() {
     });
   });
 
+  group('a push being resolved at a reset', () {
+    Future<(WalletTestBed, ProviderContainer)> wallet(WidgetTester tester) async {
+      final bed = WalletTestBed();
+      final container = ProviderContainer(overrides: bed.overrides);
+      container.read(notificationProvider);
+      await tester.pump();
+      return (bed, container);
+    }
+
+    Future<void> expectNothingAdded(ProviderContainer container) async {
+      expect(container.read(notificationProvider), isEmpty);
+      expect(container.read(notificationProvider.notifier).getScheduledNotificationIds(), isEmpty);
+      expect((await SharedPreferences.getInstance()).getStringList(notificationsStorageKey), isNull);
+    }
+
+    testWidgets('one answering during the wipe adds, saves and schedules nothing', (tester) async {
+      final (bed, container) = await wallet(tester);
+      final resolved = Completer<NotificationData?>();
+      final pushed = addResolvedNotification(container.read, () => resolved.future);
+      final wipe = bed.substrate.holdWipe = Completer<void>();
+
+      final logout = container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      resolved.complete(_reminderIn(const Duration(hours: 1)));
+      await pushed;
+      await tester.pump();
+
+      await expectNothingAdded(container);
+      wipe.complete();
+      await logout;
+      await tester.pump();
+      await expectNothingAdded(container);
+      await tester.pump();
+      container.dispose();
+    });
+
+    testWidgets('one that starts during the wipe and answers after it adds nothing', (tester) async {
+      final (bed, container) = await wallet(tester);
+      final wipe = bed.substrate.holdWipe = Completer<void>();
+      final logout = container.read(logoutServiceProvider).logout();
+      await tester.pump();
+      final resolved = Completer<NotificationData?>();
+      final pushed = addResolvedNotification(container.read, () => resolved.future);
+
+      wipe.complete();
+      await logout;
+      await tester.pump();
+      resolved.complete(_reminderIn(const Duration(hours: 1)));
+      await pushed;
+      await tester.pump();
+
+      await expectNothingAdded(container);
+      await tester.pump();
+      container.dispose();
+    });
+
+    testWidgets('one answering after a wipe that failed is added', (tester) async {
+      final (bed, container) = await wallet(tester);
+      final resolved = Completer<NotificationData?>();
+      final pushed = addResolvedNotification(container.read, () => resolved.future);
+      bed.substrate.logoutError = StateError('the wipe failed');
+
+      await expectLater(container.read(logoutServiceProvider).logout(), throwsStateError);
+      resolved.complete(_shown('kept'));
+      await pushed;
+      await tester.pump();
+
+      expect(container.read(notificationProvider).map((n) => n.id), ['kept']);
+      container.dispose();
+    });
+
+    testWidgets('with no reset, one is added', (tester) async {
+      final (_, container) = await wallet(tester);
+
+      await addResolvedNotification(container.read, () async => _shown('pushed'));
+      await tester.pump();
+
+      expect(container.read(notificationProvider).map((n) => n.id), ['pushed']);
+      container.dispose();
+    });
+
+    testWidgets('one that resolves to nothing adds nothing', (tester) async {
+      final (_, container) = await wallet(tester);
+
+      await addResolvedNotification(container.read, () async => null);
+      await tester.pump();
+
+      await expectNothingAdded(container);
+      container.dispose();
+    });
+  });
+
   group('a multisig being created at a reset', () {
     /// A wallet waiting for the indexer to answer about a multisig it created.
     Future<_Creating> creating(WidgetTester tester, {bool expired = false}) async {
