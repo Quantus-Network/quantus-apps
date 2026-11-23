@@ -86,6 +86,9 @@ class _Config extends RemoteConfigNotifier {
 class _NoNotifications implements LocalNotifications {
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async {}
+
+  @override
+  Future<void> cancelAll() async {}
 }
 
 /// 1Click as far as a confirmation asks it: a live quote for a dry one, and
