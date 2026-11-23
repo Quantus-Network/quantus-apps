@@ -1,5 +1,7 @@
 #include "camera.h"
 
+#include <mferror.h>
+
 #include <cstdint>
 #include <initializer_list>
 #include <utility>
@@ -7,6 +9,7 @@
 
 #include "frame_sizes.h"
 #include "nv12.h"
+#include "windows_status.h"
 #include "yuy2.h"
 
 using Microsoft::WRL::ComPtr;
@@ -17,13 +20,15 @@ namespace {
 
 constexpr DWORD kVideoStream = static_cast<DWORD>(MF_SOURCE_READER_FIRST_VIDEO_STREAM);
 
-CameraStatus StatusOf(HRESULT result) {
-  if (result == E_ACCESSDENIED) return CameraStatus::kPermissionDenied;
-  if (result == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION) || result == HRESULT_FROM_WIN32(ERROR_BUSY)) {
-    return CameraStatus::kBusy;
-  }
-  return CameraStatus::kFailed;
-}
+static_assert(kErrorAccessDenied == static_cast<uint32_t>(E_ACCESSDENIED), "E_ACCESSDENIED");
+static_assert(kErrorSharingViolation == (0x80070000u | ERROR_SHARING_VIOLATION), "ERROR_SHARING_VIOLATION");
+static_assert(kErrorBusy == (0x80070000u | ERROR_BUSY), "ERROR_BUSY");
+static_assert(kErrorHardwareStartFailed == static_cast<uint32_t>(MF_E_HW_MFT_FAILED_START_STREAMING),
+              "MF_E_HW_MFT_FAILED_START_STREAMING");
+static_assert(kErrorRecordingPreempted == static_cast<uint32_t>(MF_E_VIDEO_RECORDING_DEVICE_PREEMPTED),
+              "MF_E_VIDEO_RECORDING_DEVICE_PREEMPTED");
+
+CameraStatus StatusOf(HRESULT result) { return StatusOfError(static_cast<uint32_t>(result)); }
 
 // Windows N and KN ship without Media Foundation. The plugin delay-loads it so
 // that the wallet still starts there, which makes this check required before
@@ -126,8 +131,7 @@ CameraStatus Camera::TryFormat(PixelFormat format, uint32_t wanted_width, uint32
   if (FAILED(result)) return StatusOf(result);
 
   result = reader_->SetCurrentMediaType(kVideoStream, nullptr, wanted.Get());
-  if (result == E_ACCESSDENIED || result == HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION)) return StatusOf(result);
-  if (FAILED(result)) return CameraStatus::kUnsupported;
+  if (FAILED(result)) return StatusOfRejectedFormat(static_cast<uint32_t>(result));
 
   // What the driver actually agreed to, which is what frames will hold.
   ComPtr<IMFMediaType> current;
@@ -216,10 +220,7 @@ void Camera::CaptureLoop() {
     const HRESULT result = reader_->ReadSample(kVideoStream, 0, &stream, &flags, &timestamp, &sample);
 
     if (FAILED(result)) {
-      if (streaming_.load()) {
-        const CameraStatus status = StatusOf(result);
-        failure_.store(status == CameraStatus::kFailed ? CameraStatus::kStopped : status);
-      }
+      if (streaming_.load()) failure_.store(StatusOfStreamError(static_cast<uint32_t>(result)));
       break;
     }
     if (flags & (MF_SOURCE_READERF_ERROR | MF_SOURCE_READERF_ENDOFSTREAM)) {

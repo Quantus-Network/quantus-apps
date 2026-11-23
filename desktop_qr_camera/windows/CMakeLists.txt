@@ -27,6 +27,7 @@ add_library(${PLUGIN_NAME} SHARED
   "../native/camera.h"
   "../native/frame_sizes.h"
   "../native/nv12.h"
+  "../native/windows_status.h"
   "../native/yuy2.h"
 )
 

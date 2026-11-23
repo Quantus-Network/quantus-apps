@@ -1,5 +1,5 @@
-// Which sizes the Windows camera tries, and how it reads NV12. It needs no
-// camera, so it runs anywhere, under the sanitizers:
+// Which sizes the Windows camera tries, how it reads NV12, and how it tells its
+// errors apart. It needs no camera, so it runs anywhere, under the sanitizers:
 //
 //   c++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror \
 //     -fsanitize=address,undefined -I native test/native/windows_format_test.cpp \
@@ -11,11 +11,21 @@
 
 #include "frame_sizes.h"
 #include "nv12.h"
+#include "windows_status.h"
 
+using desktop_qr_camera::CameraStatus;
 using desktop_qr_camera::ConvertNv12;
 using desktop_qr_camera::FrameSize;
+using desktop_qr_camera::kErrorAccessDenied;
+using desktop_qr_camera::kErrorBusy;
+using desktop_qr_camera::kErrorHardwareStartFailed;
+using desktop_qr_camera::kErrorRecordingPreempted;
+using desktop_qr_camera::kErrorSharingViolation;
 using desktop_qr_camera::kMaxFrameSide;
 using desktop_qr_camera::SizesNearestWanted;
+using desktop_qr_camera::StatusOfError;
+using desktop_qr_camera::StatusOfRejectedFormat;
+using desktop_qr_camera::StatusOfStreamError;
 using desktop_qr_camera::WriteRgba;
 
 static int failures = 0;
@@ -180,9 +190,49 @@ void TestNoSourceIsRefused() {
   CHECK(!ConvertNv12(nullptr, 6, 2, 2, 2, out.rgba.data(), out.rgba.size(), out.luma.data(), out.luma.size()));
 }
 
+const uint32_t kBusyCodes[] = {kErrorSharingViolation, kErrorBusy, kErrorHardwareStartFailed, kErrorRecordingPreempted};
+const uint32_t kDeviceInvalidated = 0xC00D3EA2;
+const uint32_t kSomeOtherError = 0x80004005;
+
+void TestEveryBusyCodeIsBusy() {
+  for (uint32_t code : kBusyCodes) CHECK(StatusOfError(code) == CameraStatus::kBusy);
+}
+
+void TestAccessDeniedIsAPermissionProblem() {
+  CHECK(StatusOfError(kErrorAccessDenied) == CameraStatus::kPermissionDenied);
+}
+
+void TestAnyOtherErrorIsAPlainFailure() { CHECK(StatusOfError(kSomeOtherError) == CameraStatus::kFailed); }
+
+void TestARejectedFormatStaysBusyOrDenied() {
+  for (uint32_t code : kBusyCodes) CHECK(StatusOfRejectedFormat(code) == CameraStatus::kBusy);
+  CHECK(StatusOfRejectedFormat(kErrorAccessDenied) == CameraStatus::kPermissionDenied);
+}
+
+void TestAnyOtherRejectedFormatMeansTryTheNext() {
+  CHECK(StatusOfRejectedFormat(kSomeOtherError) == CameraStatus::kUnsupported);
+}
+
+void TestAReadFailingBecauseAnotherAppHoldsTheCameraIsBusy() {
+  for (uint32_t code : kBusyCodes) CHECK(StatusOfStreamError(code) == CameraStatus::kBusy);
+  CHECK(StatusOfStreamError(kErrorAccessDenied) == CameraStatus::kPermissionDenied);
+}
+
+void TestAReadFailingBecauseTheCameraWentAwayIsStopped() {
+  CHECK(StatusOfStreamError(kDeviceInvalidated) == CameraStatus::kStopped);
+  CHECK(StatusOfStreamError(kSomeOtherError) == CameraStatus::kStopped);
+}
+
 }  // namespace
 
 int main() {
+  TestEveryBusyCodeIsBusy();
+  TestAccessDeniedIsAPermissionProblem();
+  TestAnyOtherErrorIsAPlainFailure();
+  TestARejectedFormatStaysBusyOrDenied();
+  TestAnyOtherRejectedFormatMeansTryTheNext();
+  TestAReadFailingBecauseAnotherAppHoldsTheCameraIsBusy();
+  TestAReadFailingBecauseTheCameraWentAwayIsStopped();
   TestSizesAreTriedNearest720pFirst();
   TestASizeOfferedInSeveralFormatsIsTriedOnce();
   TestSizesThatCannotBeReadAreDropped();
