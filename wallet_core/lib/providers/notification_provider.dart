@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/services/local_notifications.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
+import 'package:wallet_core/utils/provider_reader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Maximum number of notifications to keep (FIFO)
@@ -20,17 +22,33 @@ final notificationProvider = StateNotifierProvider<NotificationNotifier, List<No
   final localNotifications = ref.watch(localNotificationsProvider);
   final notificationConfig = ref.watch(notificationConfigProvider);
 
-  return NotificationNotifier(localNotifications, notificationConfig);
+  return NotificationNotifier(localNotifications, notificationConfig, ref.read(walletSessionProvider));
 });
+
+/// Adds the notification [resolve] answers with, unless the wallet was reset
+/// while it was being resolved: it would be saved into the wiped storage, or
+/// scheduled to fire in the next wallet.
+Future<void> addResolvedNotification(ProviderReader read, Future<NotificationData?> Function() resolve) async {
+  final session = read(walletSessionProvider);
+  final ticket = session.ticket;
+  final notification = await resolve();
+  if (notification == null) return;
+  if (!session.stillCurrent(ticket, dropping: 'the notification ${notification.id}')) return;
+  await read(notificationProvider.notifier).addNotification(notification);
+}
 
 /// Notifier that manages notification state with persistence and streams
 class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   final LocalNotifications _localNotifications;
   final NotificationConfig _config;
 
+  /// Held back from during a reset: what this notifier's own timers do would
+  /// write the old wallet's list into the wiped storage.
+  final WalletSession _session;
+
   final Map<String, Timer> _scheduledTimers = {};
 
-  NotificationNotifier(this._localNotifications, this._config) : super([]) {
+  NotificationNotifier(this._localNotifications, this._config, this._session) : super([]) {
     _initialize();
   }
 
@@ -136,8 +154,10 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
     // Schedule timer to show notification at the right time
     final timer = Timer(duration, () {
-      _addNotificationImmediately(notification);
       _scheduledTimers.remove(notification.id);
+      _session.unlessWiped(() {
+        if (mounted) _addNotificationImmediately(notification);
+      });
     });
 
     _scheduledTimers[notification.id] = timer;
@@ -148,6 +168,11 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    if (_session.isResetting) {
+      _session.unlessWiped(() => unawaited(_saveNotifications()));
+      return;
+    }
     final notificationsJson = state
         .where((notification) => notification.persistent)
         .map((notification) => jsonEncode(notification.toJson()))
@@ -305,6 +330,7 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   @override
   void dispose() {
+    unawaited(cancelAllNotifications());
     _cleanupTimer?.cancel();
     _localAlertController.close();
     _localPushController.close();
