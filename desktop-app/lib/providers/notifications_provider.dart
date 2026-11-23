@@ -119,6 +119,16 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     state = NotificationsUnavailable(error is StateError ? error.message : '$error');
   }
 
+  /// Removes what the system still shows of a wallet that was wiped, and drops
+  /// a click still waiting for its accounts. Nothing can be asked of a system
+  /// whose notifications have not started or are unavailable.
+  @override
+  Future<void> cancelAll() async {
+    ref.read(notificationClickProvider).drop();
+    if (state is NotificationsStarting || state is NotificationsUnavailable) return;
+    await ref.read(notificationPluginProvider).cancelAll();
+  }
+
   /// Shows [notification] now. Callers check [state] first: showing one the
   /// system does not allow fails.
   @override

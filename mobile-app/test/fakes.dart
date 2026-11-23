@@ -355,6 +355,9 @@ class FakeLocalNotifications implements LocalNotifications {
 
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async => shown.add(notification);
+
+  @override
+  Future<void> cancelAll() async {}
 }
 
 /// Collects event and error names instead of sending them.

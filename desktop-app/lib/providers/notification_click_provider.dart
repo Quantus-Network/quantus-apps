@@ -60,6 +60,12 @@ class NotificationClick {
     unawaited(_follow(click, accountId, hash));
   }
 
+  /// Drops the click being followed: its wallet was wiped.
+  void drop() {
+    _current = null;
+    _cancelWait?.call();
+  }
+
   Future<void> _follow(Object click, String accountId, String? hash) async {
     // Before they have loaded, restoring the saved active account would undo
     // the switch.

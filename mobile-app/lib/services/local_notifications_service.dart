@@ -204,9 +204,9 @@ class LocalNotificationsService implements LocalNotifications {
     await _notificationPlugin.cancel(id: id);
   }
 
-  Future<void> cancelAllNotifications() async {
-    await _notificationPlugin.cancelAll();
-  }
+  // Not through [init]: a wallet reset must not bring up the permission prompt.
+  @override
+  Future<void> cancelAll() => _notificationPlugin.cancelAll();
 
   void dispose() {
     _onNotificationClick.close();

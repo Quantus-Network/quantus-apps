@@ -186,6 +186,27 @@ void main() {
     expect(_activeAccountId(container), savingsAccount.accountId);
   });
 
+  for (final refused in [false, true]) {
+    testOnMac('a reset drops a click still waiting for the accounts${refused ? ', even if the system refuses' : ''}', (
+      tester,
+    ) async {
+      final accounts = Completer<List<Account>>();
+      final notifications = FakeNotificationPlugin(launchedBy: _about(savingsAccount.accountId));
+      if (refused) notifications.cancelAllError = StateError('refused');
+      final container = await _openWallet(tester, notifications, loadAccounts: () => accounts.future, settle: false);
+      await tester.pump(const Duration(milliseconds: 100));
+
+      await container
+          .read(desktopLocalNotificationsProvider.notifier)
+          .cancelAll()
+          .catchError((Object _) {}, test: (_) => refused);
+      accounts.complete(const [mainAccount, savingsAccount]);
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), mainAccount.accountId);
+    });
+  }
+
   group('a click opens what the notification was about', () {
     testOnMac('a transfer in the open account', (tester) async {
       final row = _transfer();
@@ -706,6 +727,14 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(_opened(container), OpenedProposal(proposal));
+      });
+
+      testOnMac('a reset drops the click', (tester) async {
+        final (:container, :lookup, proposal: _) = await clicked(tester);
+
+        await container.read(desktopLocalNotificationsProvider.notifier).cancelAll();
+
+        await lookupAnswersWithNothingOpened(tester, container, lookup);
       });
 
       testOnMac('going to Mining Rewards and back drops the click', (tester) async {

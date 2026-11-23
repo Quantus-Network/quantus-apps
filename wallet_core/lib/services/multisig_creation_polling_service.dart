@@ -9,6 +9,7 @@ import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/services/multisig_creation_reconciliation.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 class MultisigCreationPollingService {
   final Ref _ref;
@@ -66,8 +67,11 @@ class MultisigCreationPollingService {
     if (!_inFlight.add(key)) return;
 
     try {
+      final session = _ref.read(walletSessionProvider);
+      final ticket = session.ticket;
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigIndexed(key);
+      if (!session.stillCurrent(ticket, dropping: 'recovering the creation of $key')) return;
       if (exists) {
         await _confirmCreation(record.draft, key, record.networkFee);
       } else {
@@ -90,8 +94,11 @@ class MultisigCreationPollingService {
     if (!_inFlight.add(key)) return;
 
     try {
+      final session = _ref.read(walletSessionProvider);
+      final ticket = session.ticket;
       final service = _ref.read(multisigServiceProvider);
       final exists = await service.isMultisigIndexed(draft.accountId);
+      if (!session.stillCurrent(ticket, dropping: 'the indexer answer for $key')) return;
       if (!exists) {
         quantusPrint('[MultisigCreationPoller] not on-chain yet: ${draft.accountId}');
         return;
@@ -117,16 +124,19 @@ class MultisigCreationPollingService {
   }
 
   Future<void> _confirmCreation(MultisigAccount draft, String key, BigInt networkFee) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     stopPolling(key);
     removePendingMultisigCreation(_ref, key);
 
     final existing = _ref.read(multisigAccountsProvider).value ?? [];
     if (!existing.any((a) => a.accountId == draft.accountId)) {
-      await _ref.read(multisigAccountsProvider.notifier).add(draft);
+      if (!await _ref.read(multisigAccountsProvider.notifier).add(draft)) return;
       _ref.invalidate(discoveredMultisigsProvider);
     }
 
     await reconcileConfirmedMultisigCreation(_ref, draft, networkFee: networkFee);
+    if (!await session.survivesReset(ticket, dropping: 'the toast for creating $key')) return;
 
     _ref.read(globalToastProvider.notifier).showSuccess(_ref.read(l10nProvider).multisigCreateReadyToast);
   }
