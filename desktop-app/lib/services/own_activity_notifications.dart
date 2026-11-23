@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/notification_status.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -26,7 +27,16 @@ import 'package:wallet_core/services/telemetry.dart';
 /// What happens elsewhere (funds received, what other signers do) is for
 /// remote notifications.
 class OwnActivityNotifications {
+  /// How long a notification handed over still needs the app: macOS's
+  /// notification plugin answers before macOS has taken it.
+  static const settleDelay = Duration(seconds: 2);
+
   OwnActivityNotifications(this._ref) {
+    _ref.onDispose(() {
+      for (final timer in _settling) {
+        timer.cancel();
+      }
+    });
     _ref.listen(pendingTransactionsProvider, (_, sends) => _onSends(sends));
     _ref.listen(pendingMultisigProposalsProvider, (_, proposals) => _onProposals(proposals));
     _ref.listen(
@@ -45,21 +55,19 @@ class OwnActivityNotifications {
   /// leaves the pending proposals before that.
   final _proposals = <String, PendingMultisigProposalEvent>{};
 
-  /// The notifications on their way to the system.
-  final _handingOver = <Future<void>>{};
+  /// One for each notification handed over less than [settleDelay] ago.
+  final _settling = <Timer>{};
 
-  /// Completes once every notification on its way has been handed to the
-  /// system, those that one being handed over leads to included.
-  Future<void> get handedOver async {
-    while (_handingOver.isNotEmpty) {
-      await Future.wait(_handingOver.toList());
-    }
-  }
+  /// Whether a notification was handed over so recently that quitting now
+  /// could still lose it.
+  bool get isSettling => _settling.isNotEmpty;
 
-  /// Keeps [handingOver], which reports its own failures, until it is done.
-  void _track(Future<void> handingOver) {
-    _handingOver.add(handingOver);
-    unawaited(handingOver.whenComplete(() => _handingOver.remove(handingOver)));
+  /// Counts [delivering], which reports its own failures, as work under way
+  /// until it is done.
+  void _holdWhile(Future<void> delivering) {
+    final holds = _ref.read(workHoldsProvider.notifier);
+    holds.hold(delivering);
+    unawaited(delivering.whenComplete(() => holds.release(delivering)));
   }
 
   void _onSends(List<PendingTransactionEvent> sends) {
@@ -71,7 +79,7 @@ class OwnActivityNotifications {
           _sends[send.id] = (send: send, broadcastAt: now);
         case TransactionState.inHistory when watched != null:
           _sends.remove(send.id);
-          _track(_notifySent(send));
+          _holdWhile(_notifySent(send));
         case TransactionState.failed when watched != null:
           _sends.remove(send.id);
           // The amount it was recorded with: what it set out to send.
@@ -234,12 +242,16 @@ class OwnActivityNotifications {
       timestamp: clock.now(),
       persistent: false,
     );
-    _track(_showNow(notification));
+    _holdWhile(_showNow(notification));
   }
 
   Future<void> _showNow(NotificationData notification) async {
     try {
       await _ref.read(desktopLocalNotificationsProvider.notifier).showOrScheduleNotification(notification);
+      if (!_ref.mounted) return;
+      late final Timer settled;
+      settled = Timer(settleDelay, () => _settling.remove(settled));
+      _settling.add(settled);
     } catch (e) {
       quantusPrint('Showing a notification failed: $e');
       _ref.read(telemetryProvider).sendError('desktop_notification_show_failed', error: e);

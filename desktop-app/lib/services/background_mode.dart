@@ -45,9 +45,8 @@ final pendingWorkProvider = Provider<bool>(
 /// ([pendingWorkProvider]), where the platform can ([supportsBackgroundMode]).
 /// Otherwise closing the window quits the app.
 class BackgroundMode {
-  /// How long the app stays once its last notification was handed over:
-  /// macOS's notification plugin answers before macOS has taken it.
-  static const settleDelay = Duration(seconds: 2);
+  /// How long the app stays once its last work has settled.
+  static const settleDelay = OwnActivityNotifications.settleDelay;
 
   /// How long the window stays closed with work that has not settled. A chain
   /// call has no timeout of its own, so one that hangs would otherwise leave
@@ -71,7 +70,7 @@ class BackgroundMode {
     );
     _ref.listen<bool>(pendingWorkProvider, (_, isPending) {
       unawaited(_reported(_window.setStayAwake(isPending)));
-      if (!isPending) unawaited(_quitOnceHandedOver());
+      if (!isPending) _quitOnceSettled();
     });
     // A menu still works with the window closed, and what it opens must show.
     _ref.listen<ShellSheet?>(shellSheetProvider, (_, sheet) {
@@ -89,16 +88,16 @@ class BackgroundMode {
   /// Runs for [settleDelay] once the work has settled and been reported.
   Timer? _quitTimer;
 
-  /// Which settling of the work the app is getting ready to quit on: only the
-  /// latest may.
-  int _quitAttempt = 0;
-
   WindowClosedNotifier get _closed => _ref.read(windowClosedProvider.notifier);
+
+  /// Whether quitting now would cut work short or lose what it has to say.
+  /// Every way of closing or quitting asks this, but Quit Now.
+  bool get _mustStay => _ref.read(pendingWorkProvider) || _ref.read(ownActivityNotificationsProvider).isSettling;
 
   /// File › Close Window: hides the window while work is under way, and
   /// otherwise asks the app to quit.
   Future<void> closeWindow() async {
-    if (!supportsBackgroundMode || !_ref.read(pendingWorkProvider)) {
+    if (!supportsBackgroundMode || !_mustStay) {
       _ref.read(requestAppExitProvider)();
       return;
     }
@@ -129,7 +128,7 @@ class BackgroundMode {
   /// while an answer is outstanding the engine takes another request to quit
   /// as settled, and would quit with no question.
   Future<AppExitResponse> _onQuitRequested() async {
-    if (!_ref.read(pendingWorkProvider)) return AppExitResponse.exit;
+    if (!_mustStay) return AppExitResponse.exit;
     // Also when already asking: the window may have been closed behind it.
     if (_ref.read(windowClosedProvider)) unawaited(_reported(_window.bringToFront()));
     _ref.read(quitQuestionProvider.notifier).set(true);
@@ -139,7 +138,7 @@ class BackgroundMode {
   /// The close button: whether the window is to hide, decided now so that
   /// work started a moment ago counts. If not, it closes, which quits the app.
   Future<bool> _onCloseButton() async {
-    if (!_ref.read(pendingWorkProvider)) return false;
+    if (!_mustStay) return false;
     await _getReadyToClose();
     return true;
   }
@@ -150,6 +149,8 @@ class BackgroundMode {
     _closed.set(true);
     _hiddenLimitTimer?.cancel();
     _hiddenLimitTimer = Timer(hiddenLimit, _onHiddenTooLong);
+    // Only a notification's last moment is left: no more work will settle.
+    if (!_ref.read(pendingWorkProvider)) _quitOnceSettled();
     final scheduler = SchedulerBinding.instance;
     if (scheduler.framesEnabled) await scheduler.endOfFrame;
   }
@@ -163,18 +164,17 @@ class BackgroundMode {
     _closed.set(false);
   }
 
-  /// With the window closed, quits once what the settled work has to say was
-  /// handed to the system.
-  Future<void> _quitOnceHandedOver() async {
-    final attempt = ++_quitAttempt;
+  /// With the window closed, quits a moment after the work has settled,
+  /// unless more has started by then.
+  void _quitOnceSettled() {
     _quitTimer?.cancel();
-    // A proposal leaves the pending list just before its outcome is recorded.
-    await Future<void>.microtask(() {});
-    if (!_ref.mounted) return;
-    await _ref.read(ownActivityNotificationsProvider).handedOver;
-    if (!_ref.mounted || attempt != _quitAttempt || !_ref.read(windowClosedProvider)) return;
+    if (!_ref.read(windowClosedProvider)) return;
     _quitTimer = Timer(settleDelay, () {
       if (_ref.read(pendingWorkProvider)) return;
+      if (_ref.read(ownActivityNotificationsProvider).isSettling) {
+        _quitOnceSettled();
+        return;
+      }
       _ref.read(requestAppExitProvider)();
     });
   }

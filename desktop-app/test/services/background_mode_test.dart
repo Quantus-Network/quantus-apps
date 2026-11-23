@@ -111,6 +111,49 @@ Future<void> _pressClose(WidgetTester tester, FakeBackgroundWindow window) async
   await tester.pumpAndSettle();
 }
 
+/// A wallet whose indexer holds Main's send, with a broadcast send under way.
+Future<_Opened> _openOnASend(
+  WidgetTester tester,
+  FakeNotificationPlugin notifications, {
+  FakeWalletDevice? device,
+}) async {
+  const sendHash = '0xsend';
+  device ??= FakeWalletDevice();
+  device.chain.indexedTransfers[sendHash] = TransferEvent(
+    id: 'indexed-send',
+    from: mainAccount.accountId,
+    to: 'qzBob',
+    amount: oneToken,
+    timestamp: DateTime(2026),
+    fee: BigInt.zero,
+    extrinsicHash: sendHash,
+    blockNumber: 10,
+    blockHash: '0xblock',
+  );
+  final opened = await _open(tester, onDevice: device, notifications: notifications);
+  final sends = opened.container.read(pendingTransactionsProvider.notifier);
+  sends.add(
+    PendingTransactionEvent(
+      tempId: 'tx-1',
+      from: mainAccount.accountId,
+      to: 'qzBob',
+      amount: oneToken,
+      fee: BigInt.zero,
+      timestamp: DateTime(2026),
+    ),
+  );
+  sends.updateState('tx-1', TransactionState.pending, extrinsicHash: sendHash);
+  await tester.pump();
+  return opened;
+}
+
+/// What the wallet does once it has found the send of [_openOnASend].
+void _confirmSend(ProviderContainer container) {
+  final sends = container.read(pendingTransactionsProvider.notifier);
+  sends.updateState('tx-1', TransactionState.inHistory);
+  sends.remove('tx-1');
+}
+
 Finder _inSheet(Finder matching) => find.descendant(of: find.byType(ShellSheetView), matching: matching);
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
@@ -505,42 +548,15 @@ void main() {
   });
 
   group('closed until the work settles', () {
-    const sendHash = '0xsend';
     const proposalHash = '0xproposal';
 
-    /// A wallet whose indexer holds Main's send, with a broadcast send under
-    /// way, its window closed.
+    /// [_openOnASend], its window closed.
     Future<_Opened> closedOnASend(
       WidgetTester tester,
       FakeNotificationPlugin notifications, {
       FakeWalletDevice? device,
     }) async {
-      device ??= FakeWalletDevice();
-      device.chain.indexedTransfers[sendHash] = TransferEvent(
-        id: 'indexed-send',
-        from: mainAccount.accountId,
-        to: 'qzBob',
-        amount: oneToken,
-        timestamp: DateTime(2026),
-        fee: BigInt.zero,
-        extrinsicHash: sendHash,
-        blockNumber: 10,
-        blockHash: '0xblock',
-      );
-      final opened = await _open(tester, onDevice: device, notifications: notifications);
-      final sends = opened.container.read(pendingTransactionsProvider.notifier);
-      sends.add(
-        PendingTransactionEvent(
-          tempId: 'tx-1',
-          from: mainAccount.accountId,
-          to: 'qzBob',
-          amount: oneToken,
-          fee: BigInt.zero,
-          timestamp: DateTime(2026),
-        ),
-      );
-      sends.updateState('tx-1', TransactionState.pending, extrinsicHash: sendHash);
-      await tester.pump();
+      final opened = await _openOnASend(tester, notifications, device: device);
       await _pressClose(tester, opened.window);
       return opened;
     }
@@ -736,6 +752,62 @@ void main() {
       expect(exits, ['exit']);
     });
 
+    testOnMac('work that comes and goes during the last moment starts that moment again', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      final holds = container.read(workHoldsProvider.notifier);
+      await _pressClose(tester, window);
+      holds.release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay ~/ 2);
+
+      holds.hold('brief work');
+      await tester.pump();
+      holds.release('brief work');
+      await tester.pump();
+
+      await tester.pump(BackgroundMode.settleDelay - const Duration(milliseconds: 1));
+      expect(exits, isEmpty);
+
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('a notification handed over during the last moment gets its own', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final device = FakeWalletDevice();
+      device.storage.multisigStore.add(teamMultisig);
+      final (:window, :container, :exits) = await _open(tester, onDevice: device, notifications: notifications);
+      final proposals = container.read(pendingMultisigProposalsProvider.notifier);
+      proposals.add(
+        PendingMultisigProposalEvent(
+          tempId: 'proposal-1',
+          multisigAddress: teamMultisig.accountId,
+          proposerId: mainAccount.accountId,
+          recipient: 'qzBob',
+          amount: oneToken,
+          deposit: BigInt.zero,
+          expiryBlock: 100,
+          palletFee: BigInt.zero,
+        ),
+      );
+      proposals.update('proposal-1', extrinsicHash: proposalHash);
+      await tester.pump();
+      await _pressClose(tester, window);
+      proposals.remove('proposal-1');
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay ~/ 2);
+
+      container.read(multisigProposalConfirmationsProvider.notifier).settle(proposalHash, SendConfirmation.confirmed);
+      await tester.pump();
+      expect(notifications.shown, hasLength(1));
+
+      await tester.pump(BackgroundMode.settleDelay - const Duration(milliseconds: 1));
+      expect(exits, isEmpty);
+
+      await tester.pump(BackgroundMode.settleDelay);
+      expect(exits, ['exit']);
+    });
+
     testWidgets('work still under way at the limit brings the window back, quits nothing, and is reported', (
       tester,
     ) async {
@@ -912,6 +984,133 @@ void main() {
       expect(await requestQuit(tester), AppExitResponse.cancel);
 
       expect(find.text(title), findsOneWidget);
+    });
+
+    for (final (stage, hold) in <(String, Completer<void> Function(FakeWalletDevice, FakeNotificationPlugin))>[
+      ('being prepared', (device, _) => device.chain.holdHashSearch = Completer<void>()),
+      ('being handed over', (_, notifications) => notifications.heldShow = Completer<void>()),
+    ]) {
+      group('with a confirmed send\'s notification $stage', () {
+        Future<({_Opened opened, Completer<void> held})> confirmed(WidgetTester tester) async {
+          final notifications = FakeNotificationPlugin();
+          final device = FakeWalletDevice();
+          final opened = await _openOnASend(tester, notifications, device: device);
+          final held = hold(device, notifications);
+          _confirmSend(opened.container);
+          await tester.pump();
+          return (opened: opened, held: held);
+        }
+
+        Future<void> expectQuitsOnceDelivered(WidgetTester tester, _Opened opened, Completer<void> held) async {
+          expect(opened.window.calls, ['hide']);
+          expect(opened.exits, isEmpty);
+          await tester.pump(BackgroundMode.settleDelay * 2);
+          expect(opened.exits, isEmpty);
+
+          held.complete();
+          await tester.pump();
+          await tester.pump(BackgroundMode.settleDelay);
+          expect(opened.exits, ['exit']);
+        }
+
+        testOnMac('File › Close Window hides, and quits once it is delivered', (tester) async {
+          final (:opened, :held) = await confirmed(tester);
+
+          await _closeFromMenu(tester, opened.container);
+
+          await expectQuitsOnceDelivered(tester, opened, held);
+        });
+
+        testOnMac('the close button hides, and quits once it is delivered', (tester) async {
+          final (:opened, :held) = await confirmed(tester);
+
+          await _pressClose(tester, opened.window);
+
+          await expectQuitsOnceDelivered(tester, opened, held);
+        });
+
+        testOnMac('Cmd+Q stays and asks', (tester) async {
+          final (:opened, held: _) = await confirmed(tester);
+
+          expect(await requestQuit(tester), AppExitResponse.cancel);
+
+          expect(find.text(title), findsOneWidget);
+          expect(opened.exits, isEmpty);
+        });
+
+        testOnMac('Quit Now still quits at once', (tester) async {
+          final (:opened, held: _) = await confirmed(tester);
+          await requestQuit(tester);
+
+          await _tap(tester, find.text(quitNow));
+
+          expect(opened.exits, ['forced']);
+        });
+
+        testOnMac('Finish, Then Quit, the send having confirmed while it asked, waits for it', (tester) async {
+          final notifications = FakeNotificationPlugin();
+          final device = FakeWalletDevice();
+          final opened = await _openOnASend(tester, notifications, device: device);
+          await requestQuit(tester);
+          final held = hold(device, notifications);
+          _confirmSend(opened.container);
+          await tester.pump();
+
+          await _tap(tester, find.text(finishFirst));
+
+          await expectQuitsOnceDelivered(tester, opened, held);
+        });
+      });
+    }
+
+    group('just after a notification was handed over', () {
+      Future<_Opened> delivered(WidgetTester tester) async {
+        final opened = await _openOnASend(tester, FakeNotificationPlugin());
+        _confirmSend(opened.container);
+        await tester.pump();
+        await tester.pump(BackgroundMode.settleDelay ~/ 2);
+        return opened;
+      }
+
+      testOnMac('File › Close Window hides, and quits a moment later', (tester) async {
+        final opened = await delivered(tester);
+
+        await _closeFromMenu(tester, opened.container);
+
+        expect(opened.window.calls, ['hide']);
+        expect(opened.exits, isEmpty);
+        await tester.pump(BackgroundMode.settleDelay);
+        expect(opened.exits, ['exit']);
+      });
+
+      testOnMac('the close button hides, and quits a moment later', (tester) async {
+        final opened = await delivered(tester);
+
+        await _pressClose(tester, opened.window);
+
+        expect(opened.window.calls, ['hide']);
+        expect(opened.exits, isEmpty);
+        await tester.pump(BackgroundMode.settleDelay);
+        expect(opened.exits, ['exit']);
+      });
+
+      testOnMac('Cmd+Q stays and asks', (tester) async {
+        await delivered(tester);
+
+        expect(await requestQuit(tester), AppExitResponse.cancel);
+
+        expect(find.text(title), findsOneWidget);
+      });
+
+      testOnMac('once the moment has passed, closing quits at once', (tester) async {
+        final opened = await delivered(tester);
+        await tester.pump(BackgroundMode.settleDelay);
+
+        await _closeFromMenu(tester, opened.container);
+
+        expect(opened.exits, ['exit']);
+        expect(opened.window.calls, isEmpty);
+      });
     });
 
     testOnWindowsAndLinux('Windows and Linux quit without asking', (tester) async {
