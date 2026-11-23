@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -23,6 +24,7 @@ import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:wallet_core/services/logout_service.dart';
@@ -49,6 +51,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   final List<MultisigAccount> multisigs;
   final Map<int, String> walletNames;
   final Map<int, String> mnemonics;
+
+  /// The swap being followed, as the device keeps it.
+  ActiveSwap? activeSwap;
 
   /// The flags kept under plain keys. The boot intro counts as seen already,
   /// so it plays only in the tests that are about it.
@@ -127,7 +132,22 @@ class FakeSettingsService extends Fake implements SettingsService {
   String? getWalletName(int walletIndex) => walletNames[walletIndex];
 
   @override
-  ActiveSwap? getActiveSwap() => null;
+  ActiveSwap? getActiveSwap() => activeSwap;
+
+  @override
+  Future<void> setActiveSwap(ActiveSwap swap) async => activeSwap = swap;
+
+  @override
+  Future<void> clearActiveSwap() async => activeSwap = null;
+
+  @override
+  Future<void> clearSelectedAppLocale() async => locale = null;
+
+  @override
+  String? getSelectedFiatCurrency() => null;
+
+  @override
+  Future<void> clearSelectedFiatCurrency() async {}
 }
 
 class FakeAccountsService extends Fake implements AccountsService {
@@ -496,6 +516,12 @@ class _FakeSubstrateService extends Fake implements SubstrateService {
   Future<String> generateMnemonic() => device!.generateMnemonic();
 
   @override
+  Future<void> logout() async {
+    device!.logouts++;
+    device!._wipeStorage();
+  }
+
+  @override
   bool isValidSS58Address(String address) => chain.isValidAddress(address);
 
   @override
@@ -538,6 +564,22 @@ class FakeSendChain {
   /// The transfers the indexer holds, by the hash of the transaction each was
   /// sent in.
   final indexedTransfers = <String, TransactionEvent>{};
+
+  /// When set, reading a transfer by its hash fails with this.
+  Object? transferLookupError;
+
+  /// The hashes of the transfers read, in order.
+  final transferLookups = <String>[];
+
+  /// The proposals the indexer holds as created, by the hash of the
+  /// transaction each was created in.
+  final indexedProposals = <String, MultisigProposalCreatedEvent>{};
+
+  /// When set, looking a proposal up by its hash fails with this.
+  Object? proposalLookupError;
+
+  /// When set, looking a proposal up by its hash waits for it.
+  Completer<void>? holdProposalLookup;
 
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
@@ -631,6 +673,9 @@ class FakeSendChain {
   /// them.
   List<MultisigProposal> openProposals = const [];
   List<MultisigProposal> pastProposals = const [];
+
+  /// When set, a read of open proposals waits for it.
+  Completer<void>? holdOpenProposals;
 
   /// The multisigs whose open proposals were read, in order.
   final openProposalReads = <String>[];
@@ -737,6 +782,7 @@ class _FakeMultisigService extends Fake implements MultisigService {
   @override
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
     chain.openProposalReads.add(msig.accountId);
+    await chain.holdOpenProposals?.future;
     return chain.openProposals;
   }
 
@@ -756,8 +802,18 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   final FakeSendChain chain;
 
   @override
-  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async =>
-      chain.indexedTransfers[extrinsicHash];
+  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
+    chain.transferLookups.add(extrinsicHash);
+    if (chain.transferLookupError case final error?) throw error;
+    return chain.indexedTransfers[extrinsicHash];
+  }
+
+  @override
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
+    await chain.holdProposalLookup?.future;
+    if (chain.proposalLookupError case final error?) throw error;
+    return chain.indexedProposals[extrinsicHash];
+  }
 
   @override
   Future<SortedTransactionsList> fetchAllTransactionTypes({
@@ -891,13 +947,7 @@ class _WipingLogoutService extends Fake implements LogoutService {
   Future<void> logout() async {
     if (device.logoutError case final error?) throw error;
     device.logouts++;
-    device.storage
-      ..accounts.clear()
-      ..mnemonics.clear()
-      ..pendingScans.clear()
-      ..bools.clear()
-      ..strings.clear()
-      ..activeAccount = null;
+    device._wipeStorage();
   }
 }
 
@@ -908,6 +958,9 @@ class FakeWalletDevice {
 
   /// The chain as Send reaches it.
   final chain = FakeSendChain();
+
+  /// 1Click as a followed swap asks it.
+  final swaps = FakeSwapService();
 
   /// What every transparent account holds.
   BigInt balance = oneToken;
@@ -934,6 +987,17 @@ class FakeWalletDevice {
   /// When set, wiping the wallet fails with this.
   Object? logoutError;
 
+  /// Wipes through the real [LogoutService], for a test of what it resets.
+  bool realLogout = false;
+
+  void _wipeStorage() => storage
+    ..accounts.clear()
+    ..mnemonics.clear()
+    ..pendingScans.clear()
+    ..bools.clear()
+    ..strings.clear()
+    ..activeAccount = null;
+
   /// Puts a software wallet with [accounts] on the device.
   void store(List<Account> accounts, {String? mnemonic = 'a stored recovery phrase'}) {
     storage.accounts.addAll(accounts);
@@ -943,12 +1007,15 @@ class FakeWalletDevice {
 
   List<Override> get overrides => [
     settingsServiceProvider.overrideWithValue(storage),
+    swapServiceProvider.overrideWithValue(swaps),
+    // No logo is fetched: the marks are their letters.
+    swapTokenIconServiceProvider.overrideWithValue(FakeSwapTokenIcons()),
     accountsServiceProvider.overrideWithValue(_StoredAccountsService(storage)),
     hdWalletServiceProvider.overrideWithValue(_FakeHdWalletService()),
     substrateServiceProvider.overrideWithValue(_FakeSubstrateService(chain, device: this)),
     ...chain.overrides(substrate: false),
     accountDiscoveryServiceProvider.overrideWithValue(_FakeAccountDiscoveryService(this)),
-    logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
+    if (!realLogout) logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
     remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(FakeRemoteConfigService(remoteConfig))),
     balanceProviderFamily.overrideWith((ref, accountId) => balance),
     encryptedBalanceProvider.overrideWith(
@@ -1139,17 +1206,27 @@ class FakeRemoteConfigService extends RemoteConfigService {
 
   final RemoteConfigModel config;
 
+  /// What the server answers when asked; nothing new until a test says so.
+  RemoteConfigModel? remote;
+
+  /// How often the server was asked.
+  int reads = 0;
+
   @override
   RemoteConfigModel readLocalConfig() => config;
 
   @override
-  Future<RemoteConfigModel?> readRemoteConfig() async => null;
+  Future<RemoteConfigModel?> readRemoteConfig() async {
+    reads++;
+    return remote;
+  }
 
   @override
   Future<void> cacheConfig(Object json) async {}
 }
 
-const _swapsNotOffered = RemoteConfigModel(
+/// The flags where swaps are not allowed.
+const swapsNotOffered = RemoteConfigModel(
   enableTestButtons: false,
   enableKeystoneHardwareWallet: true,
   enableHighSecurity: false,
@@ -1165,7 +1242,9 @@ const _swapsNotOffered = RemoteConfigModel(
 /// A balance missing from [balances] or [encryptedBalances] fails to load.
 /// [loadAccounts] and [balanceOf] replace the plain lists for tests that need
 /// a load to hang or fail. The system's approval is [approval], or one that
-/// approves; Send reaches the chain through [chain].
+/// approves; Send reaches the chain through [chain]. Where swaps are allowed
+/// is read from [remoteConfig], or as [swapAvailable] says. 1Click is [swaps],
+/// or what [swapsOf] builds, for a test that has the service rebuilt.
 List<Override> shellOverrides({
   List<Account> accounts = const [],
   Future<List<Account>> Function()? loadAccounts,
@@ -1181,8 +1260,17 @@ List<Override> shellOverrides({
   Set<String> ownEncryptedAddresses = const {},
   FakeOneClickService? oneClick,
   FakeEncryptedSendController? proving,
+  FakeSwapService? swaps,
+  FakeSwapService Function(Ref ref)? swapsOf,
+  FakeRemoteConfigService? remoteConfig,
 }) {
   return [
+    if (swapsOf != null)
+      swapServiceProvider.overrideWith(swapsOf)
+    else
+      swapServiceProvider.overrideWithValue(swaps ?? FakeSwapService()),
+    // No logo is fetched: the marks are their letters.
+    swapTokenIconServiceProvider.overrideWithValue(FakeSwapTokenIcons()),
     systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
     ...(chain ?? FakeSendChain()).overrides(),
     if (depositAddress != null || encryptedStates.isNotEmpty)
@@ -1208,8 +1296,9 @@ List<Override> shellOverrides({
     settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService()),
     accountsServiceProvider.overrideWithValue(FakeAccountsService(loadAccounts ?? () async => accounts)),
     remoteConfigProvider.overrideWith(
-      (ref) =>
-          RemoteConfigNotifier(FakeRemoteConfigService(swapAvailable ? RemoteConfigModel.defaults : _swapsNotOffered)),
+      (ref) => RemoteConfigNotifier(
+        remoteConfig ?? FakeRemoteConfigService(swapAvailable ? RemoteConfigModel.defaults : swapsNotOffered),
+      ),
     ),
     balanceProviderFamily.overrideWith((ref, accountId) {
       if (balanceOf != null) return balanceOf(accountId);
@@ -1225,6 +1314,273 @@ List<Override> shellOverrides({
       return AsyncValue.data(balance);
     }),
   ];
+}
+
+/// 1Click as far as the app asks it: what it lists, what a swap would cost,
+/// a live order for one, and how a followed swap is doing.
+class FakeSwapService extends Fake implements SwapService {
+  /// What the next status poll answers for the order it is asked about; it
+  /// may throw. The order as it stands until a test says otherwise.
+  Future<SwapOrder> Function(SwapOrder order) status = (order) async => order;
+
+  /// How often the status was asked for.
+  int polls = 0;
+
+  @override
+  Future<SwapOrder> getSwapStatus(SwapOrder order) {
+    polls++;
+    return status(order);
+  }
+
+  /// What 1Click lists, QTC first; listing may throw.
+  Future<List<SwapToken>> Function() tokens = () async => const [
+    listedQtc,
+    usdcOnArbitrum,
+    usdcOnEthereum,
+    usdtOnEthereum,
+    wNear,
+  ];
+
+  /// QTC as 1Click lists it; null while it does not, or lists it unpriced.
+  SwapToken? listedQuantus = listedQtc;
+
+  /// How often the listing was asked for, and how often afresh.
+  int tokenLoads = 0;
+  int freshTokenLoads = 0;
+
+  @override
+  Future<List<SwapToken>> getFromTokens({bool forceRefresh = false}) {
+    tokenLoads++;
+    if (forceRefresh) freshTokenLoads++;
+    return tokens();
+  }
+
+  @override
+  Future<SwapToken?> getListedQuantusToken() async => listedQuantus;
+
+  /// What a dry quote answers for the swap asked about; it may throw. One at
+  /// listed prices, with nothing taken, until a test says otherwise.
+  Future<SwapQuote> Function(SwapQuoteRequest request) quote = (request) async => fakeQuoteFor(request);
+
+  /// Every swap a dry quote was asked for, in order.
+  final quoteRequests = <SwapQuoteRequest>[];
+
+  @override
+  Future<SwapQuote> getQuote({
+    required SwapToken from,
+    required SwapToken to,
+    required BigInt amount,
+    required String refundAddress,
+    required String recipient,
+    SwapType swapType = SwapType.exactInput,
+    int slippageBps = SwapService.defaultSlippageBps,
+    bool dry = true,
+  }) {
+    final request = (
+      from: from,
+      to: to,
+      amount: amount,
+      swapType: swapType,
+      refundAddress: refundAddress,
+      recipient: recipient,
+      slippageBps: slippageBps,
+    );
+    quoteRequests.add(request);
+    return quote(request);
+  }
+
+  /// What taking a live order for a reviewed quote answers; it may throw.
+  /// The quote as reviewed, awaiting its deposit, until a test says otherwise.
+  Future<SwapOrder> Function(SwapQuote reviewed) create = (reviewed) async =>
+      SwapOrder(quote: reviewed, status: SwapStatus.pendingDeposit);
+
+  /// Every quote a live order was taken for, in order.
+  final created = <SwapQuote>[];
+
+  @override
+  Future<SwapOrder> createSwap(SwapQuote quote) {
+    created.add(quote);
+    return create(quote);
+  }
+
+  /// The addresses saved for each network, most recent first.
+  final saved = <String, List<String>>{};
+
+  /// When set, reading the saved addresses, saving one or removing one fails
+  /// with it.
+  Object? savedReadError;
+  Object? saveError;
+  Object? removeError;
+
+  @override
+  Future<List<String>> getSavedAddresses(String network) async {
+    if (savedReadError case final error?) throw error;
+    return [...?saved[network]];
+  }
+
+  @override
+  Future<void> saveAddress(String network, String address) async {
+    if (saveError case final error?) throw error;
+    saved[network] = [address, ...?saved[network]?.where((a) => a != address)];
+  }
+
+  /// When set, a removal waits for it before it answers.
+  Completer<void>? removeHold;
+
+  @override
+  Future<void> removeSavedAddress(String network, String address) async {
+    await removeHold?.future;
+    if (removeError case final error?) throw error;
+    saved[network] = [...?saved[network]?.where((a) => a != address)];
+  }
+
+  /// Every deposit 1Click was told of: the order and the transaction's hash.
+  final deposits = <({SwapOrder order, String hash})>[];
+
+  @override
+  Future<void> submitDeposit(SwapOrder order, String txHash) async => deposits.add((order: order, hash: txHash));
+}
+
+/// Where 1Click takes the QTC of a swap out of it: an address on Quantus.
+const swapQuantusDepositAddress = 'qzSwapDeposit';
+
+/// A dry quote for [request] at listed prices, nothing taken by fees: its
+/// deposit goes within twenty minutes to [swapQuantusDepositAddress] when QTC
+/// is paid, else to [swapDepositAddress] on the other chain.
+SwapQuote fakeQuoteFor(SwapQuoteRequest request, {BigInt? withdrawFee, int feeBps = 0, DateTime? deadline}) {
+  final exactOutput = request.swapType == SwapType.exactOutput;
+  final amountIn = exactOutput ? swapEstimateOut(request.amount, request.to, request.from) : request.amount;
+  final amountOut = exactOutput ? request.amount : swapEstimateOut(request.amount, request.from, request.to);
+  final kept = BigInt.from(10000 - request.slippageBps);
+  final all = BigInt.from(10000);
+  return SwapQuote(
+    fromToken: request.from,
+    toToken: request.to,
+    swapType: request.swapType,
+    amountIn: exactOutput ? amountIn * all ~/ kept : amountIn,
+    minAmountIn: amountIn,
+    amountOut: amountOut,
+    minAmountOut: exactOutput ? amountOut : amountOut * kept ~/ all,
+    amountInUsd: swapUsdValue(amountIn, request.from),
+    amountOutUsd: swapUsdValue(amountOut, request.to),
+    slippageBps: request.slippageBps,
+    refundAddress: request.refundAddress,
+    recipient: request.recipient,
+    deadline: deadline ?? clock.now().add(const Duration(minutes: 20)),
+    timeEstimate: const Duration(minutes: 3),
+    correlationId: 'c',
+    signature: 's',
+    depositAddress: request.from.isQuantus ? swapQuantusDepositAddress : swapDepositAddress,
+    withdrawFee: withdrawFee,
+    feeBps: feeBps,
+  );
+}
+
+/// Token and chain logos that are never there, so nothing is fetched.
+class FakeSwapTokenIcons extends Fake implements SwapTokenIconService {
+  @override
+  Future<SwapTokenIcon?> iconFor(SwapToken token) async => null;
+
+  @override
+  Future<SwapTokenIcon?> imageAt(String url) async => null;
+}
+
+const usdcOnArbitrum = SwapToken(
+  assetId: 'nep141:arb-usdc.omft.near',
+  symbol: 'USDC',
+  network: 'ARB',
+  decimals: 6,
+  usdPrice: 1,
+);
+const usdcOnEthereum = SwapToken(
+  assetId: 'nep141:eth-usdc.omft.near',
+  symbol: 'USDC',
+  network: 'ETH',
+  decimals: 6,
+  usdPrice: 1,
+);
+const usdtOnEthereum = SwapToken(
+  assetId: 'nep141:eth-usdt.omft.near',
+  symbol: 'USDT',
+  network: 'ETH',
+  decimals: 6,
+  usdPrice: 1,
+);
+const wNear = SwapToken(assetId: 'nep141:wrap.near', symbol: 'wNEAR', network: 'NEAR', decimals: 24, usdPrice: 2.5);
+const listedQtc = SwapToken(
+  assetId: 'nep141:qtc.omft.near',
+  symbol: 'QTC',
+  network: SwapToken.quantusNetwork,
+  decimals: AppConstants.decimals,
+  usdPrice: 0.4188,
+  isQuantus: true,
+);
+const swapRecipient = '0x3EC8b9CD4a7e21F05c6D8B93aE7f12C4d6A1509f';
+const swapDepositAddress = '0x8F41c2B7e9A05d36C1f4E8a27B90d5C3e6F7A214';
+const swapDepositTx = '0x7f3c9a1e5b2d48c6a0f19e3b7d5c2a8e4f6b1d9c3a7e5f2b8d4c6a1e9f3b7d50';
+
+/// A live quote: 250 QTC out of [account] for 104.37 USDC on Arbitrum at
+/// [swapRecipient], or, the other way, 100 USDC from outside for 236.9 QTC
+/// into it, refunded at [swapRecipient]. Its deposit goes to
+/// [swapDepositAddress] by [deadline], twenty minutes from now unless said.
+SwapQuote fakeSwapQuote({
+  bool swapOut = true,
+  Account account = mainAccount,
+  DateTime? deadline,
+  String? depositMemo,
+}) => SwapQuote(
+  fromToken: swapOut ? listedQtc : usdcOnArbitrum,
+  toToken: swapOut ? usdcOnArbitrum : listedQtc,
+  amountIn: swapOut ? oneToken * BigInt.from(250) : BigInt.from(100000000),
+  minAmountIn: swapOut ? oneToken * BigInt.from(250) : BigInt.from(100000000),
+  amountOut: swapOut ? BigInt.from(104370000) : oneToken * BigInt.from(2369) ~/ BigInt.from(10),
+  minAmountOut: swapOut ? BigInt.from(103330000) : oneToken * BigInt.from(2345) ~/ BigInt.from(10),
+  amountInUsd: 104.7,
+  amountOutUsd: 104.37,
+  slippageBps: 100,
+  refundAddress: swapOut ? account.accountId : swapRecipient,
+  recipient: swapOut ? swapRecipient : account.accountId,
+  deadline: deadline ?? clock.now().add(const Duration(minutes: 20)),
+  timeEstimate: const Duration(minutes: 3),
+  correlationId: 'c',
+  signature: 's',
+  depositAddress: swapDepositAddress,
+  depositMemo: depositMemo,
+);
+
+/// A swap as it is followed, started [age] ago from [account]: the app sent
+/// a swap out's deposit, a swap in waits for one made by hand, [depositSent]
+/// once that was marked sent.
+ActiveSwap fakeActiveSwap({
+  bool swapOut = true,
+  SwapStatus status = SwapStatus.knownDepositTx,
+  Account account = mainAccount,
+  Duration age = const Duration(minutes: 3, seconds: 7),
+  DateTime? deadline,
+  String? depositMemo,
+  bool depositSent = false,
+  BigInt? amountOut,
+  String? refundReason,
+  String? pollError,
+}) {
+  final now = clock.now();
+  return ActiveSwap(
+    order: SwapOrder(
+      quote: fakeSwapQuote(swapOut: swapOut, account: account, deadline: deadline, depositMemo: depositMemo),
+      status: status,
+      amountOut: amountOut,
+      refundReason: refundReason,
+    ),
+    accountId: account.accountId,
+    accountName: account.name,
+    startedAt: now.subtract(age),
+    settledAt: status.isFinal ? now : null,
+    depositByHand: !swapOut,
+    depositSent: depositSent,
+    depositTxHash: swapOut ? swapDepositTx : null,
+    depositFee: swapOut ? FakeSendChain.usualFee : null,
+    pollError: pollError,
+  );
 }
 
 /// Looks checkphrases up with [lookup] for the rest of the test, in place

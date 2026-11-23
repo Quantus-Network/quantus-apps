@@ -11,8 +11,6 @@
     "@walletInitErrorButtonLabel": {
       "description": "Label for the button on the error dialog when the wallet is not found"
     },
-
-
     "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
     "@authUseDeviceBiometricsToUnlock": {
       "description": "Text for the text on the lock screen when using device biometrics to unlock"
@@ -29,7 +27,6 @@
     "@authAuthorizationRequired": {
       "description": "Text for displayed on the lock screen when authorization is required"
     },
-
     "welcomeTagline": "Quantum Secure Encrypted Money",
     "@welcomeTagline": {
       "description": "Tagline on the welcome screen"
@@ -42,7 +39,6 @@
     "@welcomeImportWallet": {
       "description": "Button to import an existing wallet on the welcome screen"
     },
-
     "createWalletCautionHeadline": "Keep your Recovery Phrase Secret",
     "@createWalletCautionHeadline": {
       "description": "Headline on the recovery phrase caution screen during wallet creation"
@@ -68,7 +64,6 @@
         }
       }
     },
-
     "recoveryPhraseBodyInstructions": "Write these words down in order and keep them somewhere only you can access. Do not screenshot or copy to a notes app.",
     "@recoveryPhraseBodyInstructions": {
       "description": "Instructions above the recovery phrase word grid"
@@ -89,7 +84,6 @@
     "@recoveryPhraseBodyCopiedMessage": {
       "description": "Toast when recovery phrase is copied"
     },
-
     "accountReadyAccountCreated": "Account Created",
     "@accountReadyAccountCreated": {
       "description": "Title when a new account is created"
@@ -122,7 +116,6 @@
     "@accountReadyGoToWallet": {
       "description": "Primary CTA on the wallet created ready screen"
     },
-
     "importWalletAppBarTitle": "Import Wallet",
     "@importWalletAppBarTitle": {
       "description": "App bar title on the import wallet screen"
@@ -159,7 +152,6 @@
     "@importWalletScanSkip": {
       "description": "Button that finishes the import without scanning for accounts"
     },
-
     "homeError": "Error: {error}",
     "@homeError": {
       "description": "Error message on the home screen",
@@ -197,7 +189,6 @@
     "@homeSwap": {
       "description": "Swap action button on the home screen"
     },
-
     "homeActivityTitle": "Activity",
     "@homeActivityTitle": {
       "description": "Section title for recent activity on the home screen"
@@ -227,7 +218,6 @@
         }
       }
     },
-
     "accountsSheetTitle": "Accounts",
     "@accountsSheetTitle": {
       "description": "Title of the accounts bottom sheet"
@@ -307,7 +297,6 @@
     "@walletNameHint": {
       "description": "Placeholder of the wallet name field"
     },
-
     "addAccountMenuTitle": "Add Account",
     "@addAccountMenuTitle": {
       "description": "App bar title on add account menu"
@@ -356,7 +345,6 @@
     "@addAccountMenuDiscoverMultisigSubtitle": {
       "description": "Discover multisig menu row subtitle"
     },
-
     "multisigTag": "MULTISIG",
     "@multisigTag": {
       "description": "Badge label for multisig accounts"
@@ -859,7 +847,6 @@
     "@multisigSignerPickerBody": {
       "description": "Body text on multi-local-signer approve picker sheet"
     },
-
     "multisigCancelProposalButton": "Cancel Proposal",
     "@multisigCancelProposalButton": {
       "description": "Cancel proposal button on detail screen"
@@ -1077,7 +1064,6 @@
     "@multisigApproveDoneRecordedSubline": {
       "description": "Subline when awaiting more approvals"
     },
-
     "createAccountAppBarTitle": "Account Name",
     "@createAccountAppBarTitle": {
       "description": "App bar title when creating an account"
@@ -1107,7 +1093,6 @@
         }
       }
     },
-
     "editAccountAppBarTitle": "Account Name",
     "@editAccountAppBarTitle": {
       "description": "App bar title when editing account name"
@@ -1124,7 +1109,6 @@
     "@editAccountRenameFailed": {
       "description": "Error when renaming account fails"
     },
-
     "accountMenuTitle": "Accounts",
     "@accountMenuTitle": {
       "description": "App bar title on account menu screen"
@@ -1254,12 +1238,10 @@
     "@accountMenuDeleteWalletConfirm": {
       "description": "Confirm button for permanently deleting a wallet and its recovery phrase"
     },
-
     "accountDetailsTitle": "Address Details",
     "@accountDetailsTitle": {
       "description": "App bar title on account details screen"
     },
-
     "innerHashTitle": "Inner Hash",
     "@innerHashTitle": {
       "description": "App bar title on the encrypted account inner hash screen"
@@ -1276,7 +1258,6 @@
     "@innerHashLoadError": {
       "description": "Toaster shown when deriving the inner hash fails"
     },
-
     "addKeystoneAppBarTitle": "Add Cold Wallet",
     "@addKeystoneAppBarTitle": {
       "description": "App bar title for the add Keystone wallet screens"
@@ -1317,12 +1298,10 @@
     "@addKeystoneReadyToScan": {
       "description": "Primary button opening the QR scanner on the Keystone connect instructions screen"
     },
-
     "invalidAddress": "Invalid address",
     "@invalidAddress": {
       "description": "Shown when an address fails SS58 validation"
     },
-
     "sendTitle": "Send",
     "@sendTitle": {
       "description": "Send flow app bar title"
@@ -1335,7 +1314,6 @@
     "@sendEnterAddress": {
       "description": "Button label when recipient address is missing"
     },
-
     "sendSelectRecipientSendTo": "Send To",
     "@sendSelectRecipientSendTo": {
       "description": "Section label on select recipient screen"
@@ -1370,7 +1348,6 @@
     "@sendSelectRecipientContinue": {
       "description": "Continue button on select recipient screen"
     },
-
     "sendInputAmountSendTo": "SEND TO",
     "@sendInputAmountSendTo": {
       "description": "Recipient card label on input amount screen"
@@ -1395,7 +1372,6 @@
     "@sendInputAmountInvalidAmount": {
       "description": "Error when amount input is invalid"
     },
-
     "sendReviewSending": "SENDING",
     "@sendReviewSending": {
       "description": "Sending section label on review screen"
@@ -1436,7 +1412,6 @@
     "@sendRegularAccountRequired": {
       "description": "Toast when a send is requested while the active account cannot make regular transfers"
     },
-
     "sendTxSubmittedHeadlinePaid": "{amount} {symbol} paid",
     "@sendTxSubmittedHeadlinePaid": {
       "description": "Success headline when payment completed",
@@ -1473,7 +1448,6 @@
     "@sendTxSubmittedDone": {
       "description": "Done button on transaction submitted screen"
     },
-
     "keystoneSignScreenTitle": "Sign with Cold Wallet",
     "@keystoneSignScreenTitle": {
       "description": "App bar title shared by the Keystone signing screens"
@@ -1590,7 +1564,6 @@
     "@keystoneRejectConfirm": {
       "description": "Button confirming the transaction was rejected on the device"
     },
-
     "sendLogicCantSelfTransfer": "Can't Self Transfer",
     "@sendLogicCantSelfTransfer": {
       "description": "Button label when sending to own address"
@@ -1623,7 +1596,6 @@
     "@sendLogicReviewSend": {
       "description": "Button label to proceed to review"
     },
-
     "activityTitle": "Activity",
     "@activityTitle": {
       "description": "App bar title on activity screen"
@@ -1665,7 +1637,6 @@
     "@activityDateYesterday": {
       "description": "Date group label for yesterday"
     },
-
     "activityTxSending": "Sending",
     "@activityTxSending": {
       "description": "Transaction row label for pending send"
@@ -1776,7 +1747,6 @@
         }
       }
     },
-
     "activityDetailTitleSending": "Sending",
     "@activityDetailTitleSending": {
       "description": "Detail sheet title for pending send"
@@ -1973,7 +1943,6 @@
     "@activityDetailMultisigFeePaidByCreator": {
       "description": "Note when creation fee was paid by another account"
     },
-
     "receiveTitle": "Receive",
     "@receiveTitle": {
       "description": "App bar title on receive screen"
@@ -2007,9 +1976,6 @@
     "@receiveCheckphraseFootnote": {
       "description": "Footnote under the checkphrase on the receive screen"
     },
-
-
-
     "settingsTitle": "Settings",
     "@settingsTitle": {
       "description": "App bar title on settings hub"
@@ -2062,7 +2028,6 @@
         }
       }
     },
-
     "settingsWalletRecoveryPhrase": "Recovery Phrase",
     "@settingsWalletRecoveryPhrase": {
       "description": "Recovery phrase row on wallet settings"
@@ -2087,7 +2052,6 @@
     "@settingsWalletFailedToLoad": {
       "description": "Error when wallet list fails to load"
     },
-
     "settingsSelectWalletTitle": "Select Wallet",
     "@settingsSelectWalletTitle": {
       "description": "App bar on select wallet screen"
@@ -2105,7 +2069,6 @@
         }
       }
     },
-
     "settingsRecoveryConfirmAuthReason": "Authenticate to see recovery phrase",
     "@settingsRecoveryConfirmAuthReason": {
       "description": "Biometric prompt when viewing recovery phrase"
@@ -2114,7 +2077,6 @@
     "@settingsRecoveryConfirmAuthRequired": {
       "description": "Toaster when auth fails for recovery phrase"
     },
-
     "settingsRecoveryPhraseTitle": "Recovery Phrase",
     "@settingsRecoveryPhraseTitle": {
       "description": "App bar on recovery phrase screen"
@@ -2127,7 +2089,6 @@
     "@settingsRecoveryAlreadyBackedUp": {
       "description": "Secondary action on the recovery phrase caution screen that dismisses the backup reminder without revealing the phrase"
     },
-
     "settingsResetTitle": "Reset Wallet",
     "@settingsResetTitle": {
       "description": "App bar on reset wallet caution screen"
@@ -2169,7 +2130,6 @@
     "@settingsResetCautionCheckbox": {
       "description": "Checkbox label on wallet reset caution"
     },
-
     "settingsPreferencesCurrency": "Currency",
     "@settingsPreferencesCurrency": {
       "description": "Currency row on preferences screen"
@@ -2194,7 +2154,6 @@
     "@settingsPreferencesNotificationsSubtitle": {
       "description": "Notifications row subtitle"
     },
-
     "settingsCurrencyTitle": "Currency",
     "@settingsCurrencyTitle": {
       "description": "App bar on currency picker"
@@ -2216,7 +2175,6 @@
         }
       }
     },
-
     "settingsLanguageTitle": "Language",
     "@settingsLanguageTitle": {
       "description": "App bar on language picker"
@@ -2238,22 +2196,14 @@
         }
       }
     },
-
-
-
     "settingsHelpScreenTitle": "Help & Support",
     "@settingsHelpScreenTitle": {
       "description": "App bar on help and support screen"
-    },
-    "settingsHelpEmail": "Email Support",
-    "@settingsHelpEmail": {
-      "description": "Email support row title"
     },
     "settingsHelpTelegram": "Telegram",
     "@settingsHelpTelegram": {
       "description": "Telegram row title"
     },
-
     "settingsAboutScreenTitle": "About",
     "@settingsAboutScreenTitle": {
       "description": "App bar on about screen"
@@ -2298,7 +2248,6 @@
         }
       }
     },
-
     "swapTitle": "Swap",
     "@swapTitle": {
       "description": "App bar title on swap screens"
@@ -2928,7 +2877,6 @@
         }
       }
     },
-
     "componentQrScannerBack": "Back",
     "@componentQrScannerBack": {
       "description": "Label next to the back caret on the QR scanner"
@@ -2977,7 +2925,6 @@
     "@componentAmountApproximatePrefix": {
       "description": "Prefix before a converted secondary amount"
     },
-
     "commonLoading": "Loading...",
     "@commonLoading": {
       "description": "Text for generic loading state"
@@ -3043,7 +2990,6 @@
     "@commonTryAgain": {
       "description": "Retry label shown when a list or quote fails to load"
     },
-
     "redeemCancel": "Cancel",
     "@redeemCancel": {
       "description": "Cancel button on redeem progress"
@@ -4942,5 +4888,198 @@
     "desktopCameraFailedBody": "Something went wrong with the camera. Try again.",
     "@desktopCameraFailedBody": {
       "description": "Desktop camera: any other failure, what to do"
+    },
+    "settingsHelpDiscord": "Discord",
+    "@settingsHelpDiscord": {
+      "description": "Discord support row title"
+    },
+    "swapSaveAddressFailed": "Could not save the address.",
+    "@swapSaveAddressFailed": {
+      "description": "Error toast when the entered swap address could not be saved for future swaps"
+    },
+    "commonSupportScamWarning": "Support will never DM you first or ask for your recovery phrase.",
+    "@commonSupportScamWarning": {
+      "description": "Warning against impostors, shown wherever the app sends someone to the support Discord"
+    },
+    "desktopNotificationEncryptedSendFailedBody": "{amount} from {account} didn’t finish sending. Part of it may have gone through.",
+    "@desktopNotificationEncryptedSendFailedBody": {
+      "description": "Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapAwaitingDeposit": "Awaiting deposit",
+    "@desktopSwapAwaitingDeposit": {
+      "description": "Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet"
+    },
+    "desktopSwapWaitingForDeposit": "Waiting for your deposit",
+    "@desktopSwapWaitingForDeposit": {
+      "description": "Desktop swap row: what a swap awaiting its deposit is waiting for"
+    },
+    "desktopSwapUntil": "until {time}",
+    "@desktopSwapUntil": {
+      "description": "Desktop swap: the time by which a deposit must be sent, after its status",
+      "placeholders": {
+        "time": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapFor": "For",
+    "@desktopSwapFor": {
+      "description": "Desktop swap row: label before what the swap is for"
+    },
+    "desktopSwapAmountOnNetwork": "{amount} on {network}",
+    "@desktopSwapAmountOnNetwork": {
+      "description": "Desktop swap: an amount with its token symbol and the network the token is on",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapForAmountOnNetwork": "for {amount} on {network}",
+    "@desktopSwapForAmountOnNetwork": {
+      "description": "Desktop swap panel: what the amount in the headline is swapped for; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapRecipientOn": "Recipient on {network}",
+    "@desktopSwapRecipientOn": {
+      "description": "Desktop swap panel: heading over the address a swap pays out at",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapTheRecipient": "the recipient",
+    "@desktopSwapTheRecipient": {
+      "description": "Desktop swap: who a swap pays out to, as the last step names it (Sending USDC to the recipient)"
+    },
+    "desktopSwapSendAmount": "Send {amount}",
+    "@desktopSwapSendAmount": {
+      "description": "Desktop swap panel: headline of a swap awaiting its deposit; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapCancel": "Cancel Swap",
+    "@desktopSwapCancel": {
+      "description": "Desktop swap panel: button that drops a swap whose deposit was not sent"
+    },
+    "desktopSwapViewDeposit": "View Deposit",
+    "@desktopSwapViewDeposit": {
+      "description": "Desktop swap panel: opens the deposit's transaction in the explorer"
+    },
+    "desktopSwapReceived": "{amount} received",
+    "@desktopSwapReceived": {
+      "description": "Desktop swap panel: headline of a completed swap; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapCompleteBody": "Your swap of {amount} is complete.",
+    "@desktopSwapCompleteBody": {
+      "description": "Desktop swap panel: line under a completed swap's headline; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapPoweredByNearIntents": "Powered by NEAR Intents",
+    "@desktopSwapPoweredByNearIntents": {
+      "description": "Desktop swap: attribution to NEAR Intents"
+    },
+    "desktopSwapRecipientAddressOn": "Recipient address on {network}",
+    "@desktopSwapRecipientAddressOn": {
+      "description": "Desktop swap sheet: label of the address field for a swap out of QTC; network is the chain the token is paid out on",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapRefundAddressOn": "Refund address on {network}",
+    "@desktopSwapRefundAddressOn": {
+      "description": "Desktop swap sheet: label of the address field for a swap into QTC, and of that address on the review; network is the chain a refund returns on",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapMaximum": "Swap the maximum amount",
+    "@desktopSwapMaximum": {
+      "description": "Desktop swap sheet: checkbox that puts in the most QTC the account can swap"
+    },
+    "desktopSwapAccountAvailable": "{account} · {amount} available",
+    "@desktopSwapAccountAvailable": {
+      "description": "Desktop swap sheet: who pays and the most they can put in; amount includes the token symbol",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        },
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapLoadingTokens": "Loading tokens",
+    "@desktopSwapLoadingTokens": {
+      "description": "Desktop swap sheet: shown while the list of tokens is fetched"
+    },
+    "desktopSwapRemoveSavedAddress": "Remove Saved Address",
+    "@desktopSwapRemoveSavedAddress": {
+      "description": "Desktop swap sheet: context menu item on a saved address that forgets it"
+    },
+    "desktopSwapSavedAddressesUnavailable": "Saved addresses are unavailable: {error}",
+    "@desktopSwapSavedAddressesUnavailable": {
+      "description": "Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from",
+      "placeholders": {
+        "error": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationNotAllowed": "Not allowed in System Settings",
+    "@desktopNotificationNotAllowed": {
+      "description": "Desktop Settings, Notifications row: macOS is not letting the app show notifications"
+    },
+    "desktopNotificationOpenSystemSettings": "Open System Settings",
+    "@desktopNotificationOpenSystemSettings": {
+      "description": "Desktop Settings, Notifications row: opens the Notifications pane of macOS System Settings"
+    },
+    "desktopNotificationOpenSystemSettingsFailed": "Couldn’t open System Settings",
+    "@desktopNotificationOpenSystemSettingsFailed": {
+      "description": "Desktop Settings: the Notifications pane of System Settings could not be opened"
+    },
+    "desktopNotificationUnavailable": "Unavailable: {reason}",
+    "@desktopNotificationUnavailable": {
+      "description": "Desktop Settings, Notifications row: the system's notifications cannot be used, and why",
+      "placeholders": {
+        "reason": {
+          "type": "String"
+        }
+      }
     }
 }
