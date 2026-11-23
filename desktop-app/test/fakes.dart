@@ -1025,17 +1025,27 @@ class FakeRemoteConfigService extends RemoteConfigService {
 
   final RemoteConfigModel config;
 
+  /// What the server answers when asked; nothing new until a test says so.
+  RemoteConfigModel? remote;
+
+  /// How often the server was asked.
+  int reads = 0;
+
   @override
   RemoteConfigModel readLocalConfig() => config;
 
   @override
-  Future<RemoteConfigModel?> readRemoteConfig() async => null;
+  Future<RemoteConfigModel?> readRemoteConfig() async {
+    reads++;
+    return remote;
+  }
 
   @override
   Future<void> cacheConfig(Object json) async {}
 }
 
-const _swapsNotOffered = RemoteConfigModel(
+/// The flags where swaps are not allowed.
+const swapsNotOffered = RemoteConfigModel(
   enableTestButtons: false,
   enableKeystoneHardwareWallet: true,
   enableHighSecurity: false,
@@ -1051,7 +1061,8 @@ const _swapsNotOffered = RemoteConfigModel(
 /// A balance missing from [balances] or [encryptedBalances] fails to load.
 /// [loadAccounts] and [balanceOf] replace the plain lists for tests that need
 /// a load to hang or fail. The system's approval is [approval], or one that
-/// approves; Send reaches the chain through [chain].
+/// approves; Send reaches the chain through [chain]. Where swaps are allowed
+/// is read from [remoteConfig], or as [swapAvailable] says.
 List<Override> shellOverrides({
   List<Account> accounts = const [],
   Future<List<Account>> Function()? loadAccounts,
@@ -1068,6 +1079,7 @@ List<Override> shellOverrides({
   FakeOneClickService? oneClick,
   FakeEncryptedSendController? proving,
   FakeSwapService? swaps,
+  FakeRemoteConfigService? remoteConfig,
 }) {
   return [
     swapServiceProvider.overrideWithValue(swaps ?? FakeSwapService()),
@@ -1098,8 +1110,9 @@ List<Override> shellOverrides({
     settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService()),
     accountsServiceProvider.overrideWithValue(FakeAccountsService(loadAccounts ?? () async => accounts)),
     remoteConfigProvider.overrideWith(
-      (ref) =>
-          RemoteConfigNotifier(FakeRemoteConfigService(swapAvailable ? RemoteConfigModel.defaults : _swapsNotOffered)),
+      (ref) => RemoteConfigNotifier(
+        remoteConfig ?? FakeRemoteConfigService(swapAvailable ? RemoteConfigModel.defaults : swapsNotOffered),
+      ),
     ),
     balanceProviderFamily.overrideWith((ref, accountId) {
       if (balanceOf != null) return balanceOf(accountId);
