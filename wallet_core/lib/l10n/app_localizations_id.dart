@@ -1562,7 +1562,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
 
   @override
-  String get settingsHelpEmail => 'Dukungan Email';
+  String get settingsHelpDiscord => 'Discord';
 
   @override
   String get settingsHelpTelegram => 'Telegram';
@@ -1722,6 +1722,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapSaveAddress => 'Simpan untuk swap berikutnya';
+
+  @override
+  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
 
   @override
   String get swapContinue => 'Lanjutkan ke Swap';
@@ -2076,6 +2079,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Hubungi Dukungan';
+
+  @override
+  String get commonSupportScamWarning =>
+      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
 
   @override
   String get commonRetry => 'Coba Lagi';
@@ -3187,6 +3194,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
+  }
+
+  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal dibuat';
 
   @override
@@ -3257,6 +3269,35 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopSwapPoweredByNearIntents => 'Didukung oleh NEAR Intents';
+
+  @override
+  String desktopSwapRecipientAddressOn(String network) {
+    return 'Alamat penerima di $network';
+  }
+
+  @override
+  String desktopSwapRefundAddressOn(String network) {
+    return 'Alamat refund di $network';
+  }
+
+  @override
+  String get desktopSwapMaximum => 'Swap jumlah maksimum';
+
+  @override
+  String desktopSwapAccountAvailable(String account, String amount) {
+    return '$account · $amount tersedia';
+  }
+
+  @override
+  String get desktopSwapLoadingTokens => 'Memuat token';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Hapus Alamat Tersimpan';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Alamat tersimpan tidak tersedia: $error';
+  }
 
   @override
   String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';

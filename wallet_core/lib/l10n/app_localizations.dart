@@ -2954,11 +2954,11 @@ abstract class AppLocalizations {
   /// **'Help & Support'**
   String get settingsHelpScreenTitle;
 
-  /// Email support row title
+  /// Discord support row title
   ///
   /// In en, this message translates to:
-  /// **'Email Support'**
-  String get settingsHelpEmail;
+  /// **'Discord'**
+  String get settingsHelpDiscord;
 
   /// Telegram row title
   ///
@@ -3229,6 +3229,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save for future swaps'**
   String get swapSaveAddress;
+
+  /// Error toast when the entered swap address could not be saved for future swaps
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the address.'**
+  String get swapSaveAddressFailed;
 
   /// Button that quotes the swap with the entered address
   ///
@@ -3859,6 +3865,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact Support'**
   String get commonContactSupport;
+
+  /// Warning against impostors, shown wherever the app sends someone to the support Discord
+  ///
+  /// In en, this message translates to:
+  /// **'Support will never DM you first or ask for your recovery phrase.'**
+  String get commonSupportScamWarning;
 
   /// Retry action on various screens
   ///
@@ -5744,6 +5756,12 @@ abstract class AppLocalizations {
   /// **'{amount} from {account} was not sent.'**
   String desktopNotificationSendFailedBody(String amount, String account);
 
+  /// Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} from {account} didn’t finish sending. Part of it may have gone through.'**
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account);
+
   /// Desktop notification title: a multisig proposal made on this computer was created on the chain
   ///
   /// In en, this message translates to:
@@ -5851,6 +5869,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Powered by NEAR Intents'**
   String get desktopSwapPoweredByNearIntents;
+
+  /// Desktop swap sheet: label of the address field for a swap out of QTC; network is the chain the token is paid out on
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient address on {network}'**
+  String desktopSwapRecipientAddressOn(String network);
+
+  /// Desktop swap sheet: label of the address field for a swap into QTC, and of that address on the review; network is the chain a refund returns on
+  ///
+  /// In en, this message translates to:
+  /// **'Refund address on {network}'**
+  String desktopSwapRefundAddressOn(String network);
+
+  /// Desktop swap sheet: checkbox that puts in the most QTC the account can swap
+  ///
+  /// In en, this message translates to:
+  /// **'Swap the maximum amount'**
+  String get desktopSwapMaximum;
+
+  /// Desktop swap sheet: who pays and the most they can put in; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{account} · {amount} available'**
+  String desktopSwapAccountAvailable(String account, String amount);
+
+  /// Desktop swap sheet: shown while the list of tokens is fetched
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tokens'**
+  String get desktopSwapLoadingTokens;
+
+  /// Desktop swap sheet: context menu item on a saved address that forgets it
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Saved Address'**
+  String get desktopSwapRemoveSavedAddress;
+
+  /// Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from
+  ///
+  /// In en, this message translates to:
+  /// **'Saved addresses are unavailable: {error}'**
+  String desktopSwapSavedAddressesUnavailable(String error);
 
   /// Desktop Settings, Notifications row: macOS is not letting the app show notifications
   ///

@@ -1559,7 +1559,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Help & Support';
 
   @override
-  String get settingsHelpEmail => 'Email Support';
+  String get settingsHelpDiscord => 'Discord';
 
   @override
   String get settingsHelpTelegram => 'Telegram';
@@ -1719,6 +1719,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapSaveAddress => 'Save for future swaps';
+
+  @override
+  String get swapSaveAddressFailed => 'Could not save the address.';
 
   @override
   String get swapContinue => 'Continue to Swap';
@@ -2073,6 +2076,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Contact Support';
+
+  @override
+  String get commonSupportScamWarning => 'Support will never DM you first or ask for your recovery phrase.';
 
   @override
   String get commonRetry => 'Retry';
@@ -3182,6 +3188,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount from $account didn’t finish sending. Part of it may have gone through.';
+  }
+
+  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal created';
 
   @override
@@ -3252,6 +3263,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopSwapPoweredByNearIntents => 'Powered by NEAR Intents';
+
+  @override
+  String desktopSwapRecipientAddressOn(String network) {
+    return 'Recipient address on $network';
+  }
+
+  @override
+  String desktopSwapRefundAddressOn(String network) {
+    return 'Refund address on $network';
+  }
+
+  @override
+  String get desktopSwapMaximum => 'Swap the maximum amount';
+
+  @override
+  String desktopSwapAccountAvailable(String account, String amount) {
+    return '$account · $amount available';
+  }
+
+  @override
+  String get desktopSwapLoadingTokens => 'Loading tokens';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Remove Saved Address';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Saved addresses are unavailable: $error';
+  }
 
   @override
   String get desktopNotificationNotAllowed => 'Not allowed in System Settings';

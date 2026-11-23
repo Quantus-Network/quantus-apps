@@ -12,17 +12,18 @@ import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/swap_live_activity_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/shared/extensions/clipboard_extensions.dart';
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/copy_icon_button.dart';
 import 'package:resonance_network_wallet/v2/components/link_button.dart';
 import 'package:wallet_core/utils/account_utils.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/success_check.dart';
 import 'package:resonance_network_wallet/v2/components/token_icon.dart';
-import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/swap/swap_progress.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Follows the active swap: the deposit address while a swap into QTC (or,
 /// in preflight, any swap) waits for its deposit, then progress, and finally
@@ -441,7 +442,13 @@ class _SwapFailed extends ConsumerWidget {
               QuantusButton.simple(
                 label: l10n.commonContactSupport,
                 variant: ButtonVariant.underline,
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpAndSupportScreenV2())),
+                onTap: () => openUrl(AppConstants.discordSupportUrl, mode: LaunchMode.externalApplication),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                l10n.commonSupportScamWarning,
+                textAlign: TextAlign.center,
+                style: text.caption.copyWith(color: colors.textMuted2),
               ),
             ],
           ),

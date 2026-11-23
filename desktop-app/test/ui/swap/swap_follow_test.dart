@@ -21,6 +21,7 @@ import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_desktop_wallet/ui/swap/swap_detail.dart';
 import 'package:quantus_desktop_wallet/ui/swap/swap_row_view.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/active_swap_provider.dart';
@@ -31,6 +32,9 @@ import 'package:wallet_core/utils/explorer_url.dart';
 import '../../fakes.dart';
 
 final _l10n = lookupAppLocalizations(const Locale('en'));
+
+/// The official support server, spelled out so a changed link fails here.
+const _discord = 'https://discord.gg/Ba9nTGUdgF';
 
 ProviderContainer _container(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
@@ -453,7 +457,7 @@ void main() {
       }
     });
 
-    testOnMac('a swap that ended badly is put away by Done, and Contact Support writes to support', (tester) async {
+    testOnMac('a swap that ended badly is put away by Done, and Contact Support opens Discord', (tester) async {
       final opened = <Uri>[];
       final settings = await _open(
         tester,
@@ -463,12 +467,38 @@ void main() {
       await _openSwap(tester);
 
       await _press(tester, _inPanel(find.text(_l10n.commonContactSupport)));
-      expect(opened, [Uri.parse('mailto:${AppConstants.emailSupport}')]);
+      expect(opened, [Uri.parse(_discord)]);
       expect(settings.activeSwap, isNotNull);
 
       await _press(tester, _inPanel(find.text(_l10n.commonDone)));
       expect(settings.activeSwap, isNull);
       expect(find.byType(SwapDetail), findsNothing);
+    });
+
+    testOnMac('every way a swap ends badly sends support to Discord, with the warning against impostors', (
+      tester,
+    ) async {
+      final ended = [
+        fakeActiveSwap(status: SwapStatus.failed),
+        fakeActiveSwap(swapOut: false, status: SwapStatus.refunded),
+        fakeActiveSwap(swapOut: false, status: SwapStatus.incompleteDeposit),
+        fakeActiveSwap(
+          swapOut: false,
+          status: SwapStatus.pendingDeposit,
+          deadline: clock.now().subtract(const Duration(minutes: 1)),
+        ),
+      ];
+      for (final swap in ended) {
+        final reason = swap.order.status.wire;
+        final opened = <Uri>[];
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _open(tester, swap: swap, opened: opened);
+        await _openSwap(tester);
+
+        expect(_inPanel(find.text(_l10n.commonSupportScamWarning)), findsOne, reason: reason);
+        await _press(tester, _inPanel(find.text(_l10n.commonContactSupport)));
+        expect(opened, [Uri.parse(_discord)], reason: reason);
+      }
     });
 
     testOnMac('✕ and Esc close the panel and leave the swap followed, its row in place', (tester) async {
@@ -487,6 +517,58 @@ void main() {
       expect(find.byType(SwapDetail), findsNothing);
       expect(find.byType(SwapRowView), findsOne);
       expect(settings.activeSwap, isNotNull);
+    });
+  });
+
+  group('Start a New Swap, on a swap that ended', () {
+    testOnMac('puts the swap away and opens the Swap sheet', (tester) async {
+      final settings = await _open(tester, swap: fakeActiveSwap(status: SwapStatus.failed));
+      await _openSwap(tester);
+
+      await _press(tester, _inPanel(find.byKey(SwapDetail.startNewKey)));
+
+      expect(settings.activeSwap, isNull);
+      expect(find.byType(SwapDetail), findsNothing);
+      expect(find.byType(SwapRowView), findsNothing);
+      expect(find.byType(SwapSheet), findsOneWidget);
+    });
+
+    testOnMac('is offered on each way a swap ends short, and not on one under way or complete', (tester) async {
+      for (final (swap, isOffered) in [
+        (fakeActiveSwap(status: SwapStatus.refunded), true),
+        (fakeActiveSwap(swapOut: false, status: SwapStatus.incompleteDeposit, depositSent: true), true),
+        (
+          fakeActiveSwap(
+            swapOut: false,
+            status: SwapStatus.pendingDeposit,
+            deadline: clock.now().subtract(const Duration(minutes: 1)),
+          ),
+          true,
+        ),
+        (fakeActiveSwap(status: SwapStatus.processing), false),
+        (fakeActiveSwap(status: SwapStatus.success), false),
+      ]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await _open(tester, swap: swap);
+        await _openSwap(tester);
+
+        expect(_inPanel(find.byKey(SwapDetail.startNewKey)), isOffered ? findsOne : findsNothing, reason: '$swap');
+      }
+    });
+
+    testOnMac('is not offered from an account that cannot swap', (tester) async {
+      await _open(
+        tester,
+        swap: fakeActiveSwap(status: SwapStatus.failed),
+        active: const RegularAccount(encryptedAccount),
+      );
+      await tester.tap(
+        find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(ToolbarAction, _l10n.homeSwap)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SwapDetail), findsOneWidget);
+      expect(_inPanel(find.byKey(SwapDetail.startNewKey)), findsNothing);
     });
   });
 

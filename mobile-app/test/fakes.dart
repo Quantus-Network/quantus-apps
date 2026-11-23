@@ -313,6 +313,20 @@ List<MethodCall> recordTelemetry() {
   return calls;
 }
 
+/// Stands in for url_launcher's platform channel, and collects each link the
+/// app opens.
+List<String> recordOpenedUrls() {
+  const channel = MethodChannel('plugins.flutter.io/url_launcher');
+  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  final opened = <String>[];
+  messenger.setMockMethodCallHandler(channel, (call) async {
+    if (call.method == 'launch') opened.add((call.arguments as Map<Object?, Object?>)['url']! as String);
+    return true;
+  });
+  addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  return opened;
+}
+
 /// Records every push registration call instead of reaching the push backend.
 class FakePushRegistration implements PushRegistration {
   final calls = <String>[];
