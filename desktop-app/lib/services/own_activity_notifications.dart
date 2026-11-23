@@ -45,6 +45,23 @@ class OwnActivityNotifications {
   /// leaves the pending proposals before that.
   final _proposals = <String, PendingMultisigProposalEvent>{};
 
+  /// The notifications on their way to the system.
+  final _handingOver = <Future<void>>{};
+
+  /// Completes once every notification on its way has been handed to the
+  /// system, those that one being handed over leads to included.
+  Future<void> get handedOver async {
+    while (_handingOver.isNotEmpty) {
+      await Future.wait(_handingOver.toList());
+    }
+  }
+
+  /// Keeps [handingOver], which reports its own failures, until it is done.
+  void _track(Future<void> handingOver) {
+    _handingOver.add(handingOver);
+    unawaited(handingOver.whenComplete(() => _handingOver.remove(handingOver)));
+  }
+
   void _onSends(List<PendingTransactionEvent> sends) {
     final now = clock.now();
     for (final send in sends) {
@@ -54,7 +71,7 @@ class OwnActivityNotifications {
           _sends[send.id] = (send: send, broadcastAt: now);
         case TransactionState.inHistory when watched != null:
           _sends.remove(send.id);
-          unawaited(_notifySent(send));
+          _track(_notifySent(send));
         case TransactionState.failed when watched != null:
           _sends.remove(send.id);
           // The amount it was recorded with: what it set out to send.
@@ -217,7 +234,7 @@ class OwnActivityNotifications {
       timestamp: clock.now(),
       persistent: false,
     );
-    unawaited(_showNow(notification));
+    _track(_showNow(notification));
   }
 
   Future<void> _showNow(NotificationData notification) async {

@@ -8,6 +8,7 @@ import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
+import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
@@ -42,16 +43,32 @@ final pendingWorkProvider = Provider<bool>(
 /// ([pendingWorkProvider]), where the platform can ([supportsBackgroundMode]).
 /// Otherwise closing the window quits the app.
 class BackgroundMode {
+  /// How long the app stays once its last notification was handed over:
+  /// macOS's notification plugin answers before macOS has taken it.
+  static const settleDelay = Duration(seconds: 2);
+
+  /// How long the window stays closed with work that has not settled. A chain
+  /// call has no timeout of its own, so one that hangs would otherwise leave
+  /// the app running out of sight for good.
+  static const hiddenLimit = Duration(minutes: 30);
+
   BackgroundMode(this._ref) : _window = _ref.read(backgroundWindowProvider), _telemetry = _ref.read(telemetryProvider) {
     if (!supportsBackgroundMode) return;
-    _window.listen(onWillClose: _onCloseButton, onDidOpen: () => _closed.set(false));
-    _ref.onDispose(_window.stopListening);
+    _window.listen(onWillClose: _onCloseButton, onDidOpen: _markOpen);
+    _ref.onDispose(() {
+      _window.stopListening();
+      _hiddenLimitTimer?.cancel();
+      _quitTimer?.cancel();
+    });
     _ref.listen<StatusItemLabels>(
       statusItemLabelsProvider,
       (_, labels) => unawaited(_reported(_window.configure(labels))),
       fireImmediately: true,
     );
-    _ref.listen<bool>(pendingWorkProvider, (_, isPending) => unawaited(_reported(_window.setStayAwake(isPending))));
+    _ref.listen<bool>(pendingWorkProvider, (_, isPending) {
+      unawaited(_reported(_window.setStayAwake(isPending)));
+      if (!isPending && _ref.read(windowClosedProvider)) unawaited(_quitOnceHandedOver());
+    });
     // A menu still works with the window closed, and what it opens must show.
     _ref.listen<ShellSheet?>(shellSheetProvider, (_, sheet) {
       if (sheet != null && _ref.read(windowClosedProvider)) unawaited(_reported(_window.bringToFront()));
@@ -61,6 +78,16 @@ class BackgroundMode {
   final Ref _ref;
   final BackgroundWindow _window;
   final Telemetry _telemetry;
+
+  /// Runs from the window closing until it is back, for [hiddenLimit].
+  Timer? _hiddenLimitTimer;
+
+  /// Runs for [settleDelay] once the work has settled and been reported.
+  Timer? _quitTimer;
+
+  /// Which settling of the work the app is getting ready to quit on: only the
+  /// latest may.
+  int _quitAttempt = 0;
 
   WindowClosedNotifier get _closed => _ref.read(windowClosedProvider.notifier);
 
@@ -76,7 +103,7 @@ class BackgroundMode {
       await _window.hide();
     } catch (e) {
       _report(e);
-      _closed.set(false);
+      _markOpen();
     }
   }
 
@@ -92,8 +119,43 @@ class BackgroundMode {
   /// be there when it comes back: the window shows its last frame on return.
   Future<void> _getReadyToClose() async {
     _closed.set(true);
+    _hiddenLimitTimer?.cancel();
+    _hiddenLimitTimer = Timer(hiddenLimit, _onHiddenTooLong);
     final scheduler = SchedulerBinding.instance;
     if (scheduler.framesEnabled) await scheduler.endOfFrame;
+  }
+
+  /// The window is back, or never left: nothing is to quit the app any more.
+  void _markOpen() {
+    _hiddenLimitTimer?.cancel();
+    _hiddenLimitTimer = null;
+    _quitTimer?.cancel();
+    _quitTimer = null;
+    _closed.set(false);
+  }
+
+  /// Quits once what the settled work has to say was handed to the system.
+  Future<void> _quitOnceHandedOver() async {
+    final attempt = ++_quitAttempt;
+    _quitTimer?.cancel();
+    // A proposal leaves the pending list just before its outcome is recorded.
+    await Future<void>.microtask(() {});
+    if (!_ref.mounted) return;
+    await _ref.read(ownActivityNotificationsProvider).handedOver;
+    if (!_ref.mounted || attempt != _quitAttempt || !_ref.read(windowClosedProvider)) return;
+    _quitTimer = Timer(settleDelay, () {
+      if (!_ref.read(windowClosedProvider) || _ref.read(pendingWorkProvider)) return;
+      _ref.read(requestAppExitProvider)();
+    });
+  }
+
+  /// Something has not settled for so long that it may never: the window comes
+  /// back, for the person to see and decide. Nothing is stopped.
+  void _onHiddenTooLong() {
+    final error = StateError('Work was still under way ${hiddenLimit.inMinutes} minutes after the window closed');
+    quantusPrint('$error');
+    _telemetry.sendError('desktop_background_work_stuck', error: error);
+    unawaited(_reported(_window.bringToFront()));
   }
 
   Future<void> _reported(Future<void> request) async {

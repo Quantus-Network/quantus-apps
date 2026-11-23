@@ -26,12 +26,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/app_locale.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -497,6 +499,252 @@ void main() {
       await tester.pump(SensitiveClipboard.lifetime);
 
       expect(calls, ['copy', 'clear']);
+    });
+  });
+
+  group('closed until the work settles', () {
+    const sendHash = '0xsend';
+    const proposalHash = '0xproposal';
+
+    /// A wallet whose indexer holds Main's send, with a broadcast send under
+    /// way, its window closed.
+    Future<_Opened> closedOnASend(WidgetTester tester, FakeNotificationPlugin notifications) async {
+      final device = FakeWalletDevice();
+      device.chain.indexedTransfers[sendHash] = TransferEvent(
+        id: 'indexed-send',
+        from: mainAccount.accountId,
+        to: 'qzBob',
+        amount: oneToken,
+        timestamp: DateTime(2026),
+        fee: BigInt.zero,
+        extrinsicHash: sendHash,
+        blockNumber: 10,
+        blockHash: '0xblock',
+      );
+      final opened = await _open(tester, onDevice: device, notifications: notifications);
+      final sends = opened.container.read(pendingTransactionsProvider.notifier);
+      sends.add(
+        PendingTransactionEvent(
+          tempId: 'tx-1',
+          from: mainAccount.accountId,
+          to: 'qzBob',
+          amount: oneToken,
+          fee: BigInt.zero,
+          timestamp: DateTime(2026),
+        ),
+      );
+      sends.updateState('tx-1', TransactionState.pending, extrinsicHash: sendHash);
+      await tester.pump();
+      await _pressClose(tester, opened.window);
+      return opened;
+    }
+
+    testOnMac('the last work settling quits the app, a moment later', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      await _pressClose(tester, window);
+
+      container.read(workHoldsProvider.notifier).release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay - const Duration(milliseconds: 1));
+      expect(exits, isEmpty);
+
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('one of two settling leaves it running', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      final holds = container.read(workHoldsProvider.notifier)..hold('more work');
+      await _pressClose(tester, window);
+
+      holds.release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(exits, isEmpty);
+
+      holds.release('more work');
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('work settling with the window open does not quit', (tester) async {
+      final (window: _, :container, :exits) = await _open(tester, workUnderWay: true);
+
+      container.read(workHoldsProvider.notifier).release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay * 2);
+
+      expect(exits, isEmpty);
+    });
+
+    testOnMac('a send confirmed while closed has its notification handed over before the app quits', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final (window: _, :container, :exits) = await closedOnASend(tester, notifications);
+      final handover = notifications.heldShow = Completer<void>();
+
+      final sends = container.read(pendingTransactionsProvider.notifier);
+      sends.updateState('tx-1', TransactionState.inHistory);
+      sends.remove('tx-1');
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(notifications.shown, hasLength(1));
+      expect(exits, isEmpty);
+
+      handover.complete();
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay);
+      expect(exits, ['exit']);
+    });
+
+    for (final outcome in [SendConfirmation.confirmed, SendConfirmation.unconfirmed]) {
+      testOnMac('a proposal ${outcome.name} while closed has its notification handed over first', (tester) async {
+        final notifications = FakeNotificationPlugin();
+        final device = FakeWalletDevice();
+        device.storage.multisigStore.add(teamMultisig);
+        final (:window, :container, :exits) = await _open(tester, onDevice: device, notifications: notifications);
+        final proposals = container.read(pendingMultisigProposalsProvider.notifier);
+        proposals.add(
+          PendingMultisigProposalEvent(
+            tempId: 'proposal-1',
+            multisigAddress: teamMultisig.accountId,
+            proposerId: mainAccount.accountId,
+            recipient: 'qzBob',
+            amount: oneToken,
+            deposit: BigInt.zero,
+            expiryBlock: 100,
+            palletFee: BigInt.zero,
+          ),
+        );
+        proposals.update('proposal-1', extrinsicHash: proposalHash);
+        await tester.pump();
+        await _pressClose(tester, window);
+        final handover = notifications.heldShow = Completer<void>();
+
+        // In the wallet's own order: a created proposal leaves the list first.
+        final confirmations = container.read(multisigProposalConfirmationsProvider.notifier);
+        if (outcome == SendConfirmation.confirmed) {
+          proposals.remove('proposal-1');
+          confirmations.settle(proposalHash, outcome);
+        } else {
+          confirmations.settle(proposalHash, outcome);
+          proposals.remove('proposal-1');
+        }
+        await tester.pump();
+        await tester.pump(BackgroundMode.settleDelay * 2);
+        expect(notifications.shown, hasLength(1));
+        expect(exits, isEmpty);
+
+        handover.complete();
+        await tester.pump();
+        await tester.pump(BackgroundMode.settleDelay);
+        expect(exits, ['exit']);
+      });
+    }
+
+    testOnMac('reopening before it settles cancels the quit, and the app stays open after', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      await _pressClose(tester, window);
+
+      window.reopen();
+      container.read(workHoldsProvider.notifier).release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay * 2);
+
+      expect(exits, isEmpty);
+      expect(container.read(windowClosedProvider), isFalse);
+    });
+
+    testOnMac('reopening during the last moment cancels the quit', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      await _pressClose(tester, window);
+      container.read(workHoldsProvider.notifier).release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay ~/ 2);
+
+      window.reopen();
+      await tester.pump(BackgroundMode.settleDelay * 2);
+
+      expect(exits, isEmpty);
+    });
+
+    testOnMac('new work during the last moment holds the quit until it settles too', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      final holds = container.read(workHoldsProvider.notifier);
+      await _pressClose(tester, window);
+      holds.release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay ~/ 2);
+
+      holds.hold('new work');
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay * 2);
+      expect(exits, isEmpty);
+
+      holds.release('new work');
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay);
+      expect(exits, ['exit']);
+    });
+
+    testWidgets('work still under way at the limit brings the window back, quits nothing, and is reported', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final telemetry = _RecordingTelemetry();
+      final window = FakeBackgroundWindow();
+      final exits = <String>[];
+      final container = ProviderContainer(
+        overrides: [
+          ...shellOverrides(accounts: const [mainAccount]),
+          backgroundWindowProvider.overrideWithValue(window),
+          telemetryProvider.overrideWithValue(telemetry),
+          requestAppExitProvider.overrideWithValue(() => exits.add('exit')),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(backgroundModeProvider);
+      container.read(workHoldsProvider.notifier).hold(_work);
+      await tester.pump();
+      await _pressClose(tester, window);
+
+      await tester.pump(BackgroundMode.hiddenLimit - const Duration(seconds: 1));
+      expect(window.calls, ['hide']);
+
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(window.calls, ['hide', 'bringToFront']);
+      expect(container.read(windowClosedProvider), isFalse);
+      expect(exits, isEmpty);
+      expect(telemetry.errors, contains('desktop_background_work_stuck'));
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testOnMac('a notification that never finishes handing over brings the window back at the limit', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final (:window, :container, :exits) = await closedOnASend(tester, notifications);
+      notifications.heldShow = Completer<void>();
+      final sends = container.read(pendingTransactionsProvider.notifier);
+      sends.updateState('tx-1', TransactionState.inHistory);
+      sends.remove('tx-1');
+      await tester.pump();
+
+      await tester.pump(BackgroundMode.hiddenLimit);
+
+      expect(window.calls, ['hide', 'bringToFront']);
+      expect(exits, isEmpty);
+    });
+
+    testOnMac('a window reopened before the limit is not brought forward again', (tester) async {
+      final (:window, container: _, :exits) = await _open(tester, workUnderWay: true);
+      await _pressClose(tester, window);
+
+      window.reopen();
+      await tester.pump(BackgroundMode.hiddenLimit);
+
+      expect(window.calls, ['hide']);
+      expect(exits, isEmpty);
     });
   });
 
