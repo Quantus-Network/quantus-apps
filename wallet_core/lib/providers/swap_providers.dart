@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/send/regular_send_strategy.dart';
 
 /// The stand-in for QTC this build was started with; null in every real build.
 final swapPreflightProvider = Provider<SwapPreflight?>((_) => SwapPreflight.fromEnvironment);
@@ -64,6 +65,21 @@ BigInt swapMaxIn(BigInt spendable, BigInt fee) {
   final max = spendable - fee - balances.Constants().existentialDeposit;
   return max > BigInt.zero ? max : BigInt.zero;
 }
+
+/// Chain fee for sending [amount] QTC from the account into a deposit address.
+/// The recipient barely moves the fee, so the account's own address stands in
+/// until the live quote names the deposit address.
+final swapDepositFeeProvider = FutureProvider.autoDispose.family<BigInt, (Account, BigInt)>((ref, args) async {
+  final (account, amount) = args;
+  try {
+    return (await RegularSendStrategy(
+      account: account,
+    ).fetchFee(ref.read, recipient: account.accountId, amount: amount)).networkFee;
+  } catch (e) {
+    quantusPrint('Swap deposit fee failed: $e');
+    rethrow;
+  }
+}, retry: (_, _) => null);
 
 /// One whole token of [decimals] in base units, as a double. An int `pow`
 /// overflows past 18 decimals, and wNEAR has 24.

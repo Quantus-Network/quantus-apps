@@ -28,7 +28,6 @@ import 'package:resonance_network_wallet/v2/components/search_field.dart';
 import 'package:resonance_network_wallet/v2/screens/settings/help_and_support_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/review_swap_screen.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -142,6 +141,9 @@ class _OneClick {
   /// Holds every address save until completed.
   Completer<void>? holdSave;
 
+  /// What every address save fails with.
+  Object? saveError;
+
   /// Holds every dry quote until completed.
   Completer<void>? holdQuote;
 
@@ -229,7 +231,8 @@ class _OneClick {
   }
 }
 
-/// [SwapService] on the stand-in, whose address save waits on [_OneClick.holdSave].
+/// [SwapService] on the stand-in, whose address save waits on [_OneClick.holdSave]
+/// and fails with [_OneClick.saveError].
 class _OneClickService extends SwapService {
   final _OneClick oneClick;
 
@@ -244,6 +247,7 @@ class _OneClickService extends SwapService {
   @override
   Future<void> saveAddress(String network, String address) async {
     await oneClick.holdSave?.future;
+    if (oneClick.saveError case final error?) throw error;
     await super.saveAddress(network, address);
   }
 }
@@ -1032,6 +1036,20 @@ void main() {
       expect(find.byType(SwapScreen), findsOneWidget);
       expect(find.byType(ReviewSwapScreen), findsNothing);
       expect(find.text(l10n.swapAddRecipientAddress), findsOneWidget);
+    });
+
+    testWidgets('an address that cannot be kept is said, and the sheet stays with it', (tester) async {
+      final toasts = _recordToasts();
+      final oneClick = _OneClick(dryOut: BigInt.from(24860000))..saveError = const SwapSavedAddressesWriteException();
+      await continueWithHeldSave(tester, oneClick);
+      await settle(tester);
+
+      expect(toasts, [l10n.swapSaveAddressFailed]);
+      expect(find.byType(BottomSheetContainer), findsOneWidget);
+      expect(find.text(_external), findsOneWidget);
+      expect(find.text(l10n.swapContinue), findsOneWidget);
+      expect(find.byType(ReviewSwapScreen), findsNothing);
+      ToastController.instance.dismiss();
     });
   });
 
