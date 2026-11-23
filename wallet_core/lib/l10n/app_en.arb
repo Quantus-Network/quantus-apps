@@ -4796,6 +4796,44 @@
     "@desktopSwapPoweredByNearIntents": {
       "description": "Desktop swap: attribution to NEAR Intents"
     },
+    "desktopSwapRecipientAddressOn": "Recipient address on {network}",
+    "@desktopSwapRecipientAddressOn": {
+      "description": "Desktop swap sheet: label of the address field for a swap out of QTC; network is the chain the token is paid out on",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapRefundAddressOn": "Refund address on {network}",
+    "@desktopSwapRefundAddressOn": {
+      "description": "Desktop swap sheet: label of the address field for a swap into QTC, and of that address on the review; network is the chain a refund returns on",
+      "placeholders": {
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapMaximum": "Swap the maximum amount",
+    "@desktopSwapMaximum": {
+      "description": "Desktop swap sheet: checkbox that puts in the most QTC the account can swap"
+    },
+    "desktopSwapAccountAvailable": "{account} · {amount} available",
+    "@desktopSwapAccountAvailable": {
+      "description": "Desktop swap sheet: who pays and the most they can put in; amount includes the token symbol",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        },
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopSwapLoadingTokens": "Loading tokens",
+    "@desktopSwapLoadingTokens": {
+      "description": "Desktop swap sheet: shown while the list of tokens is fetched"
+    },
     "desktopNotificationNotAllowed": "Not allowed in System Settings",
     "@desktopNotificationNotAllowed": {
       "description": "Desktop Settings, Notifications row: macOS is not letting the app show notifications"

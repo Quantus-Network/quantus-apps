@@ -1062,7 +1062,8 @@ const swapsNotOffered = RemoteConfigModel(
 /// [loadAccounts] and [balanceOf] replace the plain lists for tests that need
 /// a load to hang or fail. The system's approval is [approval], or one that
 /// approves; Send reaches the chain through [chain]. Where swaps are allowed
-/// is read from [remoteConfig], or as [swapAvailable] says.
+/// is read from [remoteConfig], or as [swapAvailable] says. 1Click is [swaps],
+/// or what [swapsOf] builds, for a test that has the service rebuilt.
 List<Override> shellOverrides({
   List<Account> accounts = const [],
   Future<List<Account>> Function()? loadAccounts,
@@ -1079,10 +1080,14 @@ List<Override> shellOverrides({
   FakeOneClickService? oneClick,
   FakeEncryptedSendController? proving,
   FakeSwapService? swaps,
+  FakeSwapService Function(Ref ref)? swapsOf,
   FakeRemoteConfigService? remoteConfig,
 }) {
   return [
-    swapServiceProvider.overrideWithValue(swaps ?? FakeSwapService()),
+    if (swapsOf != null)
+      swapServiceProvider.overrideWith(swapsOf)
+    else
+      swapServiceProvider.overrideWithValue(swaps ?? FakeSwapService()),
     // No logo is fetched: the marks are their letters.
     swapTokenIconServiceProvider.overrideWithValue(FakeSwapTokenIcons()),
     systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
@@ -1130,7 +1135,8 @@ List<Override> shellOverrides({
   ];
 }
 
-/// 1Click as far as a followed swap asks it: what its status is now.
+/// 1Click as far as the app asks it: what it lists, what a swap would cost,
+/// a live order for one, and how a followed swap is doing.
 class FakeSwapService extends Fake implements SwapService {
   /// What the next status poll answers for the order it is asked about; it
   /// may throw. The order as it stands until a test says otherwise.
@@ -1144,6 +1150,118 @@ class FakeSwapService extends Fake implements SwapService {
     polls++;
     return status(order);
   }
+
+  /// What 1Click lists, QTC first; listing may throw.
+  Future<List<SwapToken>> Function() tokens = () async => const [
+    listedQtc,
+    usdcOnArbitrum,
+    usdcOnEthereum,
+    usdtOnEthereum,
+    wNear,
+  ];
+
+  /// QTC as 1Click lists it; null while it does not, or lists it unpriced.
+  SwapToken? listedQuantus = listedQtc;
+
+  /// How often the listing was asked for, and how often afresh.
+  int tokenLoads = 0;
+  int freshTokenLoads = 0;
+
+  @override
+  Future<List<SwapToken>> getFromTokens({bool forceRefresh = false}) {
+    tokenLoads++;
+    if (forceRefresh) freshTokenLoads++;
+    return tokens();
+  }
+
+  @override
+  Future<SwapToken?> getListedQuantusToken() async => listedQuantus;
+
+  /// What a dry quote answers for the swap asked about; it may throw. One at
+  /// listed prices, with nothing taken, until a test says otherwise.
+  Future<SwapQuote> Function(SwapQuoteRequest request) quote = (request) async => fakeQuoteFor(request);
+
+  /// Every swap a dry quote was asked for, in order.
+  final quoteRequests = <SwapQuoteRequest>[];
+
+  @override
+  Future<SwapQuote> getQuote({
+    required SwapToken from,
+    required SwapToken to,
+    required BigInt amount,
+    required String refundAddress,
+    required String recipient,
+    SwapType swapType = SwapType.exactInput,
+    int slippageBps = SwapService.defaultSlippageBps,
+    bool dry = true,
+  }) {
+    final request = (
+      from: from,
+      to: to,
+      amount: amount,
+      swapType: swapType,
+      refundAddress: refundAddress,
+      recipient: recipient,
+      slippageBps: slippageBps,
+    );
+    quoteRequests.add(request);
+    return quote(request);
+  }
+
+  /// What taking a live order for a reviewed quote answers; it may throw.
+  /// The quote as reviewed, awaiting its deposit, until a test says otherwise.
+  Future<SwapOrder> Function(SwapQuote reviewed) create = (reviewed) async =>
+      SwapOrder(quote: reviewed, status: SwapStatus.pendingDeposit);
+
+  /// Every quote a live order was taken for, in order.
+  final created = <SwapQuote>[];
+
+  @override
+  Future<SwapOrder> createSwap(SwapQuote quote) {
+    created.add(quote);
+    return create(quote);
+  }
+
+  /// Every deposit 1Click was told of: the order and the transaction's hash.
+  final deposits = <({SwapOrder order, String hash})>[];
+
+  @override
+  Future<void> submitDeposit(SwapOrder order, String txHash) async => deposits.add((order: order, hash: txHash));
+}
+
+/// Where 1Click takes the QTC of a swap out of it: an address on Quantus.
+const swapQuantusDepositAddress = 'qzSwapDeposit';
+
+/// A dry quote for [request] at listed prices, nothing taken by fees: its
+/// deposit goes within twenty minutes to [swapQuantusDepositAddress] when QTC
+/// is paid, else to [swapDepositAddress] on the other chain.
+SwapQuote fakeQuoteFor(SwapQuoteRequest request, {BigInt? withdrawFee, int feeBps = 0, DateTime? deadline}) {
+  final exactOutput = request.swapType == SwapType.exactOutput;
+  final amountIn = exactOutput ? swapEstimateOut(request.amount, request.to, request.from) : request.amount;
+  final amountOut = exactOutput ? request.amount : swapEstimateOut(request.amount, request.from, request.to);
+  final kept = BigInt.from(10000 - request.slippageBps);
+  final all = BigInt.from(10000);
+  return SwapQuote(
+    fromToken: request.from,
+    toToken: request.to,
+    swapType: request.swapType,
+    amountIn: exactOutput ? amountIn * all ~/ kept : amountIn,
+    minAmountIn: amountIn,
+    amountOut: amountOut,
+    minAmountOut: exactOutput ? amountOut : amountOut * kept ~/ all,
+    amountInUsd: swapUsdValue(amountIn, request.from),
+    amountOutUsd: swapUsdValue(amountOut, request.to),
+    slippageBps: request.slippageBps,
+    refundAddress: request.refundAddress,
+    recipient: request.recipient,
+    deadline: deadline ?? clock.now().add(const Duration(minutes: 20)),
+    timeEstimate: const Duration(minutes: 3),
+    correlationId: 'c',
+    signature: 's',
+    depositAddress: request.from.isQuantus ? swapQuantusDepositAddress : swapDepositAddress,
+    withdrawFee: withdrawFee,
+    feeBps: feeBps,
+  );
 }
 
 /// Token and chain logos that are never there, so nothing is fetched.
@@ -1162,6 +1280,21 @@ const usdcOnArbitrum = SwapToken(
   decimals: 6,
   usdPrice: 1,
 );
+const usdcOnEthereum = SwapToken(
+  assetId: 'nep141:eth-usdc.omft.near',
+  symbol: 'USDC',
+  network: 'ETH',
+  decimals: 6,
+  usdPrice: 1,
+);
+const usdtOnEthereum = SwapToken(
+  assetId: 'nep141:eth-usdt.omft.near',
+  symbol: 'USDT',
+  network: 'ETH',
+  decimals: 6,
+  usdPrice: 1,
+);
+const wNear = SwapToken(assetId: 'nep141:wrap.near', symbol: 'wNEAR', network: 'NEAR', decimals: 24, usdPrice: 2.5);
 const listedQtc = SwapToken(
   assetId: 'nep141:qtc.omft.near',
   symbol: 'QTC',

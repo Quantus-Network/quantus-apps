@@ -3259,6 +3259,27 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopSwapPoweredByNearIntents => 'Didukung oleh NEAR Intents';
 
   @override
+  String desktopSwapRecipientAddressOn(String network) {
+    return 'Alamat penerima di $network';
+  }
+
+  @override
+  String desktopSwapRefundAddressOn(String network) {
+    return 'Alamat refund di $network';
+  }
+
+  @override
+  String get desktopSwapMaximum => 'Swap jumlah maksimum';
+
+  @override
+  String desktopSwapAccountAvailable(String account, String amount) {
+    return '$account · $amount tersedia';
+  }
+
+  @override
+  String get desktopSwapLoadingTokens => 'Memuat token';
+
+  @override
   String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';
 
   @override
