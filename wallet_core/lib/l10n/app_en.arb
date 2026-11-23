@@ -4671,6 +4671,18 @@
         }
       }
     },
+    "desktopNotificationEncryptedSendFailedBody": "{amount} from {account} didn’t finish sending. Part of it may have gone through.",
+    "@desktopNotificationEncryptedSendFailedBody": {
+      "description": "Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "account": {
+          "type": "String"
+        }
+      }
+    },
     "desktopNotificationProposalCreatedTitle": "Proposal created",
     "@desktopNotificationProposalCreatedTitle": {
       "description": "Desktop notification title: a multisig proposal made on this computer was created on the chain"

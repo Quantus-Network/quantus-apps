@@ -862,6 +862,7 @@
   "desktopNotificationSendNotConfirmedBody": "{amount} dari {account} tidak terlihat di rantai tepat waktu. Mungkin gagal, atau hanya terlambat.",
   "desktopNotificationSendFailedTitle": "Pengiriman gagal",
   "desktopNotificationSendFailedBody": "{amount} dari {account} tidak terkirim.",
+  "desktopNotificationEncryptedSendFailedBody": "{amount} dari {account} tidak selesai terkirim. Sebagian mungkin sudah terkirim.",
   "desktopNotificationProposalCreatedTitle": "Proposal dibuat",
   "desktopNotificationProposalCreatedBody": "Kirim {amount} dari {multisig}",
   "desktopNotificationProposalNotConfirmedTitle": "Proposal belum terkonfirmasi",

@@ -5750,6 +5750,12 @@ abstract class AppLocalizations {
   /// **'{amount} from {account} was not sent.'**
   String desktopNotificationSendFailedBody(String amount, String account);
 
+  /// Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} from {account} didn’t finish sending. Part of it may have gone through.'**
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account);
+
   /// Desktop notification title: a multisig proposal made on this computer was created on the chain
   ///
   /// In en, this message translates to:
