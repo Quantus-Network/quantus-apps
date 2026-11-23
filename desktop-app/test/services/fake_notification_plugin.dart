@@ -73,6 +73,18 @@ class FakeNotificationPlugin implements NotificationPlugin {
     await heldShow?.future;
   }
 
+  var cancelAllCalls = 0;
+
+  /// What removing the notifications throws, when it fails.
+  Object? cancelAllError;
+
+  @override
+  Future<void> cancelAll() async {
+    cancelAllCalls++;
+    final error = cancelAllError;
+    if (error != null) throw error;
+  }
+
   /// Clicks a notification with [payload], as the person would.
   void click(String? payload) {
     final onClick = _onClick;

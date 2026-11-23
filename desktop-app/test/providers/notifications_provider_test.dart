@@ -247,6 +247,65 @@ void main() {
     });
   });
 
+  group('a wallet reset', () {
+    for (final platform in [TargetPlatform.macOS, TargetPlatform.windows, TargetPlatform.linux]) {
+      test('on ${platform.name}, removes what the system still shows', () async {
+        final plugin = FakeNotificationPlugin();
+        final (:container, :telemetry) = _open(plugin, platform: platform);
+        final notifications = container.read(desktopLocalNotificationsProvider.notifier);
+        await notifications.start();
+
+        await notifications.cancelAll();
+
+        expect(plugin.cancelAllCalls, 1);
+        expect(telemetry.errors, isEmpty);
+      });
+    }
+
+    test('with notifications turned off in System Settings, still removes those shown before', () async {
+      final plugin = FakeNotificationPlugin(grants: false);
+      final (:container, telemetry: _) = _open(plugin, platform: TargetPlatform.macOS);
+      final notifications = container.read(desktopLocalNotificationsProvider.notifier);
+      await notifications.requestPermission();
+      expect(container.read(desktopLocalNotificationsProvider), isA<NotificationsDenied>());
+
+      await notifications.cancelAll();
+
+      expect(plugin.cancelAllCalls, 1);
+    });
+
+    test('before the notifications have started, asks nothing of the system and reports nothing', () async {
+      final plugin = FakeNotificationPlugin();
+      final (:container, :telemetry) = _open(plugin, platform: TargetPlatform.windows);
+
+      await container.read(desktopLocalNotificationsProvider.notifier).cancelAll();
+
+      expect(plugin.cancelAllCalls, 0);
+      expect(telemetry.errors, isEmpty);
+    });
+
+    test('with notifications unavailable, asks nothing of the system and reports nothing more', () async {
+      final plugin = FakeNotificationPlugin(startError: StateError('no service'));
+      final (:container, :telemetry) = _open(plugin, platform: TargetPlatform.linux);
+      final notifications = container.read(desktopLocalNotificationsProvider.notifier);
+      await notifications.start();
+
+      await notifications.cancelAll();
+
+      expect(plugin.cancelAllCalls, 0);
+      expect(telemetry.errors, ['desktop_notifications_unavailable']);
+    });
+
+    test('that the system refuses fails, for the reset to report', () async {
+      final plugin = FakeNotificationPlugin()..cancelAllError = StateError('refused');
+      final (:container, telemetry: _) = _open(plugin, platform: TargetPlatform.macOS);
+      final notifications = container.read(desktopLocalNotificationsProvider.notifier);
+      await notifications.start();
+
+      await expectLater(notifications.cancelAll(), throwsStateError);
+    });
+  });
+
   group('when the window comes back', () {
     /// The person returns to the app, from System Settings for one.
     Future<void> windowReturns() async {

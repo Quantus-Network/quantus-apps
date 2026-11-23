@@ -201,7 +201,10 @@ void main() {
       await _settleDown();
 
       expect(_shown(notifications), [('Sent 12.5 QTC', 'From Main')]);
-      expect(jsonDecode(notifications.shown.single.payload), {'accountId': mainAccount.accountId});
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': mainAccount.accountId,
+        'extrinsicHash': _sendHash,
+      });
     });
 
     test('sent as Max notifies the amount the chain moved, not the estimate it was recorded with', () async {
@@ -240,6 +243,10 @@ void main() {
           '12.5 QTC from Main wasn’t seen on the chain in time. It may have failed, or only be late.',
         ),
       ]);
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': mainAccount.accountId,
+        'extrinsicHash': _sendHash,
+      });
     });
 
     test('that is marked failed notifies that it failed', () async {
@@ -251,6 +258,10 @@ void main() {
       await _settleDown();
 
       expect(_shown(notifications), [('Send failed', '12.5 QTC from Main was not sent.')]);
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': mainAccount.accountId,
+        'extrinsicHash': _sendHash,
+      });
     });
 
     test('whose broadcast failed notifies nothing: the send sheet says so', () async {
@@ -297,7 +308,10 @@ void main() {
       await _settleDown();
 
       expect(_shown(notifications), [('Proposal created', 'Send 12.5 QTC from Team')]);
-      expect(jsonDecode(notifications.shown.single.payload), {'accountId': teamMultisig.accountId});
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': teamMultisig.accountId,
+        'extrinsicHash': _proposalHash,
+      });
     });
 
     test('not seen in time notifies that it was not confirmed', () async {
@@ -310,6 +324,10 @@ void main() {
       expect(_shown(notifications), [
         ('Proposal not confirmed', 'The proposal to send 12.5 QTC from Team wasn’t seen on the chain in time.'),
       ]);
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': teamMultisig.accountId,
+        'extrinsicHash': _proposalHash,
+      });
     });
   });
 

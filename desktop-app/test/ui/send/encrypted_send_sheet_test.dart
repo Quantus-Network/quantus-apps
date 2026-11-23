@@ -24,6 +24,7 @@ import 'package:wallet_core/send/send_fee_notifier.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import '../../fakes.dart';
+import '../../services/fake_notification_plugin.dart';
 
 final _l10n = lookupAppLocalizations(const Locale('en'));
 const _colors = AppColorsV3.dark();
@@ -106,6 +107,8 @@ Future<FakeEncryptedSendController> _openSend(
   FakeUserApproval? approval,
   Size? window,
   bool reduceMotion = true,
+  FakeSendChain? chain,
+  FakeNotificationPlugin? notifications,
 }) async {
   final proving = FakeEncryptedSendController();
   _opened.clear();
@@ -113,6 +116,7 @@ Future<FakeEncryptedSendController> _openSend(
   await pumpShell(
     tester,
     reduceMotion: reduceMotion,
+    notifications: notifications,
     overrides: [
       ...shellOverrides(
         accounts: const [mainAccount, encryptedAccount],
@@ -123,6 +127,7 @@ Future<FakeEncryptedSendController> _openSend(
         oneClick: oneClick,
         approval: approval,
         proving: proving,
+        chain: chain,
       ),
       openExternalUrlProvider.overrideWithValue((url) async => _opened.add(url)),
       shareTextProvider.overrideWithValue((text, {origin}) async => _shared.add((text, origin))),
@@ -141,8 +146,20 @@ Future<FakeEncryptedSendController> _openSend(
 ///
 /// With [reduceMotion] off the progress step's spinner turns from then on, so
 /// nothing after this may wait for the window to settle.
-Future<FakeEncryptedSendController> _startSend(WidgetTester tester, {Size? window, bool reduceMotion = true}) async {
-  final proving = await _openSend(tester, window: window, reduceMotion: reduceMotion);
+Future<FakeEncryptedSendController> _startSend(
+  WidgetTester tester, {
+  Size? window,
+  bool reduceMotion = true,
+  FakeSendChain? chain,
+  FakeNotificationPlugin? notifications,
+}) async {
+  final proving = await _openSend(
+    tester,
+    window: window,
+    reduceMotion: reduceMotion,
+    chain: chain,
+    notifications: notifications,
+  );
   await _fill(tester);
   await _tap(tester, SendSheet.reviewKey);
   if (reduceMotion) {
@@ -169,6 +186,54 @@ Future<void> _report(WidgetTester tester, FakeEncryptedSendController proving, E
 }
 
 void main() {
+  group('its notification', () {
+    testOnMac('still comes once the chain has the send, after the sheet was closed', (tester) async {
+      final chain = FakeSendChain();
+      final notifications = FakeNotificationPlugin();
+      final proving = await _startSend(tester, chain: chain, notifications: notifications);
+      await _report(tester, proving, EncryptedSendState(phase: EncryptedSendPhase.succeeded, txHashes: ['0xhash']));
+      await _tap(tester, SendSheet.doneKey);
+      expect(notifications.shown, isEmpty);
+
+      chain.indexedTransfers['0xhash'] = TransferEvent(
+        id: 'indexed',
+        from: 'qzExit',
+        to: 'qzPayee',
+        amount: _qtc(250),
+        timestamp: DateTime(2026, 11, 22),
+        fee: BigInt.zero,
+        extrinsicHash: '0xhash',
+        blockNumber: 10,
+        blockHash: '0xblock',
+      );
+      await tester.pump(const Duration(seconds: 6));
+      await tester.pumpAndSettle();
+
+      expect(notifications.shown.map((n) => (n.title, n.body)), [('Sent 250 QTC', 'From Encrypted Account')]);
+    });
+
+    testOnMac('says so when the proving fails', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final proving = await _startSend(tester, notifications: notifications);
+
+      await _report(tester, proving, _partWay(EncryptedSendPhase.failed, errorMessage: 'The network refused it'));
+      // More said about the same ending is not another notification.
+      await _report(tester, proving, _partWay(EncryptedSendPhase.failed, errorMessage: 'It refused it again'));
+
+      expect(notifications.shown.single.title, 'Send failed');
+    });
+
+    testOnMac('never keeps a proving alive: closing the sheet still ends it', (tester) async {
+      final proving = await _startSend(tester, notifications: FakeNotificationPlugin());
+      await _report(tester, proving, _partWay(EncryptedSendPhase.failed, errorMessage: 'The network refused it'));
+      expect(proving.wasDisposed, isFalse);
+
+      await _tap(tester, SendSheet.closeKey);
+
+      expect(proving.wasDisposed, isTrue);
+    });
+  });
+
   testOnMac('closing the window leaves a private send being proved running', (tester) async {
     final proving = await _startSend(tester);
     expect(proving.starts, hasLength(1));
@@ -215,7 +280,8 @@ void main() {
       ('goes stale', EncryptedSendState(phase: EncryptedSendPhase.planStale)),
     ]) {
       testOnMac('counts while proving and stopping, until the proving $ending, with no frame needed', (tester) async {
-        final proving = await _startSend(tester);
+        // Notifications off: one on its way would count as work of its own.
+        final proving = await _startSend(tester, notifications: FakeNotificationPlugin(grants: false));
         await _report(tester, proving, _partWay(EncryptedSendPhase.running));
         expect(container(tester).read(pendingWorkProvider), isTrue);
         await _report(tester, proving, _partWay(EncryptedSendPhase.canceling));

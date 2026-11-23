@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
 import '../fakes.dart';
@@ -19,12 +19,22 @@ class _Balances extends FakeBalancesService {
   }
 }
 
-/// The chain not answering: the kind of failure a provider retries on its
-/// own unless told not to, which an [Error] is not.
-class _SubstrateDown extends FakeSubstrateService {
+/// The chain pricing every call at [fee], or not answering when there is
+/// none: the kind of failure a provider retries on its own unless told not
+/// to, which an [Error] is not.
+class _Substrate extends Fake implements SubstrateService {
+  _Substrate(this.fee);
+
+  final BigInt? fee;
+  final asked = <Account>[];
+
   @override
-  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async =>
-      throw TimeoutException('the chain did not answer');
+  Future<ExtrinsicFeeData> getFeeForCall(Account account, RuntimeCall call) async {
+    asked.add(account);
+    final fee = this.fee;
+    if (fee == null) throw TimeoutException('the chain did not answer');
+    return ExtrinsicFeeData(fee: fee, blockHash: '0x00', blockNumber: 1);
+  }
 }
 
 void main() {
@@ -45,7 +55,7 @@ void main() {
   test(
     "the deposit's fee is the chain's for sending the amount from the account, its own address standing in",
     () async {
-      final substrate = FakeSubstrateService(fee: BigInt.from(1200000000));
+      final substrate = _Substrate(BigInt.from(1200000000));
       final balances = _Balances();
       final container = containerWith(substrate, balances);
       final key = swapDepositFeeProvider((account, amount));
@@ -54,14 +64,14 @@ void main() {
 
       expect(await container.read(key.future), BigInt.from(1200000000));
       expect(balances.transfers, [(account.accountId, amount)]);
-      expect(substrate.lastFeeAccount, account);
-      expect(substrate.feeCalls, 1);
+      expect(substrate.asked, [account]);
     },
   );
 
   test('a fee the chain cannot give is an error, asked for once: it is not retried on its own', () async {
     final balances = _Balances();
-    final container = containerWith(_SubstrateDown(), balances);
+    final substrate = _Substrate(null);
+    final container = containerWith(substrate, balances);
     final key = swapDepositFeeProvider((account, amount));
     final kept = container.listen(key, (_, _) {}, onError: (_, _) {});
     addTearDown(kept.close);
@@ -70,5 +80,6 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 600));
     expect(container.read(key).hasError, isTrue);
     expect(balances.transfers, hasLength(1));
+    expect(substrate.asked, hasLength(1));
   });
 }
