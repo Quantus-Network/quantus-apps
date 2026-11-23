@@ -39,16 +39,7 @@ import '../fakes.dart';
 import 'fake_background_window.dart';
 import 'fake_notification_plugin.dart';
 
-const BackgroundModeRequest _keepsRunning = (
-  keepRunning: true,
-  openLabel: 'Open Quantus Wallet',
-  quitLabel: 'Quit Quantus Wallet',
-);
-const BackgroundModeRequest _quits = (
-  keepRunning: false,
-  openLabel: 'Open Quantus Wallet',
-  quitLabel: 'Quit Quantus Wallet',
-);
+const StatusItemLabels _labels = (openLabel: 'Open Quantus Wallet', quitLabel: 'Quit Quantus Wallet');
 
 /// A stored phrase whose words say where they are: `w01` … `w24`.
 final _words = [for (var i = 1; i <= 24; i++) 'w${i.toString().padLeft(2, '0')}'];
@@ -65,10 +56,12 @@ class _RecordingTelemetry implements Telemetry {
 
 typedef _Opened = ({FakeBackgroundWindow window, ProviderContainer container, List<String> exits});
 
-/// The app, on a wallet of Main and Savings unless [hasWallet] is false.
+/// The app, on a wallet of Main and Savings unless [hasWallet] is false. With
+/// [workUnderWay] something is under way, so closing the window hides it.
 Future<_Opened> _open(
   WidgetTester tester, {
   bool hasWallet = true,
+  bool workUnderWay = false,
   String locale = 'en',
   FakeUserApproval? approval,
   FakeNotificationPlugin? notifications,
@@ -91,8 +84,12 @@ Future<_Opened> _open(
     ],
   );
   final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+  if (workUnderWay) container.read(workHoldsProvider.notifier).hold(_work);
   return (window: window, container: container, exits: exits);
 }
+
+/// What holds the app open in a test that has work under way.
+const _work = 'work under way';
 
 /// File › Close Window.
 Future<void> _closeFromMenu(WidgetTester tester, ProviderContainer container) async {
@@ -129,47 +126,16 @@ Future<void> _revealInSettings(WidgetTester tester, ProviderContainer container)
 
 void main() {
   group('telling the window', () {
-    testOnMac('with a wallet it keeps running, its menu in the app language', (tester) async {
+    testOnMac('the menu bar icon gets its labels in the app language', (tester) async {
       final (:window, container: _, exits: _) = await _open(tester);
 
-      expect(window.configured.last, _keepsRunning);
+      expect(window.configured.last, _labels);
     });
 
     testOnMac('the menu follows the language the app starts in', (tester) async {
       final (:window, container: _, exits: _) = await _open(tester, locale: 'id');
 
-      expect(window.configured.last, (
-        keepRunning: true,
-        openLabel: 'Buka Quantus Wallet',
-        quitLabel: 'Keluar dari Quantus Wallet',
-      ));
-    });
-
-    testOnMac('with no wallet it quits on close', (tester) async {
-      final (:window, container: _, exits: _) = await _open(tester, hasWallet: false);
-
-      expect(window.configured.last, _quits);
-    });
-
-    testOnMac('a wallet being added tells it at once', (tester) async {
-      final (:window, :container, exits: _) = await _open(tester, hasWallet: false);
-
-      container.read(walletPresenceProvider.notifier).walletAdded();
-      await tester.pump();
-
-      expect(window.configured.last, _keepsRunning);
-    });
-
-    testOnMac('turning the setting off and on tells it at once', (tester) async {
-      final (:window, :container, exits: _) = await _open(tester);
-
-      await container.read(keepRunningProvider.notifier).setEnabled(false);
-      await tester.pump();
-      expect(window.configured.last, _quits);
-
-      await container.read(keepRunningProvider.notifier).setEnabled(true);
-      await tester.pump();
-      expect(window.configured.last, _keepsRunning);
+      expect(window.configured.last, (openLabel: 'Buka Quantus Wallet', quitLabel: 'Keluar dari Quantus Wallet'));
     });
 
     testOnMac('a change of language updates its menu', (tester) async {
@@ -209,8 +175,8 @@ void main() {
   });
 
   group('Close Window', () {
-    testOnMac('hides the window and leaves the app running', (tester) async {
-      final (:window, :container, :exits) = await _open(tester);
+    testOnMac('with work under way, the menu item hides the window and leaves the app running', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
 
       await _closeFromMenu(tester, container);
 
@@ -219,10 +185,37 @@ void main() {
       expect(container.read(windowClosedProvider), isTrue);
     });
 
-    testOnMac('with the setting off it quits', (tester) async {
+    testOnMac('with work under way, the close button hides the window and leaves the app running', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+
+      await _pressClose(tester, window);
+
+      expect(window.calls, ['hide']);
+      expect(exits, isEmpty);
+      expect(container.read(windowClosedProvider), isTrue);
+    });
+
+    testOnMac('with nothing under way, the menu item quits', (tester) async {
       final (:window, :container, :exits) = await _open(tester);
-      await container.read(keepRunningProvider.notifier).setEnabled(false);
-      await tester.pump();
+
+      await _closeFromMenu(tester, container);
+
+      expect(exits, ['exit']);
+      expect(window.calls, isEmpty);
+      expect(container.read(windowClosedProvider), isFalse);
+    });
+
+    testOnMac('with nothing under way, the close button lets the window close, which quits', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      await _pressClose(tester, window);
+
+      expect(window.calls, ['quit']);
+      expect(container.read(windowClosedProvider), isFalse);
+    });
+
+    testOnMac('with no wallet it quits', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, hasWallet: false);
 
       await _closeFromMenu(tester, container);
 
@@ -230,8 +223,17 @@ void main() {
       expect(window.calls, isEmpty);
     });
 
-    testOnMac('with no wallet it quits', (tester) async {
-      final (:window, :container, :exits) = await _open(tester, hasWallet: false);
+    testOnMac('work that started just before the close is honored', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester);
+
+      container.read(workHoldsProvider.notifier).hold(_work);
+      await _pressClose(tester, window);
+
+      expect(window.calls, ['hide']);
+    });
+
+    testOnWindowsAndLinux('Windows and Linux quit, even with work under way', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
 
       await _closeFromMenu(tester, container);
 
@@ -253,7 +255,7 @@ void main() {
       );
       addTearDown(container.dispose);
       container.read(backgroundModeProvider);
-      await container.read(walletPresenceProvider.future);
+      container.read(workHoldsProvider.notifier).hold(_work);
       await tester.pump();
 
       await _closeFromMenu(tester, container);
@@ -266,7 +268,7 @@ void main() {
 
   group('while closed', () {
     testOnMac('coming back through the Dock or the menu bar counts as open', (tester) async {
-      final (:window, :container, exits: _) = await _open(tester);
+      final (:window, :container, exits: _) = await _open(tester, workUnderWay: true);
       await _pressClose(tester, window);
       expect(container.read(windowClosedProvider), isTrue);
 
@@ -276,7 +278,7 @@ void main() {
     });
 
     testOnMac('closing a window already off the screen waits for no frame', (tester) async {
-      final (:window, :container, exits: _) = await _open(tester);
+      final (:window, :container, exits: _) = await _open(tester, workUnderWay: true);
       addTearDown(() => tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed));
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
@@ -290,18 +292,18 @@ void main() {
     });
 
     testOnMac('a menu command that opens a sheet brings the window forward', (tester) async {
-      final (:window, :container, exits: _) = await _open(tester);
+      final (:window, :container, exits: _) = await _open(tester, workUnderWay: true);
       await _pressClose(tester, window);
 
       container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
       await tester.pumpAndSettle();
 
-      expect(window.calls, ['bringToFront']);
+      expect(window.calls, ['hide', 'bringToFront']);
       expect(container.read(windowClosedProvider), isFalse);
     });
 
     testOnMac('with the window open, a sheet asks nothing of it', (tester) async {
-      final (:window, :container, exits: _) = await _open(tester);
+      final (:window, :container, exits: _) = await _open(tester, workUnderWay: true);
 
       container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
       await tester.pumpAndSettle();
@@ -312,7 +314,7 @@ void main() {
     testOnMac('a notification click brings the window forward, on its account', (tester) async {
       final requests = recordWindowRequests(tester);
       final notifications = FakeNotificationPlugin();
-      final (:window, :container, exits: _) = await _open(tester, notifications: notifications);
+      final (:window, :container, exits: _) = await _open(tester, workUnderWay: true, notifications: notifications);
       await _pressClose(tester, window);
 
       notifications.click(jsonEncode({'accountId': savingsAccount.accountId}));
@@ -330,7 +332,7 @@ void main() {
     ]) {
       testOnMac('on screen in Settings leaves it with $how, and needs approval again', (tester) async {
         final approval = FakeUserApproval();
-        final opened = await _open(tester, approval: approval);
+        final opened = await _open(tester, workUnderWay: true, approval: approval);
         await _revealInSettings(tester, opened.container);
         expect(approval.reasons, hasLength(1));
 
@@ -350,7 +352,7 @@ void main() {
 
     testOnMac('on screen in Account Info leaves it, and needs approval again', (tester) async {
       final approval = FakeUserApproval();
-      final opened = await _open(tester, approval: approval);
+      final opened = await _open(tester, workUnderWay: true, approval: approval);
       await opened.container.read(accountManagerProvider).openInfo(mainAccount);
       await tester.pumpAndSettle();
       await _tap(tester, _inSheet(find.byKey(AccountInfoSheet.recoveryPhraseRowKey)));
@@ -374,7 +376,7 @@ void main() {
     testOnMac('approved only after the window closed is not shown', (tester) async {
       final answer = Completer<ApprovalResult>();
       final approval = FakeUserApproval()..answer = () => answer.future;
-      final opened = await _open(tester, approval: approval);
+      final opened = await _open(tester, workUnderWay: true, approval: approval);
       opened.container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
       await tester.pumpAndSettle();
       await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
@@ -449,7 +451,7 @@ void main() {
         final answer = Completer<ApprovalResult>();
         final approval = FakeUserApproval()..answer = () => answer.future;
         final device = FakeWalletDevice();
-        final opened = await _open(tester, approval: approval, onDevice: device);
+        final opened = await _open(tester, workUnderWay: true, approval: approval, onDevice: device);
         await openCaution(tester, opened);
         await tester.tap(find.byKey(SettingsSheet.continueKey));
         await tester.pump();
@@ -468,7 +470,7 @@ void main() {
         final read = Completer<void>();
         final approval = FakeUserApproval();
         final device = FakeWalletDevice();
-        final opened = await _open(tester, approval: approval, onDevice: device);
+        final opened = await _open(tester, workUnderWay: true, approval: approval, onDevice: device);
         // Held only from here: the app reads the phrase as it starts, too.
         device.storage.mnemonicGate = read.future;
         await openCaution(tester, opened);
@@ -488,7 +490,7 @@ void main() {
         return null;
       });
       addTearDown(() => messenger.setMockMethodCallHandler(SensitiveClipboard.channel, null));
-      final (:window, :container, exits: _) = await _open(tester);
+      final (:window, :container, exits: _) = await _open(tester, workUnderWay: true);
 
       await container.read(sensitiveClipboardProvider).copy('a copied phrase');
       await _pressClose(tester, window);
@@ -698,25 +700,22 @@ void main() {
       WindowChrome.channel.setMethodCallHandler(null);
     });
 
-    Future<void> fromNative(String method) async {
-      final answered = Completer<void>();
+    /// Calls [method] as the window does, and gives the app's answer.
+    Future<Object?> fromNative(String method) async {
+      final answered = Completer<Object?>();
       await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
         WindowChrome.channel.name,
         WindowChrome.channel.codec.encodeMethodCall(MethodCall(method)),
-        (_) => answered.complete(),
+        (reply) => answered.complete(WindowChrome.channel.codec.decodeEnvelope(reply!)),
       );
-      await answered.future;
+      return answered.future;
     }
 
-    test('is told the mode, with its labels', () async {
-      await const BackgroundWindow().configure(_keepsRunning);
+    test('is told the menu bar icon\'s labels', () async {
+      await const BackgroundWindow().configure(_labels);
 
-      expect(sent.single.method, 'setBackgroundMode');
-      expect(sent.single.arguments, {
-        'keepRunning': true,
-        'openLabel': 'Open Quantus Wallet',
-        'quitLabel': 'Quit Quantus Wallet',
-      });
+      expect(sent.single.method, 'setStatusItemLabels');
+      expect(sent.single.arguments, {'openLabel': 'Open Quantus Wallet', 'quitLabel': 'Quit Quantus Wallet'});
     });
 
     test('is asked to hide', () async {
@@ -732,18 +731,18 @@ void main() {
       expect(sent.single.arguments, {'isAwake': true});
     });
 
-    test('is answered only once the app is ready for the window to close', () async {
-      final ready = Completer<void>();
+    test('is answered only once the app is ready for the window to close, with whether to hide it', () async {
+      final ready = Completer<bool>();
       var opened = 0;
       const BackgroundWindow().listen(onWillClose: () => ready.future, onDidOpen: () => opened++);
-      var answered = false;
-      unawaited(fromNative('windowWillClose').then((_) => answered = true));
+      Object? answer = 'unanswered';
+      unawaited(fromNative('windowWillClose').then((reply) => answer = reply));
       await Future<void>.delayed(Duration.zero);
-      expect(answered, isFalse);
+      expect(answer, 'unanswered');
 
-      ready.complete();
+      ready.complete(true);
       await Future<void>.delayed(Duration.zero);
-      expect(answered, isTrue);
+      expect(answer, isTrue);
 
       await fromNative('windowDidOpen');
       expect(opened, 1);

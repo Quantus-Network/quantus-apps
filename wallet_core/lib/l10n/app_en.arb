@@ -4720,14 +4720,6 @@
         }
       }
     },
-    "desktopKeepRunningTitle": "Keep Running When Closed",
-    "@desktopKeepRunningTitle": {
-      "description": "Desktop Settings: the switch for whether the app keeps running after its window is closed"
-    },
-    "desktopKeepRunningSubtitle": "Keeps watching your sends and proposals",
-    "@desktopKeepRunningSubtitle": {
-      "description": "Desktop Settings: what keeping the app running after its window closes is for"
-    },
     "desktopStatusItemOpen": "Open {appName}",
     "@desktopStatusItemOpen": {
       "description": "Desktop menu bar icon's menu: shows the app's window again",

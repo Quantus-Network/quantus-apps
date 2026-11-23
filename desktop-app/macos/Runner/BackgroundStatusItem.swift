@@ -1,6 +1,6 @@
 import Cocoa
 
-/// The menu bar icon, there while closing the window leaves the app running,
+/// The menu bar icon, there while the window is closed with work under way,
 /// so a wallet with no window is never out of sight. Its menu brings the
 /// window back or quits the app, in the app's language.
 final class BackgroundStatusItem: NSObject {
@@ -24,13 +24,16 @@ final class BackgroundStatusItem: NSObject {
     menu.addItem(quitItem)
   }
 
-  /// Shows the icon or takes it away, its menu saying [openLabel] and [quitLabel].
-  func update(isShown: Bool, openLabel: String, quitLabel: String) {
+  /// What the icon's menu says.
+  func setLabels(openLabel: String, quitLabel: String) {
     openItem.title = openLabel
     quitItem.title = quitLabel
     item?.button?.toolTip = openLabel
     item?.button?.setAccessibilityLabel(openLabel)
+  }
 
+  /// Shows the icon or takes it away.
+  func setShown(_ isShown: Bool) {
     guard isShown else {
       if let item {
         NSStatusBar.system.removeStatusItem(item)
@@ -39,6 +42,7 @@ final class BackgroundStatusItem: NSObject {
       return
     }
     guard item == nil else { return }
+    let openLabel = openItem.title
 
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     if let image = NSImage(named: BackgroundStatusItem.imageName) {

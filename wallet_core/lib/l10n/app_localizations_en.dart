@@ -3212,12 +3212,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get desktopKeepRunningTitle => 'Keep Running When Closed';
-
-  @override
-  String get desktopKeepRunningSubtitle => 'Keeps watching your sends and proposals';
-
-  @override
   String desktopStatusItemOpen(String appName) {
     return 'Open $appName';
   }

@@ -26,9 +26,10 @@ class MainFlutterWindow: NSWindow {
   /// until its mouse-up.
   private var isHeaderPressInFlutter = false
 
-  /// Whether closing the window leaves the app running. The app says so once
-  /// it has started; until then, closing the window quits it.
-  private var keepsRunning = false
+  /// Whether the app is listening, which it says by sending the menu bar
+  /// icon's labels. Until then there is no one to ask, and closing the window
+  /// quits the app.
+  private var isAppListening = false
 
   /// Whether the window is to leave the screen once it is out of full screen.
   private var hidesAfterFullScreen = false
@@ -69,19 +70,18 @@ class MainFlutterWindow: NSWindow {
       case "bringToFront":
         self?.bringToFront()
         result(nil)
-      case "setBackgroundMode":
+      case "setStatusItemLabels":
         guard let arguments = call.arguments as? [String: Any],
-          let keepRunning = arguments["keepRunning"] as? Bool,
           let openLabel = arguments["openLabel"] as? String,
           let quitLabel = arguments["quitLabel"] as? String
         else {
           result(
             FlutterError(
-              code: "arguments", message: "setBackgroundMode needs keepRunning, openLabel and quitLabel", details: nil))
+              code: "arguments", message: "setStatusItemLabels needs openLabel and quitLabel", details: nil))
           return
         }
-        self?.keepsRunning = keepRunning
-        self?.statusItem.update(isShown: keepRunning, openLabel: openLabel, quitLabel: quitLabel)
+        self?.isAppListening = true
+        self?.statusItem.setLabels(openLabel: openLabel, quitLabel: quitLabel)
         result(nil)
       case "hideWindow":
         self?.hideKeepingAppRunning()
@@ -170,23 +170,25 @@ class MainFlutterWindow: NSWindow {
     }
   }
 
-  /// The close button. With the app to keep running, the app first takes off
-  /// the screen what must not be there when the window returns, and the
-  /// window then leaves. If the app cannot do that, the window closes for
-  /// real, which quits the app.
+  /// The close button. The app says whether work is under way: if so it first
+  /// takes off the screen what must not be there when the window returns, and
+  /// the window hides. Otherwise, or if the app cannot answer, the window
+  /// closes for real, which quits the app.
   override func performClose(_ sender: Any?) {
-    guard keepsRunning, let windowChannel else {
+    guard isAppListening, let windowChannel else {
       super.performClose(sender)
       return
     }
     windowChannel.invokeMethod("windowWillClose", arguments: nil) { [weak self] answer in
       guard let self else { return }
-      if answer is FlutterError || (answer as? NSObject) === FlutterMethodNotImplemented {
-        NSLog("MainFlutterWindow: the app did not get ready for its window to close, so it quits: \(String(describing: answer))")
-        self.closeAndQuit(sender)
+      if answer as? Bool == true {
+        self.hideKeepingAppRunning()
         return
       }
-      self.hideKeepingAppRunning()
+      if answer is FlutterError || (answer as? NSObject) === FlutterMethodNotImplemented {
+        NSLog("MainFlutterWindow: the app did not answer the close, so it quits: \(String(describing: answer))")
+      }
+      self.closeAndQuit(sender)
     }
   }
 
@@ -197,6 +199,7 @@ class MainFlutterWindow: NSWindow {
   /// Takes the window off the screen, the app still running. A window in
   /// full screen comes out of it first, or its empty space would stay.
   private func hideKeepingAppRunning() {
+    statusItem.setShown(true)
     if self.styleMask.contains(.fullScreen) {
       hidesAfterFullScreen = true
       self.toggleFullScreen(nil)
@@ -227,6 +230,7 @@ class MainFlutterWindow: NSWindow {
   /// icon was clicked.
   func bringToFront() {
     hidesAfterFullScreen = false
+    statusItem.setShown(false)
     NSApp.unhide(nil)
     if self.isMiniaturized {
       self.deminiaturize(nil)

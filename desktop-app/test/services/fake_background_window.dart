@@ -6,9 +6,10 @@ import 'package:quantus_desktop_wallet/services/background_window.dart';
 /// lets a test press its close button or bring it back.
 class FakeBackgroundWindow implements BackgroundWindow {
   /// Each thing the window was told, in order.
-  final configured = <BackgroundModeRequest>[];
+  final configured = <StatusItemLabels>[];
 
-  /// `hide` and `bringToFront`, in the order asked.
+  /// `hide`, `quit` (the close button let through) and `bringToFront`, in
+  /// the order they happened.
   final calls = <String>[];
 
   /// Each request to stay awake (true) or that it is no longer needed (false).
@@ -20,13 +21,13 @@ class FakeBackgroundWindow implements BackgroundWindow {
   /// When set, hiding the window fails with this.
   Object? hideError;
 
-  Future<void> Function()? _onWillClose;
+  Future<bool> Function()? _onWillClose;
   VoidCallback? _onDidOpen;
 
   @override
-  Future<void> configure(BackgroundModeRequest request) async {
+  Future<void> configure(StatusItemLabels labels) async {
     if (configureError case final error?) throw error;
-    configured.add(request);
+    configured.add(labels);
   }
 
   @override
@@ -45,7 +46,7 @@ class FakeBackgroundWindow implements BackgroundWindow {
   }
 
   @override
-  void listen({required Future<void> Function() onWillClose, required VoidCallback onDidOpen}) {
+  void listen({required Future<bool> Function() onWillClose, required VoidCallback onDidOpen}) {
     _onWillClose = onWillClose;
     _onDidOpen = onDidOpen;
   }
@@ -56,8 +57,9 @@ class FakeBackgroundWindow implements BackgroundWindow {
     _onDidOpen = null;
   }
 
-  /// The window's close button: the app is told, then the window leaves.
-  Future<void> pressCloseButton() => _onWillClose!();
+  /// The window's close button: the app says whether to hide the window, and
+  /// otherwise it closes, which quits the app.
+  Future<void> pressCloseButton() async => calls.add(await _onWillClose!() ? 'hide' : 'quit');
 
   /// The Dock icon or the menu bar icon brought the window back.
   void reopen() => _onDidOpen!();

@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
-import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
@@ -608,7 +607,7 @@ void main() {
       expect(exitRequests, 1);
     });
 
-    testOnMac('with Keep Running off, File → Close Window (⌘W) asks the app to exit', (tester) async {
+    testOnMac('with nothing under way, File → Close Window (⌘W) asks the app to exit', (tester) async {
       var exitRequests = 0;
       await pumpShell(
         tester,
@@ -617,10 +616,6 @@ void main() {
           requestAppExitProvider.overrideWithValue(() => exitRequests++),
         ],
       );
-      await ProviderScope.containerOf(
-        tester.element(find.byType(DesktopShell)),
-      ).read(keepRunningProvider.notifier).setEnabled(false);
-      await tester.pumpAndSettle();
 
       final close = _nativeItem(tester, 'File', 'Close Window');
       expect(close.shortcut, _isShortcut(LogicalKeyboardKey.keyW, meta: true));

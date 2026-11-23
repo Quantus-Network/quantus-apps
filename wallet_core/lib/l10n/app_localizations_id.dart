@@ -3217,12 +3217,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String get desktopKeepRunningTitle => 'Tetap Berjalan Saat Ditutup';
-
-  @override
-  String get desktopKeepRunningSubtitle => 'Tetap memantau pengiriman dan proposal Anda';
-
-  @override
   String desktopStatusItemOpen(String appName) {
     return 'Buka $appName';
   }

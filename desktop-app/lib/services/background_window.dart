@@ -2,21 +2,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 
-/// What the native window is to do while the app runs: whether closing it
-/// leaves the app running, and the menu bar icon's items.
-typedef BackgroundModeRequest = ({bool keepRunning, String openLabel, String quitLabel});
+/// The items of the menu bar icon, there while the window is closed with work
+/// under way.
+typedef StatusItemLabels = ({String openLabel, String quitLabel});
 
 /// The native side of running with the window closed, on the channel of
 /// [WindowChrome]. Served by `MainFlutterWindow.swift`; only macOS has it.
 class BackgroundWindow {
   const BackgroundWindow();
 
-  /// Tells the window what to do when it is closed. Until it has been told,
-  /// closing it quits the app.
-  Future<void> configure(BackgroundModeRequest request) => WindowChrome.channel.invokeMethod<void>(
-    'setBackgroundMode',
-    {'keepRunning': request.keepRunning, 'openLabel': request.openLabel, 'quitLabel': request.quitLabel},
-  );
+  /// Tells the window what its menu bar icon's items say. Until it has been
+  /// told, the app is not ready to be asked about closing, and closing the
+  /// window quits it.
+  Future<void> configure(StatusItemLabels labels) => WindowChrome.channel.invokeMethod<void>('setStatusItemLabels', {
+    'openLabel': labels.openLabel,
+    'quitLabel': labels.quitLabel,
+  });
 
   /// Takes the window off the screen and leaves the app running.
   Future<void> hide() => WindowChrome.channel.invokeMethod<void>('hideWindow');
@@ -29,12 +30,13 @@ class BackgroundWindow {
   Future<void> bringToFront() => const WindowChrome().bringToFront();
 
   /// Answers the window: [onWillClose] when the person closed it, which it
-  /// waits for before leaving the screen, and [onDidOpen] when it came back.
-  void listen({required Future<void> Function() onWillClose, required VoidCallback onDidOpen}) {
+  /// waits for and which says whether to hide (true) or to close and quit
+  /// (false), and [onDidOpen] when it came back.
+  void listen({required Future<bool> Function() onWillClose, required VoidCallback onDidOpen}) {
     WindowChrome.channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'windowWillClose':
-          await onWillClose();
+          return onWillClose();
         case 'windowDidOpen':
           onDidOpen();
         default:
