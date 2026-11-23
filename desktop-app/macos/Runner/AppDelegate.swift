@@ -7,6 +7,23 @@ class AppDelegate: FlutterAppDelegate {
     return true
   }
 
+  /// A logout, restart or shutdown goes through at once. Flutter otherwise
+  /// cancels every request to quit while it asks the app, and a cancelled one
+  /// stops the whole logout or shutdown.
+  override func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+    if isSessionEnding { return .terminateNow }
+    return super.applicationShouldTerminate(sender)
+  }
+
+  /// Whether the system is quitting the app because the session is ending.
+  private var isSessionEnding: Bool {
+    guard
+      let reason = NSAppleEventManager.shared().currentAppleEvent?
+        .attributeDescriptor(forKeyword: AEKeyword(kAEQuitReason))?.typeCodeValue
+    else { return false }
+    return [OSType(kAEReallyLogOut), OSType(kAERestart), OSType(kAEShutDown)].contains(reason)
+  }
+
   /// A click on the Dock icon brings back a window that was closed with the
   /// app still running.
   override func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -83,6 +84,7 @@ Future<_Opened> _open(
       ...device.overrides,
       systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
       requestAppExitProvider.overrideWithValue(() => exits.add('exit')),
+      forceAppExitProvider.overrideWithValue(() => exits.add('forced')),
     ],
   );
   final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
@@ -745,6 +747,116 @@ void main() {
 
       expect(window.calls, ['hide']);
       expect(exits, isEmpty);
+    });
+  });
+
+  group('quitting', () {
+    const title = 'A Transaction Is Still Under Way';
+    const finishFirst = 'Finish, Then Quit';
+    const quitNow = 'Quit Now';
+
+    /// Cmd+Q or the menu bar icon's Quit, as the system passes it on.
+    Future<AppExitResponse> requestQuit(WidgetTester tester) async {
+      final response = await tester.binding.handleRequestAppExit();
+      await tester.pumpAndSettle();
+      return response;
+    }
+
+    testOnMac('with nothing under way it quits without asking', (tester) async {
+      await _open(tester);
+
+      expect(await requestQuit(tester), AppExitResponse.exit);
+      expect(find.text(title), findsNothing);
+    });
+
+    testOnMac('with work under way it stays, and asks', (tester) async {
+      final (:window, container: _, :exits) = await _open(tester, workUnderWay: true);
+
+      expect(await requestQuit(tester), AppExitResponse.cancel);
+
+      expect(find.text(title), findsOneWidget);
+      expect(find.text(finishFirst), findsOneWidget);
+      expect(find.text(quitNow), findsOneWidget);
+      expect(window.calls, isEmpty);
+      expect(exits, isEmpty);
+    });
+
+    testOnMac('from the menu bar icon, with the window closed, it brings the window forward to ask', (tester) async {
+      final (:window, :container, exits: _) = await _open(tester, workUnderWay: true);
+      await _pressClose(tester, window);
+
+      expect(await requestQuit(tester), AppExitResponse.cancel);
+
+      expect(window.calls, ['hide', 'bringToFront']);
+      expect(container.read(windowClosedProvider), isFalse);
+      expect(find.text(title), findsOneWidget);
+    });
+
+    testOnMac('Finish, Then Quit hides the window and quits once the work settles', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      await requestQuit(tester);
+
+      await _tap(tester, find.text(finishFirst));
+
+      expect(find.text(title), findsNothing);
+      expect(window.calls, ['hide']);
+      expect(container.read(windowClosedProvider), isTrue);
+      expect(exits, isEmpty);
+
+      container.read(workHoldsProvider.notifier).release(_work);
+      await tester.pump();
+      await tester.pump(BackgroundMode.settleDelay);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('Finish, Then Quit quits at once if the work settled while it was asking', (tester) async {
+      final (:window, :container, :exits) = await _open(tester, workUnderWay: true);
+      await requestQuit(tester);
+      container.read(workHoldsProvider.notifier).release(_work);
+      await tester.pump();
+
+      await _tap(tester, find.text(finishFirst));
+
+      expect(exits, ['exit']);
+      expect(window.calls, isEmpty);
+    });
+
+    testOnMac('Quit Now quits, whatever is under way', (tester) async {
+      final (window: _, container: _, :exits) = await _open(tester, workUnderWay: true);
+      await requestQuit(tester);
+
+      await _tap(tester, find.text(quitNow));
+
+      expect(exits, ['forced']);
+    });
+
+    testOnMac('a second quit while it asks neither skips the question nor asks twice', (tester) async {
+      final (window: _, container: _, :exits) = await _open(tester, workUnderWay: true);
+      await requestQuit(tester);
+
+      expect(await requestQuit(tester), AppExitResponse.cancel);
+
+      expect(find.text(title), findsOneWidget);
+      expect(exits, isEmpty);
+    });
+
+    testOnMac('after answering, a later quit with work under way asks again', (tester) async {
+      final (:window, container: _, exits: _) = await _open(tester, workUnderWay: true);
+      await requestQuit(tester);
+      await _tap(tester, find.text(finishFirst));
+      window.reopen();
+      await tester.pumpAndSettle();
+
+      expect(await requestQuit(tester), AppExitResponse.cancel);
+
+      expect(find.text(title), findsOneWidget);
+    });
+
+    testOnWindowsAndLinux('Windows and Linux quit without asking', (tester) async {
+      await _open(tester, workUnderWay: true);
+
+      expect(await requestQuit(tester), AppExitResponse.exit);
+      expect(find.text(title), findsNothing);
     });
   });
 

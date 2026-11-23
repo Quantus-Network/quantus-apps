@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
@@ -55,7 +57,9 @@ class BackgroundMode {
   BackgroundMode(this._ref) : _window = _ref.read(backgroundWindowProvider), _telemetry = _ref.read(telemetryProvider) {
     if (!supportsBackgroundMode) return;
     _window.listen(onWillClose: _onCloseButton, onDidOpen: _markOpen);
+    final quitRequests = AppLifecycleListener(onExitRequested: _onQuitRequested);
     _ref.onDispose(() {
+      quitRequests.dispose();
       _window.stopListening();
       _hiddenLimitTimer?.cancel();
       _quitTimer?.cancel();
@@ -105,6 +109,32 @@ class BackgroundMode {
       _report(e);
       _markOpen();
     }
+  }
+
+  /// Finishes what is under way out of sight, then quits: the answer to the
+  /// question of [quitQuestionProvider].
+  Future<void> finishThenQuit() {
+    _ref.read(quitQuestionProvider.notifier).set(false);
+    return closeWindow();
+  }
+
+  /// Quits at once, whatever is under way: the other answer.
+  void quitNow() {
+    _ref.read(quitQuestionProvider.notifier).set(false);
+    _ref.read(forceAppExitProvider)();
+  }
+
+  /// Cmd+Q, the menu bar icon's Quit, or anything else asking the app to quit.
+  /// With work under way the answer is no, at once, and the person is asked:
+  /// while an answer is outstanding the engine takes another request to quit
+  /// as settled, and would quit with no question.
+  Future<AppExitResponse> _onQuitRequested() async {
+    if (!_ref.read(pendingWorkProvider)) return AppExitResponse.exit;
+    if (!_ref.read(quitQuestionProvider)) {
+      if (_ref.read(windowClosedProvider)) unawaited(_reported(_window.bringToFront()));
+      _ref.read(quitQuestionProvider.notifier).set(true);
+    }
+    return AppExitResponse.cancel;
   }
 
   /// The close button: whether the window is to hide, decided now so that

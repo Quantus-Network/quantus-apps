@@ -7,6 +7,7 @@ import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -158,6 +159,27 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     if (mounted) ref.read(accountSwitchFailureProvider.notifier).clear();
   }
 
+  /// Asks what to do about the work under way, the person having asked to
+  /// quit. Only the two answers close the question.
+  Future<void> _askAboutQuitting() async {
+    final l10n = ref.read(l10nProvider);
+    final finishFirst = await showQuantusDialog(
+      context,
+      title: l10n.desktopQuitPendingTitle,
+      body: l10n.desktopQuitPendingBody,
+      actionLabel: l10n.desktopQuitFinishFirst,
+      cancelLabel: l10n.desktopQuitNow,
+      barrierDismissible: false,
+    );
+    if (!mounted) return;
+    final background = ref.read(backgroundModeProvider);
+    if (finishFirst) {
+      await background.finishThenQuit();
+    } else {
+      background.quitNow();
+    }
+  }
+
   /// Finishes what an earlier run left undone: an import's account scan that
   /// was skipped or interrupted, and a software wallet's encrypted account.
   Future<void> _finishWalletSetup() async {
@@ -177,6 +199,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     ref.listen<ShellSheet?>(shellSheetProvider, (_, sheet) => _present(sheet));
     ref.listen<PasswordPromptRequest?>(passwordPromptProvider, (_, request) {
       if (request != null) unawaited(_askForPassword(request));
+    });
+    ref.listen<bool>(quitQuestionProvider, (_, isAsking) {
+      if (isAsking) unawaited(_askAboutQuitting());
     });
     ref.listen<AsyncValue<WalletPresence>>(walletPresenceProvider, _onWalletPresence);
     ref.listen<AccountSwitchFailure?>(accountSwitchFailureProvider, (_, failure) {

@@ -8,3 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 final requestAppExitProvider = Provider<VoidCallback>((ref) {
   return () => unawaited(ServicesBinding.instance.exitApplication(AppExitType.cancelable));
 });
+
+/// Closes the app whatever is under way, because the person said to.
+final forceAppExitProvider = Provider<VoidCallback>((ref) {
+  return () => unawaited(ServicesBinding.instance.exitApplication(AppExitType.required));
+});
