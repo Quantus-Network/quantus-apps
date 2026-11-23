@@ -78,10 +78,11 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
   /// is already unsafe once dispose starts.
   void _setProgressVisible(bool visible) {
     final progressVisible = _progressVisible;
+    final id = widget.swapId;
     unawaited(
       Future<void>.microtask(() {
         if (visible && !mounted) return;
-        progressVisible.set(visible);
+        progressVisible.set(id, open: visible);
       }),
     );
   }

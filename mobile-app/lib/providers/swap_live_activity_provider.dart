@@ -336,19 +336,26 @@ class SwapLiveActivityController {
   }
 }
 
-/// Whether the swap progress screen is the route on screen. The finished card
-/// stays up only while that is true.
-final swapProgressVisibleProvider = NotifierProvider<SwapProgressVisible, bool>(SwapProgressVisible.new);
+/// The swaps whose progress screens are open, by [ActiveSwap.id], in order of
+/// opening: the last is the one on screen. The finished card stays up only
+/// while its own swap's screen is that one.
+final swapProgressVisibleProvider = NotifierProvider<SwapProgressVisible, List<String>>(SwapProgressVisible.new);
 
-class SwapProgressVisible extends Notifier<bool> {
+class SwapProgressVisible extends Notifier<List<String>> {
   @override
-  bool build() => false;
+  List<String> build() => const [];
 
-  /// Records [visible]. A write that lands after the app has gone away is dropped:
-  /// the provider, and anything listening to it, is already gone.
-  void set(bool visible) {
+  /// Records that the progress screen of the swap with [id] opened, or with
+  /// [open] false, closed. A write that lands after the app has gone away is
+  /// dropped: the provider, and anything listening to it, is already gone.
+  void set(String id, {required bool open}) {
     if (!ref.mounted) return;
-    state = visible;
+    if (open) {
+      state = [...state, id];
+      return;
+    }
+    final at = state.lastIndexOf(id);
+    if (at >= 0) state = [...state]..removeAt(at);
   }
 }
 
@@ -370,12 +377,13 @@ final swapLiveActivityControllerProvider = Provider<SwapLiveActivityController>(
     snapshot: () {
       final formatting = ref.read(numberFormattingServiceProvider);
       final now = clock.now();
+      final swap = swapOnCard(ref.read(activeSwapsProvider), now);
       return SwapLiveSnapshot(
-        swap: swapOnCard(ref.read(activeSwapsProvider), now),
+        swap: swap,
         l10n: ref.read(l10nProvider),
         formatAmount: (amount, token) => formatting.formatCompactAmount(amount, decimals: token.decimals),
         now: now,
-        progressVisible: ref.read(swapProgressVisibleProvider),
+        progressVisible: swap != null && ref.read(swapProgressVisibleProvider).lastOrNull == swap.id,
       );
     },
   );

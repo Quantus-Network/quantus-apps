@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -25,43 +27,44 @@ void main() {
     isQuantus: true,
   );
 
-  testWidgets('opening the progress route marks it visible and leaving clears it', (tester) async {
+  testWidgets('the swap on screen is the last progress route opened, and leaving one gives back the one below', (
+    tester,
+  ) async {
     final account = makeAccount(1);
     final started = DateTime.utc(2026, 11, 3);
+    ActiveSwap swap(String depositAddress) => ActiveSwap(
+      order: SwapOrder(
+        quote: SwapQuote(
+          fromToken: qtc,
+          toToken: usdc,
+          amountIn: BigInt.from(10).pow(AppConstants.decimals),
+          minAmountIn: BigInt.from(10).pow(AppConstants.decimals),
+          amountOut: BigInt.from(100000),
+          minAmountOut: BigInt.from(99000),
+          amountInUsd: 0.1,
+          amountOutUsd: 0.1,
+          slippageBps: 100,
+          refundAddress: account.accountId,
+          recipient: '0x${'ab' * 20}',
+          deadline: started.add(const Duration(hours: 1)),
+          timeEstimate: const Duration(minutes: 1),
+          correlationId: 'c',
+          signature: 's',
+          depositAddress: depositAddress,
+        ),
+        status: SwapStatus.success,
+        amountOut: BigInt.from(100000),
+      ),
+      accountId: account.accountId,
+      accountName: account.name,
+      startedAt: started,
+      settledAt: started.add(const Duration(minutes: 1)),
+      depositByHand: false,
+      simulated: true,
+    );
     final settings = FakeSettingsService(
       activeAccount: RegularAccount(account),
-      activeSwaps: [
-        ActiveSwap(
-          order: SwapOrder(
-            quote: SwapQuote(
-              fromToken: qtc,
-              toToken: usdc,
-              amountIn: BigInt.from(10).pow(AppConstants.decimals),
-              minAmountIn: BigInt.from(10).pow(AppConstants.decimals),
-              amountOut: BigInt.from(100000),
-              minAmountOut: BigInt.from(99000),
-              amountInUsd: 0.1,
-              amountOutUsd: 0.1,
-              slippageBps: 100,
-              refundAddress: account.accountId,
-              recipient: '0x${'ab' * 20}',
-              deadline: started.add(const Duration(hours: 1)),
-              timeEstimate: const Duration(minutes: 1),
-              correlationId: 'c',
-              signature: 's',
-              depositAddress: 'qzdeposit',
-            ),
-            status: SwapStatus.success,
-            amountOut: BigInt.from(100000),
-          ),
-          accountId: account.accountId,
-          accountName: account.name,
-          startedAt: started,
-          settledAt: started.add(const Duration(minutes: 1)),
-          depositByHand: false,
-          simulated: true,
-        ),
-      ],
+      activeSwaps: [swap('qzdeposit'), swap('qzother')],
     );
 
     await tester.pumpApp(
@@ -78,26 +81,33 @@ void main() {
       ],
     );
     final container = ProviderScope.containerOf(tester.element(find.text('open')));
-    expect(container.read(swapProgressVisibleProvider), isFalse);
+    Future<void> settle() => tester.pumpAndSettle(
+      const Duration(milliseconds: 50),
+      EnginePhase.sendSemanticsUpdate,
+      const Duration(seconds: 3),
+    );
+    expect(container.read(swapProgressVisibleProvider), isEmpty);
 
     await tester.tap(find.text('open'));
-    await tester.pumpAndSettle(
-      const Duration(milliseconds: 50),
-      EnginePhase.sendSemanticsUpdate,
-      const Duration(seconds: 3),
-    );
+    await settle();
+    expect(container.read(swapProgressVisibleProvider), ['qzdeposit']);
 
-    expect(find.byType(SwapProgressScreen), findsOneWidget);
-    expect(container.read(swapProgressVisibleProvider), isTrue);
+    unawaited(
+      Navigator.of(
+        tester.element(find.byType(SwapProgressScreen)),
+      ).push(SwapProgressScreen.route('qzother', account: account)),
+    );
+    await settle();
+    expect(container.read(swapProgressVisibleProvider), ['qzdeposit', 'qzother']);
 
     await tester.tap(find.byType(AppBackButton));
-    await tester.pumpAndSettle(
-      const Duration(milliseconds: 50),
-      EnginePhase.sendSemanticsUpdate,
-      const Duration(seconds: 3),
-    );
+    await settle();
+    expect(find.byType(SwapProgressScreen), findsOneWidget);
+    expect(container.read(swapProgressVisibleProvider), ['qzdeposit']);
 
+    await tester.tap(find.byType(AppBackButton));
+    await settle();
     expect(find.byType(SwapProgressScreen), findsNothing);
-    expect(container.read(swapProgressVisibleProvider), isFalse);
+    expect(container.read(swapProgressVisibleProvider), isEmpty);
   });
 }
