@@ -24,6 +24,12 @@ import 'package:wallet_core/services/telemetry.dart';
 /// to the foreground.
 final activeSwapsProvider = NotifierProvider<ActiveSwapsNotifier, List<ActiveSwap>>(ActiveSwapsNotifier.new);
 
+/// Whether a swap still waiting for its deposit by hand is kept when the app
+/// starts. Not where the swap is only paid from a deposit screen that went
+/// with the last run; an app that lists such a swap among the rest says so
+/// here.
+final keepsUnpaidSwapsProvider = Provider<bool>((_) => false);
+
 /// The followed swap with [id], or null once it was put away.
 final activeSwapProvider = Provider.family<ActiveSwap?, String>(
   (ref, id) => ref.watch(activeSwapsProvider.select((swaps) => swaps.firstWhereOrNull((s) => s.id == id))),
@@ -42,7 +48,8 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
 
   /// The swaps kept on the device, less any still waiting for its deposit by
   /// hand: the deposit screen that pays it went with the last run, so such a
-  /// swap is dropped here as it is when that screen is left.
+  /// swap is dropped here as it is when that screen is left. An app that
+  /// keeps unpaid swaps ([keepsUnpaidSwapsProvider]) follows them still.
   @override
   List<ActiveSwap> build() {
     ref.onDispose(() => _timer?.cancel());
@@ -54,9 +61,10 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
       }
     });
     final settings = ref.watch(settingsServiceProvider);
+    final keepsUnpaid = ref.watch(keepsUnpaidSwapsProvider);
     final swaps = <ActiveSwap>[];
     for (final swap in settings.getActiveSwaps()) {
-      if (swap.awaitingDeposit) {
+      if (swap.awaitingDeposit && !keepsUnpaid) {
         unawaited(
           settings.removeActiveSwap(swap.id).catchError((Object e) => quantusPrint('Unpaid swap drop failed: $e')),
         );
