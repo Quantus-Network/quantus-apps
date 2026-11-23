@@ -5,7 +5,7 @@ class AppConstants {
   static const String tokenSymbol = 'QTC'; // fetch this from chain eventually
   static const String shareUrl = 'https://linktr.ee/quantusnetwork';
   static const String websiteBaseUrl = 'https://www.quantus.com';
-  static const String emailSupport = 'support@quantus.com';
+  static const String discordSupportUrl = 'https://discord.gg/Ba9nTGUdgF';
   static const String telegramHandle = '@quantusnetwork';
 
   // static const List<String> rpcEndpoints = ['http://127.0.0.1:9944']; // local testing

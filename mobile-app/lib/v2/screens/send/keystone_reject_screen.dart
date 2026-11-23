@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
+import 'package:resonance_network_wallet/shared/utils/open_external_url.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_signing_widgets.dart';
@@ -11,8 +12,6 @@ import 'package:url_launcher/url_launcher.dart';
 /// Pops with `true` once the user confirms the rejection.
 class KeystoneRejectScreen extends ConsumerWidget {
   const KeystoneRejectScreen({super.key});
-
-  static final Uri _supportUrl = Uri.parse('mailto:${AppConstants.emailSupport}');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -47,7 +46,13 @@ class KeystoneRejectScreen extends ConsumerWidget {
             QuantusButton.simple(
               label: l10n.commonContactSupport,
               variant: ButtonVariant.underline,
-              onTap: () => launchUrl(_supportUrl),
+              onTap: () => openUrl(AppConstants.discordSupportUrl, mode: LaunchMode.externalApplication),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              l10n.commonSupportScamWarning,
+              textAlign: TextAlign.center,
+              style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted2),
             ),
           ],
         ),

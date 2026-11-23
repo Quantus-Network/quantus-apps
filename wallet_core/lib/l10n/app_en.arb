@@ -2245,9 +2245,9 @@
     "@settingsHelpScreenTitle": {
       "description": "App bar on help and support screen"
     },
-    "settingsHelpEmail": "Email Support",
-    "@settingsHelpEmail": {
-      "description": "Email support row title"
+    "settingsHelpDiscord": "Discord",
+    "@settingsHelpDiscord": {
+      "description": "Discord support row title"
     },
     "settingsHelpTelegram": "Telegram",
     "@settingsHelpTelegram": {
@@ -3038,6 +3038,10 @@
     "commonContactSupport": "Contact Support",
     "@commonContactSupport": {
       "description": "Link to support from a failed swap or the Keystone mismatch screen"
+    },
+    "commonSupportScamWarning": "Support will never DM you first or ask for your recovery phrase.",
+    "@commonSupportScamWarning": {
+      "description": "Warning against impostors, shown wherever the app sends someone to the support Discord"
     },
     "commonRetry": "Retry",
     "@commonRetry": {

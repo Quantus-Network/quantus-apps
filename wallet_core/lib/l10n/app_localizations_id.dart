@@ -1562,7 +1562,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
 
   @override
-  String get settingsHelpEmail => 'Dukungan Email';
+  String get settingsHelpDiscord => 'Discord';
 
   @override
   String get settingsHelpTelegram => 'Telegram';
@@ -2079,6 +2079,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Hubungi Dukungan';
+
+  @override
+  String get commonSupportScamWarning =>
+      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
 
   @override
   String get commonRetry => 'Coba Lagi';
