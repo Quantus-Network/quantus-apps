@@ -14,7 +14,6 @@ import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
 import 'package:quantus_desktop_wallet/ui/shell/panel_widths.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 
 /// The active account's panels: its balance; what of it is still under way
@@ -73,12 +72,12 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
 
   /// Whether the swap being followed is from [account], and so among its
   /// rows.
-  bool _hasSwap(BaseAccount account) => ref.watch(activeSwapProvider)?.accountId == account.accountId;
+  bool _hasSwap(BaseAccount account) => ref.watch(followedSwapProvider)?.accountId == account.accountId;
 
   /// Every row that opens, in the order the lists show them.
   List<OpenedActivity> _openable() {
     final account = ref.read(activeAccountProvider).value?.account;
-    final swap = ref.read(activeSwapProvider);
+    final swap = ref.read(followedSwapProvider);
     final swapRow = [if (account != null && swap?.accountId == account.accountId) const OpenedSwap()];
     final view = ref.read(activityViewProvider).value;
     if (view == null) return swapRow;

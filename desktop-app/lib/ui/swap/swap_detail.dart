@@ -21,7 +21,7 @@ import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
@@ -53,18 +53,18 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
   /// Whether Stop tracking was pressed, and is waiting to be confirmed.
   bool _asksToStop = false;
 
-  /// Puts the swap away: it is no longer followed, and the panel closes.
-  void _putAway() {
+  /// Puts [swap] away: it is no longer followed, and the panel closes.
+  void _putAway(ActiveSwap swap) {
     ref.read(openedActivityProvider.notifier).close();
-    unawaited(ref.read(activeSwapProvider.notifier).clear());
+    unawaited(ref.read(activeSwapsProvider.notifier).remove(swap.id));
   }
 
-  /// Puts the swap away and opens the Swap sheet on the active account, for
+  /// Puts [swap] away and opens the Swap sheet on the active account, for
   /// the swap to be tried again.
-  Future<void> _startNew() async {
+  Future<void> _startNew(ActiveSwap swap) async {
     final sheets = ref.read(shellSheetProvider.notifier);
     ref.read(openedActivityProvider.notifier).close();
-    await ref.read(activeSwapProvider.notifier).clear();
+    await ref.read(activeSwapsProvider.notifier).remove(swap.id);
     await sheets.open(ShellSheet.swap);
   }
 
@@ -82,12 +82,11 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final swap = ref.watch(activeSwapProvider);
+    final swap = ref.watch(followedSwapProvider);
     if (swap == null) throw StateError("The swap's panel was drawn with no swap followed.");
     // Drawn again each second while the swap runs: its clock, and the moment
     // an awaited deposit's window closes.
-    ref.watch(swapElapsedProvider);
-    final now = clock.now();
+    final now = ref.watch(swapClockProvider).value ?? clock.now();
     final page = _Page(
       context: context,
       l10n: ref.watch(l10nProvider),
@@ -159,7 +158,7 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
                 ToolbarAction.symbol(
                   symbol: CupertinoIcons.arrow_clockwise,
                   label: page.l10n.commonRetry,
-                  onPressed: () => unawaited(ref.read(activeSwapProvider.notifier).refresh()),
+                  onPressed: () => unawaited(ref.read(activeSwapsProvider.notifier).refresh()),
                 ),
               ],
             ),
@@ -245,7 +244,7 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
                   key: SwapDetail.confirmStopKey,
                   label: l10n.swapStopTracking,
                   kind: SheetButtonKind.destructive,
-                  onTap: _putAway,
+                  onTap: () => _putAway(page.swap),
                 ),
               ]),
             ],
@@ -338,8 +337,11 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
       const SizedBox(height: 16),
       // Before the terms: what the page is for stays in sight.
       _buttons([
-        SheetButton(label: l10n.swapDepositSent, onTap: () => ref.read(activeSwapProvider.notifier).markDepositSent()),
-        SheetButton(label: l10n.desktopSwapCancel, kind: SheetButtonKind.secondary, onTap: _putAway),
+        SheetButton(
+          label: l10n.swapDepositSent,
+          onTap: () => ref.read(activeSwapsProvider.notifier).markDepositSent(page.swap.id),
+        ),
+        SheetButton(label: l10n.desktopSwapCancel, kind: SheetButtonKind.secondary, onTap: () => _putAway(page.swap)),
       ]),
       const SizedBox(height: 16),
       const MenuDivider(),
@@ -381,7 +383,7 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
       const SizedBox(height: 4),
       ...page.terms(),
       const SizedBox(height: 16),
-      _buttons([SheetButton(label: l10n.commonDone, onTap: _putAway), ?viewDeposit], spacing: 14),
+      _buttons([SheetButton(label: l10n.commonDone, onTap: () => _putAway(page.swap)), ?viewDeposit], spacing: 14),
       const SizedBox(height: 14),
       _attribution(page),
     ];
@@ -437,13 +439,13 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
       ],
       const SizedBox(height: 16),
       _buttons([
-        SheetButton(label: l10n.commonDone, onTap: _putAway),
+        SheetButton(label: l10n.commonDone, onTap: () => _putAway(page.swap)),
         if (_canStartNew())
           SheetButton(
             key: SwapDetail.startNewKey,
             label: l10n.swapStartNew,
             kind: SheetButtonKind.secondary,
-            onTap: () => unawaited(_startNew()),
+            onTap: () => unawaited(_startNew(page.swap)),
           ),
         ToolbarAction.symbol(
           symbol: CupertinoIcons.chat_bubble,

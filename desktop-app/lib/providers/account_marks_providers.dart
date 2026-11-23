@@ -8,7 +8,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/activity/activity_progress.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
@@ -84,7 +83,7 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
 
   // The swap counts for the account it is from until it has ended, however
   // it did.
-  final swap = ref.watch(activeSwapProvider);
+  final swap = ref.watch(followedSwapProvider);
   final swapView = swap == null ? null : swapProgressViewOf(swap, clock.now());
   final swapIsUnderWay = swapView == SwapProgressView.inProgress || swapView == SwapProgressView.deposit;
   int swapsOf(BaseAccount account) => swapIsUnderWay && swap?.accountId == account.accountId ? 1 : 0;

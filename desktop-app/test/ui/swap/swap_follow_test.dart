@@ -24,7 +24,7 @@ import 'package:quantus_desktop_wallet/ui/swap/swap_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
@@ -232,6 +232,18 @@ void main() {
   });
 
   group('the Swap panel', () {
+    testOnMac('a swap awaiting its deposit is still followed after a restart, its address with it', (tester) async {
+      final settings = await _open(tester, swap: fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit));
+      await tester.pump();
+
+      expect(find.byType(SwapRowView), findsOneWidget);
+      expect(settings.activeSwap, isNotNull, reason: 'it is not dropped from the device at launch');
+
+      await _openSwap(tester);
+      expect(_inPanel(find.byType(CopyAction)), findsWidgets);
+      expect(_inPanel(find.text(_l10n.swapDepositSent)), findsOne);
+    });
+
     testOnMac('a swap out under way: its amount, what for, who is paid, its steps and its terms', (tester) async {
       final opened = <Uri>[];
       await _open(tester, swap: fakeActiveSwap(), opened: opened);
@@ -328,7 +340,7 @@ void main() {
       await _press(tester, _inPanel(find.byKey(SwapDetail.confirmStopKey)));
 
       expect(settings.activeSwap, isNull);
-      expect(_container(tester).read(activeSwapProvider), isNull);
+      expect(_container(tester).read(activeSwapsProvider), isEmpty);
       expect(find.byType(SwapDetail), findsNothing);
       expect(find.byType(SwapRowView), findsNothing);
     });

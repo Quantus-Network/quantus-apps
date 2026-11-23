@@ -24,6 +24,7 @@ import 'package:quantus_desktop_wallet/ui/swap/swap_form_parts.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
@@ -543,6 +544,8 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
           Navigator.of(context).pop();
         case SwapConfirmDropped():
           break;
+        case SwapTooManyFollowed():
+          _say(l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
         case SwapTermsChanged(:final quote):
           setState(() {
             _reviewed = quote;
