@@ -20,18 +20,18 @@ This is a trimmed and patched copy of [`flutter_lite_camera`](https://pub.dev/pa
 `flutter test` covers the Dart side. The frame conversion and both preview textures' buffers and lifetimes are tested natively, under the sanitizers:
 
 ```bash
-c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
   -I native test/native/yuy2_test.cpp -o /tmp/yuy2_test && /tmp/yuy2_test
-c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
   -I linux test/native/camera_texture_buffer_test.cpp \
   -o /tmp/camera_texture_buffer_test && /tmp/camera_texture_buffer_test
 c++ -std=c++17 -Wall -Wextra -Wno-unused-parameter -Werror -pthread \
-  -fsanitize=address,undefined -I test/native/fake_flutter -I windows \
+  -fsanitize=address,undefined -fno-sanitize-recover=undefined -I test/native/fake_flutter -I windows \
   test/native/texture_handler_test.cpp windows/texture_handler.cpp \
   -o /tmp/texture_handler_test && /tmp/texture_handler_test
-c++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror -fsanitize=address,undefined \
+c++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
   -I native test/native/windows_format_test.cpp -o /tmp/windows_format_test && /tmp/windows_format_test
-c++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined \
+c++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=undefined \
   -I test/native/fake_v4l2 -I native test/native/camera_linux_open_test.cpp \
   -o /tmp/camera_linux_open_test && /tmp/camera_linux_open_test
 ```

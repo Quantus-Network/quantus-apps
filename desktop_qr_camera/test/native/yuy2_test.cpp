@@ -1,7 +1,7 @@
 // The conversion every camera frame goes through on Windows and Linux. It needs
 // no camera, so it runs anywhere, under the sanitizers:
 //
-//   c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+//   c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
 //     -I native test/native/yuy2_test.cpp -o /tmp/yuy2_test && /tmp/yuy2_test
 #include <cstdint>
 #include <cstdio>

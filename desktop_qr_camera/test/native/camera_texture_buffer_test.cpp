@@ -1,7 +1,7 @@
 // What the Linux preview texture hands to Flutter. It needs no camera or GTK, so
 // it runs anywhere, under the sanitizers:
 //
-//   c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+//   c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
 //     -I linux test/native/camera_texture_buffer_test.cpp \
 //     -o /tmp/camera_texture_buffer_test && /tmp/camera_texture_buffer_test
 #include <cstdint>

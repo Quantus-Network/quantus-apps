@@ -1,7 +1,7 @@
 // Which /dev/video node the Linux camera opens. The system calls are replaced
 // by a fake set of nodes, so it runs anywhere, under the sanitizers:
 //
-//   c++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined \
+//   c++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=undefined \
 //     -I test/native/fake_v4l2 -I native test/native/camera_linux_open_test.cpp \
 //     -o /tmp/camera_linux_open_test && /tmp/camera_linux_open_test
 #include <errno.h>

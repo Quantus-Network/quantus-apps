@@ -2,7 +2,7 @@
 // still be painting it. It runs anywhere, under the sanitizers:
 //
 //   c++ -std=c++17 -Wall -Wextra -Wno-unused-parameter -Werror -pthread \
-//     -fsanitize=address,undefined -I test/native/fake_flutter -I windows \
+//     -fsanitize=address,undefined -fno-sanitize-recover=undefined -I test/native/fake_flutter -I windows \
 //     test/native/texture_handler_test.cpp windows/texture_handler.cpp \
 //     -o /tmp/texture_handler_test && /tmp/texture_handler_test
 #include <cstdint>

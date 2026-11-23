@@ -91,20 +91,20 @@ jobs:
       - name: Check the camera frame conversion under the sanitizers
         working-directory: ./desktop_qr_camera
         run: |
-          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
             -I native test/native/yuy2_test.cpp -o "$RUNNER_TEMP/yuy2_test"
           "$RUNNER_TEMP/yuy2_test"
-          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
             -I linux test/native/camera_texture_buffer_test.cpp -o "$RUNNER_TEMP/camera_texture_buffer_test"
           "$RUNNER_TEMP/camera_texture_buffer_test"
           clang++ -std=c++17 -Wall -Wextra -Wno-unused-parameter -Werror -pthread \
-            -fsanitize=address,undefined -I test/native/fake_flutter -I windows \
+            -fsanitize=address,undefined -fno-sanitize-recover=undefined -I test/native/fake_flutter -I windows \
             test/native/texture_handler_test.cpp windows/texture_handler.cpp -o "$RUNNER_TEMP/texture_handler_test"
           "$RUNNER_TEMP/texture_handler_test"
-          clang++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror -fsanitize=address,undefined \
+          clang++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
             -I native test/native/windows_format_test.cpp -o "$RUNNER_TEMP/windows_format_test"
           "$RUNNER_TEMP/windows_format_test"
-          clang++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined \
+          clang++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=undefined \
             -I test/native/fake_v4l2 -I native test/native/camera_linux_open_test.cpp \
             -o "$RUNNER_TEMP/camera_linux_open_test"
           "$RUNNER_TEMP/camera_linux_open_test"

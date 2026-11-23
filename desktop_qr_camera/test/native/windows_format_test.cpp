@@ -2,7 +2,7 @@
 // errors apart. It needs no camera, so it runs anywhere, under the sanitizers:
 //
 //   c++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror \
-//     -fsanitize=address,undefined -I native test/native/windows_format_test.cpp \
+//     -fsanitize=address,undefined -fno-sanitize-recover=undefined -I native test/native/windows_format_test.cpp \
 //     -o /tmp/windows_format_test && /tmp/windows_format_test
 #include <cstdint>
 #include <cstdio>
