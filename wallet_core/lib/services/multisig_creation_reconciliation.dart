@@ -2,11 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/services/account_activity_reconciliation.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 
 /// Appends a confirmed multisig creation to cached activity history.
 Future<void> reconcileConfirmedMultisigCreation(Ref ref, MultisigAccount draft, {required BigInt networkFee}) async {
+  final session = ref.read(walletSessionProvider);
+  final ticket = session.ticket;
   final created = await _loadCreatedEvent(ref, draft, networkFee: networkFee);
+  if (!await session.survivesReset(ticket, dropping: 'the history of creating ${draft.accountId}')) return;
   final creatorId = draft.creator ?? draft.myMemberAccountId;
   final affectedIds = {...draft.signers, creatorId};
 

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
+import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
@@ -432,7 +433,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
         // The proving lives as long as something listens to it: from here
         // on the sheet does, and moves on once every proof is handed over.
-        ref.listenManual(encryptedSendControllerProvider, (_, next) {
+        ref.listenManual(encryptedSendControllerProvider, (previous, next) {
+          if (previous?.phase != next.phase) {
+            ref
+                .read(ownActivityNotificationsProvider)
+                .onEncryptedSendEnded(account: account, amount: amount, send: next);
+          }
           if (next.phase == EncryptedSendPhase.succeeded && _step == _Step.proving) {
             setState(() => _step = _Step.receipt);
           }

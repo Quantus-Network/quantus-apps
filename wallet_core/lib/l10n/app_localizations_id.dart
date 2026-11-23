@@ -1562,9 +1562,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
 
   @override
-  String get settingsHelpEmail => 'Dukungan Email';
-
-  @override
   String get settingsHelpTelegram => 'Telegram';
 
   @override
@@ -3290,4 +3287,118 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopCreateMultisigTimedOut => 'Multisig belum terkonfirmasi';
+
+  @override
+  String get settingsHelpDiscord => 'Discord';
+
+  @override
+  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
+
+  @override
+  String get commonSupportScamWarning =>
+      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
+
+  @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
+  }
+
+  @override
+  String get desktopSwapAwaitingDeposit => 'Menunggu deposit';
+
+  @override
+  String get desktopSwapWaitingForDeposit => 'Menunggu deposit Anda';
+
+  @override
+  String desktopSwapUntil(String time) {
+    return 'hingga $time';
+  }
+
+  @override
+  String get desktopSwapFor => 'Untuk';
+
+  @override
+  String desktopSwapAmountOnNetwork(String amount, String network) {
+    return '$amount di $network';
+  }
+
+  @override
+  String desktopSwapForAmountOnNetwork(String amount, String network) {
+    return 'untuk $amount di $network';
+  }
+
+  @override
+  String desktopSwapRecipientOn(String network) {
+    return 'Penerima di $network';
+  }
+
+  @override
+  String get desktopSwapTheRecipient => 'penerima';
+
+  @override
+  String desktopSwapSendAmount(String amount) {
+    return 'Kirim $amount';
+  }
+
+  @override
+  String get desktopSwapCancel => 'Batalkan Swap';
+
+  @override
+  String get desktopSwapViewDeposit => 'Lihat Deposit';
+
+  @override
+  String desktopSwapReceived(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String desktopSwapCompleteBody(String amount) {
+    return 'Swap $amount Anda selesai.';
+  }
+
+  @override
+  String get desktopSwapPoweredByNearIntents => 'Didukung oleh NEAR Intents';
+
+  @override
+  String desktopSwapRecipientAddressOn(String network) {
+    return 'Alamat penerima di $network';
+  }
+
+  @override
+  String desktopSwapRefundAddressOn(String network) {
+    return 'Alamat refund di $network';
+  }
+
+  @override
+  String get desktopSwapMaximum => 'Swap jumlah maksimum';
+
+  @override
+  String desktopSwapAccountAvailable(String account, String amount) {
+    return '$account · $amount tersedia';
+  }
+
+  @override
+  String get desktopSwapLoadingTokens => 'Memuat token';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Hapus Alamat Tersimpan';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Alamat tersimpan tidak tersedia: $error';
+  }
+
+  @override
+  String get desktopNotificationNotAllowed => 'Tidak diizinkan di Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettings => 'Buka Pengaturan Sistem';
+
+  @override
+  String get desktopNotificationOpenSystemSettingsFailed => 'Tidak dapat membuka Pengaturan Sistem';
+
+  @override
+  String desktopNotificationUnavailable(String reason) {
+    return 'Tidak tersedia: $reason';
+  }
 }

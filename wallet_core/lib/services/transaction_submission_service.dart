@@ -13,18 +13,22 @@ import 'package:wallet_core/providers/pending_multisig_cancellations_provider.da
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/multisig_approval_polling_service.dart';
 import 'package:wallet_core/services/multisig_cancellation_polling_service.dart';
 import 'package:wallet_core/services/multisig_execution_polling_service.dart';
 import 'package:wallet_core/services/multisig_proposal_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
-  final PendingTransactionPollingService _poller;
 
-  TransactionSubmissionService(this._ref) : _poller = PendingTransactionPollingService(_ref);
+  TransactionSubmissionService(this._ref);
+
+  /// The shared poller, which a wallet reset stops.
+  PendingTransactionPollingService get _poller => _ref.read(pendingTransactionPollingServiceProvider);
 
   /// Signs first so the pending record carries the extrinsic's own block
   /// number (the poller's search floor), then broadcasts the signed bytes.
@@ -35,8 +39,11 @@ class TransactionSubmissionService {
     required BigInt amount,
     required BigInt fee,
   }) async {
-    final substrate = SubstrateService();
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
+    final substrate = _ref.read(substrateServiceProvider);
     final signed = await substrate.getExtrinsicPayload(account, call);
+    if (!session.isCurrent(ticket)) throw StateError('The wallet was reset while this transfer was being signed');
     final pendingTx = createPendingTransaction(
       from: account.accountId,
       to: targetAddress,
@@ -222,6 +229,8 @@ class TransactionSubmissionService {
       palletFee: feeBreakdown.creationFee,
     );
 
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     addPendingMultisigProposal(_ref, pending);
     _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
@@ -229,6 +238,13 @@ class TransactionSubmissionService {
       final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusPrint('[Propose] submitted: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would ever remove it.
+      if (!session.stillCurrent(ticket, dropping: 'tracking proposal $extrinsicHash')) {
+        removePendingMultisigProposal(_ref, pending.id);
+        return extrinsicHash;
+      }
 
       updatePendingMultisigProposal(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
@@ -542,12 +558,21 @@ class TransactionSubmissionService {
     Future<Uint8List> Function() submit,
     PendingTransactionEvent pendingTx,
   ) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     try {
       quantusPrint('Submitting transaction: ${pendingTx.id}');
 
       final extrinsicHashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
       quantusPrint('submission hash: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would remove it in time.
+      if (!session.stillCurrent(ticket, dropping: 'tracking send $extrinsicHash')) {
+        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+        return extrinsicHash;
+      }
 
       _ref
           .read(pendingTransactionsProvider.notifier)
@@ -579,16 +604,7 @@ class TransactionSubmissionService {
       },
     );
   }
-
-  void dispose() => _poller.dispose();
 }
 
 // Provider for the service
-final transactionSubmissionServiceProvider = Provider<TransactionSubmissionService>((ref) {
-  final service = TransactionSubmissionService(ref);
-
-  // Clean up when provider is disposed
-  ref.onDispose(() => service.dispose());
-
-  return service;
-});
+final transactionSubmissionServiceProvider = Provider<TransactionSubmissionService>(TransactionSubmissionService.new);

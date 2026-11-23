@@ -1,5 +1,7 @@
-import 'dart:ui';
+import 'dart:async';
+import 'dart:typed_data';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,9 +13,11 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/send/multisig_propose_strategy.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
@@ -168,6 +172,110 @@ void main() {
         expect(submission.proposals, isEmpty);
       });
     }
+  });
+
+  group('a wallet reset', () {
+    final keystoneMember = makeAccount(1, accountType: AccountType.keystone);
+
+    List<Override> keystoneOverrides() => [
+      ...bed.overrides,
+      accountsProvider.overrideWith((ref) => AccountsNotifier(bed.accounts, initialAccounts: [keystoneMember])),
+      multisigServiceProvider.overrideWithValue(_FakeMultisigService()),
+      transactionSubmissionServiceProvider.overrideWithValue(submission),
+    ];
+
+    Future<KeystoneSigningSession> hardwareSession(WidgetRef ref) async =>
+        ((await submit(ref)) as SendNeedsHardwareSignature).session;
+
+    Future<String> submitHardware(KeystoneSigningSession session, WidgetRef ref) =>
+        session.submitSigned(ref, unsignedData: makeUnsignedTransactionData(), signatureWithPublicKey: Uint8List(0));
+
+    testWidgets('during the approval prompt proposes nothing and says the proposal failed', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      bed.userApproval.answer = () async {
+        await ref.read(logoutServiceProvider).logout();
+        return ApprovalResult.approved;
+      };
+
+      final outcome = await submit(ref);
+
+      expect((outcome as SendFailed).message, ref.read(l10nProvider).multisigProposeSubmitFailed);
+      expect(submission.proposals, isEmpty);
+      expect(bed.droppedByReset.single, contains('proposal'));
+    });
+
+    testWidgets('before a Keystone signature comes back proposes nothing', (tester) async {
+      final ref = await pumpRef(tester, overrides: keystoneOverrides());
+      final session = await hardwareSession(ref);
+
+      await ref.read(logoutServiceProvider).logout();
+
+      await expectLater(submitHardware(session, ref), throwsStateError);
+      expect(submission.proposals, isEmpty);
+    });
+
+    testWidgets('while a proposal goes out keeps its recipient out of the recent addresses', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final held = submission.holdTransfer = Completer<void>();
+      final sent = submit(ref);
+      await tester.pump();
+
+      await ref.read(logoutServiceProvider).logout();
+      held.complete();
+      expect(await sent, isA<SendSubmitted>());
+      await tester.pump();
+
+      expect(await RecentAddressesService().getAddresses(), isEmpty);
+      expect(bed.droppedByReset.single, contains('proposal'));
+    });
+
+    testWidgets('that also closed the screen still reports a proposal that went out', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final held = submission.holdTransfer = Completer<void>();
+      final sent = submit(ref);
+      await tester.pump();
+
+      await ref.read(logoutServiceProvider).logout();
+      await tester.pumpWidget(const SizedBox());
+      held.complete();
+
+      expect(await sent, isA<SendSubmitted>());
+    });
+
+    testWidgets('while a Keystone proposal goes out keeps its recipient out too', (tester) async {
+      final ref = await pumpRef(tester, overrides: keystoneOverrides());
+      final session = await hardwareSession(ref);
+      final held = submission.holdTransfer = Completer<void>();
+      final sent = submitHardware(session, ref);
+      await tester.pump();
+
+      await ref.read(logoutServiceProvider).logout();
+      held.complete();
+      expect(await sent, '0xproposal');
+      await tester.pump();
+
+      expect(await RecentAddressesService().getAddresses(), isEmpty);
+    });
+
+    testWidgets('that did not happen leaves a proposal\'s recipient among the recent addresses', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      await submit(ref);
+      await tester.pump();
+
+      expect(await RecentAddressesService().getAddresses(), [recipient.accountId]);
+      expect(bed.droppedByReset, isEmpty);
+    });
+
+    testWidgets('that did not happen leaves a Keystone proposal\'s recipient there too', (tester) async {
+      final ref = await pumpRef(tester, overrides: keystoneOverrides());
+
+      await submitHardware(await hardwareSession(ref), ref);
+      await tester.pump();
+
+      expect(submission.proposals, hasLength(1));
+      expect(await RecentAddressesService().getAddresses(), [recipient.accountId]);
+    });
   });
 
   test('a threshold is written as the phone shows it, and two are equal when their parts are', () {
