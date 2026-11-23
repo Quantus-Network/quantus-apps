@@ -3,8 +3,11 @@ import 'dart:typed_data';
 
 import 'package:desktop_qr_camera/desktop_qr_camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+// ignore: implementation_imports
+import 'package:mobile_scanner/src/method_channel/mobile_scanner_method_channel.dart';
 import 'package:quantus_desktop_wallet/services/qr_frame_decoder.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 
@@ -331,4 +334,145 @@ void main() {
       await unmount(tester, scan);
     });
   });
+
+  group('MacQrScanSource over the real method channel', () {
+    const methods = MethodChannel('dev.steenbakker.mobile_scanner/scanner/method');
+    const events = EventChannel('dev.steenbakker.mobile_scanner/scanner/event');
+    final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    final onMac = TargetPlatformVariant.only(TargetPlatform.macOS);
+
+    late _NativeScanner native;
+    late MobileScannerPlatform original;
+
+    setUp(() {
+      original = MobileScannerPlatform.instance;
+      MobileScannerPlatform.instance = MethodChannelMobileScanner();
+      native = _NativeScanner();
+      messenger.setMockMethodCallHandler(methods, native.handle);
+      messenger.setMockStreamHandler(events, MockStreamHandler.inline(onListen: (_, _) {}));
+    });
+
+    tearDown(() {
+      messenger.setMockMethodCallHandler(methods, null);
+      messenger.setMockStreamHandler(events, null);
+      MobileScannerPlatform.instance = original;
+    });
+
+    Future<MacQrScanSource> mounted(WidgetTester tester) async {
+      final scan = MacQrScanSource();
+      await tester.pumpWidget(Directionality(textDirection: TextDirection.ltr, child: scan.buildPreview()));
+      await tester.pump();
+      return scan;
+    }
+
+    Future<void> unmount(WidgetTester tester, MacQrScanSource scan) async {
+      await scan.dispose();
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump();
+    }
+
+    testWidgets('a start with no camera releases the native session, and a retry works', (tester) async {
+      final scan = await mounted(tester);
+
+      await expectLater(
+        scan.start(),
+        throwsA(isA<QrCameraException>().having((e) => e.failure, 'failure', QrCameraFailure.noCamera)),
+      );
+      expect(native.holdsAnything, isFalse);
+
+      native.hasCamera = true;
+      await scan.start();
+
+      expect(native.isRunning, isTrue);
+      await unmount(tester, scan);
+      expect(native.holdsAnything, isFalse);
+    }, variant: onMac);
+
+    testWidgets('a camera whose input fails is released, and a retry works', (tester) async {
+      native
+        ..hasCamera = true
+        ..inputFails = true;
+      final scan = await mounted(tester);
+
+      await expectLater(
+        scan.start(),
+        throwsA(isA<QrCameraException>().having((e) => e.failure, 'failure', QrCameraFailure.failed)),
+      );
+      expect(native.holdsAnything, isFalse);
+
+      native.inputFails = false;
+      await scan.start();
+
+      expect(native.isRunning, isTrue);
+      await unmount(tester, scan);
+    }, variant: onMac);
+
+    testWidgets('after a failed start, a code is passed on once per frame', (tester) async {
+      final scan = await mounted(tester);
+      final reads = <String>[];
+      final subscription = scan.reads.listen(reads.add);
+      await expectLater(scan.start(), throwsA(isA<QrCameraException>()));
+      native.hasCamera = true;
+      await scan.start();
+
+      await messenger.handlePlatformMessage(
+        events.name,
+        events.codec.encodeSuccessEnvelope({
+          'name': 'barcode',
+          'data': [
+            {'rawValue': 'code'},
+          ],
+        }),
+        null,
+      );
+      await tester.pump();
+
+      expect(reads, ['code']);
+      unawaited(subscription.cancel());
+      await unmount(tester, scan);
+    }, variant: onMac);
+  });
+}
+
+/// The plugin's Swift side as 7.2.0 has it. A failed start keeps what it
+/// allocated, and only `stop` frees it. `stop` reads its force flag as a Bool
+/// while Dart sends a map, so the flag never counts there.
+class _NativeScanner {
+  bool hasCamera = false;
+  bool inputFails = false;
+  bool hasDevice = false;
+  bool hasSession = false;
+  int? texture;
+
+  bool get _stopped => !hasDevice || !hasSession;
+  bool get _paused => _stopped && texture != null;
+  bool get isRunning => hasDevice && hasSession && texture != null;
+  bool get holdsAnything => hasDevice || hasSession || texture != null;
+
+  Future<Object?> handle(MethodCall call) async {
+    switch (call.method) {
+      case 'state':
+        return 1;
+      case 'start':
+        if (hasDevice || hasSession) throw PlatformException(code: 'MOBILE_SCANNER_ALREADY_STARTED_ERROR');
+        texture ??= 7;
+        hasSession = true;
+        if (!hasCamera) throw PlatformException(code: 'MOBILE_SCANNER_NO_CAMERA_ERROR');
+        hasDevice = true;
+        if (inputFails) throw PlatformException(code: 'MOBILE_SCANNER_CAMERA_ERROR');
+        return <String, Object?>{
+          'textureId': texture,
+          'size': {'width': 1280.0, 'height': 720.0},
+          'currentTorchState': -1,
+          'cameraDirection': 0,
+        };
+      case 'stop':
+        if (!_paused && _stopped) return null;
+        hasDevice = false;
+        hasSession = false;
+        texture = null;
+        return null;
+    }
+    return null;
+  }
 }

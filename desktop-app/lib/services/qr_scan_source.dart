@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+// The package's only way to release a failed start ([MacQrScanSource]).
+// ignore: implementation_imports
+import 'package:mobile_scanner/src/method_channel/mobile_scanner_method_channel.dart';
 import 'package:quantus_desktop_wallet/services/qr_frame_decoder.dart';
 import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 
@@ -188,8 +191,25 @@ class MacQrScanSource implements QrScanSource {
       if (!_isWanted) return;
       await _controller.start();
       final state = _controller.value;
-      if (!state.isRunning) throw _exceptionOf(state.error);
+      if (state.isRunning) return;
+      await _releaseFailedStart();
+      throw _exceptionOf(state.error);
     });
+  }
+
+  /// A native start that fails keeps the session and texture it allocated,
+  /// and refuses every later start until they are released. The controller's
+  /// stop skips a camera that is not running, so only a forced stop on the
+  /// channel reaches them. The failure that started this is the one to
+  /// report, so a second one is only logged.
+  static Future<void> _releaseFailedStart() async {
+    try {
+      if (MobileScannerPlatform.instance case final MethodChannelMobileScanner channel) {
+        await channel.stop(force: true);
+      }
+    } catch (error) {
+      debugPrint('The camera could not be released after a failed start: $error');
+    }
   }
 
   @override
