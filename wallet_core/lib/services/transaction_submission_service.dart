@@ -229,6 +229,8 @@ class TransactionSubmissionService {
       palletFee: feeBreakdown.creationFee,
     );
 
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     addPendingMultisigProposal(_ref, pending);
     _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
@@ -236,6 +238,13 @@ class TransactionSubmissionService {
       final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusPrint('[Propose] submitted: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would ever remove it.
+      if (!session.isCurrent(ticket)) {
+        removePendingMultisigProposal(_ref, pending.id);
+        return extrinsicHash;
+      }
 
       updatePendingMultisigProposal(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);

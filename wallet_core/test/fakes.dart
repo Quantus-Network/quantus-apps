@@ -492,6 +492,23 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
     required int expiryBlock,
     required ProposeFeeBreakdown feeBreakdown,
   }) async {
+    await holdTransfer?.future;
+    proposals.add((recipient, amount, expiryBlock));
+    return '0xproposal';
+  }
+
+  @override
+  Future<String> proposeTransferWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) async {
+    await holdTransfer?.future;
     proposals.add((recipient, amount, expiryBlock));
     return '0xproposal';
   }

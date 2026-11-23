@@ -7,11 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/notification_models.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/providers/notification_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/logout_service.dart';
+import 'package:wallet_core/services/multisig_proposal_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 
@@ -58,6 +61,28 @@ class _Indexer extends Fake implements ChainHistoryService {
     await held?.future;
     return holds;
   }
+
+  int proposalReads = 0;
+
+  @override
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
+    proposalReads++;
+    return null;
+  }
+}
+
+/// The chain's answer to a proposal, held until the test gives it.
+class _Multisigs extends Fake implements MultisigService {
+  final accepted = Completer<Uint8List>();
+
+  @override
+  Future<Uint8List> propose({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+  }) => accepted.future;
 }
 
 typedef _Watched = ({WalletTestBed bed, _Indexer indexer, ProviderContainer container});
@@ -480,6 +505,97 @@ void main() {
         expect(watched.container.read(pendingTransactionsProvider), hasLength(1));
         watched.container.read(pendingTransactionPollingServiceProvider).stopAll();
         watched.container.dispose();
+      });
+    });
+
+    group('a proposal going out', () {
+      Future<
+        ({WalletTestBed bed, _Indexer indexer, _Multisigs chain, ProviderContainer container, Future<String> sent})
+      >
+      proposing(WidgetTester tester) async {
+        final bed = WalletTestBed();
+        final indexer = _Indexer();
+        final chain = _Multisigs();
+        final container = ProviderContainer(
+          overrides: [
+            ...bed.overrides,
+            chainHistoryServiceProvider.overrideWithValue(indexer),
+            multisigServiceProvider.overrideWithValue(chain),
+          ],
+        );
+        container.read(notificationProvider);
+        await tester.pump();
+        final member = makeAccount(1);
+        final sent = container
+            .read(transactionSubmissionServiceProvider)
+            .proposeTransfer(
+              msig: MultisigAccount(
+                name: 'Multisig',
+                accountId: 'qzMultisig',
+                signers: [member.accountId, 'qzOther'],
+                threshold: 2,
+                nonce: BigInt.zero,
+                myMemberAccountId: member.accountId,
+              ),
+              signer: member,
+              recipient: 'qzTo',
+              amount: BigInt.one,
+              expiryBlock: 10,
+              feeBreakdown: ProposeFeeBreakdown(
+                networkFee: BigInt.zero,
+                deposit: BigInt.zero,
+                creationFee: BigInt.zero,
+                expiryBlock: 10,
+              ),
+            );
+        return (bed: bed, indexer: indexer, chain: chain, container: container, sent: sent);
+      }
+
+      testWidgets('that answers after a reset is not tracked', (tester) async {
+        final proposal = await proposing(tester);
+
+        await proposal.container.read(logoutServiceProvider).logout();
+        await tester.pump();
+        proposal.chain.accepted.complete(Uint8List.fromList([1]));
+        expect(await proposal.sent, '0x01');
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pump();
+
+        expect(proposal.indexer.proposalReads, 0);
+        expect(proposal.container.read(pendingMultisigProposalsProvider), isEmpty);
+        proposal.container.dispose();
+      });
+
+      testWidgets('that answers during a wipe that then fails leaves no row stuck as pending', (tester) async {
+        final proposal = await proposing(tester);
+        final wipe = proposal.bed.substrate.holdWipe = Completer<void>();
+        proposal.bed.substrate.logoutError = StateError('the wipe failed');
+
+        final logout = proposal.container.read(logoutServiceProvider).logout();
+        final failed = expectLater(logout, throwsStateError);
+        await tester.pump();
+        proposal.chain.accepted.complete(Uint8List.fromList([1]));
+        expect(await proposal.sent, '0x01');
+        wipe.complete();
+        await failed;
+        await tester.pump();
+
+        expect(proposal.indexer.proposalReads, 0);
+        expect(proposal.container.read(pendingMultisigProposalsProvider), isEmpty);
+        proposal.container.dispose();
+      });
+
+      testWidgets('with no reset is tracked', (tester) async {
+        final proposal = await proposing(tester);
+
+        proposal.chain.accepted.complete(Uint8List.fromList([1]));
+        expect(await proposal.sent, '0x01');
+        await tester.pump();
+
+        expect(proposal.indexer.proposalReads, 1);
+        expect(proposal.container.read(pendingMultisigProposalsProvider).single.extrinsicHash, '0x01');
+        proposal.container.read(multisigProposalPollingServiceProvider).stopAll();
+        proposal.container.dispose();
       });
     });
 
