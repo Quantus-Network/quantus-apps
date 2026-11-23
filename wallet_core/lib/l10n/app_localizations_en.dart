@@ -3210,4 +3210,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopNotificationUnavailable(String reason) {
     return 'Unavailable: $reason';
   }
+
+  @override
+  String get desktopKeepRunningTitle => 'Keep Running When Closed';
+
+  @override
+  String get desktopKeepRunningSubtitle => 'Keeps watching your sends and proposals';
+
+  @override
+  String desktopStatusItemOpen(String appName) {
+    return 'Open $appName';
+  }
+
+  @override
+  String desktopStatusItemQuit(String appName) {
+    return 'Quit $appName';
+  }
 }

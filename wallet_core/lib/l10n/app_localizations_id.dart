@@ -3215,4 +3215,20 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopNotificationUnavailable(String reason) {
     return 'Tidak tersedia: $reason';
   }
+
+  @override
+  String get desktopKeepRunningTitle => 'Tetap Berjalan Saat Ditutup';
+
+  @override
+  String get desktopKeepRunningSubtitle => 'Tetap memantau pengiriman dan proposal Anda';
+
+  @override
+  String desktopStatusItemOpen(String appName) {
+    return 'Buka $appName';
+  }
+
+  @override
+  String desktopStatusItemQuit(String appName) {
+    return 'Keluar dari $appName';
+  }
 }

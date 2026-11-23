@@ -5791,6 +5791,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unavailable: {reason}'**
   String desktopNotificationUnavailable(String reason);
+
+  /// Desktop Settings: the switch for whether the app keeps running after its window is closed
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Running When Closed'**
+  String get desktopKeepRunningTitle;
+
+  /// Desktop Settings: what keeping the app running after its window closes is for
+  ///
+  /// In en, this message translates to:
+  /// **'Keeps watching your sends and proposals'**
+  String get desktopKeepRunningSubtitle;
+
+  /// Desktop menu bar icon's menu: shows the app's window again
+  ///
+  /// In en, this message translates to:
+  /// **'Open {appName}'**
+  String desktopStatusItemOpen(String appName);
+
+  /// Desktop menu bar icon's menu: quits the app
+  ///
+  /// In en, this message translates to:
+  /// **'Quit {appName}'**
+  String desktopStatusItemQuit(String appName);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

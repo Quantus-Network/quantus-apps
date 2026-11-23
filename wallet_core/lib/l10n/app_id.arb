@@ -868,5 +868,9 @@
   "desktopNotificationNotAllowed": "Tidak diizinkan di Pengaturan Sistem",
   "desktopNotificationOpenSystemSettings": "Buka Pengaturan Sistem",
   "desktopNotificationOpenSystemSettingsFailed": "Tidak dapat membuka Pengaturan Sistem",
-  "desktopNotificationUnavailable": "Tidak tersedia: {reason}"
+  "desktopNotificationUnavailable": "Tidak tersedia: {reason}",
+  "desktopKeepRunningTitle": "Tetap Berjalan Saat Ditutup",
+  "desktopKeepRunningSubtitle": "Tetap memantau pengiriman dan proposal Anda",
+  "desktopStatusItemOpen": "Buka {appName}",
+  "desktopStatusItemQuit": "Keluar dari {appName}"
 }
