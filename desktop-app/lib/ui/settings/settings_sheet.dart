@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
+import 'package:quantus_desktop_wallet/ui/settings/keep_running_row.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/language_pop_up.dart';
 import 'package:quantus_desktop_wallet/ui/settings/notifications_row.dart';
@@ -212,6 +214,7 @@ class _SettingsListState extends ConsumerState<_SettingsList> {
               ),
             ),
             const NotificationsRow(),
+            if (supportsBackgroundMode) const KeepRunningRow(),
             SettingsRow.action(
               key: SettingsSheet.keyboardShortcutsRowKey,
               title: l10n.settingsKeyboardShortcuts,

@@ -52,8 +52,17 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   bool? getBool(String key) => bools[key];
 
+  /// Why the next [setBool] fails, once.
+  Object? failNextBoolWrite;
+
   @override
-  Future<void> setBool(String key, bool value) async => bools[key] = value;
+  Future<void> setBool(String key, bool value) async {
+    if (failNextBoolWrite case final error?) {
+      failNextBoolWrite = null;
+      throw error;
+    }
+    bools[key] = value;
+  }
 
   /// The text kept under plain keys.
   final Map<String, String> strings = {};
