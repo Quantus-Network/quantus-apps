@@ -86,13 +86,17 @@ jobs:
         run: flutter pub get --enforce-lockfile
         working-directory: ./desktop-app
 
-      # Every camera frame on Windows and Linux goes through this conversion.
+      # Every camera frame on Windows and Linux goes through this conversion,
+      # and every Linux preview paint through the texture's buffer.
       - name: Check the camera frame conversion under the sanitizers
         working-directory: ./desktop_qr_camera
         run: |
           clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
             -I native test/native/yuy2_test.cpp -o "$RUNNER_TEMP/yuy2_test"
           "$RUNNER_TEMP/yuy2_test"
+          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+            -I linux test/native/camera_texture_buffer_test.cpp -o "$RUNNER_TEMP/camera_texture_buffer_test"
+          "$RUNNER_TEMP/camera_texture_buffer_test"
 
       # The only run of the login password check against a real libpam. The
       # app's PAM service is installed as its package will install it, and the

@@ -18,6 +18,7 @@ add_library(${PLUGIN_NAME} SHARED
   "desktop_qr_camera_plugin.cc"
   "camera_texture.cc"
   "camera_texture.h"
+  "camera_texture_buffer.h"
   "../native/camera.h"
   "../native/yuy2.h"
 )

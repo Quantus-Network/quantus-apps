@@ -1,7 +1,9 @@
 #include "camera_texture.h"
 
-#include <cstring>
+#include "camera_texture_buffer.h"
 
+// The buffer is behind a pointer because GObject instance memory is
+// zero-initialized and C++ member constructors would not run.
 struct _CameraTexture
 {
     FlPixelBufferTexture parent_instance;
@@ -10,27 +12,16 @@ struct _CameraTexture
 
 G_DEFINE_TYPE(CameraTexture, camera_texture, fl_pixel_buffer_texture_get_type())
 
-// Called on the Flutter raster thread. The returned buffer must stay valid
-// until the next copy_pixels call, so pixels are copied into a dedicated
-// presentation buffer that the capture thread never touches.
+// Called on the Flutter raster thread.
 static gboolean camera_texture_copy_pixels(FlPixelBufferTexture *texture,
                                            const uint8_t **out_buffer,
                                            uint32_t *width, uint32_t *height,
                                            GError **error)
 {
-    CameraTexture *self = CAMERA_TEXTURE(texture);
-    CameraTextureBuffer *fb = self->buffer;
-
-    std::lock_guard<std::mutex> lock(fb->mutex);
-    if (!fb->has_frame)
-    {
-        return FALSE;
-    }
-
-    fb->present = fb->latest;
-    *out_buffer = fb->present.data();
-    *width = fb->width;
-    *height = fb->height;
+    const PresentedFrame frame = CAMERA_TEXTURE(texture)->buffer->Present();
+    *out_buffer = frame.rgba;
+    *width = frame.width;
+    *height = frame.height;
     return TRUE;
 }
 
@@ -60,16 +51,5 @@ CameraTexture *camera_texture_new()
 
 void camera_texture_update_frame(CameraTexture *texture, const uint8_t *rgba, uint32_t width, uint32_t height)
 {
-    CameraTextureBuffer *fb = texture->buffer;
-    std::lock_guard<std::mutex> lock(fb->mutex);
-
-    size_t size = static_cast<size_t>(width) * height * 4;
-    if (fb->latest.size() != size)
-    {
-        fb->latest.resize(size);
-    }
-    std::memcpy(fb->latest.data(), rgba, size);
-    fb->width = width;
-    fb->height = height;
-    fb->has_frame = true;
+    texture->buffer->Update(rgba, width, height);
 }

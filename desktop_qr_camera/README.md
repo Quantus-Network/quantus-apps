@@ -17,11 +17,14 @@ This is a trimmed and patched copy of [`flutter_lite_camera`](https://pub.dev/pa
 
 ## Testing
 
-`flutter test` covers the Dart side. The frame conversion is tested natively, under the sanitizers:
+`flutter test` covers the Dart side. The frame conversion and the Linux texture's buffer are tested natively, under the sanitizers:
 
 ```bash
 c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
   -I native test/native/yuy2_test.cpp -o /tmp/yuy2_test && /tmp/yuy2_test
+c++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined \
+  -I linux test/native/camera_texture_buffer_test.cpp \
+  -o /tmp/camera_texture_buffer_test && /tmp/camera_texture_buffer_test
 ```
 
 The Windows and Linux capture code needs a real camera, so it is only built by CI and tested by hand.
