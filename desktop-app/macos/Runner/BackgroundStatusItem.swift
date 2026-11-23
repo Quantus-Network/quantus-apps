@@ -42,7 +42,6 @@ final class BackgroundStatusItem: NSObject {
 
     let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
     if let image = NSImage(named: BackgroundStatusItem.imageName) {
-      image.isTemplate = true
       item.button?.image = image
     } else {
       NSLog("BackgroundStatusItem: the image \(BackgroundStatusItem.imageName) is missing from the app")
