@@ -138,7 +138,13 @@ void main() {
         ))
           row.label,
       ];
-      expect(labels, ['New Account', 'Import Wallet…', 'Create Multisig…', 'Manage Multisigs…']);
+      expect(labels, [
+        'New Account',
+        'Import Wallet…',
+        'Connect Cold Wallet…',
+        'Create Multisig…',
+        'Manage Multisigs…',
+      ]);
       expect(find.descendant(of: _menu, matching: find.byType(MenuPanelSeparator)), findsNWidgets(2));
       expect(
         tester.getTopLeft(find.descendant(of: _menu, matching: find.byType(MenuPanelSeparator)).first).dy,
@@ -154,7 +160,7 @@ void main() {
       final at = groups.indexWhere((group) => group.members.any((item) => item.label == 'New Account'));
 
       expect(groups[at].members, hasLength(1));
-      expect(groups[at + 1].members.map((item) => item.label), ['Import Wallet…']);
+      expect(groups[at + 1].members.map((item) => item.label), ['Import Wallet…', 'Connect Cold Wallet…']);
       expect(_menuBarItem(tester).shortcut, isNull);
     });
 

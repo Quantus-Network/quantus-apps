@@ -209,8 +209,24 @@ class FakeWalletStorage extends FakeSettingsService {
   /// When set, deriving a wallet's encrypted account waits for this first.
   Future<void>? encryptedAccountsGate;
 
+  /// When set, adding an account waits for this first.
+  Future<void>? addAccountGate;
+
   @override
   Future<List<Account>> getAccounts() async => List.of(accounts);
+
+  @override
+  Future<int> getNextFreeAccountIndex(int walletIndex, {DilithiumScheme? scheme}) async {
+    final used = {
+      for (final account in accounts)
+        if (account.walletIndex == walletIndex) account.index,
+    };
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return index;
+  }
 
   @override
   Future<bool> getHasWallet() async {
@@ -234,6 +250,7 @@ class FakeWalletStorage extends FakeSettingsService {
 
   @override
   Future<void> addAccount(Account account) async {
+    await addAccountGate;
     if (addAccountError case final error?) throw error;
     if (accounts.any((a) => a.accountId == account.accountId)) throw Exception('Account already exists');
     accounts.add(account);

@@ -33,9 +33,10 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// none, no item has it. In the menus that answer a key press,
 /// [onNewAccountByKey] is given and that item acts on it instead, for the
 /// wallet of the account active when its turn comes. It is disabled with the
-/// items that open a sheet, as Import Wallet…, in a group after it, is, and
-/// Create Multisig… and Manage Multisigs…, in a group after that when
-/// [offersMultisigs]. Create Multisig… is also disabled unless
+/// items that open a sheet, as Import Wallet… and, when [offersColdWallets],
+/// Connect Cold Wallet…, in a group after it, are, and Create Multisig… and
+/// Manage Multisigs…, in a group after that when [offersMultisigs]. Create
+/// Multisig… is also disabled unless
 /// [canCreateMultisig].
 ///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
@@ -49,6 +50,7 @@ List<PlatformMenu> buildAppMenus({
   required int? newAccountShortcutWallet,
   required ValueChanged<int> onNewAccount,
   required VoidCallback? onNewAccountByKey,
+  required bool offersColdWallets,
   required bool offersMultisigs,
   required bool canCreateMultisig,
   required List<DisplayAccount> accounts,
@@ -164,7 +166,14 @@ List<PlatformMenu> buildAppMenus({
           ],
         ),
         PlatformMenuItemGroup(
-          members: [PlatformMenuItem(label: l10n.desktopMenuImportWallet, onSelected: opens(ShellSheet.importWallet))],
+          members: [
+            PlatformMenuItem(label: l10n.desktopMenuImportWallet, onSelected: opens(ShellSheet.importWallet)),
+            if (offersColdWallets)
+              PlatformMenuItem(
+                label: l10n.desktopMenuConnectColdWallet,
+                onSelected: opens(ShellSheet.connectColdWallet),
+              ),
+          ],
         ),
         if (offersMultisigs)
           PlatformMenuItemGroup(

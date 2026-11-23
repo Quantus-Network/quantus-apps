@@ -108,6 +108,7 @@ class Sidebar extends ConsumerWidget {
       ref.read(l10nProvider),
       ref.read(softwareWalletsProvider),
       ref.read(accountManagerProvider),
+      offersColdWallets: ref.read(remoteConfigProvider).enableKeystoneHardwareWallet,
       offersMultisigs: ref.read(remoteConfigProvider).enableMultisig,
       canCreateMultisig: ref.read(multisigCreatorProvider) != null,
     );
