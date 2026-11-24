@@ -327,6 +327,32 @@ void main() {
       expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse);
       expect(_note(tester), _l10n.desktopProposalKeystoneExecute(vaultAccount.name));
     });
+
+    testOnMac('as this device\'s member, beside an account that signs here: Execute offered', (tester) async {
+      final vaultTeam = MultisigAccount(
+        name: 'Team',
+        accountId: 'qzTeam',
+        signers: _team.signers,
+        threshold: 2,
+        nonce: BigInt.zero,
+        myMemberAccountId: 'qzVault',
+      );
+      final chain = FakeSendChain()..openProposals = [_ready()];
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [vaultAccount, savingsAccount],
+          settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(vaultTeam), multisigs: [vaultTeam]),
+          balances: oneTokenEach,
+          chain: chain,
+        ),
+      );
+      await tester.tap(find.byType(OpenProposalRowView));
+      await tester.pumpAndSettle();
+
+      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
+      expect(_note(tester), isNull);
+    });
   });
 
   testOnMac('no login password set up: the actions are unavailable, with the note to set one', (tester) async {

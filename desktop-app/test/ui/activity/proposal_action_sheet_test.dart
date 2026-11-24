@@ -239,6 +239,29 @@ void main() {
       expect(_button(tester, ProposalActionSheet.confirmKey).label, _l10n.multisigExecuteButton);
     });
 
+    testOnMac('execute, with two accounts here: a choice, the member first; the other is priced and executes', (
+      tester,
+    ) async {
+      final sheet = await _open(
+        tester,
+        MultisigActionKind.execute,
+        _proposal(status: MultisigProposalStatus.approved, approvals: const ['qzOther', 'qzSavings']),
+        accounts: const [savingsAccount, mainAccount],
+      );
+
+      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzMain'))), findsOne);
+      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))), findsOne);
+      expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzMain']);
+
+      await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
+      await tester.pumpAndSettle();
+      expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzMain', 'qzSavings']);
+
+      await _confirm(tester);
+
+      expect(sheet.chain.actions.map((action) => (action.$1, action.$2)), [('execute', 'qzSavings')]);
+    });
+
     testOnMac('cancel: in ember, the phone\'s sentence, the deposit refunded, Keep or Cancel Proposal', (tester) async {
       await _open(tester, MultisigActionKind.cancel, _proposal(proposer: 'qzMain'));
 
