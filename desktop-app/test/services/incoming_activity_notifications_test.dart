@@ -39,6 +39,18 @@ class _NoLogout extends Fake implements LogoutService {
   Future<void> logout() async {}
 }
 
+/// Settings that take a multisig being added or removed: the list in the app
+/// is what the tests go by.
+class _Settings extends FakeSettingsService {
+  _Settings({super.activeAccount, super.multisigs});
+
+  @override
+  Future<void> addMultisigAccount(MultisigAccount account) async {}
+
+  @override
+  Future<void> removeMultisigAccount(String accountId) async {}
+}
+
 /// 12.5 tokens.
 final _amount = oneToken * BigInt.from(25) ~/ BigInt.two;
 const _onePoll = IncomingActivityNotifications.pollInterval;
@@ -60,6 +72,7 @@ Future<_Wallet> _open(
   WidgetTester tester, {
   String locale = 'en',
   List<Account> accounts = const [mainAccount, savingsAccount, encryptedAccount],
+  List<MultisigAccount>? multisigs,
   void Function(FakeSendChain chain)? before,
 }) async {
   SharedPreferences.setMockInitialValues({});
@@ -73,7 +86,7 @@ Future<_Wallet> _open(
     overrides: [
       ...shellOverrides(
         loadAccounts: () async => [...held],
-        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: [teamMultisig])
+        settings: _Settings(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs ?? [teamMultisig])
           ..locale = locale,
         chain: chain,
       ),
@@ -111,9 +124,10 @@ void _test(
   Future<void> Function(WidgetTester tester, _Wallet wallet) body, {
   String locale = 'en',
   List<Account> accounts = const [mainAccount, savingsAccount, encryptedAccount],
+  List<MultisigAccount>? multisigs,
   void Function(FakeSendChain chain)? before,
 }) => testWidgets(description, (tester) async {
-  final wallet = await _open(tester, locale: locale, accounts: accounts, before: before);
+  final wallet = await _open(tester, locale: locale, accounts: accounts, multisigs: multisigs, before: before);
   await body(tester, wallet);
   wallet.container.dispose();
 }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
@@ -154,6 +168,83 @@ ReversibleTransferEvent _scheduled({required String to}) {
     blockHash: '0xblock',
   );
 }
+
+/// A multisig that needs all three of its signers, Main among them.
+final _board = MultisigAccount(
+  name: 'Board',
+  accountId: 'qzBoard',
+  signers: const ['qzMain', 'qzOther', 'qzThird'],
+  threshold: 3,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'qzMain',
+);
+
+/// A multisig any one of its signers can spend from, Main among them.
+final _either = MultisigAccount(
+  name: 'Either',
+  accountId: 'qzEither',
+  signers: const ['qzMain', 'qzOther'],
+  threshold: 1,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'qzMain',
+);
+
+const _created = MultisigProposalActivityKind.created;
+const _signed = MultisigProposalActivityKind.signed;
+const _ready = MultisigProposalActivityKind.ready;
+const _executed = MultisigProposalActivityKind.executed;
+const _cancelled = MultisigProposalActivityKind.cancelled;
+const _removed = MultisigProposalActivityKind.removed;
+
+/// The indexer now holds that [kind] happened to a proposal of [msig], Team
+/// unless said, to send 12.5 to Bob: done by Other unless said. With
+/// [transfer] false the proposal is something other than a transfer.
+void _happens(
+  FakeSendChain chain,
+  MultisigProposalActivityKind kind, {
+  MultisigAccount? msig,
+  String by = 'qzOther',
+  int? approvals,
+  bool? succeeded,
+  bool transfer = true,
+}) {
+  final multisig = msig ?? teamMultisig;
+  final n = ++_transfers;
+  final when = DateTime(2026, 11, 24, 12);
+  chain.proposalActivity
+      .putIfAbsent(multisig.accountId, () => [])
+      .add(
+        MultisigProposalActivity(
+          kind: kind,
+          id: '${kind.name}-$n',
+          timestamp: when,
+          proposal: MultisigProposal(
+            entityId: '${multisig.accountId}-1',
+            id: 1,
+            multisigAddress: multisig.accountId,
+            proposer: 'qzOther',
+            createdAt: when,
+            updatedAt: when,
+            pallet: '',
+            call: '',
+            recipient: transfer ? 'qzBob' : '',
+            amount: transfer ? _amount : BigInt.zero,
+            expiryBlock: 1284220,
+            approvals: const ['qzOther'],
+            deposit: BigInt.zero,
+            status: MultisigProposalStatus.active,
+            threshold: multisig.threshold,
+            signerCount: multisig.signers.length,
+          ),
+          creationHash: '0xcreated',
+          actor: by,
+          approvalsCount: approvals,
+          succeeded: succeeded,
+        ),
+      );
+}
+
+const _send = 'Send 12.5 QTC from Team';
 
 Future<void> _advance(WidgetTester tester, [Duration by = _onePoll]) async {
   await tester.pump(by);
@@ -316,6 +407,230 @@ void main() {
     expect(_shown(wallet), [('Incoming 12.5 QTC', 'Scheduled to arrive in Main')]);
   });
 
+  group('in a multisig of the wallet, a proposal', () {
+    _test('another signer made is notified as new, with what it proposes, for its click to open it', (
+      tester,
+      wallet,
+    ) async {
+      _happens(wallet.chain, _created);
+
+      await _advance(tester);
+
+      expect(_shown(wallet), [('New proposal', _send)]);
+      expect(jsonDecode(wallet.notifications.shown.single.payload), {
+        'accountId': 'qzTeam',
+        'extrinsicHash': '0xcreated',
+      });
+    });
+
+    _test(
+      'another signer signed, with approvals still to come, is notified with how many it has',
+      multisigs: [_board],
+      (tester, wallet) async {
+        _happens(wallet.chain, _signed, msig: _board, approvals: 2);
+
+        await _advance(tester);
+
+        expect(_shown(wallet), [('Proposal signed: 2 of 3', 'Send 12.5 QTC from Board')]);
+      },
+    );
+
+    _test('another signer gave its last approval is notified once, as ready to execute', (tester, wallet) async {
+      _happens(wallet.chain, _signed, approvals: 2);
+      _happens(wallet.chain, _ready, approvals: 2);
+
+      await _advance(tester);
+
+      expect(_shown(wallet), [('Proposal ready to execute', _send)]);
+    });
+
+    _test(
+      'another signer made where one approval is enough is notified once, as ready to execute',
+      multisigs: [_either],
+      (tester, wallet) async {
+        _happens(wallet.chain, _created, msig: _either);
+        _happens(wallet.chain, _ready, msig: _either, approvals: 1);
+
+        await _advance(tester);
+
+        expect(_shown(wallet), [('Proposal ready to execute', 'Send 12.5 QTC from Either')]);
+      },
+    );
+
+    _test('another signer executed is notified, as executed or as failed', (tester, wallet) async {
+      _happens(wallet.chain, _executed, succeeded: true);
+      _happens(wallet.chain, _executed, succeeded: false);
+
+      await _advance(tester);
+
+      expect(_shown(wallet), [('Proposal executed', _send), ('Proposal execution failed', _send)]);
+    });
+
+    _test('another signer cancelled or removed is notified', (tester, wallet) async {
+      _happens(wallet.chain, _cancelled);
+      _happens(wallet.chain, _removed);
+
+      await _advance(tester);
+
+      expect(_shown(wallet), [('Proposal cancelled', _send), ('Proposal removed', _send)]);
+    });
+
+    _test('that is not a transfer names only its multisig', (tester, wallet) async {
+      _happens(wallet.chain, _created, transfer: false);
+
+      await _advance(tester);
+
+      expect(_shown(wallet), [('New proposal', 'In Team')]);
+    });
+
+    _test(
+      'that one of the wallet\'s own accounts acted on notifies nothing, whatever it did',
+      multisigs: [teamMultisig, _board],
+      (tester, wallet) async {
+        _happens(wallet.chain, _created, by: 'qzMain');
+        _happens(wallet.chain, _signed, msig: _board, by: 'qzSavings', approvals: 2);
+        _happens(wallet.chain, _ready, by: 'qzMain', approvals: 2);
+        _happens(wallet.chain, _executed, by: 'qzMain', succeeded: true);
+        _happens(wallet.chain, _cancelled, by: 'qzMain');
+        _happens(wallet.chain, _removed, by: 'qzSavings');
+
+        await _advance(tester);
+
+        expect(wallet.notifications.shown, isEmpty);
+      },
+    );
+
+    _test('is notified once, however often the indexer is read, and none replaces another', (tester, wallet) async {
+      _happens(wallet.chain, _created);
+      _happens(wallet.chain, _cancelled);
+
+      await _advance(tester);
+      await _advance(tester);
+      await _advance(tester);
+
+      expect(_shown(wallet), [('New proposal', _send), ('Proposal cancelled', _send)]);
+      expect(wallet.notifications.shown.map((n) => n.id).toSet(), hasLength(2));
+    });
+
+    _test(
+      'acted on before the app started notifies nothing; what happens after does',
+      before: (chain) => _happens(chain, _created),
+      (tester, wallet) async {
+        await _advance(tester);
+        expect(wallet.notifications.shown, isEmpty);
+
+        _happens(wallet.chain, _cancelled);
+        await _advance(tester);
+
+        expect(_shown(wallet), [('Proposal cancelled', _send)]);
+      },
+    );
+
+    _test('is said in the app language', locale: 'id', multisigs: [teamMultisig, _board], (tester, wallet) async {
+      _happens(wallet.chain, _created);
+      _happens(wallet.chain, _created, transfer: false);
+      _happens(wallet.chain, _signed, msig: _board, approvals: 2);
+      _happens(wallet.chain, _ready, approvals: 2);
+      _happens(wallet.chain, _executed, succeeded: true);
+      _happens(wallet.chain, _executed, succeeded: false);
+      _happens(wallet.chain, _cancelled);
+      _happens(wallet.chain, _removed);
+
+      await _advance(tester);
+
+      const send = 'Kirim 12,5 QTC dari Team';
+      expect(_shown(wallet), [
+        ('Proposal baru', send),
+        ('Proposal baru', 'Di Team'),
+        ('Proposal siap dieksekusi', send),
+        ('Proposal dieksekusi', send),
+        ('Eksekusi proposal gagal', send),
+        ('Proposal dibatalkan', send),
+        ('Proposal dihapus', send),
+        ('Proposal ditandatangani: 2 dari 3', 'Kirim 12,5 QTC dari Board'),
+      ]);
+    });
+  });
+
+  group('the multisigs read for their proposals', () {
+    _test('are the wallet\'s multisigs', multisigs: [teamMultisig, _board], (tester, wallet) async {
+      await _advance(tester);
+
+      expect(wallet.chain.proposalActivityReads.length, greaterThan(1));
+      for (final read in wallet.chain.proposalActivityReads) {
+        expect(read, unorderedEquals(['qzTeam', 'qzBoard']));
+      }
+    });
+
+    _test('are not asked about in a wallet with none', multisigs: const [], (tester, wallet) async {
+      await _advance(tester);
+
+      expect(wallet.chain.proposalActivityReads, isEmpty);
+    });
+
+    _test(
+      'take in a multisig added later, from then on: what happened in it before is not notified',
+      before: (chain) => _happens(chain, _created, msig: _board),
+      (tester, wallet) async {
+        await wallet.container.read(multisigAccountsProvider.notifier).add(_board);
+        await _settle(tester);
+        expect(wallet.chain.proposalActivityReads.last, contains('qzBoard'), reason: 'read at once');
+
+        _happens(wallet.chain, _cancelled, msig: _board);
+        await _advance(tester);
+
+        expect(_shown(wallet), [('Proposal cancelled', 'Send 12.5 QTC from Board')]);
+      },
+    );
+
+    _test('start afresh on a multisig removed and added back', (tester, wallet) async {
+      final multisigs = wallet.container.read(multisigAccountsProvider.notifier);
+      await multisigs.remove('qzTeam');
+      await _settle(tester);
+      _happens(wallet.chain, _created);
+      await _advance(tester);
+
+      await multisigs.add(teamMultisig);
+      await _settle(tester);
+      await _advance(tester);
+      expect(wallet.notifications.shown, isEmpty);
+
+      _happens(wallet.chain, _cancelled);
+      await _advance(tester);
+
+      expect(_shown(wallet), [('Proposal cancelled', _send)]);
+    });
+
+    _test('that cannot be read are reported once while it lasts, and what was received is still notified', (
+      tester,
+      wallet,
+    ) async {
+      _happens(wallet.chain, _created);
+      wallet.chain.receive('qzMain', _transfer(to: 'qzMain'));
+      wallet.chain.proposalActivityError = StateError('the indexer is down');
+
+      await _advance(tester);
+      await _advance(tester);
+      expect(_shown(wallet), [_receivedInMain]);
+      expect(wallet.telemetry.errors, ['desktop_notification_proposals_unread']);
+
+      wallet.chain.proposalActivityError = null;
+      await _advance(tester);
+
+      expect(_shown(wallet), [_receivedInMain, ('New proposal', _send)]);
+    });
+
+    _test('are still read when what was received cannot be', (tester, wallet) async {
+      _happens(wallet.chain, _created);
+      wallet.chain.receivedError = StateError('the indexer is down');
+
+      await _advance(tester);
+
+      expect(_shown(wallet), [('New proposal', _send)]);
+      expect(wallet.telemetry.errors, ['desktop_notification_incoming_unread']);
+    });
+  });
+
   group('the accounts read', () {
     _test('are the Transparent accounts and the multisigs, never an Encrypted account', (tester, wallet) async {
       await _advance(tester);
@@ -475,20 +790,29 @@ void main() {
   }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
 
   group('at a wallet reset', () {
-    _test('a read answered after the wallet was wiped notifies nothing', (tester, wallet) async {
-      wallet.chain.receive('qzMain', _transfer(to: 'qzMain'));
-      final held = wallet.chain.holdReceived = Completer<void>();
-      await _advance(tester);
+    for (final kind in ['of what was received', 'of what happened to proposals']) {
+      _test('a read $kind answered after the wallet was wiped notifies nothing', (tester, wallet) async {
+        wallet.chain.receive('qzMain', _transfer(to: 'qzMain'));
+        _happens(wallet.chain, _created);
+        final held = Completer<void>();
+        if (kind == 'of what was received') {
+          wallet.chain.holdReceived = held;
+        } else {
+          wallet.chain.holdProposalActivity = held;
+        }
+        await _advance(tester);
+        final shownBefore = wallet.notifications.shown.length;
+        expect(shownBefore, 1, reason: 'the other read was answered');
 
-      final session = wallet.container.read(walletSessionProvider)..beginReset();
-      session.finishReset();
-      await wallet.container.read(walletPresenceProvider.notifier).wipeWallet();
-      held.complete();
-      wallet.chain.holdReceived = null;
-      await _settle(tester);
+        final session = wallet.container.read(walletSessionProvider)..beginReset();
+        session.finishReset();
+        await wallet.container.read(walletPresenceProvider.notifier).wipeWallet();
+        held.complete();
+        await _settle(tester);
 
-      expect(wallet.notifications.shown, isEmpty);
-    });
+        expect(wallet.notifications.shown, hasLength(shownBefore));
+      });
+    }
 
     _test('the indexer is no longer read, and the next wallet starts from what it holds then', (tester, wallet) async {
       final session = wallet.container.read(walletSessionProvider)..beginReset();
@@ -498,6 +822,7 @@ void main() {
       final readsAtTheWipe = wallet.chain.receivedReads.length;
 
       wallet.chain.receive('qzMain', _transfer(to: 'qzMain'));
+      _happens(wallet.chain, _created);
       await _advance(tester);
       await _advance(tester);
       expect(wallet.chain.receivedReads, hasLength(readsAtTheWipe));
@@ -508,9 +833,10 @@ void main() {
       expect(wallet.notifications.shown, isEmpty, reason: 'received before this wallet was here');
 
       wallet.chain.receive('qzMain', _transfer(to: 'qzMain'));
+      _happens(wallet.chain, _cancelled);
       await _advance(tester);
 
-      expect(_shown(wallet), [_receivedInMain]);
+      expect(_shown(wallet), [_receivedInMain, ('Proposal cancelled', _send)]);
     });
   });
 }

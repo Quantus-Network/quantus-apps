@@ -3207,6 +3207,34 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get desktopNotificationProposalNewTitle => 'New proposal';
+
+  @override
+  String desktopNotificationProposalSignedTitle(int count, int threshold) {
+    return 'Proposal signed: $count of $threshold';
+  }
+
+  @override
+  String get desktopNotificationProposalReadyTitle => 'Proposal ready to execute';
+
+  @override
+  String get desktopNotificationProposalExecutedTitle => 'Proposal executed';
+
+  @override
+  String get desktopNotificationProposalFailedTitle => 'Proposal execution failed';
+
+  @override
+  String get desktopNotificationProposalCancelledTitle => 'Proposal cancelled';
+
+  @override
+  String get desktopNotificationProposalRemovedTitle => 'Proposal removed';
+
+  @override
+  String desktopNotificationProposalOtherBody(String multisig) {
+    return 'In $multisig';
+  }
+
+  @override
   String get desktopNotificationProposalNotConfirmedTitle => 'Proposal not confirmed';
 
   @override

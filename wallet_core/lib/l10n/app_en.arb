@@ -4665,6 +4665,51 @@
         }
       }
     },
+    "desktopNotificationProposalNewTitle": "New proposal",
+    "@desktopNotificationProposalNewTitle": {
+      "description": "Desktop notification title: another signer proposed something in a multisig of the wallet"
+    },
+    "desktopNotificationProposalSignedTitle": "Proposal signed: {count} of {threshold}",
+    "@desktopNotificationProposalSignedTitle": {
+      "description": "Desktop notification title: another signer approved a proposal that still needs more approvals; count is the approvals it has now, threshold how many it needs",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "threshold": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopNotificationProposalReadyTitle": "Proposal ready to execute",
+    "@desktopNotificationProposalReadyTitle": {
+      "description": "Desktop notification title: another signer gave the approval a proposal still needed, so it can now be executed"
+    },
+    "desktopNotificationProposalExecutedTitle": "Proposal executed",
+    "@desktopNotificationProposalExecutedTitle": {
+      "description": "Desktop notification title: another signer executed a proposal and what it proposed went through"
+    },
+    "desktopNotificationProposalFailedTitle": "Proposal execution failed",
+    "@desktopNotificationProposalFailedTitle": {
+      "description": "Desktop notification title: another signer executed a proposal and what it proposed failed on the chain"
+    },
+    "desktopNotificationProposalCancelledTitle": "Proposal cancelled",
+    "@desktopNotificationProposalCancelledTitle": {
+      "description": "Desktop notification title: another signer cancelled a proposal"
+    },
+    "desktopNotificationProposalRemovedTitle": "Proposal removed",
+    "@desktopNotificationProposalRemovedTitle": {
+      "description": "Desktop notification title: another signer removed a proposal that had expired"
+    },
+    "desktopNotificationProposalOtherBody": "In {multisig}",
+    "@desktopNotificationProposalOtherBody": {
+      "description": "Desktop notification body for a proposal that is not a transfer: the multisig it is in",
+      "placeholders": {
+        "multisig": {
+          "type": "String"
+        }
+      }
+    },
     "desktopNotificationProposalNotConfirmedTitle": "Proposal not confirmed",
     "@desktopNotificationProposalNotConfirmedTitle": {
       "description": "Desktop notification title: a multisig proposal made on this computer was not seen on the chain in time"

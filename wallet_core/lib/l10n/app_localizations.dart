@@ -5774,6 +5774,54 @@ abstract class AppLocalizations {
   /// **'Send {amount} from {multisig}'**
   String desktopNotificationProposalCreatedBody(String amount, String multisig);
 
+  /// Desktop notification title: another signer proposed something in a multisig of the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'New proposal'**
+  String get desktopNotificationProposalNewTitle;
+
+  /// Desktop notification title: another signer approved a proposal that still needs more approvals; count is the approvals it has now, threshold how many it needs
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal signed: {count} of {threshold}'**
+  String desktopNotificationProposalSignedTitle(int count, int threshold);
+
+  /// Desktop notification title: another signer gave the approval a proposal still needed, so it can now be executed
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal ready to execute'**
+  String get desktopNotificationProposalReadyTitle;
+
+  /// Desktop notification title: another signer executed a proposal and what it proposed went through
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get desktopNotificationProposalExecutedTitle;
+
+  /// Desktop notification title: another signer executed a proposal and what it proposed failed on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal execution failed'**
+  String get desktopNotificationProposalFailedTitle;
+
+  /// Desktop notification title: another signer cancelled a proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cancelled'**
+  String get desktopNotificationProposalCancelledTitle;
+
+  /// Desktop notification title: another signer removed a proposal that had expired
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal removed'**
+  String get desktopNotificationProposalRemovedTitle;
+
+  /// Desktop notification body for a proposal that is not a transfer: the multisig it is in
+  ///
+  /// In en, this message translates to:
+  /// **'In {multisig}'**
+  String desktopNotificationProposalOtherBody(String multisig);
+
   /// Desktop notification title: a multisig proposal made on this computer was not seen on the chain in time
   ///
   /// In en, this message translates to:

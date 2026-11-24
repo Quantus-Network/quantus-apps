@@ -726,6 +726,19 @@ class FakeSendChain {
   Object? receivedError;
   Completer<void>? holdReceived;
 
+  /// What happened to each multisig's proposals, oldest first, as the indexer
+  /// holds it.
+  final proposalActivity = <String, List<MultisigProposalActivity>>{};
+
+  /// The multisigs asked what happened to their proposals, each time, in
+  /// order.
+  final proposalActivityReads = <List<String>>[];
+
+  /// When set, a read of what happened to proposals fails with this; and
+  /// waits for [holdProposalActivity], when that is set.
+  Object? proposalActivityError;
+  Completer<void>? holdProposalActivity;
+
   /// When set, a read of past proposals waits for it; and fails with
   /// [pastProposalsError], when that is set.
   Completer<void>? holdPastProposals;
@@ -752,6 +765,31 @@ class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.chain);
 
   final FakeSendChain chain;
+
+  /// A cursor counts, under every kind, how many of the multisig's records
+  /// were read.
+  @override
+  Future<Map<String, MultisigProposalActivitySince>> fetchProposalActivitySince(
+    List<MultisigAccount> multisigs,
+    Map<String, MultisigProposalActivityCursor> cursors,
+  ) async {
+    chain.proposalActivityReads.add([for (final msig in multisigs) msig.accountId]);
+    await chain.holdProposalActivity?.future;
+    if (chain.proposalActivityError case final error?) throw error;
+    return {
+      for (final msig in multisigs)
+        msig.accountId: MultisigProposalActivitySince(
+          activity: switch (cursors[msig.accountId]) {
+            null => const [],
+            final cursor => [...?chain.proposalActivity[msig.accountId]?.skip(int.parse(cursor.values.first.id))],
+          },
+          cursor: {
+            for (final kind in MultisigProposalActivityKind.values)
+              kind: AccountEventCursor(timestamp: '', id: '${chain.proposalActivity[msig.accountId]?.length ?? 0}'),
+          },
+        ),
+    };
+  }
 
   @override
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) {
