@@ -55,7 +55,9 @@ class OwnActivityNotifications {
       (previous, settled) => _onSettled(previous ?? const {}, settled),
     );
     _ref.listen(walletPresenceProvider, (_, presence) {
-      if (presence.value == WalletPresence.none) _stopWatchingEncryptedSends();
+      if (presence.value != WalletPresence.none) return;
+      _stopWatchingEncryptedSends();
+      _encryptedSendHashes.clear();
     });
     _ref.onDispose(() => _encryptedSendWatch.dispose());
   }
@@ -67,6 +69,14 @@ class OwnActivityNotifications {
   /// The Encrypted sends handed to the node and not yet seen on the chain, by
   /// the hash of the last transaction of each.
   final _encryptedSends = <String, _EncryptedSend>{};
+
+  /// The transactions of the Encrypted sends this computer handed to the node.
+  final _encryptedSendHashes = <String>{};
+
+  /// Whether [hash] is a transaction of an Encrypted send this computer
+  /// handed to the node: what it paid an account of the wallet is the
+  /// person's own send, not something received.
+  bool isEncryptedSendFromHere(String hash) => _encryptedSendHashes.contains(hash);
 
   late final _encryptedSendWatch = ExtrinsicIndexerPollingService<_EncryptedSend, void>(
     _ref,
@@ -165,6 +175,7 @@ class OwnActivityNotifications {
   /// the chain holds every one of its transactions. One the person cancelled
   /// is not notified: the sheet in front of them says what became of it.
   void onEncryptedSendEnded({required Account account, required BigInt amount, required EncryptedSendState send}) {
+    _encryptedSendHashes.addAll(send.txHashes);
     switch (send.phase) {
       case EncryptedSendPhase.succeeded:
         if (send.txHashes.isEmpty) {

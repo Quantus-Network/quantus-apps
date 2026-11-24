@@ -712,6 +712,20 @@ class FakeSendChain {
   List<ReversibleTransferEvent> stillScheduled = const [];
   final stillScheduledReads = <List<String>>[];
 
+  /// What each account received, oldest first, as the indexer holds it.
+  final received = <String, List<TransactionEvent>>{};
+
+  /// The indexer now holds [event] as received by the account [accountId].
+  void receive(String accountId, TransactionEvent event) => received.putIfAbsent(accountId, () => []).add(event);
+
+  /// The accounts asked what they received, each time, in order.
+  final receivedReads = <List<String>>[];
+
+  /// When set, a read of what accounts received fails with this; and waits
+  /// for [holdReceived], when that is set.
+  Object? receivedError;
+  Completer<void>? holdReceived;
+
   /// When set, a read of past proposals waits for it; and fails with
   /// [pastProposalsError], when that is set.
   Completer<void>? holdPastProposals;
@@ -873,6 +887,21 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   Future<List<ReversibleTransferEvent>> fetchStillScheduledTransfers({required List<String> accountIds}) async {
     chain.stillScheduledReads.add(accountIds);
     return chain.stillScheduled;
+  }
+
+  /// A cursor counts how many of the account's rows were read.
+  @override
+  Future<Map<String, IncomingSince>> fetchIncomingSince(Map<String, AccountEventCursor?> after) async {
+    chain.receivedReads.add(after.keys.toList());
+    await chain.holdReceived?.future;
+    if (chain.receivedError case final error?) throw error;
+    return {
+      for (final MapEntry(key: account, value: cursor) in after.entries)
+        account: IncomingSince(
+          received: cursor == null ? const [] : [...?chain.received[account]?.skip(int.parse(cursor.id))],
+          cursor: AccountEventCursor(timestamp: '', id: '${chain.received[account]?.length ?? 0}'),
+        ),
+    };
   }
 }
 

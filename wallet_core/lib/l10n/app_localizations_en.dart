@@ -3163,6 +3163,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationReceivedTitle(String amount) {
+    return 'Received $amount';
+  }
+
+  @override
+  String desktopNotificationReceivedBody(String account) {
+    return 'In $account';
+  }
+
+  @override
+  String desktopNotificationIncomingTitle(String amount) {
+    return 'Incoming $amount';
+  }
+
+  @override
+  String desktopNotificationIncomingBody(String account) {
+    return 'Scheduled to arrive in $account';
+  }
+
+  @override
   String get desktopNotificationSendNotConfirmedTitle => 'Send not confirmed';
 
   @override
