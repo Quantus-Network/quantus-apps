@@ -772,7 +772,8 @@ void main() {
 
     testOnMac('with as many swaps running as can be followed, Confirm says so and starts nothing', (tester) async {
       final running = [
-        for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++) fakeActiveSwap(depositAddress: '0x${'$i' * 40}'),
+        for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++)
+          fakeActiveSwap(depositAddress: '0x${i.toString() * 40}'),
       ];
       final chain = FakeSendChain();
       final approval = FakeUserApproval();

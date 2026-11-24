@@ -17,7 +17,6 @@ import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
-import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_desktop_wallet/ui/swap/swap_detail.dart';
 import 'package:quantus_desktop_wallet/ui/swap/swap_row_view.dart';
