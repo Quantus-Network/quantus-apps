@@ -285,6 +285,56 @@ void main() {
       expect(_nativeItem(tester, 'Account', 'New Account').shortcut, _isShortcut(LogicalKeyboardKey.keyN, meta: true));
     });
 
+    testOnMac('while a switch is still being saved, Swap is offered, to be checked against the account switched to', (
+      tester,
+    ) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+      expect(_nativeItem(tester, 'Account', 'Swap').onSelected, isNull);
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Main').onSelected!();
+      await tester.pumpAndSettle();
+      final swap = _nativeItem(tester, 'Account', 'Swap');
+      expect(swap.onSelected, isNotNull);
+      expect(swap.shortcut, _isShortcut(LogicalKeyboardKey.keyS, meta: true, shift: true));
+      swap.onSelected!();
+      await tester.pumpAndSettle();
+      await settings.finishWrites(tester);
+
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(_inSheet(find.text('Main')), findsOneWidget);
+    });
+
+    testOnMac('where swaps are not offered, Swap stays out of the Account menu while a switch is still being saved', (
+      tester,
+    ) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+          swapAvailable: false,
+        ),
+      );
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Main').onSelected!();
+      await tester.pumpAndSettle();
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).where((item) => item.label == 'Swap'), isEmpty);
+      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNotNull, reason: 'the switch is still waiting');
+      await settings.finishWrites(tester);
+
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).where((item) => item.label == 'Swap'), isEmpty);
+    });
+
     testOnMac('the Account menu lists the accounts in the sidebar\'s order, numbered from ⌘1', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
@@ -1156,6 +1206,42 @@ void main() {
         await pumpShell(tester, overrides: withVault(settings));
 
         await pressWithinOneFrame(tester, [LogicalKeyboardKey.digit2, LogicalKeyboardKey.keyS]);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Vault');
+        expect(find.byType(ShellSheetView), findsNothing);
+      });
+
+      /// Presses Ctrl+Shift+S, Swap's keys.
+      Future<void> pressSwapKeys(WidgetTester tester) async {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pumpAndSettle();
+      }
+
+      testOnWindowsAndLinux('from an account that cannot swap, Ctrl+1 then Ctrl+Shift+S opens Swap on the account '
+          'switched to', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await press(tester, LogicalKeyboardKey.digit1);
+        await pressSwapKeys(tester);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Main');
+        expect(find.byType(SwapSheet), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsOneWidget);
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 to an account that cannot swap, then Ctrl+Shift+S, opens nothing', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await press(tester, LogicalKeyboardKey.digit2);
+        await pressSwapKeys(tester);
         await settings.finishWrites(tester);
 
         expect(_selected(tester), 'Vault');
