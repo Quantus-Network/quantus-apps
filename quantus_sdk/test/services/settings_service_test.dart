@@ -742,6 +742,28 @@ void main() {
       expect(current.getAirdropClaim(1)?.toJson(), claim.toJson());
     }
 
+    final vault = MultisigAccount(
+      name: 'Vault',
+      accountId: 'id_vault',
+      signers: [first.accountId, second.accountId],
+      threshold: 1,
+      nonce: BigInt.zero,
+      myMemberAccountId: first.accountId,
+    );
+
+    /// Stores [first] and the multisig [vault], with [active] as the active
+    /// account, while every write is still stored.
+    Future<void> givenVault({required BaseAccount active}) async {
+      await settings.saveAccounts([first]);
+      await settings.addMultisigAccount(vault);
+      await settings.setActiveAccount(
+        active is MultisigAccount ? MultisigDisplayAccount(active) : RegularAccount(active as Account),
+      );
+    }
+
+    Future<List<String>> multisigIdsIn(SettingsService settings) async =>
+        (await settings.getMultisigAccounts()).map((a) => a.accountId).toList();
+
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       FlutterSecureStorage.setMockInitialValues({});
@@ -832,6 +854,73 @@ void main() {
           }
         });
       }
+
+      test('a $how active account write, removing the active wallet, throws and leaves the wallet whole', () async {
+        await givenTradingWallet();
+        fail('active_display_account');
+
+        await expectLater(settings.removeWallet(1), throwsA(anything));
+
+        for (final current in [settings, await restarted()]) {
+          await expectTradingWalletWhole(current);
+        }
+      });
+
+      test('a $how multisig add throws and adds nothing', () async {
+        await given([first], active: first);
+        fail('multisig_accounts_v1');
+
+        await expectLater(settings.addMultisigAccount(vault), throwsA(anything));
+
+        expect(await multisigIdsIn(settings), isEmpty);
+        expect(await multisigIdsIn(await restarted()), isEmpty);
+      });
+
+      test('a $how multisig rename throws and keeps the old name', () async {
+        await givenVault(active: first);
+        fail('multisig_accounts_v1');
+
+        await expectLater(settings.updateMultisigAccount(vault.copyWith(name: 'Renamed')), throwsA(anything));
+
+        expect((await settings.getMultisigAccounts()).single.name, 'Vault');
+        expect((await (await restarted()).getMultisigAccounts()).single.name, 'Vault');
+      });
+
+      test('a $how active account write, renaming the active multisig, throws and keeps the old name', () async {
+        await givenVault(active: vault);
+        fail('active_display_account');
+
+        await expectLater(settings.updateMultisigAccount(vault.copyWith(name: 'Renamed')), throwsA(anything));
+
+        for (final current in [settings, await restarted()]) {
+          expect((await current.getMultisigAccounts()).single.name, 'Vault');
+          expect((await current.getActiveAccount())?.account.name, 'Vault');
+        }
+      });
+
+      test('a $how multisig removal throws, keeps the multisig, and keeps it active', () async {
+        await givenVault(active: vault);
+        fail('multisig_accounts_v1');
+
+        await expectLater(settings.removeMultisigAccount(vault.accountId), throwsA(anything));
+
+        for (final current in [settings, await restarted()]) {
+          expect(await multisigIdsIn(current), [vault.accountId]);
+          expect(await activeIdIn(current), vault.accountId);
+        }
+      });
+
+      test('a $how active account write, removing the active multisig, throws and keeps it', () async {
+        await givenVault(active: vault);
+        fail('active_display_account');
+
+        await expectLater(settings.removeMultisigAccount(vault.accountId), throwsA(anything));
+
+        for (final current in [settings, await restarted()]) {
+          expect(await multisigIdsIn(current), [vault.accountId]);
+          expect(await activeIdIn(current), vault.accountId);
+        }
+      });
 
       test('a $how move of an old single account throws and keeps its old keys', () async {
         await store.setValue('String', 'flutter.account_id', 'id_old');

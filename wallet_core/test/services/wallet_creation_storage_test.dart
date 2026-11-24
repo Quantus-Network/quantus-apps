@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
+
+import '../fakes.dart';
 
 const _phrase = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 const _otherPhrase = 'legal winner thank year wave sausage worth useful legal winner thank yellow';
@@ -27,12 +31,37 @@ class _FailingStore extends InMemorySharedPreferencesStore {
   final refused = <String>{};
   final throwing = <String>{};
 
+  _LateAcknowledgement? _late;
+
+  /// The next write of [key] is stored at once, as it is sent, but reported
+  /// stored only when [_LateAcknowledgement.acknowledge] is called.
+  _LateAcknowledgement acknowledgeLater(String key) => _late = _LateAcknowledgement(key);
+
   @override
   Future<bool> setValue(String valueType, String key, Object value) async {
     if (throwing.contains(key)) throw StateError('the disk is gone');
     if (refused.contains(key)) return false;
-    return super.setValue(valueType, key, value);
+    final stored = await super.setValue(valueType, key, value);
+    if (_late case final late? when late.key == key) {
+      _late = null;
+      late._reached.complete();
+      await late._acknowledged.future;
+    }
+    return stored;
   }
+}
+
+class _LateAcknowledgement {
+  _LateAcknowledgement(this.key);
+
+  final String key;
+  final _reached = Completer<void>();
+  final _acknowledged = Completer<void>();
+
+  /// Completes once the write is stored and waits for its acknowledgement.
+  Future<void> get reached => _reached.future;
+
+  void acknowledge() => _acknowledged.complete();
 }
 
 void main() {
@@ -156,5 +185,36 @@ void main() {
       expect(await settings.getMnemonic(0), _otherPhrase);
       expect(await settings.getMnemonic(1), isNull);
     });
+  });
+
+  test('a wallet removed while its resumed account scan waits on the chain stays removed after a restart', () async {
+    const main = Account(walletIndex: 0, index: 0, name: 'Main', accountId: 'qzMain');
+    final second = _root(walletIndex: 1).copyWith(index: 1, accountId: 'qzSecond');
+    await settings.addAccount(main);
+    await settings.setMnemonic(_phrase, 1);
+    await settings.setPendingAccountScan(1, _root().accountId);
+    await settings.addAccount(_root(walletIndex: 1));
+    final chain = Completer<List<Account>>();
+    service = WalletCreationService(
+      settingsService: settings,
+      accountsService: AccountsService(),
+      discoveryService: FakeAccountDiscoveryService([() => chain.future]),
+    );
+
+    final scan = service.resumePendingAccountScans();
+    await pumpEventQueue();
+    final stored = store.acknowledgeLater(_accountsKey);
+    final removal = settings.removeWallet(1);
+    await stored.reached;
+    chain.complete([_root(walletIndex: 1), second]);
+    await pumpEventQueue();
+    stored.acknowledge();
+    await removal;
+    await scan;
+
+    await startApp();
+    expect((await settings.getAccounts()).map((a) => a.accountId), [main.accountId]);
+    expect(settings.pendingAccountScan(1), isNull);
+    expect(await settings.getMnemonic(1), isNull);
   });
 }

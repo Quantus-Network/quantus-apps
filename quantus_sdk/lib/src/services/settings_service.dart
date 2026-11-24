@@ -215,10 +215,11 @@ class SettingsService {
   /// mnemonic from secure storage. The primary wallet (index 0) cannot be
   /// removed.
   ///
-  /// Throws when its accounts cannot be dropped, its settings cleared or its
-  /// mnemonic deleted, and the wallet is then kept whole: its accounts,
-  /// mnemonic and settings, and the active account, are what they were. The
-  /// mnemonic goes last, as the one step that cannot be put back.
+  /// Throws when its account scan cannot be stopped, its accounts dropped,
+  /// its settings cleared or its mnemonic deleted, and the wallet is then kept
+  /// whole: its accounts, mnemonic and settings, and the active account, are
+  /// what they were. The mnemonic goes last, as the one step that cannot be
+  /// put back.
   Future<void> removeWallet(int walletIndex) async {
     if (walletIndex == 0) {
       throw Exception('Cant remove the primary wallet!');
@@ -233,36 +234,46 @@ class SettingsService {
     }
     final previousAccounts = _prefs.getString(_accountsKey);
     final previousActive = _prefs.getString(_activeDisplayAccountKey);
+    final scanKey = _pendingAccountScanKey(walletIndex);
     final settingsKeys = [
-      _pendingAccountScanKey(walletIndex),
       _walletOriginKey(walletIndex),
       _recoveryPhraseViewedKey(walletIndex),
       _walletNameKey(walletIndex),
       _airdropClaimKey(walletIndex),
     ];
+    final previousScan = _prefs.get(scanKey);
     final previousSettings = {for (final key in settingsKeys) key: _prefs.get(key)};
-    final activeId = await _getActiveAccountId();
-    final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
-    if (activeRemoved) {
-      await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
-    }
+    // The wallet's account scan adds accounts only while it is pending, so it
+    // is stopped first, before any step that waits, and is pending again only
+    // if the removal is undone.
     try {
-      await saveAccounts(remaining);
-    } catch (_) {
-      await _putBack(_activeDisplayAccountKey, previousActive);
-      rethrow;
-    }
-    try {
-      for (final key in settingsKeys) {
-        if (!await _prefs.remove(key)) throw Exception('Could not remove $key');
+      if (!await _prefs.remove(scanKey)) throw Exception('Could not remove $scanKey');
+      final activeId = await _getActiveAccountId();
+      final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
+      if (activeRemoved) {
+        await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
       }
-      await deleteMnemonic(walletIndex);
-    } catch (_) {
-      for (final MapEntry(:key, :value) in previousSettings.entries) {
-        await _putBack(key, value);
+      try {
+        await saveAccounts(remaining);
+      } catch (_) {
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
       }
-      await _putBack(_accountsKey, previousAccounts);
-      await _putBack(_activeDisplayAccountKey, previousActive);
+      try {
+        for (final key in settingsKeys) {
+          if (!await _prefs.remove(key)) throw Exception('Could not remove $key');
+        }
+        await deleteMnemonic(walletIndex);
+      } catch (_) {
+        for (final MapEntry(:key, :value) in previousSettings.entries) {
+          await _putBack(key, value);
+        }
+        await _putBack(_accountsKey, previousAccounts);
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
+      }
+    } catch (_) {
+      await _putBack(scanKey, previousScan);
       rethrow;
     }
   }
@@ -404,11 +415,23 @@ class SettingsService {
     return decoded.map((e) => MultisigAccount.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// Stores [accounts] as the multisig list. Throws when it cannot be
+  /// stored, and the list is then what it was before.
   Future<void> _saveMultisigAccounts(List<MultisigAccount> accounts) async {
+    final previous = _prefs.getString(_multisigAccountsKey);
     final jsonData = accounts.map((a) => a.toJson()).toList();
-    await _prefs.setString(_multisigAccountsKey, jsonEncode(jsonData));
+    try {
+      if (!await _prefs.setString(_multisigAccountsKey, jsonEncode(jsonData))) {
+        throw Exception('Could not save $_multisigAccountsKey');
+      }
+    } catch (_) {
+      await _putBack(_multisigAccountsKey, previous);
+      rethrow;
+    }
   }
 
+  /// Stores [account]. Throws when it cannot be stored, and the multisigs
+  /// are then what they were.
   Future<void> addMultisigAccount(MultisigAccount account) async {
     final accounts = await getMultisigAccounts();
     if (accounts.any((a) => a.accountId == account.accountId)) {
@@ -418,29 +441,46 @@ class SettingsService {
     await _saveMultisigAccounts(accounts);
   }
 
+  /// Stores [account] in place of the stored multisig with its id. Throws
+  /// when it cannot be stored, and the multisigs are then what they were.
   Future<void> updateMultisigAccount(MultisigAccount account) async {
     final accounts = await getMultisigAccounts();
     final index = accounts.indexWhere((a) => a.accountId == account.accountId);
     if (index != -1) {
+      final previous = _prefs.getString(_multisigAccountsKey);
       accounts[index] = account;
       await _saveMultisigAccounts(accounts);
-      await _syncActiveDisplayAccount(MultisigDisplayAccount(account));
+      try {
+        await _syncActiveDisplayAccount(MultisigDisplayAccount(account));
+      } catch (_) {
+        await _putBack(_multisigAccountsKey, previous);
+        rethrow;
+      }
     }
   }
 
+  /// Removes the multisig [accountId], making another account active if it
+  /// was. Throws when the change cannot be stored, and the multisigs and the
+  /// active account are then what they were.
   Future<void> removeMultisigAccount(String accountId) async {
     final accounts = await getMultisigAccounts();
     final filtered = accounts.where((a) => a.accountId != accountId).toList();
     if (filtered.length == accounts.length) {
       throw Exception('Multisig not found');
     }
-    await _saveMultisigAccounts(filtered);
+    final previousActive = _prefs.getString(_activeDisplayAccountKey);
     final active = await getActiveAccount();
     if (active is MultisigDisplayAccount && active.account.accountId == accountId) {
       final regulars = await getAccounts();
       if (regulars.isNotEmpty) {
         await setActiveAccount(RegularAccount(regulars.first));
       }
+    }
+    try {
+      await _saveMultisigAccounts(filtered);
+    } catch (_) {
+      await _putBack(_activeDisplayAccountKey, previousActive);
+      rethrow;
     }
   }
 
