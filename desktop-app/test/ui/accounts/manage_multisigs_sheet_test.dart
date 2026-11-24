@@ -303,7 +303,11 @@ void main() {
     });
 
     testOnMac('it does not take the name of a multisig still being created', (tester) async {
-      final device = await _pump(tester, saved: [_multisig('qzOne', name: 'Multisig 1')], found: [_foundA]);
+      final device = await _pump(
+        tester,
+        saved: [_multisig('qzOne', name: 'Multisig 1')],
+        found: [_foundA],
+      );
       final creating = _multisig('qzCreating', name: 'Multisig 2');
       final pending = _container(tester).read(pendingMultisigCreationsProvider.notifier);
       await pending.ready;
