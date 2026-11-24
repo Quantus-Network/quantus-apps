@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/services/background_window.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
@@ -32,6 +33,7 @@ import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
+import 'services/fake_background_window.dart';
 import 'services/fake_notification_plugin.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
@@ -62,8 +64,17 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   bool? getBool(String key) => bools[key];
 
+  /// Why the next [setBool] fails, once.
+  Object? failNextBoolWrite;
+
   @override
-  Future<void> setBool(String key, bool value) async => bools[key] = value;
+  Future<void> setBool(String key, bool value) async {
+    if (failNextBoolWrite case final error?) {
+      failNextBoolWrite = null;
+      throw error;
+    }
+    bools[key] = value;
+  }
 
   /// The text kept under plain keys.
   final Map<String, String> strings = {};
@@ -219,6 +230,19 @@ class FakeWalletStorage extends FakeSettingsService {
 
   /// When set, the check for a wallet fails with this.
   Object? hasWalletError;
+
+  /// When set, reading a recovery phrase waits for this first.
+  Future<void>? mnemonicGate;
+
+  /// How many times a recovery phrase was read.
+  int mnemonicReads = 0;
+
+  @override
+  Future<String?> getMnemonic(int walletIndex) async {
+    mnemonicReads++;
+    if (mnemonicGate case final gate?) await gate;
+    return super.getMnemonic(walletIndex);
+  }
 
   /// How many times the device was asked whether it has a wallet.
   int hasWalletChecks = 0;
@@ -581,6 +605,9 @@ class FakeSendChain {
   /// When set, looking a proposal up by its hash waits for it.
   Completer<void>? holdProposalLookup;
 
+  /// When set, a search of the indexer by transaction hash waits for it.
+  Completer<void>? holdHashSearch;
+
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
   /// proposal, expiring at block 1284220.
@@ -803,6 +830,7 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
 
   @override
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
+    await chain.holdHashSearch?.future;
     chain.transferLookups.add(extrinsicHash);
     if (chain.transferLookupError case final error?) throw error;
     return chain.indexedTransfers[extrinsicHash];
@@ -1022,8 +1050,15 @@ class FakeWalletDevice {
       (ref, walletIndex) =>
           AsyncValue.data(encryptedDeposits.isEmpty ? oneToken : _encryptedState(walletIndex).balance),
     ),
-    encryptedStateProvider.overrideWith((ref, walletIndex) => _encryptedState(walletIndex)),
+    encryptedStateProvider.overrideWith((ref, walletIndex) {
+      final held = holdEncryptedState;
+      if (held == null) return _encryptedState(walletIndex);
+      return held.future.then((_) => _encryptedState(walletIndex));
+    }),
   ];
+
+  /// When set, reading an Encrypted account waits for it.
+  Completer<void>? holdEncryptedState;
 
   EncryptedAccountState _encryptedState(int walletIndex) => EncryptedAccountState(
     accountId: 'qzEncrypted$walletIndex',
@@ -1730,6 +1765,7 @@ Future<void> pumpShell(
   bool realPolling = false,
   FakeNetwork? network,
   FakeNotificationPlugin? notifications,
+  FakeBackgroundWindow? backgroundWindow,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -1749,6 +1785,7 @@ Future<void> pumpShell(
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
         ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
         notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
+        backgroundWindowProvider.overrideWithValue(backgroundWindow ?? FakeBackgroundWindow()),
       ],
     ),
   );
