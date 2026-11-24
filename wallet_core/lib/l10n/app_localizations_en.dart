@@ -3295,6 +3295,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopMenuConnectColdWallet => 'Connect Cold Wallet…';
 
   @override
+  String get desktopColdWalletAddAccountTitle => 'Add Cold Wallet Account';
+
+  @override
   String get desktopColdWalletStepHold => 'Hold it up to this camera';
 
   @override

@@ -39,6 +39,10 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// Multisig… is also disabled unless
 /// [canCreateMultisig].
 ///
+/// With [coldWalletHasShortcut], as on a Cold Wallet account, New Account's
+/// shortcut is on Connect Cold Wallet… instead, which then acts as the
+/// New Account item with it does: through [onNewAccountByKey] when given.
+///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
 /// the first nine have a number to be reached by ([ShortcutBindings.account]).
 List<PlatformMenu> buildAppMenus({
@@ -51,6 +55,7 @@ List<PlatformMenu> buildAppMenus({
   required ValueChanged<int> onNewAccount,
   required VoidCallback? onNewAccountByKey,
   required bool offersColdWallets,
+  required bool coldWalletHasShortcut,
   required bool offersMultisigs,
   required bool canCreateMultisig,
   required List<DisplayAccount> accounts,
@@ -170,7 +175,10 @@ List<PlatformMenu> buildAppMenus({
             if (offersColdWallets)
               PlatformMenuItem(
                 label: l10n.desktopMenuConnectColdWallet,
-                onSelected: opens(ShellSheet.connectColdWallet),
+                shortcut: coldWalletHasShortcut ? keysOf(AppCommand.addAccount) : null,
+                onSelected: !canOpenSheet
+                    ? null
+                    : (coldWalletHasShortcut ? onNewAccountByKey : null) ?? opens(ShellSheet.connectColdWallet),
               ),
           ],
         ),

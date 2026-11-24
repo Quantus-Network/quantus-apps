@@ -25,6 +25,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/pending_multisig_creation_record.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
+import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/services/multisig_creation_polling_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -523,6 +524,30 @@ void main() {
 
     testOnMac('a payer who cannot afford it is named and it stays on the form', (tester) async {
       await _pump(tester, prepare: (device) => device.balance = BigInt.zero);
+      await _openFilled(tester);
+
+      await _pressReview(tester);
+
+      expect(find.text('Main can’t cover what this costs'), findsOneWidget);
+      expect(_isOnReview(), isFalse);
+    });
+
+    testOnMac('a payer whose pending send leaves too little is named and it stays on the form', (tester) async {
+      final cost = MultisigCreationEvent.palletConstants.multisigFee + FakeSendChain.usualFee;
+      await _pump(tester, prepare: (device) => device.balance = cost);
+      _container(tester)
+          .read(pendingTransactionsProvider.notifier)
+          .add(
+            PendingTransactionEvent(
+              tempId: 'pending-send',
+              from: mainAccount.accountId,
+              to: _other,
+              amount: BigInt.one,
+              fee: BigInt.zero,
+              timestamp: DateTime.now(),
+              blockNumber: 0,
+            ),
+          );
       await _openFilled(tester);
 
       await _pressReview(tester);
