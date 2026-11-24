@@ -20,6 +20,7 @@ import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pa
 import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -1890,3 +1891,11 @@ EncryptedAccountState emptyEncryptedState(int walletIndex) => EncryptedAccountSt
   nextIndex: 0,
   nextChangeIndex: 0,
 );
+
+/// The bytes of a real runtime call from quantus_sdk's sample calls, by its
+/// name there (e.g. `ReversibleTransfers.set_high_security`), as a
+/// proposal's `callRaw` carries them.
+Uint8List corpusCall(String name) {
+  final hex = callCorpus[name] ?? (throw ArgumentError.value(name, 'name', 'not a sample call'));
+  return Uint8List.fromList([for (var i = 0; i < hex.length; i += 2) int.parse(hex.substring(i, i + 2), radix: 16)]);
+}

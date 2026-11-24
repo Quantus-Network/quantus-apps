@@ -9,8 +9,10 @@ import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_inspector.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_detail.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
+import 'package:quantus_desktop_wallet/ui/components/summary_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -343,7 +345,12 @@ void main() {
   });
 
   group('a proposal', () {
-    MultisigProposal proposal({required MultisigProposalStatus status}) => MultisigProposal(
+    MultisigProposal proposal({
+      required MultisigProposalStatus status,
+      int expiryBlock = 1284220,
+      BigInt? burnedPalletFee,
+      BigInt? networkFee,
+    }) => MultisigProposal(
       entityId: 'proposal-${status.name}',
       id: 1,
       multisigAddress: teamMultisig.accountId,
@@ -354,16 +361,46 @@ void main() {
       call: '',
       recipient: _bob,
       amount: oneToken * BigInt.from(250),
+      expiryBlock: expiryBlock,
+      approvals: const ['qzMain'],
+      deposit: oneToken,
+      burnedPalletFee: burnedPalletFee,
+      networkFee: networkFee,
+      status: status,
+      threshold: teamMultisig.threshold,
+      signerCount: teamMultisig.signers.length,
+    );
+
+    /// A proposal whose call is the sample call [name], which moves nothing.
+    MultisigProposal callProposal(String name) => MultisigProposal(
+      entityId: 'call-$name',
+      id: 3,
+      multisigAddress: teamMultisig.accountId,
+      proposer: _bob,
+      createdAt: _now.subtract(const Duration(hours: 2)),
+      updatedAt: _now.subtract(const Duration(hours: 2)),
+      pallet: name.split('.').first,
+      call: name.split('.').last,
+      recipient: '',
+      amount: BigInt.zero,
+      callRaw: corpusCall(name),
       expiryBlock: 1284220,
       approvals: const ['qzMain'],
       deposit: oneToken,
-      status: status,
+      status: MultisigProposalStatus.active,
       threshold: teamMultisig.threshold,
       signerCount: teamMultisig.signers.length,
     );
 
     Future<_Outside> openTeam(WidgetTester tester, FakeSendChain chain) =>
         _open(tester, chain, active: MultisigDisplayAccount(teamMultisig), multisigs: [teamMultisig]);
+
+    /// Opens the team with [open] as its only open proposal, and opens that.
+    Future<void> openOnly(WidgetTester tester, MultisigProposal open) async {
+      await openTeam(tester, FakeSendChain()..openProposals = [open]);
+      await tester.tap(find.byType(OpenProposalRowView));
+      await tester.pumpAndSettle();
+    }
 
     testOnMac('the multisig and who proposed it, accounts of the wallet, show their addresses on hover', (
       tester,
@@ -437,6 +474,105 @@ void main() {
 
       expect(_inPanel(find.text(_l10n.multisigStatusExecuted)), findsOne);
     });
+
+    testOnMac('one that moves nothing is headed by its call in words, its pallet beside the date, and its fields as '
+        'rows; no amount and no To', (tester) async {
+      final open = callProposal('ReversibleTransfers.set_high_security');
+      final call = open.decodedCall!;
+      expect(call.summary, isNull, reason: 'the sample moves nothing');
+
+      await openOnly(tester, open);
+
+      expect(_inPanel(find.text('Set high security')), findsOne);
+      expect(_inPanel(find.textContaining('ReversibleTransfers · ')), findsOne);
+      expect(call.fields, isNotEmpty);
+      for (final field in call.fields) {
+        expect(_inPanel(find.text(field.label)), findsOne, reason: field.label);
+      }
+      final guardian = call.fields.whereType<ValueField>().singleWhere((field) => field.kind == ValueKind.address);
+      expect(_inPanel(find.text(guardian.value)), findsOne, reason: 'an address is shown whole');
+      expect(_inPanel(find.text(_money(tester, BigInt.zero))), findsNothing);
+      expect(_inPanel(find.text(_l10n.sendTxSubmittedToLabel.toUpperCase())), findsNothing);
+    });
+
+    testOnMac('one this wallet cannot read says so in ember, and why, and names no recipient', (tester) async {
+      final open = callProposal('System.remark');
+      expect(open.hasUndecodableCall, isTrue, reason: 'System.remark is not a call a proposal may carry');
+
+      await openOnly(tester, open);
+
+      final headline = tester.widget<Text>(_inPanel(find.text(_l10n.multisigProposalInvalid)));
+      expect(headline.style?.color, tester.element(find.byType(ActivityInspector)).colorsV3.semanticEmber);
+      expect(_inPanel(find.text(_l10n.desktopProposalUnreadable)), findsOne);
+      expect(_inPanel(find.text(_money(tester, BigInt.zero))), findsNothing);
+      expect(_inPanel(find.text(_l10n.sendTxSubmittedToLabel.toUpperCase())), findsNothing);
+    });
+
+    testOnMac('one with every approval it needs, waiting to be executed, says Approved', (tester) async {
+      await openOnly(tester, proposal(status: MultisigProposalStatus.approved));
+
+      expect(_inPanel(find.text(_l10n.desktopProposalApproved.toUpperCase())), findsOne);
+      expect(_inPanel(find.text(_l10n.multisigStatusActive)), findsNothing);
+    });
+
+    for (final status in [MultisigProposalStatus.active, MultisigProposalStatus.approved]) {
+      testOnMac('one still ${status.name} past its expiry block says Expired, and when it expired', (tester) async {
+        // The chain is at block 1,250,000.
+        await openOnly(tester, proposal(status: status, expiryBlock: 1249000));
+
+        expect(_inPanel(find.text(_l10n.desktopProposalExpired.toUpperCase())), findsOne);
+        expect(_inPanel(find.text(_l10n.desktopProposalExpired)), findsOne, reason: 'the row of when it expired');
+        expect(_inPanel(find.text(_l10n.desktopProposeExpires)), findsNothing);
+        expect(_inPanel(find.text(_l10n.multisigStatusActive)), findsNothing);
+        expect(_inPanel(find.text(_l10n.desktopProposalApproved.toUpperCase())), findsNothing);
+      });
+    }
+
+    testOnMac('every signer is listed with whether they approved: the wallet\'s own by name, marked You, any other '
+        'whole', (tester) async {
+      await openOnly(tester, proposal(status: MultisigProposalStatus.active));
+
+      final signers = tester.widgetList<ProposalSignerRow>(_inPanel(find.byType(ProposalSignerRow))).toList();
+      expect(signers.map((row) => row.address), teamMultisig.signers);
+      expect(signers.map((row) => row.hasApproved), [true, false]);
+      final own = find.byWidget(signers.first);
+      expect(find.descendant(of: own, matching: find.text(_l10n.desktopAccountInfoYou)), findsOne);
+      expect(find.descendant(of: own, matching: find.text(mainAccount.name)), findsOne);
+      final other = find.byWidget(signers.last);
+      expect(find.descendant(of: other, matching: find.text('qzOther')), findsOne);
+      expect(find.descendant(of: other, matching: find.text(_l10n.desktopAccountInfoYou)), findsNothing);
+    });
+
+    testOnMac('it shows what proposing cost: the proposal fee, the deposit and the network fee', (tester) async {
+      final open = proposal(
+        status: MultisigProposalStatus.active,
+        burnedPalletFee: oneToken * BigInt.from(2),
+        networkFee: oneToken * BigInt.from(3),
+      );
+      await openOnly(tester, open);
+
+      for (final (label, amount) in [
+        (_l10n.desktopProposeFee, open.palletFee),
+        (_l10n.desktopProposeDeposit, open.deposit),
+        (_l10n.swapReviewNetworkFee, open.networkFee!),
+      ]) {
+        final row = find.ancestor(of: _inPanel(find.text(label)), matching: find.byType(FigureRow));
+        expect(
+          find.descendant(of: row, matching: find.text(_money(tester, amount))),
+          findsOne,
+          reason: label,
+        );
+      }
+    });
+
+    for (final (what, fee) in [('An unknown', null), ('A zero', BigInt.zero)]) {
+      testOnMac('$what network fee is left out', (tester) async {
+        await openOnly(tester, proposal(status: MultisigProposalStatus.active, networkFee: fee));
+
+        expect(_inPanel(find.text(_l10n.desktopProposeFee)), findsOne);
+        expect(_inPanel(find.text(_l10n.swapReviewNetworkFee)), findsNothing);
+      });
+    }
   });
 
   testOnMac('✕ closes the panel', (tester) async {
