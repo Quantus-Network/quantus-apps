@@ -4119,6 +4119,18 @@
     "@desktopProposeWaiting": {
       "description": "Desktop Propose receipt: the line under the headline while the proposal's transaction was broadcast and the network has not yet created the proposal"
     },
+    "desktopProposalApproved": "Approved",
+    "@desktopProposalApproved": {
+      "description": "Desktop proposal panel: where an open proposal stands once it has all the approvals it needs and waits to be executed; drawn in small capitals"
+    },
+    "desktopProposalExpired": "Expired",
+    "@desktopProposalExpired": {
+      "description": "Desktop proposal panel: where an open proposal stands once it is past its expiry block, drawn in small capitals; also the label of the row that says when it expired, in place of \"Expires\""
+    },
+    "desktopProposalUnreadable": "This wallet can't read what this proposal would do, so it can't be approved or executed here.",
+    "@desktopProposalUnreadable": {
+      "description": "Desktop proposal panel: the sentence under \"Invalid proposal\" for a proposal whose call this wallet cannot decode"
+    },
     "desktopFooterMainnet": "Mainnet",
     "@desktopFooterMainnet": {
       "description": "Desktop footer: the network the wallet is on, beside a dot that is green while online"
