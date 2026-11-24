@@ -167,6 +167,13 @@ class OwnActivityNotifications {
     );
   }
 
+  /// Takes in the transactions an Encrypted send has handed to the chain so
+  /// far, from the sheet that runs it. A send of several batches pays with
+  /// the first while it still proves the next, and one that fails later has
+  /// paid them all the same: what they pay one of the wallet's own accounts
+  /// is this send, never something received.
+  void onEncryptedSendSubmitted(Iterable<String> hashes) => _encryptedSendHashes.addAll(hashes);
+
   /// Takes in how an Encrypted send's proving ended, from the sheet that runs
   /// it: listening to the proving from here would keep it alive after the
   /// sheet has gone.
@@ -175,7 +182,7 @@ class OwnActivityNotifications {
   /// the chain holds every one of its transactions. One the person cancelled
   /// is not notified: the sheet in front of them says what became of it.
   void onEncryptedSendEnded({required Account account, required BigInt amount, required EncryptedSendState send}) {
-    _encryptedSendHashes.addAll(send.txHashes);
+    onEncryptedSendSubmitted(send.txHashes);
     switch (send.phase) {
       case EncryptedSendPhase.succeeded:
         if (send.txHashes.isEmpty) {

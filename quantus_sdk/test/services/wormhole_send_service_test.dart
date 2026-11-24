@@ -45,6 +45,7 @@ class _StubProvingSendService extends WormholeSendService {
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
+    void Function(String txHash)? onTransactionSubmitted,
   }) async {
     capturedBatches = batches;
     for (final batch in batches) {
