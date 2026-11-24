@@ -3,9 +3,8 @@
 // the fee, Confirm waits for it, failures are said and can be retried. The
 // flow moves to wallet_core next, unchanged, so the desktop app can share it.
 //
-// Asking the person (biometrics) is pinned with that move: the sheet calls the
-// LocalAuthService singleton, which a test cannot replace. Here no wallet is
-// stored, so the singleton lets every confirmation through unasked.
+// Asking the person goes through the shared user approval, which the phone
+// binds to its biometrics; here it approves unless a test says otherwise.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -24,6 +23,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
+import 'package:wallet_core/services/user_approval.dart';
 
 import '../fakes.dart';
 
@@ -162,6 +162,24 @@ class _FakeSubmission extends Fake implements TransactionSubmissionService {
   }) => _submit('cancel', proposer, fee, null);
 }
 
+/// The person at the device: approves unless told otherwise, and notes the
+/// reason given with each request.
+class _FakeApproval implements UserApproval {
+  ApprovalResult answer = ApprovalResult.approved;
+  final reasons = <String>[];
+
+  @override
+  Future<ApprovalAvailability> availability() async => ApprovalAvailability.available;
+
+  @override
+  Future<ApprovalResult> approve({required String reason}) async {
+    reasons.add(reason);
+    return answer;
+  }
+}
+
+late _FakeApproval _approval;
+
 Future<void> _open(
   WidgetTester tester,
   _FakeMultisigService chain,
@@ -176,6 +194,7 @@ Future<void> _open(
       overrides: [
         multisigServiceProvider.overrideWithValue(chain),
         transactionSubmissionServiceProvider.overrideWithValue(submission),
+        userApprovalProvider.overrideWithValue(_approval),
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: [_one, _two])),
       ],
       child: Builder(
@@ -217,6 +236,7 @@ void main() {
     await SettingsService().initialize();
     chain = _FakeMultisigService();
     submission = _FakeSubmission();
+    _approval = _FakeApproval();
   });
 
   testWidgets('approve reads the call from the chain first, then prices it with those bytes; Confirm waits for them', (
@@ -294,6 +314,44 @@ void main() {
     expect(submission.submitted, [('approve', _two.accountId, null, _callBytes)]);
     expect(find.byType(MultisigActionConfirmSheet), findsNothing);
   });
+
+  testWidgets('a declined approval says approval is required, submits nothing, and stays open', (tester) async {
+    _approval.answer = ApprovalResult.declined;
+    await _open(tester, chain, submission, (context) => _approve(context, signer: _two));
+
+    await tester.tap(find.text(_l10n.multisigApproveConfirmYes));
+    await tester.pumpAndSettle();
+
+    expect(find.text(_l10n.multisigAuthRequired), findsOneWidget);
+    expect(submission.submitted, isEmpty);
+    expect(find.byType(MultisigActionConfirmSheet), findsOneWidget);
+    expect(_isOffered(tester, _l10n.multisigApproveConfirmYes), isTrue);
+  });
+
+  for (final (name, show, confirmLabel, reason) in [
+    ('approve', _approve, () => _l10n.multisigApproveConfirmYes, () => _l10n.multisigApproveAuthReason),
+    (
+      'execute',
+      (BuildContext context) => showMultisigExecuteConfirmSheet(context, msig: _msig, proposal: _proposal),
+      () => _l10n.multisigExecuteConfirmYes,
+      () => _l10n.multisigExecuteAuthReason,
+    ),
+    (
+      'cancel',
+      (BuildContext context) => showMultisigCancelConfirmSheet(context, msig: _msig, proposal: _proposal),
+      () => _l10n.multisigCancelConfirmYes,
+      () => _l10n.multisigCancelAuthReason,
+    ),
+  ]) {
+    testWidgets('$name asks for approval with its own reason', (tester) async {
+      await _open(tester, chain, submission, show);
+
+      await tester.tap(find.text(confirmLabel()));
+      await tester.pumpAndSettle();
+
+      expect(_approval.reasons, [reason()]);
+    });
+  }
 
   testWidgets('execute reads the call, prices it, and executes as this device\'s member with that fee', (tester) async {
     await _open(

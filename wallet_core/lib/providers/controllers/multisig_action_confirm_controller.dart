@@ -15,6 +15,15 @@ import 'package:wallet_core/utils/account_utils.dart';
 /// An action on a multisig proposal that this wallet confirms and sends.
 enum MultisigActionKind { approve, execute, cancel }
 
+/// The call bytes an action that resubmits the proposal cannot proceed without.
+///
+/// [action] names the caller so a missing load is not mistaken for a chain
+/// rejection.
+List<int> requireCallBytes(List<int>? callBytes, String action) {
+  if (callBytes == null) throw StateError('$action requires the proposal call bytes');
+  return callBytes;
+}
+
 /// What is being confirmed: [kind] on [proposal] of [msig], by [signer], or by
 /// the multisig's own member account when null.
 class MultisigActionRequest {
@@ -281,18 +290,16 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   }
 
   RuntimeCall _buildCall() {
-    final callBytes = state.callBytes;
-    if (callBytes == null) throw StateError('$_logPrefix requires the proposal call bytes');
     return switch (request.kind) {
       MultisigActionKind.approve => MultisigService().buildApproveCall(
         msig: _msig,
         proposalId: _proposal.id,
-        call: callBytes,
+        call: requireCallBytes(state.callBytes, 'Approve'),
       ),
       MultisigActionKind.execute => MultisigService().buildExecuteCall(
         msig: _msig,
         proposalId: _proposal.id,
-        call: callBytes,
+        call: requireCallBytes(state.callBytes, 'Execute'),
       ),
       MultisigActionKind.cancel => MultisigService().buildCancelCall(msig: _msig, proposalId: _proposal.id),
     };
