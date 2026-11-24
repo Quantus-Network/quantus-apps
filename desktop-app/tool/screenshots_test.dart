@@ -202,6 +202,19 @@ void main() {
     }
   });
 
+  _scene('missing_phrase', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _encrypted], mnemonic: null), reduceMotion: true);
+    await tester.pump(const Duration(milliseconds: 500));
+  });
+
+  _scene('missing_phrase_remove', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _encrypted], mnemonic: null), reduceMotion: true);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Remove Wallet…'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  });
+
   _scene('import_wallet', (tester) async {
     await _open(tester, FakeWalletDevice(), reduceMotion: true);
     await tester.tap(find.widgetWithText(QuantusButton, 'Import Wallet'));
