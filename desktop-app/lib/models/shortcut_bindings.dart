@@ -207,6 +207,8 @@ class ShortcutBindings {
     AppCommand.receive => KeyCombo(LogicalKeyboardKey.keyR, _command),
     AppCommand.send => KeyCombo(LogicalKeyboardKey.keyS, _command),
     AppCommand.propose => KeyCombo(LogicalKeyboardKey.keyP, _command),
+    // ⌘S is Send's; Swap keeps beside it.
+    AppCommand.swap => KeyCombo(LogicalKeyboardKey.keyS, _commandShift),
     AppCommand.addAccount => KeyCombo(LogicalKeyboardKey.keyN, _command),
     AppCommand.getInfo => KeyCombo(LogicalKeyboardKey.keyI, _command),
     // ⌘C is the system's Copy; Copy Address keeps beside it.

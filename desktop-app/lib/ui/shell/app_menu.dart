@@ -73,8 +73,7 @@ List<PlatformMenu> buildAppMenus({
     AccountActionKind.receive => keysOf(AppCommand.receive),
     AccountActionKind.send => keysOf(AppCommand.send),
     AccountActionKind.propose => keysOf(AppCommand.propose),
-    // Its sheet is not built yet.
-    AccountActionKind.swap => null,
+    AccountActionKind.swap => keysOf(AppCommand.swap),
   };
 
   PlatformMenuItem newAccountItem(String label, int walletIndex) {
