@@ -6,7 +6,7 @@ import 'package:wallet_core/activity/activity_progress.dart';
 import 'package:wallet_core/activity/multisig_activity.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
@@ -261,6 +261,12 @@ final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
   };
 });
 
+/// The swap this app follows. It follows one at a time: while there is one,
+/// Swap opens it instead of the form for another. Should a second have started
+/// all the same, as when a deposit lands after its sheet was left, it is the
+/// newest, and the one before it shows once that is put away.
+final followedSwapProvider = Provider<ActiveSwap?>((ref) => ref.watch(activeSwapsProvider).lastOrNull);
+
 /// The swap being followed: there is one at most, so it needs no more to be
 /// told apart.
 final class OpenedSwap extends OpenedActivity {
@@ -283,7 +289,7 @@ final class OpenedSwap extends OpenedActivity {
 final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
   final opened = ref.watch(openedActivityProvider);
   if (opened == null) return null;
-  if (opened is OpenedSwap) return ref.watch(activeSwapProvider) == null ? null : opened;
+  if (opened is OpenedSwap) return ref.watch(followedSwapProvider) == null ? null : opened;
   final view = ref.watch(activityViewProvider).value;
   if (view == null) return opened;
   final activity = [...view.inProgress, ...view.settled];

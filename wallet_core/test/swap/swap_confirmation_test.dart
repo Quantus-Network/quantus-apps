@@ -10,7 +10,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
@@ -36,20 +36,6 @@ const _qtc = SwapToken(
 const _deposit = 'qzdeposit';
 final _unit = BigInt.from(10).pow(AppConstants.decimals);
 final _fee = _unit ~/ BigInt.from(50);
-
-/// Settings that keep the swap being followed, as the device does.
-class _Settings extends FakeSettingsService {
-  ActiveSwap? activeSwap;
-
-  @override
-  ActiveSwap? getActiveSwap() => activeSwap;
-
-  @override
-  Future<void> setActiveSwap(ActiveSwap swap) async => activeSwap = swap;
-
-  @override
-  Future<void> clearActiveSwap() async => activeSwap = null;
-}
 
 /// Remote config whose location verdict a test changes.
 class _RemoteConfig extends RemoteConfigService {
@@ -189,12 +175,24 @@ SwapQuote _quote({
   );
 }
 
+/// A swap under way whose deposit went to [depositAddress].
+ActiveSwap _running(Account account, String depositAddress) => ActiveSwap(
+  order: SwapOrder(
+    quote: _quote(depositAddress: depositAddress),
+    status: SwapStatus.processing,
+  ),
+  accountId: account.accountId,
+  accountName: account.name,
+  startedAt: clock.now(),
+  depositByHand: false,
+);
+
 void main() {
   final l10n = lookupAppLocalizations(const Locale('en'));
   final account = makeAccount(1);
   late _OneClick oneClick;
   late _Submission submission;
-  late _Settings settings;
+  late FakeSettingsService settings;
   late _Config config;
   late FakeUserApproval approval;
   late FakeTelemetry telemetry;
@@ -204,7 +202,7 @@ void main() {
   setUp(() {
     oneClick = _OneClick();
     submission = _Submission();
-    settings = _Settings();
+    settings = FakeSettingsService();
     config = _Config(_RemoteConfig());
     approval = FakeUserApproval();
     telemetry = FakeTelemetry();
@@ -262,14 +260,15 @@ void main() {
     expect(submission.transfers, [(_deposit, quote.amountIn, _fee)]);
     expect(oneClick.deposits, [(_deposit, '0xtxhash')]);
 
-    final swap = ref.read(activeSwapProvider)!;
+    final swap = ref.read(activeSwapsProvider).single;
+    expect((outcome as SwapConfirmed).swap, same(swap), reason: 'the outcome names the swap that started');
     expect(swap.order.depositAddress, _deposit);
     expect(swap.accountId, account.accountId);
     expect(swap.accountName, account.name);
     expect(swap.depositByHand, isFalse);
     expect(swap.depositTxHash, '0xtxhash');
     expect(swap.depositFee, _fee);
-    expect(settings.activeSwap?.depositTxHash, '0xtxhash');
+    expect(settings.activeSwaps.single.depositTxHash, '0xtxhash');
     expect(telemetry.events, ['swap_started']);
   });
 
@@ -289,14 +288,14 @@ void main() {
     expect(live.depositAddress, _deposit);
     expect(submission.asked, 0);
     expect(approval.reasons, isEmpty);
-    expect(ref.read(activeSwapProvider), isNull);
+    expect(ref.read(activeSwapsProvider), isEmpty);
 
     final second = await confirm(confirmation, ref, live);
 
     expect(second, isA<SwapConfirmed>());
     expect(oneClick.created, hasLength(1), reason: 'the live quote is kept, with its deposit address');
     expect(submission.transfers, [(_deposit, quote.amountIn, _fee)]);
-    expect(ref.read(activeSwapProvider)!.order.quote.amountOut, BigInt.from(20000000));
+    expect(ref.read(activeSwapsProvider).single.order.quote.amountOut, BigInt.from(20000000));
   });
 
   testWidgets('a live quote that asks for more is new terms too', (tester) async {
@@ -364,7 +363,7 @@ void main() {
     expect(await confirming, isA<SwapListingChanged>());
     expect(submission.asked, 0);
     expect(approval.reasons, isEmpty);
-    expect(ref.read(activeSwapProvider), isNull);
+    expect(ref.read(activeSwapsProvider), isEmpty);
 
     // And the quote it was owed is not kept.
     oneClick.hold = null;
@@ -385,7 +384,7 @@ void main() {
     expect(await confirming, isA<SwapNotAllowed>());
     expect(submission.asked, 0);
     expect(approval.reasons, isEmpty);
-    expect(ref.read(activeSwapProvider), isNull);
+    expect(ref.read(activeSwapsProvider), isEmpty);
   });
 
   testWidgets('the location is asked afresh once approval is given: found not allowed, nothing is sent', (
@@ -404,7 +403,7 @@ void main() {
     expect(config.service.reads, readsBefore + 1);
     expect(submission.asked, 0);
     expect(oneClick.deposits, isEmpty);
-    expect(ref.read(activeSwapProvider), isNull);
+    expect(ref.read(activeSwapsProvider), isEmpty);
   });
 
   testWidgets('approval that is not given sends nothing: approval is required', (tester) async {
@@ -417,7 +416,7 @@ void main() {
     expect(outcome, isA<SwapApprovalRequired>());
     expect(submission.asked, 0);
     expect(oneClick.deposits, isEmpty);
-    expect(ref.read(activeSwapProvider), isNull);
+    expect(ref.read(activeSwapsProvider), isEmpty);
   });
 
   testWidgets('a deposit the chain refuses is not reported to 1Click and no swap is followed', (tester) async {
@@ -430,8 +429,8 @@ void main() {
     expect(outcome, isA<SwapDepositFailed>());
     expect(submission.asked, 1);
     expect(oneClick.deposits, isEmpty);
-    expect(ref.read(activeSwapProvider), isNull);
-    expect(settings.activeSwap, isNull);
+    expect(ref.read(activeSwapsProvider), isEmpty);
+    expect(settings.activeSwaps, isEmpty);
   });
 
   testWidgets('a live quote 1Click refuses says why, and sends nothing', (tester) async {
@@ -464,7 +463,7 @@ void main() {
     expect(await confirming, isA<SwapConfirmDropped>());
     expect(submission.asked, 0);
     expect(oneClick.deposits, isEmpty);
-    expect(ref.read(activeSwapProvider), isNull);
+    expect(ref.read(activeSwapsProvider), isEmpty);
   });
 
   testWidgets('a review gone while the deposit is going out: the swap is followed all the same', (tester) async {
@@ -480,46 +479,107 @@ void main() {
     await confirming;
 
     expect(oneClick.deposits, [(_deposit, '0xtxhash')]);
-    expect(ref.read(activeSwapProvider)?.depositTxHash, '0xtxhash');
-    expect(settings.activeSwap?.depositTxHash, '0xtxhash');
+    expect(ref.read(activeSwapsProvider).single.depositTxHash, '0xtxhash');
+    expect(settings.activeSwaps.single.depositTxHash, '0xtxhash');
   });
 
-  testWidgets('a deposit that lands after the wallet moved on does not take the place of what it moved on to', (
+  testWidgets('a deposit that lands after a logout is not followed', (tester) async {
+    final quote = _quote();
+    final ref = await pumpReview(tester, quote);
+    submission.hold = Completer<void>();
+
+    final confirming = confirm(SwapConfirmation(account: account), ref, quote);
+    await settle(tester);
+    expect(submission.asked, 1);
+    unawaited(ref.read(activeSwapsProvider.notifier).clearAll());
+    submission.hold!.complete();
+
+    expect(await confirming, isA<SwapConfirmDropped>());
+    expect(submission.transfers.single.$1, _deposit);
+    expect(ref.read(activeSwapsProvider), isEmpty);
+    expect(settings.activeSwaps, isEmpty);
+  });
+
+  testWidgets('a deposit that lands after another swap started, or was put away, is followed alongside', (
     tester,
   ) async {
     final quote = _quote();
-    final other = ActiveSwap(
-      order: SwapOrder(
-        quote: _quote(depositAddress: 'qzother'),
-        status: SwapStatus.processing,
-      ),
-      accountId: account.accountId,
-      accountName: account.name,
-      startedAt: clock.now(),
-      depositByHand: false,
-    );
-    final movedOn = <(String, void Function(ActiveSwapNotifier), ActiveSwap?)>[
-      ('cleared, as a logout does', (swaps) => unawaited(swaps.clear()), null),
-      ('started another', (swaps) => swaps.start(other), other),
+    final other = _running(account, 'qzother');
+    final movedOn = <(String, void Function(ActiveSwapsNotifier), List<String>)>[
+      ('started another', (swaps) => swaps.start(other), [other.id, _deposit]),
+      ('put another away', (swaps) => unawaited(swaps.remove('qzearlier')), [_deposit]),
     ];
-    for (final (name, moveOn, kept) in movedOn) {
+    for (final (name, moveOn, followed) in movedOn) {
       // Each round is a wallet of its own; the last one's config went with it.
       submission = _Submission()..hold = Completer<void>();
-      settings = _Settings();
+      settings = FakeSettingsService()..activeSwaps.add(_running(account, 'qzearlier'));
       config = _Config(_RemoteConfig());
       final ref = await pumpReview(tester, quote);
 
       final confirming = confirm(SwapConfirmation(account: account), ref, quote);
       await settle(tester);
       expect(submission.asked, 1, reason: name);
-      moveOn(ref.read(activeSwapProvider.notifier));
+      moveOn(ref.read(activeSwapsProvider.notifier));
       submission.hold!.complete();
 
-      expect(await confirming, isA<SwapConfirmDropped>(), reason: name);
-      expect(submission.transfers.single.$1, _deposit, reason: name);
-      expect(ref.read(activeSwapProvider), kept == null ? isNull : same(kept), reason: name);
+      expect(await confirming, isA<SwapConfirmed>(), reason: name);
+      final ids = [for (final swap in ref.read(activeSwapsProvider)) swap.id];
+      expect(ids.where((id) => id != 'qzearlier'), followed, reason: name);
       await tester.pumpWidget(const SizedBox.shrink());
     }
+  });
+
+  testWidgets('with as many swaps running as can be followed, confirming is refused before any live quote', (
+    tester,
+  ) async {
+    final quote = _quote();
+    for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++) {
+      settings.activeSwaps.add(_running(account, 'qzrunning$i'));
+    }
+    final ref = await pumpReview(tester, quote);
+
+    final outcome = await confirm(SwapConfirmation(account: account), ref, quote);
+
+    expect(outcome, isA<SwapTooManyFollowed>());
+    expect(oneClick.created, isEmpty);
+    expect(submission.asked, 0);
+    expect(ref.read(activeSwapsProvider), hasLength(ActiveSwapsNotifier.maxFollowed));
+  });
+
+  testWidgets('a confirmation under way holds the last slot against another', (tester) async {
+    final quote = _quote();
+    for (var i = 0; i < ActiveSwapsNotifier.maxFollowed - 1; i++) {
+      settings.activeSwaps.add(_running(account, 'qzrunning$i'));
+    }
+    final ref = await pumpReview(tester, quote);
+    oneClick.hold = Completer<void>();
+
+    final first = confirm(SwapConfirmation(account: account), ref, quote);
+    await settle(tester);
+    final second = await confirm(SwapConfirmation(account: account), ref, quote);
+
+    expect(second, isA<SwapTooManyFollowed>());
+    expect(oneClick.created, hasLength(1), reason: 'the second asked for no live quote');
+
+    oneClick.hold!.complete();
+    expect(await first, isA<SwapConfirmed>());
+    expect(ref.read(activeSwapsProvider), hasLength(ActiveSwapsNotifier.maxFollowed));
+  });
+
+  testWidgets('a confirmation that ends with no swap gives its slot back', (tester) async {
+    final quote = _quote();
+    for (var i = 0; i < ActiveSwapsNotifier.maxFollowed - 1; i++) {
+      settings.activeSwaps.add(_running(account, 'qzrunning$i'));
+    }
+    final ref = await pumpReview(tester, quote);
+    final confirmation = SwapConfirmation(account: account);
+    oneClick.refusal = TimeoutException('slow');
+
+    expect(await confirm(confirmation, ref, quote), isA<SwapQuoteRefused>());
+    oneClick.refusal = null;
+
+    expect(await confirm(confirmation, ref, quote), isA<SwapConfirmed>());
+    expect(ref.read(activeSwapsProvider), hasLength(ActiveSwapsNotifier.maxFollowed));
   });
 
   testWidgets('a swap into QTC sends no deposit of ours: it is followed as one made by hand', (tester) async {
@@ -532,7 +592,7 @@ void main() {
     expect(approval.reasons, isEmpty);
     expect(submission.asked, 0);
     expect(oneClick.deposits, isEmpty);
-    final swap = ref.read(activeSwapProvider)!;
+    final swap = ref.read(activeSwapsProvider).single;
     expect(swap.depositByHand, isTrue);
     expect(swap.depositTxHash, isNull);
     expect(swap.depositFee, isNull);
@@ -554,6 +614,6 @@ void main() {
 
     expect(outcome, isA<SwapConfirmed>());
     expect(submission.asked, 0);
-    expect(ref.read(activeSwapProvider)!.depositByHand, isTrue);
+    expect(ref.read(activeSwapsProvider).single.depositByHand, isTrue);
   });
 }

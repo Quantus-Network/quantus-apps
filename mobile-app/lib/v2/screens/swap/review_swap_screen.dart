@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:wallet_core/models/swap_preflight.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -48,15 +49,14 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
       final outcome = await _confirmation.confirm(ref, _quote, isActive: () => mounted);
       if (!mounted) return;
       switch (outcome) {
-        case SwapConfirmed():
+        case SwapConfirmed(:final swap):
           Navigator.pushAndRemoveUntil(
             context,
-            MaterialPageRoute(
-              settings: const RouteSettings(name: SwapProgressScreen.routeName),
-              builder: (_) => SwapProgressScreen(account: widget.account),
-            ),
+            SwapProgressScreen.route(swap.id, account: widget.account),
             (route) => route.isFirst,
           );
+        case SwapTooManyFollowed():
+          context.showErrorToaster(message: l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
         case SwapConfirmDropped():
           break;
         case SwapTermsChanged(:final quote):

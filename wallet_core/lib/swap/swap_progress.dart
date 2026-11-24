@@ -62,7 +62,7 @@ enum SwapProgressView {
 /// app sent is on its way from the start.
 SwapProgressView swapProgressViewOf(ActiveSwap swap, DateTime now) {
   final order = swap.order;
-  final awaitingDeposit = order.status == SwapStatus.pendingDeposit && !swap.depositUnderway;
+  final awaitingDeposit = swap.awaitingDeposit;
   final expired = awaitingDeposit && now.isAfter(order.quote.deadline);
   return switch (order.status) {
     SwapStatus.success => SwapProgressView.complete,

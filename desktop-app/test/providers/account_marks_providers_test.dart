@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -35,6 +36,8 @@ void main() {
           chain: chain,
         ),
         currentTimeProvider.overrideWithValue(() => clock),
+        // As the app has it: a swap awaiting its deposit is kept at launch.
+        keepsUnpaidSwapsProvider.overrideWithValue(true),
       ],
     );
     container.listen(accountMarksProvider, (_, _) {});

@@ -29,6 +29,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   final Map<int, WalletOrigin> origins = {};
   final Map<int, String> pendingScans = {};
   DisplayAccount? activeAccount;
+
+  /// The swaps being followed, as the device keeps them.
+  final List<ActiveSwap> activeSwaps = [];
   bool migrationDone = false;
   bool referralChecked = false;
   bool seenPromoVideo = false;
@@ -112,10 +115,23 @@ class FakeSettingsService extends Fake implements SettingsService {
   Future<void> clearSelectedFiatCurrency() async {}
 
   @override
-  ActiveSwap? getActiveSwap() => null;
+  List<ActiveSwap> getActiveSwaps() => [...activeSwaps];
 
   @override
-  Future<void> clearActiveSwap() async {}
+  Future<void> saveActiveSwap(ActiveSwap swap) async {
+    final at = activeSwaps.indexWhere((s) => s.id == swap.id);
+    if (at < 0) {
+      activeSwaps.add(swap);
+    } else {
+      activeSwaps[at] = swap;
+    }
+  }
+
+  @override
+  Future<void> removeActiveSwap(String id) async => activeSwaps.removeWhere((s) => s.id == id);
+
+  @override
+  Future<void> clearActiveSwaps() async => activeSwaps.clear();
 
   @override
   Future<List<MultisigAccount>> getMultisigAccounts() async => const [];

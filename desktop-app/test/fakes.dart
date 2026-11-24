@@ -54,8 +54,12 @@ class FakeSettingsService extends Fake implements SettingsService {
   final Map<int, String> walletNames;
   final Map<int, String> mnemonics;
 
-  /// The swap being followed, as the device keeps it.
-  ActiveSwap? activeSwap;
+  /// The swaps being followed, as the device keeps them.
+  List<ActiveSwap> activeSwaps = [];
+
+  /// The one swap the desktop follows at a time, as the device keeps it.
+  ActiveSwap? get activeSwap => activeSwaps.singleOrNull;
+  set activeSwap(ActiveSwap? swap) => activeSwaps = [?swap];
 
   /// The flags kept under plain keys. The boot intro counts as seen already,
   /// so it plays only in the tests that are about it.
@@ -143,13 +147,23 @@ class FakeSettingsService extends Fake implements SettingsService {
   String? getWalletName(int walletIndex) => walletNames[walletIndex];
 
   @override
-  ActiveSwap? getActiveSwap() => activeSwap;
+  List<ActiveSwap> getActiveSwaps() => [...activeSwaps];
 
   @override
-  Future<void> setActiveSwap(ActiveSwap swap) async => activeSwap = swap;
+  Future<void> saveActiveSwap(ActiveSwap swap) async {
+    final at = activeSwaps.indexWhere((s) => s.id == swap.id);
+    if (at < 0) {
+      activeSwaps.add(swap);
+    } else {
+      activeSwaps[at] = swap;
+    }
+  }
 
   @override
-  Future<void> clearActiveSwap() async => activeSwap = null;
+  Future<void> removeActiveSwap(String id) async => activeSwaps.removeWhere((s) => s.id == id);
+
+  @override
+  Future<void> clearActiveSwaps() async => activeSwaps.clear();
 
   @override
   Future<void> clearSelectedAppLocale() async => locale = null;

@@ -7,6 +7,8 @@ import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/swap/swap_progress.dart';
 import 'package:wallet_core/models/fiat_currency.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
@@ -33,14 +35,16 @@ void main() {
     required FakeSettingsService settings,
     required TestLocalAuthController auth,
     bool geoNearAllowed = true,
+    AsyncValue<CombinedTransactionsList>? activity,
   }) async {
     await tester.pumpApp(
       const HomeScreen(),
       overrides: [
         settingsServiceProvider.overrideWithValue(settings),
         localAuthProvider.overrideWith((ref) => auth),
+        isOnlineProvider.overrideWith((ref) => true),
         activeAccountTransactionsProvider.overrideWith(
-          (ref, filter) => AsyncValue.data(CombinedTransactionsList.empty),
+          (ref, filter) => activity ?? AsyncValue.data(CombinedTransactionsList.empty),
         ),
         balanceProvider.overrideWithValue(AsyncValue.data(BigInt.from(10).pow(15))),
         balanceProviderFamily.overrideWith((ref, accountId) async => BigInt.from(10).pow(15)),
@@ -73,6 +77,7 @@ void main() {
     SwapStatus status, {
     Duration age = const Duration(minutes: 3, seconds: 7),
     bool byHand = false,
+    String depositAddress = 'qzdeposit',
   }) {
     const usdc = SwapToken(assetId: 'nep141:usdc.omft.near', symbol: 'USDC', network: 'ETH', decimals: 6, usdPrice: 1);
     const qtc = SwapToken(
@@ -102,7 +107,7 @@ void main() {
           timeEstimate: const Duration(minutes: 1),
           correlationId: 'c',
           signature: 's',
-          depositAddress: 'qzdeposit',
+          depositAddress: depositAddress,
         ),
         status: status,
       ),
@@ -116,7 +121,7 @@ void main() {
   }
 
   FakeSettingsService settingsFollowing(Account account, ActiveSwap swap) =>
-      FakeSettingsService(activeAccount: RegularAccount(account), activeSwap: swap);
+      FakeSettingsService(activeAccount: RegularAccount(account), activeSwaps: [swap]);
 
   Color dotColor(WidgetTester tester, int index) {
     final dots = find.descendant(of: find.byType(SwapProgressDots), matching: find.byType(Container));
@@ -131,7 +136,7 @@ void main() {
     expect(find.text('1 QTC → 0.1 USDC'), findsOneWidget);
     expect(find.text('Swapping'), findsOneWidget);
     expect(find.text('3:07'), findsOneWidget);
-    final colors = tester.element(find.byType(SwapActivityRow)).colorsV3;
+    final colors = tester.element(find.byType(SwapActivityRows)).colorsV3;
     expect(
       [for (var i = 0; i < swapStepCount; i++) dotColor(tester, i)],
       [colors.semanticSage, colors.semanticSage, colors.semanticSage, colors.bgSurface2],
@@ -147,29 +152,78 @@ void main() {
     expect(find.byType(SwapScreen), findsNothing);
   });
 
-  for (final (what, status, byHand, title) in [
-    ('a swap whose deposit is still to be sent', SwapStatus.pendingDeposit, true, 'Send Your Deposit'),
-    ('a settled swap', SwapStatus.refunded, false, 'Swap Failed'),
-  ]) {
-    testWidgets('$what is not pinned; the swap button opens it, even where swap is not offered', (tester) async {
-      final account = makeAccount(1);
-      final settings = settingsFollowing(account, swapOf(account, status, byHand: byHand));
-      await pumpHome(
-        tester,
-        settings: settings,
-        auth: TestLocalAuthController(authenticated: true),
-        geoNearAllowed: false,
-      );
+  testWidgets('a swap whose deposit by hand was never sent is dropped at launch, and the swap button opens the form', (
+    tester,
+  ) async {
+    final account = makeAccount(1);
+    final settings = settingsFollowing(account, swapOf(account, SwapStatus.pendingDeposit, byHand: true));
+    final container = await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
 
-      expect(find.byType(SwapProgressDots), findsNothing);
-      expect(find.text('3:07'), findsNothing);
-      await tester.tap(find.text('Swap'));
+    expect(find.byType(SwapProgressDots), findsNothing);
+    expect(container.read(activeSwapsProvider), isEmpty);
+    expect(settings.activeSwaps, isEmpty);
+    await tester.tap(find.text('Swap'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(SwapScreen), findsOneWidget);
+  });
+
+  testWidgets('a settled swap stays pinned until it is opened', (tester) async {
+    final account = makeAccount(1);
+    final settings = settingsFollowing(account, swapOf(account, SwapStatus.refunded));
+    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+    expect(find.text('Swap Failed'), findsOneWidget);
+    expect(find.text('3:07'), findsOneWidget);
+    expect(dotColor(tester, 2), tester.element(find.byType(SwapActivityRows)).colorsV3.semanticEmber);
+
+    await tester.tap(find.text('3:07'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.byType(SwapProgressScreen), findsOneWidget);
+    await tester.tap(find.byType(AppBackButton));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(SwapProgressDots), findsNothing);
+  });
+
+  testWidgets('every followed swap is pinned, newest first', (tester) async {
+    final account = makeAccount(1);
+    final settings = FakeSettingsService(
+      activeAccount: RegularAccount(account),
+      activeSwaps: [
+        swapOf(account, SwapStatus.processing),
+        swapOf(account, SwapStatus.knownDepositTx, depositAddress: 'qzlater'),
+      ],
+    );
+    await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+    expect(find.byType(SwapProgressDots), findsNWidgets(2));
+    expect(
+      tester.getTopLeft(find.text('Confirming on Quantus')).dy,
+      lessThan(tester.getTopLeft(find.text('Swapping')).dy),
+    );
+  });
+
+  testWidgets('a tap on the lock-screen card opens the swap it shows, once', (tester) async {
+    final account = makeAccount(1);
+    final settings = FakeSettingsService(
+      activeAccount: RegularAccount(account),
+      activeSwaps: [
+        swapOf(account, SwapStatus.processing),
+        swapOf(account, SwapStatus.refunded, depositAddress: 'qzlater'),
+      ],
+    );
+    final container = await pumpHome(tester, settings: settings, auth: TestLocalAuthController(authenticated: true));
+
+    for (var tap = 0; tap < 2; tap++) {
+      container.read(swapProgressIntentProvider.notifier).state = true;
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
-      expect(find.byType(SwapProgressScreen), findsOneWidget);
-      expect(find.text(title), findsOneWidget);
-    });
-  }
+    }
+    expect(tester.widget<SwapProgressScreen>(find.byType(SwapProgressScreen)).swapId, 'qzdeposit');
+    expect(container.read(swapProgressIntentProvider), isFalse);
+  });
 
   testWidgets('a swap whose hand deposit 1Click has seen is pinned, on a multisig home too', (tester) async {
     final account = makeAccount(1);
@@ -185,6 +239,40 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.byType(SwapProgressScreen), findsOneWidget);
   });
+
+  final feeds = <(String, AsyncValue<CombinedTransactionsList>)>[
+    ('fails', AsyncValue.error(StateError('indexer down'), StackTrace.empty)),
+    ('is still loading', const AsyncValue.loading()),
+  ];
+  for (final (state, feed) in feeds) {
+    for (final multisig in [false, true]) {
+      testWidgets(
+        'a followed swap is pinned on a ${multisig ? 'multisig' : 'regular'} home while the activity $state',
+        (tester) async {
+          final account = makeAccount(1);
+          final settings = settingsFollowing(account, swapOf(account, SwapStatus.processing));
+          if (multisig) {
+            settings
+              ..activeAccount = MultisigDisplayAccount(makeMultisigAccount())
+              ..multisigs = [makeMultisigAccount()];
+          }
+          await pumpHome(
+            tester,
+            settings: settings,
+            auth: TestLocalAuthController(authenticated: true),
+            activity: feed,
+          );
+
+          expect(find.text('Swapping'), findsOneWidget);
+          expect(find.text('Error loading transactions'), state == 'fails' ? findsOneWidget : findsNothing);
+          await tester.tap(find.text('3:07'));
+          await tester.pump();
+          await tester.pump(const Duration(milliseconds: 400));
+          expect(find.byType(SwapProgressScreen), findsOneWidget);
+        },
+      );
+    }
+  }
 
   // The swap being followed belongs to the wallet, not the selected account:
   // it shows and opens from any home, while only an account with a key here
@@ -210,10 +298,10 @@ void main() {
 
       expect(find.text('Send'), findsNothing);
       expect(find.text('Propose'), kind == 'multisig' ? findsOneWidget : findsNothing);
-      expect(find.byType(SwapProgressDots), findsNothing);
-      expect(find.text('Swap'), findsOneWidget);
+      expect(find.text('Swap Failed'), findsOneWidget);
+      expect(find.text('Swap'), findsNothing);
 
-      await tester.tap(find.text('Swap'));
+      await tester.tap(find.text('3:07'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(SwapProgressScreen), findsOneWidget);
@@ -226,6 +314,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       expect(find.byType(SwapProgressScreen), findsNothing);
+      expect(find.byType(SwapProgressDots), findsNothing);
     });
   }
 

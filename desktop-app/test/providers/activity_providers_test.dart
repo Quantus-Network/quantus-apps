@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
@@ -81,7 +81,7 @@ void main() {
     container.read(openedActivityProvider.notifier).open(const OpenedSwap());
     expect(container.read(openedActivityViewProvider), const OpenedSwap());
 
-    await container.read(activeSwapProvider.notifier).clear();
+    await container.read(activeSwapsProvider.notifier).clearAll();
     expect(container.read(openedActivityViewProvider), isNull);
 
     container.dispose();

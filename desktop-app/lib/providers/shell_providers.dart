@@ -10,7 +10,6 @@ import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
@@ -295,7 +294,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
     }
     // A swap being followed lives in the window, not in a sheet: Swap opens
     // it in the panel at the right, from whichever account.
-    if (sheet == ShellSheet.swap && ref.read(activeSwapProvider) != null) {
+    if (sheet == ShellSheet.swap && ref.read(followedSwapProvider) != null) {
       ref.read(openedActivityProvider.notifier).open(const OpenedSwap());
       return;
     }
@@ -355,7 +354,7 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
     for (final action in accountActions(
       active,
       swapAvailable: ref.watch(remoteConfigProvider).swapAvailable,
-      hasActiveSwap: ref.watch(activeSwapProvider) != null,
+      hasActiveSwap: ref.watch(followedSwapProvider) != null,
     ))
       if (sends(action.kind) && !canSend) AccountAction(action.kind, isEnabled: false) else action,
   ];

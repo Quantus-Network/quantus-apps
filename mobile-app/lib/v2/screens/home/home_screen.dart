@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:resonance_network_wallet/v2/components/dotted_border.dart';
 import 'package:resonance_network_wallet/v2/components/shared_address_action_sheet.dart';
 import 'package:wallet_core/services/global_history_polling_service.dart';
+import 'package:resonance_network_wallet/services/swap_live_activity.dart';
 import 'package:resonance_network_wallet/services/telemetry_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:wallet_core/utils/account_utils.dart';
@@ -27,7 +29,7 @@ import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.da
 import 'package:resonance_network_wallet/v2/screens/swap/swap_screen.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:resonance_network_wallet/providers/local_auth_provider.dart';
@@ -110,26 +112,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       quantusPrint('swap progress intent ignored: send flow active');
       return;
     }
-    if (ref.read(activeSwapProvider) == null) {
-      ref.read(swapProgressIntentProvider.notifier).state = false;
-      return;
-    }
     ref.read(swapProgressIntentProvider.notifier).state = false;
+    final swap = swapOnCard(ref.read(activeSwapsProvider), clock.now());
+    if (swap == null) return;
     final navigator = Navigator.of(context);
     var topIsSwap = false;
     navigator.popUntil((route) {
-      topIsSwap = route.settings.name == SwapProgressScreen.routeName;
+      topIsSwap = route.settings.name == SwapProgressScreen.routeName && route.settings.arguments == swap.id;
       return true;
     });
     if (topIsSwap) return;
     final active = ref.read(activeAccountProvider).value;
-    final starter = active is RegularAccount ? active.account : null;
-    navigator.push(
-      MaterialPageRoute(
-        settings: const RouteSettings(name: SwapProgressScreen.routeName),
-        builder: (_) => SwapProgressScreen(account: starter),
-      ),
-    );
+    navigator.push(SwapProgressScreen.route(swap.id, account: active is RegularAccount ? active.account : null));
   }
 
   void _onTransactionIntent(TransactionEvent? _, TransactionEvent? transaction) {
@@ -221,9 +215,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final accountAsync = ref.watch(activeAccountProvider);
     final txAsync = ref.watch(activeAccountTransactionsProvider(TransactionFilter.all));
     final isBalanceHidden = ref.watch(isBalanceHiddenProvider);
-    // Watched before the account is known, so a swap saved on the device is
+    // Watched before the account is known, so swaps saved on the device are
     // picked up and polled again whichever account is selected.
-    final swap = ref.watch(activeSwapProvider);
+    ref.watch(activeSwapsProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
 
@@ -247,7 +241,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return ScaffoldBase.refreshable(
             onRefresh: _refresh,
             slivers: [
-              _buildContent(active, swap, colors, text, l10n, isBalanceHidden),
+              _buildContent(active, colors, text, l10n, isBalanceHidden),
               if (active is MultisigDisplayAccount)
                 MultisigActivitySection(
                   msig: active.account,
@@ -273,14 +267,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildContent(
     DisplayAccount active,
-    ActiveSwap? swap,
     AppColorsV3 colors,
     AppTextThemeV3 text,
     AppLocalizations l10n,
     bool isBalanceHidden,
   ) {
     final backupWalletIndex = ref.watch(backupReminderWalletIndexProvider);
-    final actions = _buildActionButtons(l10n, active, swap);
+    final actions = _buildActionButtons(l10n, active);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -374,14 +367,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget? _buildActionButtons(AppLocalizations l10n, DisplayAccount active, ActiveSwap? swap) {
+  Widget? _buildActionButtons(AppLocalizations l10n, DisplayAccount active) {
     final cards = [
       ...switch (active) {
         RegularAccount(:final account) => [_receiveCard(l10n), _sendCard(l10n, account)],
         MultisigDisplayAccount(:final account) => [_receiveCard(l10n), _proposeCard(l10n, account)],
         EntrustedDisplayAccount() => const <Widget>[],
       },
-      ?_swapCard(l10n, active, swap),
+      ?_swapCard(l10n, active),
     ];
     return cards.isEmpty ? null : Row(spacing: 20, children: cards);
   }
@@ -421,35 +414,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     },
   );
 
-  /// The one swap being followed opens from any account, even where swaps are
-  /// no longer offered; while its deposit is with 1Click it is also pinned
-  /// above the activity. Otherwise only
-  /// a transparent account with a key here can swap; the button stays,
+  /// Only a transparent account with a key here can swap; the button stays,
   /// disabled, for the other regular accounts so the layout doesn't change
-  /// between them.
-  Widget? _swapCard(AppLocalizations l10n, DisplayAccount active, ActiveSwap? swap) {
+  /// between them. The swaps being followed are reached from the activity.
+  Widget? _swapCard(AppLocalizations l10n, DisplayAccount active) {
     final starter = active is RegularAccount ? active.account : null;
-    final Widget Function() screen;
-    var isDisabled = false;
-    if (swap != null) {
-      screen = () => SwapProgressScreen(account: starter);
-    } else if (starter != null && ref.watch(remoteConfigProvider).swapAvailable) {
-      screen = () => SwapScreen(account: starter);
-      isDisabled = !starter.signsLocally;
-    } else {
-      return null;
-    }
+    if (starter == null || !ref.watch(remoteConfigProvider).swapAvailable) return null;
     return _actionCard(
       icon: QuantusIcons.actionSwap,
       label: l10n.homeSwap,
-      isDisabled: isDisabled,
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-          settings: RouteSettings(name: swap != null ? SwapProgressScreen.routeName : null),
-          builder: (_) => screen(),
-        ),
-      ),
+      isDisabled: !starter.signsLocally,
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SwapScreen(account: starter))),
     );
   }
 

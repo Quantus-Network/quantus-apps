@@ -6,7 +6,7 @@ import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -24,7 +24,7 @@ class SwapEntry extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final swap = ref.watch(activeSwapProvider);
+    final swap = ref.watch(followedSwapProvider);
     if (swap == null) throw StateError("A swap's row was drawn with no swap followed.");
     return SwapRowView(
       swap: swap,
@@ -80,8 +80,7 @@ class _SwapRowViewState extends ConsumerState<SwapRowView> {
     final text = context.themeTextV3;
     // Drawn again each second while the swap runs: its clock, and the moment
     // an awaited deposit's window closes.
-    ref.watch(swapElapsedProvider);
-    final now = clock.now();
+    final now = ref.watch(swapClockProvider).value ?? clock.now();
     final swap = widget.swap;
     final quote = swap.order.quote;
     final swapOut = quote.fromToken.isQuantus;
