@@ -26,6 +26,7 @@ import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
+import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
@@ -506,6 +507,18 @@ void main() {
     });
   }
 
+  _scene('connect_cold_wallet_add', (tester) async {
+    await _openConnectColdWallet(tester);
+  });
+
+  _scene('connect_cold_wallet_add_confirm', (tester) async {
+    await _readColdWalletAddress(tester, await _openConnectColdWallet(tester));
+  });
+
+  _scene('connect_cold_wallet_first_confirm', (tester) async {
+    await _readColdWalletAddress(tester, await _openConnectColdWallet(tester, withColdWallet: false));
+  });
+
   _scene('account_info', (tester) async {
     await _openInfo(tester, _savings);
   });
@@ -930,6 +943,53 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallet
   await tester.pumpAndSettle();
 }
 
+/// A camera that shows a dark picture and reads what it is handed.
+class _HandedScanSource implements QrScanSource {
+  final _reads = StreamController<String>.broadcast(sync: true);
+
+  @override
+  Stream<String> get reads => _reads.stream;
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Widget buildPreview() => const ColoredBox(color: Color(0xFF15161A));
+
+  @override
+  Future<void> dispose() async {}
+
+  void read(String text) => _reads.add(text);
+}
+
+/// Opens Connect Cold Wallet over the accounts, with Vault's cold wallet in
+/// the app unless [withColdWallet] is false.
+Future<_HandedScanSource> _openConnectColdWallet(WidgetTester tester, {bool withColdWallet = true}) async {
+  final source = _HandedScanSource();
+  await _openAccounts(
+    tester,
+    withColdWallet: withColdWallet,
+    overrides: [qrScanSourceFactoryProvider.overrideWithValue(() => source)],
+  );
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openConnectColdWallet();
+  await tester.pumpAndSettle();
+  return source;
+}
+
+/// The camera reads an address three times, which opens Confirm Address.
+Future<void> _readColdWalletAddress(WidgetTester tester, _HandedScanSource source) async {
+  for (var read = 0; read < 3; read++) {
+    source.read('qzR8vNc2LpX6tKw9HsYd4QmB7fJa3UeZo1Gi5WnTk2xVb');
+    await tester.pump();
+  }
+  await tester.pumpAndSettle();
+}
+
 /// A phrase no wallet in the scenes holds.
 final _newPhrase = ['zebra', ...List.filled(22, 'abandon'), 'art'].join(' ');
 
@@ -1007,8 +1067,10 @@ Future<void> _openAccounts(
   WidgetTester tester, {
   int moreWallets = 0,
   bool walletsLeftOpen = true,
+  bool withColdWallet = true,
   Future<List<Account>> Function()? scan,
   Future<List<MultisigAccount>> Function()? discoverMultisigs,
+  List<Override> overrides = const [],
 }) async {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
@@ -1017,7 +1079,7 @@ Future<void> _openAccounts(
   if (scan != null) device.scan = scan;
   if (discoverMultisigs != null) device.chain.discoverMultisigs = discoverMultisigs;
   device.storage.accounts.addAll([
-    _cold,
+    if (withColdWallet) _cold,
     _trading,
     for (var i = 0; i < moreWallets; i++)
       Account(walletIndex: 3 + i, index: 0, name: 'Spare ${i + 1}', accountId: 'qzSpare$i'),
@@ -1044,6 +1106,7 @@ Future<void> _openAccounts(
           innerHash: () async => '0x7c3f9a1e5b2d8c4f6a0e9b3d7f1c5a8e2b6d0f4a9c3e7b1d5f8a2c6e0b4d9f3a',
         ),
       ),
+      ...overrides,
     ],
   );
   useFakeCheckphrases((address) async => 'Harbor-Velvet-Signal-Mirror-Canyon');
