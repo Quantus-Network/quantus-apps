@@ -12,7 +12,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Bermasalah';
 
   @override
-  String get walletInitErrorMessage => 'Gagal mencari secret phrase. Coba pulihkan wallet anda.';
+  String get walletInitErrorMessage => 'Tidak dapat membaca recovery phrase Anda dari perangkat ini.';
+
+  @override
+  String get walletInitErrorRemoveWallet => 'Hapus Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Hapus Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Hapus semua wallet dari perangkat ini?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'Ini tidak dapat dibatalkan.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Hapus';
 
   @override
   String get walletInitErrorButtonLabel => 'OK';

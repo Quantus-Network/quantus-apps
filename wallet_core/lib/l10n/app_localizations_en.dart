@@ -12,7 +12,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Error';
 
   @override
-  String get walletInitErrorMessage => 'Unable to find secret phrase. Please restore your wallet.';
+  String get walletInitErrorMessage => 'Unable to read your recovery phrase from this device.';
+
+  @override
+  String get walletInitErrorRemoveWallet => 'Remove Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Remove Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Remove all wallets from this device?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'This cannot be undone.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Remove';
 
   @override
   String get walletInitErrorButtonLabel => 'OK';

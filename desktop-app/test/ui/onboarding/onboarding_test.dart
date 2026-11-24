@@ -148,7 +148,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('Wallet Error'), findsOneWidget);
-      expect(find.text('Unable to find secret phrase. Please restore your wallet.'), findsOneWidget);
+      expect(find.text('Unable to read your recovery phrase from this device.'), findsOneWidget);
       expect(find.byType(Sidebar), findsNothing);
       expect(device.logouts, 0);
 

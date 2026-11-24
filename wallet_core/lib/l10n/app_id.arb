@@ -1,6 +1,11 @@
 {
   "walletInitErrorTitle": "Wallet Bermasalah",
-  "walletInitErrorMessage": "Gagal mencari secret phrase. Coba pulihkan wallet anda.",
+  "walletInitErrorMessage": "Tidak dapat membaca recovery phrase Anda dari perangkat ini.",
+  "walletInitErrorRemoveWallet": "Hapus Wallet",
+  "desktopWalletInitErrorRemoveWallet": "Hapus Wallet…",
+  "walletInitErrorRemoveTitle": "Hapus semua wallet dari perangkat ini?",
+  "walletInitErrorRemoveBody": "Ini tidak dapat dibatalkan.",
+  "walletInitErrorRemoveConfirm": "Hapus",
   "walletInitErrorButtonLabel": "OK",
   "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk mengakses wallet",
   "authAuthenticating": "Mengotentikasi...",

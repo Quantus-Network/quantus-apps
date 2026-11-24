@@ -98,11 +98,41 @@ abstract class AppLocalizations {
   /// **'Wallet Error'**
   String get walletInitErrorTitle;
 
-  /// Message for the error dialog when the wallet is not found
+  /// Message for the error dialog when the wallet's recovery phrase cannot be read at start
   ///
   /// In en, this message translates to:
-  /// **'Unable to find secret phrase. Please restore your wallet.'**
+  /// **'Unable to read your recovery phrase from this device.'**
   String get walletInitErrorMessage;
+
+  /// Phone: on the error sheet when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Wallet'**
+  String get walletInitErrorRemoveWallet;
+
+  /// Desktop: on the error dialog when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Wallet…'**
+  String get desktopWalletInitErrorRemoveWallet;
+
+  /// Title of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all wallets from this device?'**
+  String get walletInitErrorRemoveTitle;
+
+  /// Body of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get walletInitErrorRemoveBody;
+
+  /// The button that removes every wallet from the device, on the confirmation asked from the error dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get walletInitErrorRemoveConfirm;
 
   /// Label for the button on the error dialog when the wallet is not found
   ///
