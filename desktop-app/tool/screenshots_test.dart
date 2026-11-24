@@ -51,6 +51,7 @@ import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -1586,16 +1587,18 @@ void _activityScenes() {
   _scene('activity_multisig_smallest_window', (tester) => openTeamProposal(tester, window: const Size(960, 640)));
 }
 
-/// Opens Account 1 following [swap], with some settled activity under it.
+/// Opens Account 1 following [swap], the newest, after the [earlier] ones if
+/// any, with some settled activity under it; [swap] is the one opened.
 Future<void> _openFollowing(
   WidgetTester tester,
   ActiveSwap Function() swap, {
+  List<ActiveSwap> Function()? earlier,
   bool opened = true,
   bool reduceMotion = true,
 }) async {
   useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
   final device = _activityDevice();
-  device.storage.activeSwap = swap();
+  device.storage.activeSwaps = [...?earlier?.call(), swap()];
   await _open(tester, device, reduceMotion: reduceMotion);
   if (reduceMotion) {
     await tester.pumpAndSettle();
@@ -1603,7 +1606,7 @@ Future<void> _openFollowing(
     await tester.pump(const Duration(milliseconds: 600));
   }
   if (!opened) return;
-  await tester.tap(find.byType(SwapRowView));
+  await tester.tap(find.byType(SwapRowView).first);
   if (reduceMotion) {
     await tester.pumpAndSettle();
   } else {
@@ -1698,6 +1701,41 @@ void _swapScenes() {
         deadline: DateTime.now().subtract(const Duration(minutes: 1)),
       ),
     );
+  });
+
+  // Several followed at once, one of each ending and one awaiting its
+  // deposit under the newest, which runs.
+  List<ActiveSwap> earlier() => [
+    fakeActiveSwap(
+      account: _root,
+      status: SwapStatus.refunded,
+      refundReason: 'PARTIAL_DEPOSIT',
+      depositAddress: '0x1111111111111111111111111111111111111111',
+    ),
+    fakeActiveSwap(
+      account: _root,
+      status: SwapStatus.success,
+      age: const Duration(minutes: 4, seconds: 12),
+      depositAddress: '0x2222222222222222222222222222222222222222',
+    ),
+    fakeActiveSwap(
+      swapOut: false,
+      status: SwapStatus.pendingDeposit,
+      account: _root,
+      depositAddress: '0x3333333333333333333333333333333333333333',
+    ),
+  ];
+
+  _scene('swap_several', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), earlier: earlier);
+  });
+
+  _scene('swap_several_smallest_window', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), earlier: earlier, opened: false);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(SwapRowView).first);
+    await tester.pumpAndSettle();
   });
 
   _scene('swap_smallest_window', (tester) async {
@@ -1889,6 +1927,20 @@ void _swapSheetScenes() {
 
   _scene('swap_sheet_disabled', (tester) async {
     await _openSwapSheet(tester, prepare: (device) => device.swaps.listedQuantus = null);
+  });
+
+  // As many swaps running as can be followed.
+  void followsAllItCan(FakeWalletDevice device) => device.storage.activeSwaps = [
+    for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++)
+      fakeActiveSwap(account: _root, depositAddress: '0x${i.toString() * 40}'),
+  ];
+
+  _scene('swap_sheet_limit', (tester) async {
+    await _openSwapSheet(tester, prepare: followsAllItCan);
+  });
+
+  _scene('swap_sheet_limit_smallest_window', (tester) async {
+    await _openSwapSheet(tester, prepare: followsAllItCan, window: const Size(960, 640));
   });
 
   _scene('swap_sheet_review', (tester) async {

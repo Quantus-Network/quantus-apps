@@ -7,6 +7,7 @@ import 'package:wallet_core/providers/pending_multisig_executions_provider.dart'
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/extrinsic_indexer_polling_service.dart';
 import 'package:wallet_core/services/multisig_execution_reconciliation.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 
 typedef MultisigExecutionPollingService =
@@ -16,6 +17,8 @@ Future<bool> _confirmIndexedExecution(Ref ref, MultisigAccount msig, PendingMult
   final hash = pending.extrinsicHash;
   if (hash == null) return false;
 
+  final session = ref.read(walletSessionProvider);
+  final ticket = session.ticket;
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
   if (proposal == null || proposal.status != MultisigProposalStatus.executed) return false;
@@ -23,6 +26,7 @@ Future<bool> _confirmIndexedExecution(Ref ref, MultisigAccount msig, PendingMult
   final historyService = ref.read(chainHistoryServiceProvider);
   final indexed = await historyService.searchExecutedByExtrinsicHash(extrinsicHash: hash);
   if (indexed == null) return false;
+  if (!await session.survivesReset(ticket, dropping: 'confirming execution ${pending.id}')) return true;
 
   removePendingMultisigExecution(ref, pending.id);
   await reconcileIndexedExecution(ref, msig, indexed);
@@ -32,11 +36,15 @@ Future<bool> _confirmIndexedExecution(Ref ref, MultisigAccount msig, PendingMult
 /// When the indexer account event lags but the proposal already shows as
 /// executed, clear pending state and refresh without a timeout toast.
 Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingMultisigExecutionEvent pending) async {
+  final session = ref.read(walletSessionProvider);
+  final ticket = session.ticket;
+  final dropping = 'resolving execution ${pending.id}';
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
   if (proposal == null || proposal.status != MultisigProposalStatus.executed) {
     return false;
   }
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
   removePendingMultisigExecution(ref, pending.id);
   invalidateMultisigProposals(ref, msig);
@@ -45,6 +53,7 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
   if (hash != null) {
     try {
       final indexed = await ref.read(chainHistoryServiceProvider).searchExecutedByExtrinsicHash(extrinsicHash: hash);
+      if (!await session.survivesReset(ticket, dropping: dropping)) return true;
       if (indexed != null) {
         await reconcileIndexedExecution(ref, msig, indexed);
         return true;
@@ -53,6 +62,7 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
       quantusPrint('[MultisigExecutionPoller] soft timeout reconcile error: $e');
     }
   }
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
   // The proposal is executed but this user's own extrinsic was never indexed:
   // another signer most likely executed first and this user's submission

@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:resonance_network_wallet/providers/swap_live_activity_provider.dart';
@@ -27,19 +27,28 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Follows the active swap: the deposit address while a swap into QTC (or,
 /// in preflight, any swap) waits for its deposit, then progress, and finally
-/// the completed or failed swap. Leaving by Done or Start new, or a failed
-/// swap by going back, puts the swap away, so the next tap on Swap starts a
-/// fresh one, as does leaving the deposit screen before the deposit is sent;
-/// a running swap left by going back is still followed. Its details sheet,
-/// or the notice once it is overdue, offers to stop tracking.
+/// the completed or failed swap. Leaving a settled swap by Done, Start new
+/// or going back puts it away, as does leaving the deposit screen before the
+/// deposit is sent; a running swap left by going back is still followed. Its
+/// details sheet, or the notice once it is overdue, offers to stop tracking.
 class SwapProgressScreen extends ConsumerStatefulWidget {
   static const routeName = 'swap-progress';
+
+  /// The followed swap to show, by [ActiveSwap.id].
+  final String swapId;
 
   /// The account a new swap would start from; none when the selected
   /// account cannot swap.
   final Account? account;
 
-  const SwapProgressScreen({super.key, this.account});
+  const SwapProgressScreen({super.key, required this.swapId, this.account});
+
+  /// The route showing the swap with [swapId], named with it so a tap on the
+  /// lock-screen card can tell whether that swap is already on top.
+  static MaterialPageRoute<void> route(String swapId, {Account? account}) => MaterialPageRoute(
+    settings: RouteSettings(name: routeName, arguments: swapId),
+    builder: (_) => SwapProgressScreen(swapId: swapId, account: account),
+  );
 
   @override
   ConsumerState<SwapProgressScreen> createState() => _SwapProgressScreenState();
@@ -70,20 +79,20 @@ class _SwapProgressScreenState extends ConsumerState<SwapProgressScreen> {
   /// is already unsafe once dispose starts.
   void _setProgressVisible(bool visible) {
     final progressVisible = _progressVisible;
+    final id = widget.swapId;
     unawaited(
       Future<void>.microtask(() {
         if (visible && !mounted) return;
-        progressVisible.set(visible);
+        progressVisible.set(id, open: visible);
       }),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final swap = _shown = ref.watch(activeSwapProvider) ?? _shown;
-    if (swap == null) throw StateError('No active swap to show');
-    ref.watch(swapElapsedProvider);
-    final now = clock.now();
+    final swap = _shown = ref.watch(activeSwapProvider(widget.swapId)) ?? _shown;
+    if (swap == null) throw StateError('No followed swap ${widget.swapId} to show');
+    final now = ref.watch(swapClockProvider).value ?? clock.now();
     return switch (swapProgressViewOf(swap, now)) {
       SwapProgressView.complete => _SwapComplete(swap: swap),
       SwapProgressView.failed => _SwapFailed(swap: swap, account: widget.account),
@@ -111,7 +120,7 @@ class _PollErrorNotice extends ConsumerWidget {
         const SizedBox(height: 8),
         Align(
           alignment: Alignment.centerRight,
-          child: LinkButton(label: l10n.commonRetry, onTap: () => ref.read(activeSwapProvider.notifier).refresh()),
+          child: LinkButton(label: l10n.commonRetry, onTap: () => ref.read(activeSwapsProvider.notifier).refresh()),
         ),
       ],
     );
@@ -119,19 +128,19 @@ class _PollErrorNotice extends ConsumerWidget {
 }
 
 /// Puts the swap away and returns home.
-void _finish(BuildContext context, WidgetRef ref) {
+void _finish(BuildContext context, WidgetRef ref, String id) {
   Navigator.popUntil(context, (route) => route.isFirst);
-  ref.read(activeSwapProvider.notifier).clear();
+  ref.read(activeSwapsProvider.notifier).remove(id);
 }
 
 /// Puts the swap away and opens the form for another.
-void _startNew(BuildContext context, WidgetRef ref, Account account) {
+void _startNew(BuildContext context, WidgetRef ref, Account account, String id) {
   Navigator.pushAndRemoveUntil(
     context,
     MaterialPageRoute(builder: (_) => SwapScreen(account: account)),
     (route) => route.isFirst,
   );
-  ref.read(activeSwapProvider.notifier).clear();
+  ref.read(activeSwapsProvider.notifier).remove(id);
 }
 
 class _SwapInProgress extends ConsumerWidget {
@@ -215,7 +224,7 @@ class _SwapInProgress extends ConsumerWidget {
               QuantusButton.simple(
                 label: l10n.swapStopTracking,
                 variant: ButtonVariant.underline,
-                onTap: () => _finish(context, ref),
+                onTap: () => _finish(context, ref, swap.id),
               ),
             ],
           ],
@@ -298,7 +307,7 @@ class _SwapDetailsSheet extends ConsumerWidget {
           QuantusButton.simple(
             label: l10n.swapStopTracking,
             variant: ButtonVariant.underline,
-            onTap: () => _stopTracking(context, ref, l10n),
+            onTap: () => _stopTracking(context, ref, l10n, swap.id),
           ),
         ],
       ),
@@ -307,7 +316,7 @@ class _SwapDetailsSheet extends ConsumerWidget {
 }
 
 /// Puts the swap away once the user confirms; it carries on at 1Click.
-Future<void> _stopTracking(BuildContext context, WidgetRef ref, AppLocalizations l10n) async {
+Future<void> _stopTracking(BuildContext context, WidgetRef ref, AppLocalizations l10n, String id) async {
   final confirmed = await showConfirmActionSheet(
     context,
     title: l10n.swapStopTrackingConfirmTitle,
@@ -315,7 +324,7 @@ Future<void> _stopTracking(BuildContext context, WidgetRef ref, AppLocalizations
     confirmLabel: l10n.swapStopTracking,
     cancelLabel: l10n.commonCancel,
   );
-  if (confirmed && context.mounted) _finish(context, ref);
+  if (confirmed && context.mounted) _finish(context, ref, id);
 }
 
 class _SwapComplete extends ConsumerWidget {
@@ -334,35 +343,40 @@ class _SwapComplete extends ConsumerWidget {
     final to = quote.toToken;
     final receiver = to.isQuantus && ref.watch(swapPreflightProvider) == null ? swap.accountName : to.networkName;
 
-    return ScaffoldBase(
-      appBar: V2AppBar(title: l10n.swapCompleteTitle),
-      mainContent: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SuccessCheck(size: 80),
-            const SizedBox(height: 40),
-            Text(
-              formatSwapAmount(l10n, fmt, order.amountOut ?? quote.amountOut, to),
-              style: text.titleSuccess.copyWith(color: colors.textContent),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(l10n.swapCompleteReceived, style: text.caption.copyWith(color: colors.textMuted)),
-            const SizedBox(height: 48),
-            Text(l10n.swapCompleteTo, style: text.bodyEmphasis.copyWith(color: colors.textContent)),
-            const SizedBox(height: 16),
-            Text(receiver, style: text.body.copyWith(color: colors.accentFlare)),
-            const SizedBox(height: 4),
-            Text(
-              AddressFormattingService.formatAddress(quote.recipient),
-              style: text.dataAddress.copyWith(color: colors.textContent),
-            ),
-          ],
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) ref.read(activeSwapsProvider.notifier).remove(swap.id);
+      },
+      child: ScaffoldBase(
+        appBar: V2AppBar(title: l10n.swapCompleteTitle),
+        mainContent: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SuccessCheck(size: 80),
+              const SizedBox(height: 40),
+              Text(
+                formatSwapAmount(l10n, fmt, order.amountOut ?? quote.amountOut, to),
+                style: text.titleSuccess.copyWith(color: colors.textContent),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(l10n.swapCompleteReceived, style: text.caption.copyWith(color: colors.textMuted)),
+              const SizedBox(height: 48),
+              Text(l10n.swapCompleteTo, style: text.bodyEmphasis.copyWith(color: colors.textContent)),
+              const SizedBox(height: 16),
+              Text(receiver, style: text.body.copyWith(color: colors.accentFlare)),
+              const SizedBox(height: 4),
+              Text(
+                AddressFormattingService.formatAddress(quote.recipient),
+                style: text.dataAddress.copyWith(color: colors.textContent),
+              ),
+            ],
+          ),
         ),
-      ),
-      bottomContent: ScaffoldBaseBottomContent(
-        child: QuantusButton.simple(label: l10n.commonDone, onTap: () => _finish(context, ref)),
+        bottomContent: ScaffoldBaseBottomContent(
+          child: QuantusButton.simple(label: l10n.commonDone, onTap: () => _finish(context, ref, swap.id)),
+        ),
       ),
     );
   }
@@ -399,7 +413,7 @@ class _SwapFailed extends ConsumerWidget {
 
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) ref.read(activeSwapProvider.notifier).clear();
+        if (didPop) ref.read(activeSwapsProvider.notifier).remove(swap.id);
       },
       child: ScaffoldBase(
         appBar: V2AppBar(title: failure.title),
@@ -436,7 +450,7 @@ class _SwapFailed extends ConsumerWidget {
               QuantusButton.simple(
                 label: l10n.swapStartNew,
                 isDisabled: starter == null || !starter.signsLocally || !swapsOffered,
-                onTap: starter == null ? null : () => _startNew(context, ref, starter),
+                onTap: starter == null ? null : () => _startNew(context, ref, starter, swap.id),
               ),
               const SizedBox(height: 4),
               QuantusButton.simple(
@@ -487,7 +501,7 @@ class _SwapDeposit extends ConsumerWidget {
 
     return PopScope(
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) ref.read(activeSwapProvider.notifier).clear();
+        if (didPop) ref.read(activeSwapsProvider.notifier).remove(swap.id);
       },
       child: ScaffoldBase(
         appBar: V2AppBar(title: l10n.swapDepositTitle),
@@ -597,7 +611,7 @@ class _SwapDeposit extends ConsumerWidget {
               const SizedBox(height: 16),
               QuantusButton.simple(
                 label: l10n.swapDepositSent,
-                onTap: () => ref.read(activeSwapProvider.notifier).markDepositSent(),
+                onTap: () => ref.read(activeSwapsProvider.notifier).markDepositSent(swap.id),
               ),
             ],
           ),

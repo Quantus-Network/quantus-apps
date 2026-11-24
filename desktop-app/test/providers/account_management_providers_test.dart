@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/push_registration.dart';
@@ -599,6 +601,48 @@ void main() {
 
       expect(device.storage.multisigStore, isEmpty);
       expect(container.read(multisigAccountsProvider).value, isEmpty);
+      await _close(tester, container);
+    });
+
+    testWidgets('a swap from an account that goes alone stays reachable, under the accounts that remain', (
+      tester,
+    ) async {
+      final swap = fakeActiveSwap(account: savingsAccount);
+      final (device, container) = await _device(tester);
+      device.storage.activeSwaps = [swap];
+      List<String> listedUnder(Account account) => [
+        for (final listed in container.read(accountSwapsProvider(account.accountId))) listed.id,
+      ];
+      await _settle(tester, container);
+      expect(listedUnder(mainAccount), isEmpty, reason: 'it is under Savings while Savings is there');
+      expect(listedUnder(savingsAccount), [swap.id]);
+
+      await _manager(container).disconnect(savingsAccount);
+      await _settle(tester, container);
+
+      expect(container.read(activeSwapsProvider).map((s) => s.id), [swap.id], reason: 'it is still followed');
+      expect(listedUnder(mainAccount), [swap.id]);
+      expect(listedUnder(_trading), [swap.id]);
+      await _close(tester, container);
+    });
+
+    testWidgets('a swap from a wallet that goes with its last account stays reachable too', (tester) async {
+      final swap = fakeActiveSwap(account: _trading);
+      final (device, container) = await _device(tester);
+      device.storage.activeSwaps = [swap];
+      List<String> listedUnder(Account account) => [
+        for (final listed in container.read(accountSwapsProvider(account.accountId))) listed.id,
+      ];
+      await _settle(tester, container);
+      expect(listedUnder(mainAccount), isEmpty);
+
+      await _manager(container).disconnect(_trading);
+      await _settle(tester, container);
+
+      expect(device.storage.accounts.where((a) => a.walletIndex == 2), isEmpty);
+      expect(container.read(activeSwapsProvider).map((s) => s.id), [swap.id], reason: 'it is still followed');
+      expect(listedUnder(mainAccount), [swap.id]);
+      expect(listedUnder(savingsAccount), [swap.id]);
       await _close(tester, container);
     });
 

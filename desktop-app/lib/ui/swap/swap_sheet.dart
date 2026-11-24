@@ -24,6 +24,7 @@ import 'package:quantus_desktop_wallet/ui/swap/swap_form_parts.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
@@ -46,8 +47,9 @@ typedef _Funds = ({AsyncValue<BigInt> balance, BigInt? max, AsyncValue<BigInt>? 
 /// is confirmed the sheet closes, and the swap is followed in the window.
 ///
 /// Only a transparent account whose key signs here swaps. Where swaps are
-/// not allowed, until 1Click lists QTC with a price, or when 1Click cannot
-/// be reached, the form gives way to a notice.
+/// not allowed, while as many run as can be followed, until 1Click lists QTC
+/// with a price, or when 1Click cannot be reached, the form gives way to a
+/// notice.
 class SwapSheet extends ConsumerStatefulWidget {
   const SwapSheet({super.key});
 
@@ -538,11 +540,13 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
       );
       if (!mounted) return;
       switch (outcome) {
-        case SwapConfirmed():
-          ref.read(openedActivityProvider.notifier).open(const OpenedSwap());
+        case SwapConfirmed(:final swap):
+          ref.read(openedActivityProvider.notifier).open(OpenedSwap(swap.id));
           Navigator.of(context).pop();
         case SwapConfirmDropped():
           break;
+        case SwapTooManyFollowed():
+          _say(l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
         case SwapTermsChanged(:final quote):
           setState(() {
             _reviewed = quote;
@@ -582,12 +586,17 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
     final available = ref.watch(remoteConfigProvider.select((config) => config.swapAvailable));
     final foreign = _foreign;
     final quantus = _quantus;
+    final atLimit = ref.watch(swapsAtLimitProvider);
     final isReview = _step == _Step.review;
     final List<Widget> content;
     if (isReview) {
       content = _review(l10n, available: available);
-    } else if (!available || foreign == null || quantus == null) {
-      content = _unavailable(l10n, disabled: !available);
+    } else if (!available) {
+      content = _unavailable(l10n, disabled: true);
+    } else if (atLimit) {
+      content = _limitReached(l10n);
+    } else if (foreign == null || quantus == null) {
+      content = _unavailable(l10n, disabled: false);
     } else {
       content = _form(l10n, quantus, foreign);
     }
@@ -623,23 +632,41 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
 
   // ------------------------------------------------- in place of the form
 
+  Widget _close(AppLocalizations l10n) => SheetButton(
+    key: SwapSheet.closeKey,
+    label: l10n.commonClose,
+    kind: SheetButtonKind.secondary,
+    // Asked, not told, as the cross in the title is: a sheet that is
+    // confirming a swap stays.
+    onTap: () => unawaited(Navigator.of(context).maybePop()),
+  );
+
+  /// What stands in place of the form: [title] as a status, what [body] adds
+  /// to it, and Close, with [action] across from it when there is one.
+  List<Widget> _inPlaceOfForm(AppLocalizations l10n, {required String title, String? body, Widget? action}) {
+    final colors = context.colorsV3;
+    return [
+      const SizedBox(height: 26),
+      inspectorStatusLine(
+        context,
+        mark: Icon(CupertinoIcons.exclamationmark_circle, size: 13, color: colors.semanticEmber),
+        label: title,
+        color: colors.semanticEmber,
+      ),
+      if (body != null) ...[
+        const SizedBox(height: 14),
+        Text(body, style: context.themeTextV3.body.copyWith(color: colors.textContent)),
+      ],
+      const SizedBox(height: 22),
+      Row(children: [?action, const Spacer(), _close(l10n)]),
+    ];
+  }
+
   /// In place of the form: that the tokens are loading; that swaps are
   /// disabled, where they are for this location or while 1Click does not
   /// list QTC with a price, saying nothing about why or when; or that 1Click
   /// cannot be reached, with a way to ask again.
   List<Widget> _unavailable(AppLocalizations l10n, {required bool disabled}) {
-    final colors = context.colorsV3;
-    final text = context.themeTextV3;
-    final unreachable = _loadFailed && !disabled;
-    Widget close() => SheetButton(
-      key: SwapSheet.closeKey,
-      label: l10n.commonClose,
-      kind: SheetButtonKind.secondary,
-      // Asked, not told, as the cross in the title is: a sheet that is
-      // confirming a swap stays.
-      onTap: () => unawaited(Navigator.of(context).maybePop()),
-    );
-
     if (_loadingTokens && !disabled) {
       return [
         const SizedBox(height: 26),
@@ -654,39 +681,33 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
         Row(
           children: [
             Expanded(child: _attribution(l10n)),
-            close(),
+            _close(l10n),
           ],
         ),
       ];
     }
-    return [
-      const SizedBox(height: 26),
-      inspectorStatusLine(
-        context,
-        mark: Icon(CupertinoIcons.exclamationmark_circle, size: 13, color: colors.semanticEmber),
-        label: unreachable ? l10n.swapUnavailableTitle : l10n.swapDisabledTitle,
-        color: colors.semanticEmber,
+    if (disabled || !_loadFailed) return _inPlaceOfForm(l10n, title: l10n.swapDisabledTitle);
+    return _inPlaceOfForm(
+      l10n,
+      title: l10n.swapUnavailableTitle,
+      body: l10n.swapUnavailableUnreachable,
+      action: ToolbarAction.symbol(
+        key: SwapSheet.tryAgainKey,
+        symbol: CupertinoIcons.arrow_clockwise,
+        label: l10n.commonTryAgain,
+        onPressed: () => unawaited(_loadTokens(forceRefresh: true)),
       ),
-      if (unreachable) ...[
-        const SizedBox(height: 14),
-        Text(l10n.swapUnavailableUnreachable, style: text.body.copyWith(color: colors.textContent)),
-      ],
-      const SizedBox(height: 22),
-      Row(
-        children: [
-          if (unreachable)
-            ToolbarAction.symbol(
-              key: SwapSheet.tryAgainKey,
-              symbol: CupertinoIcons.arrow_clockwise,
-              label: l10n.commonTryAgain,
-              onPressed: () => unawaited(_loadTokens(forceRefresh: true)),
-            ),
-          const Spacer(),
-          close(),
-        ],
-      ),
-    ];
+    );
   }
+
+  /// In place of the form while as many swaps run as can be followed: that
+  /// no other can start until one of them finishes. The form takes its place
+  /// again as soon as one has, or is put away.
+  List<Widget> _limitReached(AppLocalizations l10n) => _inPlaceOfForm(
+    l10n,
+    title: l10n.swapUnavailableTitle,
+    body: l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed),
+  );
 
   // --------------------------------------------------------------- the form
 

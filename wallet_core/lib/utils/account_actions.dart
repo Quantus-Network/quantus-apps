@@ -26,11 +26,10 @@ class AccountAction {
 /// The actions offered on [active], in display order.
 ///
 /// A regular account receives and sends; a multisig receives and proposes; an
-/// entrusted account does neither. A swap already being followed
-/// ([hasActiveSwap]) opens from any account. Otherwise Swap is offered on
-/// regular accounts where swaps are available, and is disabled unless the
-/// account's key signs in this app.
-List<AccountAction> accountActions(DisplayAccount active, {required bool swapAvailable, required bool hasActiveSwap}) {
+/// entrusted account does neither. Swap is offered on regular accounts where
+/// swaps are available, and is disabled unless the account's key signs in
+/// this app.
+List<AccountAction> accountActions(DisplayAccount active, {required bool swapAvailable}) {
   return [
     ...switch (active) {
       RegularAccount() => const [AccountAction(AccountActionKind.receive), AccountAction(AccountActionKind.send)],
@@ -40,9 +39,7 @@ List<AccountAction> accountActions(DisplayAccount active, {required bool swapAva
       ],
       EntrustedDisplayAccount() => const <AccountAction>[],
     },
-    if (hasActiveSwap)
-      const AccountAction(AccountActionKind.swap)
-    else if (active is RegularAccount && swapAvailable)
+    if (active is RegularAccount && swapAvailable)
       AccountAction(AccountActionKind.swap, isEnabled: active.account.signsLocally),
   ];
 }

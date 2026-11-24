@@ -6,17 +6,18 @@ import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/swap/swap_progress.dart';
 
-/// The swap being followed, as a row of its account's In progress: open when
-/// it is what the panel at the right shows, and a click opens it there.
+/// A followed [swap], as a row of its account's In progress: open when it is
+/// what the panel at the right shows, and a click opens it there.
 class SwapEntry extends ConsumerWidget {
-  const SwapEntry({super.key, required this.form, this.hasFocus = true});
+  const SwapEntry({super.key, required this.swap, required this.form, this.hasFocus = true});
 
+  final ActiveSwap swap;
   final ActivityRowForm form;
 
   /// Whether the keys are in the panel the row is in.
@@ -24,14 +25,13 @@ class SwapEntry extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final swap = ref.watch(activeSwapProvider);
-    if (swap == null) throw StateError("A swap's row was drawn with no swap followed.");
+    final opened = OpenedSwap(swap.id);
     return SwapRowView(
       swap: swap,
       form: form,
-      isSelected: ref.watch(openedActivityViewProvider) is OpenedSwap,
+      isSelected: ref.watch(openedActivityViewProvider) == opened,
       hasFocus: hasFocus,
-      onTap: () => ref.read(openedActivityProvider.notifier).open(const OpenedSwap()),
+      onTap: () => ref.read(openedActivityProvider.notifier).open(opened),
     );
   }
 }
@@ -80,8 +80,7 @@ class _SwapRowViewState extends ConsumerState<SwapRowView> {
     final text = context.themeTextV3;
     // Drawn again each second while the swap runs: its clock, and the moment
     // an awaited deposit's window closes.
-    ref.watch(swapElapsedProvider);
-    final now = clock.now();
+    final now = ref.watch(swapClockProvider).value ?? clock.now();
     final swap = widget.swap;
     final quote = swap.order.quote;
     final swapOut = quote.fromToken.isQuantus;

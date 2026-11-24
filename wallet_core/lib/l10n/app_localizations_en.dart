@@ -1783,6 +1783,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapReviewConfirm => 'Confirm swap';
 
   @override
+  String get swapActivityOverdue => 'Not finished in time';
+
+  @override
+  String swapTooManyFollowed(int count) {
+    return 'Up to $count swaps can run at once. Wait for one to finish.';
+  }
+
+  @override
   String swapActivityAmounts(String amountIn, String amountOut) {
     return '$amountIn → $amountOut';
   }

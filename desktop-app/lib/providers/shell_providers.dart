@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
@@ -10,7 +9,6 @@ import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
@@ -293,12 +291,6 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       quantusPrint('${sheet.name} is not offered on the active account; nothing is opened.');
       return;
     }
-    // A swap being followed lives in the window, not in a sheet: Swap opens
-    // it in the panel at the right, from whichever account.
-    if (sheet == ShellSheet.swap && ref.read(activeSwapProvider) != null) {
-      ref.read(openedActivityProvider.notifier).open(const OpenedSwap());
-      return;
-    }
     if (sheet == ShellSheet.send || sheet == ShellSheet.propose) _beginSend();
     // A swap starts from this sheet, so where swaps are allowed is asked
     // again as it opens: the answer in hand may be from another place.
@@ -352,11 +344,7 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final canSend = sendStrategyFor(active, accounts: ref.watch(accountsProvider).value ?? const []) != null;
   bool sends(AccountActionKind kind) => kind == AccountActionKind.send || kind == AccountActionKind.propose;
   return [
-    for (final action in accountActions(
-      active,
-      swapAvailable: ref.watch(remoteConfigProvider).swapAvailable,
-      hasActiveSwap: ref.watch(activeSwapProvider) != null,
-    ))
+    for (final action in accountActions(active, swapAvailable: ref.watch(remoteConfigProvider).swapAvailable))
       if (sends(action.kind) && !canSend) AccountAction(action.kind, isEnabled: false) else action,
   ];
 });
@@ -364,13 +352,19 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
 /// The account actions as the menus and their shortcuts offer them. While
 /// navigation asked for earlier is still to finish, the account it ends on
 /// is not known yet, so Receive, Send and Propose are offered whatever the
-/// active account allows, and checked against the account they open on
-/// ([ShellSheetNotifier.open]). The toolbar shows what the active account
-/// offers ([activeAccountActionsProvider]).
+/// active account allows, and Swap too where swaps are offered; each is
+/// checked against the account it opens on ([ShellSheetNotifier.open]). The
+/// toolbar shows what the active account offers
+/// ([activeAccountActionsProvider]).
 final menuAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final actions = ref.watch(activeAccountActionsProvider);
   if (!ref.watch(shellNavigationProvider)) return actions;
-  const whatever = [AccountActionKind.receive, AccountActionKind.send, AccountActionKind.propose];
+  final whatever = [
+    AccountActionKind.receive,
+    AccountActionKind.send,
+    AccountActionKind.propose,
+    if (ref.watch(remoteConfigProvider).swapAvailable) AccountActionKind.swap,
+  ];
   return [
     for (final kind in whatever) AccountAction(kind),
     for (final action in actions)

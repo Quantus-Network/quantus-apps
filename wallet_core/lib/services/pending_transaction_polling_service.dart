@@ -11,6 +11,7 @@ import 'package:wallet_core/utils/tx_filter_family_provider.dart';
 class PendingTransactionPollingService {
   final Ref _ref;
   final Map<String, Timer> _timers = {};
+  final Set<String> _inFlight = {};
   static const _searchInterval = Duration(seconds: 5);
 
   /// How long a send is watched for. Not found by then, it is removed
@@ -61,6 +62,8 @@ class PendingTransactionPollingService {
   }
 
   Future<void> _search(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) async {
+    if (!_inFlight.add(pendingTx.id)) return;
+
     try {
       final session = _ref.read(walletSessionProvider);
       final ticket = session.ticket;
@@ -106,6 +109,8 @@ class PendingTransactionPollingService {
       }
     } catch (e) {
       quantusPrint('[PendingTxPoller] Search error for ${pendingTx.id}: $e');
+    } finally {
+      _inFlight.remove(pendingTx.id);
     }
   }
 

@@ -8,7 +8,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/services/firebase_messaging_service.dart';
@@ -34,7 +34,7 @@ class SwapLiveSnapshot {
   });
 }
 
-/// Keeps the lock-screen card in step with the swap being followed. A refresh
+/// Keeps the lock-screen card in step with the swap it is about ([swapOnCard]). A refresh
 /// that does not change the card is skipped until [swapLiveRefreshAfter], so
 /// the stale deadline keeps moving without a push on every poll.
 ///
@@ -336,19 +336,26 @@ class SwapLiveActivityController {
   }
 }
 
-/// Whether the swap progress screen is the route on screen. The finished card
-/// stays up only while that is true.
-final swapProgressVisibleProvider = NotifierProvider<SwapProgressVisible, bool>(SwapProgressVisible.new);
+/// The swaps whose progress screens are open, by [ActiveSwap.id], in order of
+/// opening: the last is the one on screen. The finished card stays up only
+/// while its own swap's screen is that one.
+final swapProgressVisibleProvider = NotifierProvider<SwapProgressVisible, List<String>>(SwapProgressVisible.new);
 
-class SwapProgressVisible extends Notifier<bool> {
+class SwapProgressVisible extends Notifier<List<String>> {
   @override
-  bool build() => false;
+  List<String> build() => const [];
 
-  /// Records [visible]. A write that lands after the app has gone away is dropped:
-  /// the provider, and anything listening to it, is already gone.
-  void set(bool visible) {
+  /// Records that the progress screen of the swap with [id] opened, or with
+  /// [open] false, closed. A write that lands after the app has gone away is
+  /// dropped: the provider, and anything listening to it, is already gone.
+  void set(String id, {required bool open}) {
     if (!ref.mounted) return;
-    state = visible;
+    if (open) {
+      state = [...state, id];
+      return;
+    }
+    final at = state.lastIndexOf(id);
+    if (at >= 0) state = [...state]..removeAt(at);
   }
 }
 
@@ -369,12 +376,14 @@ final swapLiveActivityControllerProvider = Provider<SwapLiveActivityController>(
     notifications: LocalSwapLiveNotificationPoster(ref.read(localNotificationsServiceProvider)),
     snapshot: () {
       final formatting = ref.read(numberFormattingServiceProvider);
+      final now = clock.now();
+      final swap = swapOnCard(ref.read(activeSwapsProvider), now);
       return SwapLiveSnapshot(
-        swap: ref.read(activeSwapProvider),
+        swap: swap,
         l10n: ref.read(l10nProvider),
         formatAmount: (amount, token) => formatting.formatCompactAmount(amount, decimals: token.decimals),
-        now: clock.now(),
-        progressVisible: ref.read(swapProgressVisibleProvider),
+        now: now,
+        progressVisible: swap != null && ref.read(swapProgressVisibleProvider).lastOrNull == swap.id,
       );
     },
   );
@@ -384,7 +393,7 @@ final swapLiveActivityControllerProvider = Provider<SwapLiveActivityController>(
     WidgetsBinding.instance.removeObserver(observer);
     controller.dispose();
   });
-  ref.listen(activeSwapProvider, (_, _) => controller.sync());
+  ref.listen(activeSwapsProvider, (_, _) => controller.sync());
   ref.listen(swapProgressVisibleProvider, (_, _) => controller.sync());
   ref.listen(l10nProvider, (_, _) => controller.sync());
   final lifecycle = WidgetsBinding.instance.lifecycleState;
