@@ -26,6 +26,23 @@ class MainFlutterWindow: NSWindow {
   /// until its mouse-up.
   private var isHeaderPressInFlutter = false
 
+  /// Whether the app is listening, which it says by sending the menu bar
+  /// icon's labels. Until then there is no one to ask, and closing the window
+  /// quits the app.
+  private var isAppListening = false
+
+  /// Whether the window is to leave the screen once it is out of full screen.
+  private var hidesAfterFullScreen = false
+
+  /// Whether the window is off the screen with the app still running.
+  private(set) var isHiddenForWork = false
+
+  private lazy var statusItem = BackgroundStatusItem(onOpen: { [weak self] in self?.bringToFront() })
+
+  /// Held while something is under way that App Nap would make the app late
+  /// for. The computer may still go to sleep.
+  private var stayAwakeActivity: NSObjectProtocol?
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.flutterViewController = flutterViewController
@@ -56,6 +73,29 @@ class MainFlutterWindow: NSWindow {
       case "bringToFront":
         self?.bringToFront()
         result(nil)
+      case "setStatusItemLabels":
+        guard let arguments = call.arguments as? [String: Any],
+          let openLabel = arguments["openLabel"] as? String,
+          let quitLabel = arguments["quitLabel"] as? String
+        else {
+          result(
+            FlutterError(
+              code: "arguments", message: "setStatusItemLabels needs openLabel and quitLabel", details: nil))
+          return
+        }
+        self?.isAppListening = true
+        self?.statusItem.setLabels(openLabel: openLabel, quitLabel: quitLabel)
+        result(nil)
+      case "hideWindow":
+        self?.hideKeepingAppRunning()
+        result(nil)
+      case "setStayAwake":
+        guard let arguments = call.arguments as? [String: Any], let isAwake = arguments["isAwake"] as? Bool else {
+          result(FlutterError(code: "arguments", message: "setStayAwake needs isAwake", details: nil))
+          return
+        }
+        self?.setStayAwake(isAwake)
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -77,6 +117,9 @@ class MainFlutterWindow: NSWindow {
       NotificationCenter.default.addObserver(
         self, selector: #selector(layoutTrafficLights), name: name, object: self)
     }
+    NotificationCenter.default.addObserver(
+      self, selector: #selector(finishHidingAfterFullScreen), name: NSWindow.didExitFullScreenNotification,
+      object: self)
 
     super.awakeFromNib()
 
@@ -130,9 +173,69 @@ class MainFlutterWindow: NSWindow {
     }
   }
 
-  /// Shows the window in front of the other apps' windows, minimized or
-  /// hidden as it may be: a notification was clicked.
-  private func bringToFront() {
+  /// The close button. The app says whether work is under way: if so it first
+  /// takes off the screen what must not be there when the window returns, and
+  /// the window hides. Otherwise, or if the app cannot answer, the window
+  /// closes for real, which quits the app.
+  override func performClose(_ sender: Any?) {
+    guard isAppListening, let windowChannel else {
+      super.performClose(sender)
+      return
+    }
+    windowChannel.invokeMethod("windowWillClose", arguments: nil) { [weak self] answer in
+      guard let self else { return }
+      if answer as? Bool == true {
+        self.hideKeepingAppRunning()
+        return
+      }
+      if answer is FlutterError || (answer as? NSObject) === FlutterMethodNotImplemented {
+        NSLog("MainFlutterWindow: the app did not answer the close, so it quits: \(String(describing: answer))")
+      }
+      self.closeAndQuit(sender)
+    }
+  }
+
+  private func closeAndQuit(_ sender: Any?) {
+    super.performClose(sender)
+  }
+
+  /// Takes the window off the screen, the app still running. A window in
+  /// full screen comes out of it first, or its empty space would stay.
+  private func hideKeepingAppRunning() {
+    isHiddenForWork = true
+    statusItem.setShown(true)
+    if self.styleMask.contains(.fullScreen) {
+      hidesAfterFullScreen = true
+      self.toggleFullScreen(nil)
+      return
+    }
+    self.orderOut(nil)
+  }
+
+  @objc private func finishHidingAfterFullScreen() {
+    guard hidesAfterFullScreen else { return }
+    hidesAfterFullScreen = false
+    self.orderOut(nil)
+  }
+
+  private func setStayAwake(_ isAwake: Bool) {
+    if isAwake {
+      guard stayAwakeActivity == nil else { return }
+      stayAwakeActivity = ProcessInfo.processInfo.beginActivity(
+        options: .userInitiatedAllowingIdleSystemSleep, reason: "Watching a transaction on the chain")
+    } else if let activity = stayAwakeActivity {
+      ProcessInfo.processInfo.endActivity(activity)
+      stayAwakeActivity = nil
+    }
+  }
+
+  /// Shows the window in front of the other apps' windows, minimized, hidden
+  /// or closed as it may be: a notification, the Dock icon or the menu bar
+  /// icon was clicked.
+  func bringToFront() {
+    isHiddenForWork = false
+    hidesAfterFullScreen = false
+    statusItem.setShown(false)
     NSApp.unhide(nil)
     if self.isMiniaturized {
       self.deminiaturize(nil)
@@ -143,6 +246,7 @@ class MainFlutterWindow: NSWindow {
     } else {
       NSApp.activate(ignoringOtherApps: true)
     }
+    windowChannel?.invokeMethod("windowDidOpen", arguments: nil)
   }
 
   /// Moves the window with the mouse press the app's header just received.
