@@ -48,6 +48,8 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # MockClient, for the push service's requests.
+  http: ^1.6.0
   # The screenshot tool's in-memory preferences.
   shared_preferences: ^2.5.5
   yaml: ^3.1.3
