@@ -13,6 +13,7 @@ import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/activity/in_progress_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
+import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -613,6 +614,21 @@ void main() {
       expect(find.byType(SwapRowView), findsNothing);
     });
 
+    testOnMac("a swap whose account the wallet no longer holds counts on the open account's badge in the sidebar, "
+        'beside its own', (tester) async {
+      final own = fakeActiveSwap();
+      final orphaned = fakeActiveSwap(account: tradingAccount, depositAddress: _secondAddress);
+      await _open(tester, followed: [own, orphaned]);
+      expect(_rowIds(tester), [orphaned.id, own.id]);
+
+      Finder countOf(String account) => find.descendant(
+        of: find.descendant(of: find.byType(Sidebar), matching: find.widgetWithText(SidebarRow, account)),
+        matching: find.byKey(DesktopAccountBadge.countKey),
+      );
+      expect(find.descendant(of: countOf('Main'), matching: find.text('2')), findsOne);
+      expect(find.descendant(of: countOf('Savings'), matching: find.text('1')), findsOne);
+    });
+
     testOnMac('swaps kept from the last run are all listed, one still awaiting its deposit with them', (tester) async {
       final running = fakeActiveSwap();
       final awaited = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, depositAddress: _secondAddress);
@@ -795,6 +811,27 @@ void main() {
       expect(_rowIds(tester), [running.id]);
       expect(find.byType(SwapDetail), findsNothing);
       expect(find.byType(SwapSheet), findsOneWidget);
+    });
+
+    testOnMac('with as many others running as can be followed, puts the swap away and opens the sheet on the limit', (
+      tester,
+    ) async {
+      final failed = fakeActiveSwap(status: SwapStatus.failed);
+      final running = [
+        for (var i = 1; i <= ActiveSwapsNotifier.maxFollowed; i++)
+          fakeActiveSwap(depositAddress: '0x${i.toRadixString(16) * 40}'),
+      ];
+      // The newest, so that its row is at the top of a long list.
+      final settings = await _open(tester, followed: [...running, failed]);
+      await _openRow(tester, failed);
+
+      await _press(tester, _inPanel(find.byKey(SwapDetail.startNewKey)));
+
+      expect(settings.activeSwaps.map((s) => s.id), running.map((s) => s.id));
+      expect(find.byType(SwapDetail), findsNothing);
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(find.text(_l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed)), findsOneWidget);
+      expect(find.byKey(SwapSheet.amountFieldKey), findsNothing);
     });
 
     testOnMac('is not offered where swaps are no longer available', (tester) async {

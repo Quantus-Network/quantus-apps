@@ -51,6 +51,7 @@ import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -1926,6 +1927,20 @@ void _swapSheetScenes() {
 
   _scene('swap_sheet_disabled', (tester) async {
     await _openSwapSheet(tester, prepare: (device) => device.swaps.listedQuantus = null);
+  });
+
+  // As many swaps running as can be followed.
+  void followsAllItCan(FakeWalletDevice device) => device.storage.activeSwaps = [
+    for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++)
+      fakeActiveSwap(account: _root, depositAddress: '0x${i.toString() * 40}'),
+  ];
+
+  _scene('swap_sheet_limit', (tester) async {
+    await _openSwapSheet(tester, prepare: followsAllItCan);
+  });
+
+  _scene('swap_sheet_limit_smallest_window', (tester) async {
+    await _openSwapSheet(tester, prepare: followsAllItCan, window: const Size(960, 640));
   });
 
   _scene('swap_sheet_review', (tester) async {
