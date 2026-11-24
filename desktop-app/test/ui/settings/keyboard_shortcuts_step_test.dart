@@ -180,6 +180,40 @@ void main() {
     );
   });
 
+  testOnMac('Swap is listed under Account after Propose, with shift command S, and takes new keys as the others do', (
+    tester,
+  ) async {
+    await _openShortcuts(tester);
+
+    expect(_capsOf(tester, AppCommand.swap), ['shift', 'command', 'S']);
+    expect(_inSheet(find.text('Swap')), findsOneWidget);
+    final propose = tester.getRect(_row(AppCommand.propose));
+    final swap = tester.getRect(_row(AppCommand.swap));
+    final newAccount = tester.getRect(_row(AppCommand.addAccount));
+    expect(swap.top, greaterThanOrEqualTo(propose.bottom));
+    expect(newAccount.top, greaterThanOrEqualTo(swap.bottom));
+
+    await _record(tester, AppCommand.swap);
+    await _press(tester, LogicalKeyboardKey.keyS, meta: true, alt: true);
+
+    expect(_capsOf(tester, AppCommand.swap), ['option', 'command', 'S']);
+    final shortcut = _nativeItem(tester, 'Account', 'Swap').shortcut! as SingleActivator;
+    expect(
+      (shortcut.trigger, shortcut.meta, shortcut.alt, shortcut.shift),
+      (LogicalKeyboardKey.keyS, true, true, false),
+    );
+  });
+
+  testOnMac('Swap\'s keys, given to another command, are refused, naming Swap', (tester) async {
+    await _openShortcuts(tester);
+
+    await _record(tester, AppCommand.nextSidebarItem);
+    await _press(tester, LogicalKeyboardKey.keyS, meta: true, shift: true);
+
+    expect(_inSheet(find.text('That shortcut is already used by Swap. Press other keys.')), findsOneWidget);
+    expect(_capsOf(tester, AppCommand.swap), ['shift', 'command', 'S']);
+  });
+
   testOnMac('while a shortcut waits for keys the menus have none, so the keys reach it', (tester) async {
     await _openShortcuts(tester);
 
@@ -357,6 +391,9 @@ void main() {
     await _record(tester, AppCommand.send);
     await _press(tester, LogicalKeyboardKey.backspace);
 
+    // Under the list, which scrolls.
+    await tester.ensureVisible(find.byKey(KeyboardShortcutsStep.restoreKey));
+    await tester.pump();
     await tester.tap(find.byKey(KeyboardShortcutsStep.restoreKey));
     await tester.pumpAndSettle();
 
