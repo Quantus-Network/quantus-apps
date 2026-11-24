@@ -29,6 +29,20 @@ class AccountEventPage<T> {
   const AccountEventPage({required this.items, required this.hasMore, required this.nextCursor});
 }
 
+/// What an account received since it was last read, oldest first, and where
+/// its next read starts.
+class IncomingSince {
+  /// The transfers to the account and the reversible transfers scheduled to
+  /// it.
+  final List<TransactionEvent> received;
+
+  /// The last row read, or the cursor the read was asked with when there was
+  /// none.
+  final AccountEventCursor cursor;
+
+  const IncomingSince({required this.received, required this.cursor});
+}
+
 class ChainHistoryService {
   final GraphQlEndpointService _graphQlEndpointService = GraphQlEndpointService();
 
@@ -159,6 +173,28 @@ $_scheduledTransferFields
         id
       }''';
 
+  /// What a transfer is read with, as [_transferEvent] parses it: the pallet
+  /// tells a wormhole receipt apart.
+  static const _transferFields = '''
+      id
+      amount
+      timestamp
+      from {
+        id
+      }
+      to {
+        id
+      }
+      block {
+        height
+        hash
+      }
+      extrinsic {
+        id
+        pallet
+      }
+      fee''';
+
   /// How many still-scheduled transfers, or ids asked about, one request
   /// takes: under the indexer's 1000 rows a selection.
   static const _stillScheduledPage = 500;
@@ -278,6 +314,140 @@ query SettledScheduledTransfers($variables) {
     }
   }
 
+  /// How many rows one read takes of what an account received: under the
+  /// indexer's 1000 rows a selection. An account that received more is read
+  /// on by the next read.
+  static const _incomingSincePage = 100;
+
+  /// Where an account with no incoming history is read on from: every row is
+  /// strictly after it.
+  static const _beforeAnyEvent = AccountEventCursor(timestamp: '1970-01-01T00:00:00+00:00', id: '');
+
+  /// Builds the query for what accounts received since each was last read:
+  /// one selection per account (`$account0..N-1`), aliased `events0..N-1`.
+  ///
+  /// An account read before ([withCursor]) is read on from its own cursor
+  /// (`$cursorTimestampN`, `$cursorIdN`), oldest first, `$limit` rows at a
+  /// time. One never read is asked only for its newest incoming row, which is
+  /// where it is read on from.
+  ///
+  /// Every predicate is a plain column and the order follows the
+  /// `(account_id, incoming, timestamp, id)` index, so each selection is one
+  /// range scan from the cursor to the end of the account's incoming rows.
+  @visibleForTesting
+  static String buildIncomingSinceQuery({required List<bool> withCursor}) {
+    if (withCursor.isEmpty) {
+      throw ArgumentError.value(withCursor, 'withCursor', 'Must query at least one account');
+    }
+    final variables = [
+      for (final (i, hasCursor) in withCursor.indexed) ...[
+        '\$account$i: String!',
+        if (hasCursor) ...['\$cursorTimestamp$i: timestamptz!', '\$cursorId$i: String!'],
+      ],
+      if (withCursor.contains(true)) '\$limit: Int!',
+    ].join(', ');
+
+    String selection(int i, bool hasCursor) {
+      const incoming = '{incoming: {_eq: true}}';
+      if (!hasCursor) {
+        return '''
+  ${_accountAlias(i)}: account_event(limit: 1, where: {_and: [{account_id: {_eq: \$account$i}}, $incoming]}, ${_accountEventOrder(TransactionFilter.receive)}) {
+    id
+    timestamp
+  }''';
+      }
+      return '''
+  ${_accountAlias(i)}: account_event(limit: \$limit, where: {_and: [{account_id: {_eq: \$account$i}}, $incoming, {timestamp: {_gte: \$cursorTimestamp$i}}, {_not: {timestamp: {_eq: \$cursorTimestamp$i}, id: {_lte: \$cursorId$i}}}]}, order_by: [{account_id: asc}, {incoming: asc}, {timestamp: asc}, {id: asc}]) {
+    id
+    timestamp
+    transfer {
+$_transferFields
+    }
+    scheduledReversibleTransfer {
+$_scheduledTransferFields
+    }
+  }''';
+    }
+
+    return '''
+query IncomingSince($variables) {
+${[for (final (i, hasCursor) in withCursor.indexed) selection(i, hasCursor)].join('\n')}
+}
+''';
+  }
+
+  /// Variables for [buildIncomingSinceQuery], for the accounts of [after] in
+  /// its order: exactly those the query declares.
+  @visibleForTesting
+  static Map<String, dynamic> incomingSinceVariables(Map<String, AccountEventCursor?> after, {required int limit}) {
+    if (after.isEmpty) {
+      throw ArgumentError.value(after, 'after', 'Must not be empty');
+    }
+    return {
+      for (final (i, MapEntry(key: account, value: cursor)) in after.entries.indexed) ...{
+        'account$i': account,
+        if (cursor != null) 'cursorTimestamp$i': cursor.timestamp,
+        if (cursor != null) 'cursorId$i': cursor.id,
+      },
+      if (after.values.any((cursor) => cursor != null)) 'limit': limit,
+    };
+  }
+
+  /// Reads the answer to [buildIncomingSinceQuery] for the accounts of
+  /// [after], in its order.
+  ///
+  /// Rows of other kinds, such as a mining reward, are passed over: the cursor
+  /// moves past them all the same.
+  @visibleForTesting
+  static Map<String, IncomingSince> incomingSinceOf(Map<String, dynamic> data, Map<String, AccountEventCursor?> after) {
+    final read = <String, IncomingSince>{};
+    for (final (i, MapEntry(key: account, value: cursor)) in after.entries.indexed) {
+      final rows = data[_accountAlias(i)];
+      if (rows is! List) {
+        throw StateError('account_event response is missing alias ${_accountAlias(i)}: ${data.keys}');
+      }
+      if (cursor == null) {
+        read[account] = IncomingSince(
+          received: const [],
+          cursor: rows.isEmpty ? _beforeAnyEvent : _cursorOf(rows.single),
+        );
+        continue;
+      }
+      final received = <TransactionEvent>[];
+      for (final row in rows.cast<Map<String, dynamic>>()) {
+        if (row['transfer'] case final Map<String, dynamic> transfer) {
+          received.add(_transferEvent(transfer));
+        } else if (row['scheduledReversibleTransfer'] case final Map<String, dynamic> scheduled) {
+          received.add(ReversibleTransferEvent.fromJson(scheduled, status: ReversibleTransferStatus.SCHEDULED));
+        }
+      }
+      read[account] = IncomingSince(received: received, cursor: rows.isEmpty ? cursor : _cursorOf(rows.last));
+    }
+    return read;
+  }
+
+  /// What each account of [after] received since its cursor there, oldest
+  /// first, and the cursor to ask with next. An account with no cursor yet
+  /// (null) is only given one, at the end of its history: what it received
+  /// before is not answered.
+  ///
+  /// The cursors are one per account because the indexer adds a block's rows
+  /// together and each account is read in one statement: nothing an account
+  /// receives lands behind its own cursor. One cursor across accounts could
+  /// pass a row that another account's statement ran too early to see.
+  Future<Map<String, IncomingSince>> fetchIncomingSince(Map<String, AccountEventCursor?> after) async {
+    try {
+      final Map<String, dynamic> data = await _graphQlEndpointService.query(
+        document: buildIncomingSinceQuery(withCursor: [for (final cursor in after.values) cursor != null]),
+        variables: incomingSinceVariables(after, limit: _incomingSincePage),
+      );
+      return incomingSinceOf(data, after);
+    } catch (e, stackTrace) {
+      _log('Error fetching what accounts received: $e', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
   /// One `account_event` selection per account, aliased `events0..N-1`, all
   /// sharing `$limit` and the optional cursor.
   static String _accountEventDocument({
@@ -353,28 +523,12 @@ $selections
         '${_directionPredicate(filter)}'
         '${withCursor ? ', $_cursorPredicate' : ''}]}';
 
-    final selection = '''
+    final selection =
+        '''
     id
     timestamp
     transfer {
-      id
-      amount
-      timestamp
-      from {
-        id
-      }
-      to {
-        id
-      }
-      block {
-        height
-        hash
-      }
-      extrinsic {
-        id
-        pallet
-      }
-      fee
+$_transferFields
       executedBy {
         txId: tx_id
       }
