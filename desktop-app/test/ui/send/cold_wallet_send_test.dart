@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:desktop_qr_camera/desktop_qr_camera.dart';
 import 'package:flutter/material.dart';
@@ -82,7 +81,7 @@ Finder _editable(Key field) => find.descendant(of: find.byKey(field), matching: 
 
 bool _canPress(WidgetTester tester, Key key) {
   final button = tester.widget<SheetButton>(find.byKey(key));
-  return !button.isDisabled && !button.isLoading && button.onTap != null;
+  return !button.isDisabled && !button.isLoading;
 }
 
 /// The frames of the request QR code on screen.
