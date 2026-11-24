@@ -404,11 +404,23 @@ class SettingsService {
     return decoded.map((e) => MultisigAccount.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// Stores [accounts] as the multisig list. Throws when it cannot be
+  /// stored, and the list is then what it was before.
   Future<void> _saveMultisigAccounts(List<MultisigAccount> accounts) async {
+    final previous = _prefs.getString(_multisigAccountsKey);
     final jsonData = accounts.map((a) => a.toJson()).toList();
-    await _prefs.setString(_multisigAccountsKey, jsonEncode(jsonData));
+    try {
+      if (!await _prefs.setString(_multisigAccountsKey, jsonEncode(jsonData))) {
+        throw Exception('Could not save $_multisigAccountsKey');
+      }
+    } catch (_) {
+      await _putBack(_multisigAccountsKey, previous);
+      rethrow;
+    }
   }
 
+  /// Stores [account]. Throws when it cannot be stored, and the multisigs
+  /// are then what they were.
   Future<void> addMultisigAccount(MultisigAccount account) async {
     final accounts = await getMultisigAccounts();
     if (accounts.any((a) => a.accountId == account.accountId)) {
@@ -418,29 +430,46 @@ class SettingsService {
     await _saveMultisigAccounts(accounts);
   }
 
+  /// Stores [account] in place of the stored multisig with its id. Throws
+  /// when it cannot be stored, and the multisigs are then what they were.
   Future<void> updateMultisigAccount(MultisigAccount account) async {
     final accounts = await getMultisigAccounts();
     final index = accounts.indexWhere((a) => a.accountId == account.accountId);
     if (index != -1) {
+      final previous = _prefs.getString(_multisigAccountsKey);
       accounts[index] = account;
       await _saveMultisigAccounts(accounts);
-      await _syncActiveDisplayAccount(MultisigDisplayAccount(account));
+      try {
+        await _syncActiveDisplayAccount(MultisigDisplayAccount(account));
+      } catch (_) {
+        await _putBack(_multisigAccountsKey, previous);
+        rethrow;
+      }
     }
   }
 
+  /// Removes the multisig [accountId], making another account active if it
+  /// was. Throws when the change cannot be stored, and the multisigs and the
+  /// active account are then what they were.
   Future<void> removeMultisigAccount(String accountId) async {
     final accounts = await getMultisigAccounts();
     final filtered = accounts.where((a) => a.accountId != accountId).toList();
     if (filtered.length == accounts.length) {
       throw Exception('Multisig not found');
     }
-    await _saveMultisigAccounts(filtered);
+    final previousActive = _prefs.getString(_activeDisplayAccountKey);
     final active = await getActiveAccount();
     if (active is MultisigDisplayAccount && active.account.accountId == accountId) {
       final regulars = await getAccounts();
       if (regulars.isNotEmpty) {
         await setActiveAccount(RegularAccount(regulars.first));
       }
+    }
+    try {
+      await _saveMultisigAccounts(filtered);
+    } catch (_) {
+      await _putBack(_activeDisplayAccountKey, previousActive);
+      rethrow;
     }
   }
 
