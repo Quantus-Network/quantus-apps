@@ -22,4 +22,6 @@ String sheetTitle(AppLocalizations l10n, ShellSheet sheet) => switch (sheet) {
   ShellSheet.connectColdWallet => l10n.addKeystoneConnectTitle,
   ShellSheet.createMultisig => l10n.multisigAddTitle,
   ShellSheet.manageMultisigs => l10n.desktopManageMultisigsTitle,
+  // The sheet heads itself by the action it does.
+  ShellSheet.proposalAction => l10n.multisigProposalTitle,
 };

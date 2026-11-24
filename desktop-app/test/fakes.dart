@@ -643,6 +643,26 @@ class FakeSendChain {
   /// signed it, and what it proposes.
   final proposals = <({String multisig, String signer, String recipient, BigInt amount, int expiryBlock})>[];
 
+  /// The call a proposal stores on chain, as reading it answers; it may
+  /// throw. A sample transfer unless told otherwise.
+  Future<List<int>> Function(int proposalId) proposalCall = (_) async => corpusCall('Balances.transfer_allow_death');
+
+  /// What pricing an approval, execution or cancellation answers; it may
+  /// throw.
+  Future<BigInt> Function() actionFee = () async => usualFee;
+
+  /// Every approval, execution or cancellation priced, in order: the action,
+  /// the account that signs it, and the call it was priced with.
+  final actionQuotes = <(String action, String signer, List<int>? callBytes)>[];
+
+  /// What handing an approval, execution or cancellation over answers, the
+  /// transaction's hash; it may throw.
+  Future<String> Function() submitAction = () async => '0xaction';
+
+  /// Every approval, execution or cancellation handed over: the action, the
+  /// account that signed it, its fee and the call it carried.
+  final actions = <(String action, String signer, BigInt? fee, List<int>? callBytes)>[];
+
   /// When the chain is said to reach any block.
   DateTime blockTime = DateTime(2026, 11, 20, 22, 14);
 
@@ -819,6 +839,35 @@ class _FakeMultisigService extends Fake implements MultisigService {
   }
 
   @override
+  Future<List<int>> fetchProposalCallBytes({required MultisigAccount msig, required int proposalId}) =>
+      chain.proposalCall(proposalId);
+
+  Future<BigInt> _actionFee(String action, Account signer, List<int>? callBytes) {
+    chain.actionQuotes.add((action, signer.accountId, callBytes));
+    return chain.actionFee();
+  }
+
+  @override
+  Future<BigInt> estimateApproveFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    List<int>? callBytes,
+  }) => _actionFee('approve', signer, callBytes);
+
+  @override
+  Future<BigInt> estimateExecuteFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    List<int>? callBytes,
+  }) => _actionFee('execute', signer, callBytes);
+
+  @override
+  Future<BigInt> estimateCancelFee({required MultisigAccount msig, required Account signer, required int proposalId}) =>
+      _actionFee('cancel', signer, null);
+
+  @override
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
 
   @override
@@ -954,6 +1003,37 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
     ));
     return hash;
   }
+
+  Future<String> _action(String action, Account signer, BigInt? fee, List<int>? callBytes) async {
+    final hash = await chain.submitAction();
+    chain.actions.add((action, signer.accountId, fee, callBytes));
+    return hash;
+  }
+
+  @override
+  Future<String> approveProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    List<int>? callBytes,
+  }) => _action('approve', signer, null, callBytes);
+
+  @override
+  Future<String> executeProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    List<int>? callBytes,
+    BigInt? fee,
+  }) => _action('execute', signer, fee, callBytes);
+
+  @override
+  Future<String> cancelProposal({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    BigInt? fee,
+  }) => _action('cancel', proposer, fee, null);
 }
 
 class _FakeRecentAddressesService extends Fake implements RecentAddressesService {

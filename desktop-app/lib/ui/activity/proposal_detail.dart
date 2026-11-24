@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/chain_status_providers.dart';
 import 'package:quantus_desktop_wallet/ui/activity/inspector_parts.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_actions.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
@@ -19,11 +20,11 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
 
-/// A multisig's proposal, read only: where it stands; what it does, by its
-/// amount and recipient or, for a call that moves nothing, by the call and
-/// its fields; how far its approvals are and who gave them; until when it is
-/// open; what proposing it cost; who proposed it; and its page. Approving,
-/// executing and cancelling come with the proposals' own feature.
+/// A multisig's proposal: where it stands; what it does, by its amount and
+/// recipient or, for a call that moves nothing, by the call and its fields;
+/// what this wallet can do with it, before the details; how far its approvals
+/// are and who gave them; until when it is open; what proposing it cost; who
+/// proposed it; and its page.
 class ProposalDetail extends ConsumerWidget {
   const ProposalDetail({super.key, required this.proposal});
 
@@ -113,6 +114,7 @@ class ProposalDetail extends ConsumerWidget {
             inspectorAccount(own[proposal.recipient], proposal.recipient),
           ],
         ],
+        ProposalActionsBar(msig: account, proposal: proposal),
         const SizedBox(height: 20),
         const MenuDivider(),
         const SizedBox(height: 4),
