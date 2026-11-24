@@ -35,6 +35,17 @@ final _team = MultisigAccount(
   myMemberAccountId: 'qzMain',
 );
 
+const _withoutColdWallets = RemoteConfigModel(
+  enableTestButtons: false,
+  enableKeystoneHardwareWallet: false,
+  enableHighSecurity: false,
+  enableRemoteNotifications: true,
+  enableEncryptedAccount: true,
+  enableMultisig: true,
+  enableOneClickNearWarning: true,
+  geoNearAllowed: true,
+);
+
 class _NoTelemetry implements Telemetry {
   @override
   void sendEvent(String eventName, {Map<String, String>? parameters}) {}
@@ -74,13 +85,16 @@ void _recordClipboard(WidgetTester tester) {
 }
 
 /// A device with Main and Savings in wallet 0 (Main active), their encrypted
-/// account, a Keystone account, Trading alone in wallet 2, and Team.
+/// account, a Keystone account, Trading alone in wallet 2, and Team. Cold
+/// wallets are offered unless [offersColdWallets] is false.
 Future<(FakeWalletDevice, ProviderContainer)> _device(
   WidgetTester tester, {
   String innerHash = '0xinner',
   PushRegistration? push,
+  bool offersColdWallets = true,
 }) async {
   final device = FakeWalletDevice()..store([mainAccount, savingsAccount, _encrypted]);
+  if (!offersColdWallets) device.remoteConfig = _withoutColdWallets;
   device.storage.accounts.addAll([_cold, _trading]);
   device.storage.mnemonics[2] = 'trading words';
   device.storage.multisigStore.add(_team);
@@ -513,7 +527,7 @@ void main() {
         await _close(tester, container);
       });
 
-      testWidgets('with a Cold Wallet account active, does nothing', (tester) async {
+      testWidgets('with a Cold Wallet account active, opens Connect Cold Wallet and adds nothing', (tester) async {
         final (device, container) = await _device(tester);
         final before = device.storage.accounts.length;
         await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_cold));
@@ -522,10 +536,88 @@ void main() {
         await _manager(container).createInActiveWallet();
         await _settle(tester, container);
 
+        expect(container.read(shellSheetProvider), ShellSheet.connectColdWallet);
         expect(device.storage.accounts, hasLength(before));
         expect(container.read(accountNoteProvider), isNull);
         await _close(tester, container);
       });
+
+      testWidgets('with a Cold Wallet account active and cold wallets turned off, does nothing', (tester) async {
+        final (device, container) = await _device(tester, offersColdWallets: false);
+        final before = device.storage.accounts.length;
+        await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_cold));
+        await _settle(tester, container);
+
+        await _manager(container).createInActiveWallet();
+        await _settle(tester, container);
+
+        expect(container.read(shellSheetProvider), isNull);
+        expect(device.storage.accounts, hasLength(before));
+        await _close(tester, container);
+      });
+    });
+  });
+
+  group('connectColdWallet', () {
+    Account stored(FakeWalletDevice device, String accountId) =>
+        device.storage.accounts.singleWhere((a) => a.accountId == accountId);
+
+    Account coldAt(int walletIndex, String accountId) => Account(
+      walletIndex: walletIndex,
+      index: 0,
+      name: 'Cold Wallet',
+      accountId: accountId,
+      accountType: AccountType.keystone,
+    );
+
+    testWidgets('with a cold wallet, saves into it at its next free index as its next Cold Wallet N', (tester) async {
+      final (device, container) = await _device(tester);
+
+      final saved = await _manager(container).connectColdWallet('qzScanned');
+
+      expect(stored(device, 'qzScanned'), saved);
+      expect((saved.walletIndex, saved.index, saved.name), (1, 1, 'Cold Wallet 2'));
+      expect(saved.accountType, AccountType.keystone);
+      await _close(tester, container);
+    });
+
+    testWidgets('two in a row take different slots and names', (tester) async {
+      final (device, container) = await _device(tester);
+
+      await _manager(container).connectColdWallet('qzFirst');
+      await _manager(container).connectColdWallet('qzSecond');
+
+      final first = stored(device, 'qzFirst');
+      final second = stored(device, 'qzSecond');
+      expect((first.walletIndex, first.index, first.name), (1, 1, 'Cold Wallet 2'));
+      expect((second.walletIndex, second.index, second.name), (1, 2, 'Cold Wallet 3'));
+      await _close(tester, container);
+    });
+
+    testWidgets('with the active account in another cold wallet from before, saves into that one', (tester) async {
+      final (device, container) = await _device(tester);
+      device.storage.accounts.add(coldAt(3, 'qzColdThree'));
+      container.invalidate(accountsProvider);
+      await _settle(tester, container);
+      await container.read(sidebarSelectionProvider.notifier).showAccount(RegularAccount(coldAt(3, 'qzColdThree')));
+      await _settle(tester, container);
+
+      final saved = await _manager(container).connectColdWallet('qzScanned');
+
+      expect((saved.walletIndex, saved.index, saved.name), (3, 1, 'Cold Wallet 2'));
+      await _close(tester, container);
+    });
+
+    testWidgets('with the active account in no cold wallet, saves into the lowest one', (tester) async {
+      final (device, container) = await _device(tester);
+      device.storage.accounts.add(coldAt(3, 'qzColdThree'));
+      container.invalidate(accountsProvider);
+      await _settle(tester, container);
+
+      final saved = await _manager(container).connectColdWallet('qzScanned');
+
+      expect(saved.walletIndex, 1);
+      await _close(tester, container);
     });
   });
 

@@ -292,6 +292,11 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     final manager = ref.read(accountManagerProvider);
     final newAccountWallets = hasWallet ? read(softwareWalletsProvider) : const <SoftwareWallet>[];
     final activeWallet = read(activeWalletIndexProvider);
+    final offersColdWallets = read(remoteConfigProvider).enableKeystoneHardwareWallet;
+    // On a Cold Wallet account, ⌘N opens Connect Cold Wallet, as on the phone.
+    final active = read(activeAccountProvider).value?.account;
+    final coldWalletHasShortcut =
+        hasWallet && offersColdWallets && active is Account && active.accountType == AccountType.keystone;
 
     return buildAppMenus(
       l10n: read(l10nProvider),
@@ -303,12 +308,13 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       // on, which may be in a software wallet even if the active one is not.
       newAccountShortcutWallet: newAccountWallets.any((wallet) => wallet.walletIndex == activeWallet)
           ? activeWallet
-          : read(shellNavigationProvider)
+          : read(shellNavigationProvider) && !coldWalletHasShortcut
           ? newAccountWallets.firstOrNull?.walletIndex
           : null,
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
       onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
-      offersColdWallets: read(remoteConfigProvider).enableKeystoneHardwareWallet,
+      offersColdWallets: offersColdWallets,
+      coldWalletHasShortcut: coldWalletHasShortcut,
       offersMultisigs: read(remoteConfigProvider).enableMultisig,
       canCreateMultisig: hasWallet && read(multisigCreatorProvider) != null,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],

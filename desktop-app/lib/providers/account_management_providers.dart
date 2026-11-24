@@ -12,10 +12,10 @@ import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/utils/cold_wallet_target.dart';
 import 'package:quantus_desktop_wallet/utils/managed_multisigs.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
-import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// What can be copied from an account's menu.
@@ -200,9 +200,6 @@ class ColdWalletAlreadyInApp implements Exception {
 class AccountManager {
   AccountManager(this._ref);
 
-  /// What a connected cold wallet's account is called, as on the phone.
-  static const coldWalletName = 'Cold Wallet';
-
   final Ref _ref;
 
   /// Whether the providers it works on are still there: false once the app
@@ -250,8 +247,10 @@ class AccountManager {
       _ref.read(shellNavigationProvider.notifier).run(() => _create(walletIndex));
 
   /// [createAccount] in the wallet of the account active when its turn comes,
-  /// as ⌘N is meant for the account a switch still being saved ends on. With
-  /// no software wallet to add to, as on a Cold Wallet account, nothing is done.
+  /// as ⌘N is meant for the account a switch still being saved ends on. On a
+  /// Cold Wallet account it opens Connect Cold Wallet instead, where a further
+  /// account is scanned, as on the phone. In no wallet, as on a multisig,
+  /// nothing is done.
   Future<void> createInActiveWallet() => _ref.read(shellNavigationProvider.notifier).run(() async {
     if (!_ref.mounted) return;
     final activeId = _ref.read(activeAccountProvider).value?.account.accountId;
@@ -268,11 +267,14 @@ class AccountManager {
       _noteNotAdded(e);
       return;
     }
-    if (wallet == null || wallet.kind != WalletKind.software) {
-      quantusPrint('The active account is in no software wallet; no account is added.');
-      return;
+    switch (wallet?.kind) {
+      case WalletKind.software:
+        await _create(wallet!.walletIndex);
+      case WalletKind.keystone:
+        if (_ref.mounted) _ref.read(shellSheetProvider.notifier).openInStep(ShellSheet.connectColdWallet);
+      case null:
+        quantusPrint('The active account is in no wallet; no account is added.');
     }
-    await _create(wallet.walletIndex);
   });
 
   Future<void> _create(int walletIndex) async {
@@ -322,10 +324,11 @@ class AccountManager {
   /// over another, and it opens only while cold wallets are offered.
   Future<void> openConnectColdWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.connectColdWallet);
 
-  /// Saves [address] as the account of a new cold wallet, after the
-  /// navigation asked for before, one at a time so two never take the same
-  /// wallet index. Throws [ColdWalletAlreadyInApp] when the address is already
-  /// here, checked against storage, and whatever a failed write throws.
+  /// Saves [address] as an account of the cold wallet [coldWalletTarget]
+  /// picks, or of a new one, after the navigation asked for before, one at a
+  /// time so two never take the same slot. Throws [ColdWalletAlreadyInApp]
+  /// when the address is already here, checked against storage, and whatever
+  /// a failed write throws.
   Future<Account> connectColdWallet(String address) async {
     Account? saved;
     await _ref.read(shellNavigationProvider.notifier).run(() async {
@@ -340,11 +343,14 @@ class AccountManager {
           _ref.read(creatingMultisigsProvider).any((multisig) => multisig.accountId == address)) {
         throw const ColdWalletAlreadyInApp();
       }
-      final walletIndex = nextWalletIndex(accounts);
+      final target = coldWalletTarget(
+        accounts,
+        activeAccountId: (await settings.getActiveAccount())?.account.accountId,
+      );
       final account = Account(
-        walletIndex: walletIndex,
-        index: await settings.getNextFreeAccountIndex(walletIndex),
-        name: coldWalletName,
+        walletIndex: target.walletIndex,
+        index: await settings.getNextFreeAccountIndex(target.walletIndex),
+        name: target.name,
         accountId: address,
         accountType: AccountType.keystone,
       );
