@@ -261,9 +261,6 @@ final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
   };
 });
 
-/// The newest swap followed: the one the sidebar counts for its account.
-final followedSwapProvider = Provider<ActiveSwap?>((ref) => ref.watch(activeSwapsProvider).lastOrNull);
-
 /// The swaps followed from the account [accountId], newest first: its rows
 /// in In progress, one awaiting its deposit among them.
 final accountSwapsProvider = Provider.family<List<ActiveSwap>, String>(
