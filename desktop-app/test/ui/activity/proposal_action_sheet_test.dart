@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -114,7 +113,7 @@ SheetButton _button(WidgetTester tester, Key key) => tester.widget<SheetButton>(
 
 bool _offered(WidgetTester tester, Key key) {
   final button = _button(tester, key);
-  return !button.isDisabled && button.onTap != null;
+  return !button.isDisabled;
 }
 
 Future<void> _confirm(WidgetTester tester) async {

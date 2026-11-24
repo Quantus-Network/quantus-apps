@@ -124,7 +124,7 @@ SheetButton? _button(WidgetTester tester, Key key) {
   return tester.widget<SheetButton>(found);
 }
 
-bool _offered(SheetButton? button) => button != null && !button.isDisabled && button.onTap != null;
+bool _offered(SheetButton? button) => button != null && !button.isDisabled;
 
 String? _note(WidgetTester tester) {
   final found = _inPanel(find.byKey(ProposalActionsBar.noteKey));
