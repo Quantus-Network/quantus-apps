@@ -65,7 +65,8 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
   late final BaseAccount? _account = ref.read(activeAccountProvider).value?.account;
 
   /// The accounts that could sign it, as the sheet opened: for an approval,
-  /// those still to approve whose key is here; otherwise the member.
+  /// those still to approve whose key is here; for a cancellation, its
+  /// proposer; for an execution, the member.
   late final List<Account> _signers = _signersAtOpen();
 
   late Account _signer = _signers.first;
@@ -80,16 +81,16 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
     kind: _kind,
     msig: _target.msig,
     proposal: _proposal,
-    // An approval names who signs; an execution or cancellation is the
+    // An approval or a cancellation names who signs; an execution is the
     // member's, as the confirmation finds it.
-    signer: _kind == MultisigActionKind.approve ? _signer : null,
+    signer: _kind == MultisigActionKind.execute ? null : _signer,
   );
 
   List<Account> _signersAtOpen() {
     final accounts = ref.read(accountsProvider).value ?? const <Account>[];
-    if (_kind != MultisigActionKind.approve) {
+    if (_kind == MultisigActionKind.execute) {
       final member = accounts.where((a) => a.accountId == _target.msig.myMemberAccountId).firstOrNull;
-      if (member == null) throw StateError('The ${_kind.name} sheet opened with the member not in this wallet.');
+      if (member == null) throw StateError('The execute sheet opened with the member not in this wallet.');
       return [member];
     }
     final actions = proposalActionsOf(
@@ -102,10 +103,13 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
       pendingCancellations: ref.read(pendingMultisigCancellationsProvider),
     );
     final signers = switch (actions) {
+      ProposalOpen(:final canceller) when _kind == MultisigActionKind.cancel => [if (canceller != null) canceller],
       ProposalOpen(:final eligibleApprovers) => eligibleApprovers.where((a) => !a.signsWithHardware).toList(),
       ProposalOver() => const <Account>[],
     };
-    if (signers.isEmpty) throw StateError('The approve sheet opened with no account here to approve.');
+    if (signers.isEmpty || signers.any((a) => a.signsWithHardware)) {
+      throw StateError('The ${_kind.name} sheet opened with no account whose key is here to sign it.');
+    }
     return signers;
   }
 
