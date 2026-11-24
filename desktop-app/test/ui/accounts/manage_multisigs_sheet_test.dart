@@ -302,6 +302,19 @@ void main() {
       expect(device.storage.multisigStore.last.name, 'Multisig 2');
     });
 
+    testOnMac('it does not take the name of a multisig still being created', (tester) async {
+      final device = await _pump(tester, saved: [_multisig('qzOne', name: 'Multisig 1')], found: [_foundA]);
+      final creating = _multisig('qzCreating', name: 'Multisig 2');
+      final pending = _container(tester).read(pendingMultisigCreationsProvider.notifier);
+      await pending.ready;
+      await pending.add(PendingMultisigCreationEvent.fromDraft(creating, networkFee: BigInt.one), creating);
+      await _openSheet(tester);
+
+      await _toggle(tester, _foundA);
+
+      expect(device.storage.multisigStore.last.name, 'Multisig 3');
+    });
+
     testOnMac('a failed add goes back off, says why on its row, and can be retried', (tester) async {
       final device = await _pump(tester, found: [_foundA, _foundB]);
       device.storage.writeError = StateError('disk full');
