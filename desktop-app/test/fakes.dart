@@ -9,12 +9,15 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/services/background_window.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
@@ -30,6 +33,7 @@ import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
+import 'services/fake_background_window.dart';
 import 'services/fake_notification_plugin.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
@@ -40,7 +44,10 @@ class FakeSettingsService extends Fake implements SettingsService {
     this.multisigs = const [],
     this.walletNames = const {},
     Map<int, String>? mnemonics,
-  }) : mnemonics = mnemonics ?? {0: 'a stored recovery phrase'};
+    Set<int> openWallets = const {},
+  }) : mnemonics = mnemonics ?? {0: 'a stored recovery phrase'} {
+    if (openWallets.isNotEmpty) strings[KeptOpenWalletsNotifier.settingsKey] = openWallets.join(',');
+  }
 
   DisplayAccount? activeAccount;
   final List<MultisigAccount> multisigs;
@@ -61,8 +68,17 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   bool? getBool(String key) => bools[key];
 
+  /// Why the next [setBool] fails, once.
+  Object? failNextBoolWrite;
+
   @override
-  Future<void> setBool(String key, bool value) async => bools[key] = value;
+  Future<void> setBool(String key, bool value) async {
+    if (failNextBoolWrite case final error?) {
+      failNextBoolWrite = null;
+      throw error;
+    }
+    bools[key] = value;
+  }
 
   /// The text kept under plain keys.
   final Map<String, String> strings = {};
@@ -229,6 +245,19 @@ class FakeWalletStorage extends FakeSettingsService {
   /// When set, the check for a wallet fails with this.
   Object? hasWalletError;
 
+  /// When set, reading a recovery phrase waits for this first.
+  Future<void>? mnemonicGate;
+
+  /// How many times a recovery phrase was read.
+  int mnemonicReads = 0;
+
+  @override
+  Future<String?> getMnemonic(int walletIndex) async {
+    mnemonicReads++;
+    if (mnemonicGate case final gate?) await gate;
+    return super.getMnemonic(walletIndex);
+  }
+
   /// How many times the device was asked whether it has a wallet.
   int hasWalletChecks = 0;
 
@@ -238,8 +267,24 @@ class FakeWalletStorage extends FakeSettingsService {
   /// When set, deriving a wallet's encrypted account waits for this first.
   Future<void>? encryptedAccountsGate;
 
+  /// When set, adding an account waits for this first.
+  Future<void>? addAccountGate;
+
   @override
   Future<List<Account>> getAccounts() async => List.of(accounts);
+
+  @override
+  Future<int> getNextFreeAccountIndex(int walletIndex, {DilithiumScheme? scheme}) async {
+    final used = {
+      for (final account in accounts)
+        if (account.walletIndex == walletIndex) account.index,
+    };
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return index;
+  }
 
   @override
   Future<bool> getHasWallet() async {
@@ -249,8 +294,22 @@ class FakeWalletStorage extends FakeSettingsService {
     return accounts.isNotEmpty;
   }
 
+  /// When set, adding an account fails with this, and nothing is added.
+  Object? addAccountError;
+
+  /// When set, storing the active account fails with this.
+  Object? activeWriteError;
+
+  @override
+  Future<void> setActiveAccount(DisplayAccount account) async {
+    if (activeWriteError case final error?) throw error;
+    activeAccount = account;
+  }
+
   @override
   Future<void> addAccount(Account account) async {
+    await addAccountGate;
+    if (addAccountError case final error?) throw error;
     if (accounts.any((a) => a.accountId == account.accountId)) throw Exception('Account already exists');
     accounts.add(account);
     if (accounts.length == 1) activeAccount = RegularAccount(account);
@@ -366,6 +425,17 @@ class FakeWalletStorage extends FakeSettingsService {
   @override
   Future<List<MultisigAccount>> getMultisigAccounts() async => List.of(multisigStore);
 
+  /// When set, adding or removing a multisig waits for this first.
+  Completer<void>? multisigWriteGate;
+
+  @override
+  Future<void> addMultisigAccount(MultisigAccount account) async {
+    await multisigWriteGate?.future;
+    _checkWrite();
+    if (multisigStore.any((m) => m.accountId == account.accountId)) throw Exception('Multisig already added');
+    multisigStore.add(account);
+  }
+
   @override
   Future<void> updateMultisigAccount(MultisigAccount account) async {
     _checkWrite();
@@ -376,6 +446,7 @@ class FakeWalletStorage extends FakeSettingsService {
 
   @override
   Future<void> removeMultisigAccount(String accountId) async {
+    await multisigWriteGate?.future;
     _checkWrite();
     multisigStore.removeWhere((m) => m.accountId == accountId);
     if (activeAccount?.account.accountId == accountId) activeAccount = RegularAccount(accounts.first);
@@ -401,6 +472,29 @@ class _StoredAccountsService extends Fake implements AccountsService {
 
   @override
   Future<void> addAccount(Account newAccount) => storage.addAccount(newAccount);
+
+  /// The wallet's next free account, as the real service derives it from the
+  /// wallet's phrase.
+  @override
+  Future<Account> createNewAccount({required int walletIndex}) async {
+    if (await storage.getMnemonic(walletIndex) == null) {
+      throw Exception('Mnemonic not found. Cannot create new account.');
+    }
+    final used = {
+      for (final account in storage.accounts)
+        if (account.walletIndex == walletIndex && account.accountType != AccountType.encrypted) account.index,
+    };
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return Account(
+      walletIndex: walletIndex,
+      index: index,
+      name: 'Account ${storage.accounts.length + 1}',
+      accountId: 'qzNew$walletIndex-$index',
+    );
+  }
 
   @override
   Future<void> removeAccount(Account account) => storage.removeAccount(account);
@@ -473,6 +567,9 @@ class _FakeSubstrateService extends Fake implements SubstrateService {
     chain.quotes.add(chain.describe(call));
     return ExtrinsicFeeData(fee: await chain.fee(), blockHash: '0x', blockNumber: 1);
   }
+
+  @override
+  Future<BigInt> queryBalance(String address) async => device!.balance;
 }
 
 /// A transfer as Send builds it: who is paid and how much. An [amount] of
@@ -521,6 +618,9 @@ class FakeSendChain {
 
   /// When set, looking a proposal up by its hash waits for it.
   Completer<void>? holdProposalLookup;
+
+  /// When set, a search of the indexer by transaction hash waits for it.
+  Completer<void>? holdHashSearch;
 
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
@@ -580,6 +680,36 @@ class FakeSendChain {
   /// The pages of history read, by their number, in order.
   final historyReads = <int>[];
 
+  /// What the indexer answers when asked for the multisigs an account signs
+  /// for, and how many times it was asked.
+  Future<List<MultisigAccount>> Function() discoverMultisigs = () async => const [];
+  int discoverReads = 0;
+
+  /// The address a new multisig of [signerCount] signers needing [threshold]
+  /// approvals gets at [nonce].
+  static String newMultisigAddress(int signerCount, int threshold, BigInt nonce) =>
+      'qzNew${signerCount}of$threshold#$nonce';
+
+  /// What working out a new multisig's address answers; it may throw.
+  Future<MultisigCreationParams> Function(List<String> signers, int threshold) resolveMultisig =
+      (signers, threshold) async => MultisigCreationParams(
+        nonce: BigInt.zero,
+        address: newMultisigAddress(signers.length, threshold, BigInt.zero),
+      );
+
+  /// The addresses set aside each time a new multisig's address was worked
+  /// out.
+  final reservedMultisigReads = <Set<String>>[];
+
+  /// The multisigs the indexer holds.
+  final indexedMultisigs = <String>{};
+
+  /// What handing a new multisig over answers; it may throw.
+  Future<Uint8List> Function() submitMultisig = () async => Uint8List.fromList(const [1, 2, 3]);
+
+  /// Every new multisig handed over.
+  final createdMultisigs = <({String creator, List<String> signers, int threshold, BigInt? nonce})>[];
+
   /// A multisig's open proposals, and its past ones, as the indexer gives
   /// them.
   List<MultisigProposal> openProposals = const [];
@@ -622,6 +752,53 @@ class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.chain);
 
   final FakeSendChain chain;
+
+  @override
+  Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) {
+    chain.discoverReads++;
+    return chain.discoverMultisigs();
+  }
+
+  @override
+  Future<MultisigCreationParams> resolveMultisigCreationParams({
+    required List<String> signers,
+    required int threshold,
+    Set<String> reservedAddresses = const {},
+    BigInt? startNonce,
+    Future<bool> Function(String address)? isAddressTaken,
+    Future<String> Function({required List<String> signers, required int threshold, required BigInt nonce})?
+    predictAddress,
+    int maxAttempts = 64,
+  }) {
+    chain.reservedMultisigReads.add(reservedAddresses);
+    return chain.resolveMultisig(signers, threshold);
+  }
+
+  @override
+  Future<String> predictMultisigAddress({required List<String> signers, required int threshold, BigInt? nonce}) async =>
+      FakeSendChain.newMultisigAddress(signers.length, threshold, nonce ?? BigInt.zero);
+
+  @override
+  Future<bool> isMultisigIndexed(String address) async => chain.indexedMultisigs.contains(address);
+
+  @override
+  Multisig buildCreateMultisigCall({required List<String> signers, required int threshold, required BigInt nonce}) {
+    final call = const multisig_pallet.Txs().createMultisig(signers: const [], threshold: threshold, nonce: nonce);
+    chain._calls[call] = (recipient: 'a new multisig', amount: null);
+    return call;
+  }
+
+  @override
+  Future<Uint8List> submitCreateMultisigExtrinsic({
+    required Account creator,
+    required List<String> signers,
+    required int threshold,
+    BigInt? nonce,
+  }) async {
+    final hash = await chain.submitMultisig();
+    chain.createdMultisigs.add((creator: creator.accountId, signers: signers, threshold: threshold, nonce: nonce));
+    return hash;
+  }
 
   @override
   Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
@@ -667,6 +844,7 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
 
   @override
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
+    await chain.holdHashSearch?.future;
     chain.transferLookups.add(extrinsicHash);
     if (chain.transferLookupError case final error?) throw error;
     return chain.indexedTransfers[extrinsicHash];
@@ -829,6 +1007,9 @@ class FakeWalletDevice {
   /// What every transparent account holds.
   BigInt balance = oneToken;
 
+  /// What the app is told it may offer.
+  RemoteConfigModel remoteConfig = RemoteConfigModel.defaults;
+
   /// The deposits, in tokens, an Encrypted account can spend, and the tokens
   /// of change still on their way back to it. With no deposits it holds one
   /// token and nothing to spend.
@@ -877,16 +1058,21 @@ class FakeWalletDevice {
     ...chain.overrides(substrate: false),
     accountDiscoveryServiceProvider.overrideWithValue(_FakeAccountDiscoveryService(this)),
     if (!realLogout) logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
-    remoteConfigProvider.overrideWith(
-      (ref) => RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults)),
-    ),
+    remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(FakeRemoteConfigService(remoteConfig))),
     balanceProviderFamily.overrideWith((ref, accountId) => balance),
     encryptedBalanceProvider.overrideWith(
       (ref, walletIndex) =>
           AsyncValue.data(encryptedDeposits.isEmpty ? oneToken : _encryptedState(walletIndex).balance),
     ),
-    encryptedStateProvider.overrideWith((ref, walletIndex) => _encryptedState(walletIndex)),
+    encryptedStateProvider.overrideWith((ref, walletIndex) {
+      final held = holdEncryptedState;
+      if (held == null) return _encryptedState(walletIndex);
+      return held.future.then((_) => _encryptedState(walletIndex));
+    }),
   ];
+
+  /// When set, reading an Encrypted account waits for it.
+  Completer<void>? holdEncryptedState;
 
   EncryptedAccountState _encryptedState(int walletIndex) => EncryptedAccountState(
     accountId: 'qzEncrypted$walletIndex',
@@ -1593,6 +1779,7 @@ Future<void> pumpShell(
   bool realPolling = false,
   FakeNetwork? network,
   FakeNotificationPlugin? notifications,
+  FakeBackgroundWindow? backgroundWindow,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -1612,6 +1799,7 @@ Future<void> pumpShell(
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
         ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
         notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
+        backgroundWindowProvider.overrideWithValue(backgroundWindow ?? FakeBackgroundWindow()),
       ],
     ),
   );

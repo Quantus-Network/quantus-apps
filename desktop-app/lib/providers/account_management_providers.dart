@@ -8,10 +8,14 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/utils/managed_multisigs.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// What can be copied from an account's menu.
@@ -142,9 +146,12 @@ class RecoveryPhraseTargetNotifier extends Notifier<int?> {
   void clear() => state = null;
 }
 
+/// A software wallet: what it is called, and its accounts' names.
+typedef SoftwareWallet = ({int walletIndex, String name, List<String> accounts});
+
 /// The software wallets, whose recovery phrases this app holds, in the
 /// sidebar's order: what each is called, and its accounts' names.
-final softwareWalletsProvider = Provider<List<({int walletIndex, String name, List<String> accounts})>>((ref) {
+final softwareWalletsProvider = Provider<List<SoftwareWallet>>((ref) {
   final l10n = ref.watch(l10nProvider);
   final grouping = groupWallets(
     accounts: ref.watch(accountsProvider).value ?? const [],
@@ -185,8 +192,16 @@ final walletLabelProvider = Provider.family<String?, int>((ref, walletIndex) {
 /// carries them out on the device's storage and refreshes what shows it.
 final accountManagerProvider = Provider<AccountManager>(AccountManager.new);
 
+/// The address being connected is already an account or multisig in this app.
+class ColdWalletAlreadyInApp implements Exception {
+  const ColdWalletAlreadyInApp();
+}
+
 class AccountManager {
   AccountManager(this._ref);
+
+  /// What a connected cold wallet's account is called, as on the phone.
+  static const coldWalletName = 'Cold Wallet';
 
   final Ref _ref;
 
@@ -225,6 +240,219 @@ class AccountManager {
     }
     await _ref.read(settingsServiceProvider).setWalletName(walletIndex, name.isEmpty ? null : name);
     _ref.invalidate(walletNameProvider(walletIndex));
+  }
+
+  /// Adds a Transparent account to the software wallet at [walletIndex],
+  /// after the navigation asked for before, one at a time so two never take
+  /// the same slot. It becomes the active account with its name ready to be
+  /// typed over. One that cannot be added says so on the active account.
+  Future<void> createAccount(int walletIndex) =>
+      _ref.read(shellNavigationProvider.notifier).run(() => _create(walletIndex));
+
+  /// [createAccount] in the wallet of the account active when its turn comes,
+  /// as ⌘N is meant for the account a switch still being saved ends on. With
+  /// no software wallet to add to, as on a Cold Wallet account, nothing is done.
+  Future<void> createInActiveWallet() => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final activeId = _ref.read(activeAccountProvider).value?.account.accountId;
+    final WalletGroup? wallet;
+    try {
+      // From storage: the list may still be reloading after the last one added.
+      final accounts = await _ref.read(accountsServiceProvider).getAccounts();
+      final multisigs = _ref.read(multisigAccountsProvider).value ?? const <MultisigAccount>[];
+      wallet = groupWallets(
+        accounts: accounts,
+        multisigs: multisigs,
+      ).wallets.where((w) => activeId != null && w.contains(activeId)).firstOrNull;
+    } catch (e) {
+      _noteNotAdded(e);
+      return;
+    }
+    if (wallet == null || wallet.kind != WalletKind.software) {
+      quantusPrint('The active account is in no software wallet; no account is added.');
+      return;
+    }
+    await _create(wallet.walletIndex);
+  });
+
+  Future<void> _create(int walletIndex) async {
+    // A sheet is for the account it opened on, so nothing moves under it.
+    if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return;
+    final l10n = _ref.read(l10nProvider);
+    final service = _ref.read(accountsServiceProvider);
+    final Account account;
+    try {
+      final accounts = await service.getAccounts();
+      if (accounts.any((a) => a.walletIndex == walletIndex && a.accountType == AccountType.keystone)) {
+        throw StateError('Wallet $walletIndex is a hardware wallet');
+      }
+      final draft = await service.createNewAccount(walletIndex: walletIndex);
+      account = draft.copyWith(name: l10n.createAccountDefaultName(accounts.length + 1));
+      await service.addAccount(account);
+    } catch (e) {
+      _noteNotAdded(e);
+      return;
+    }
+    if (!_ref.mounted) return;
+
+    _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
+    // Before the list reloads: the switch reads which wallet is being left.
+    await _ref.read(sidebarSelectionProvider.notifier).showInStep(RegularAccount(account));
+    if (!_ref.mounted) return;
+    _ref.invalidate(accountsProvider);
+    unawaited(registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId));
+
+    // A switch that failed has said so, and the account is there all the same.
+    if (_ref.read(activeAccountProvider).value?.account.accountId != account.accountId) return;
+    if (_ref.read(sidebarVisibleProvider)) {
+      _ref.read(sidebarRenameProvider.notifier).start(RenameAccount(account.accountId));
+    } else {
+      _ref
+          .read(accountInfoTargetProvider.notifier)
+          .set(AccountInfoTarget(account.accountId, start: AccountInfoStart.rename));
+      _ref.read(shellSheetProvider.notifier).openInStep(ShellSheet.accountInfo);
+    }
+  }
+
+  /// Opens the Import Wallet sheet. Like any sheet, it does not open over
+  /// another.
+  Future<void> openImportWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.importWallet);
+
+  /// Opens the Connect Cold Wallet sheet. Like any sheet, it does not open
+  /// over another, and it opens only while cold wallets are offered.
+  Future<void> openConnectColdWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.connectColdWallet);
+
+  /// Saves [address] as the account of a new cold wallet, after the
+  /// navigation asked for before, one at a time so two never take the same
+  /// wallet index. Throws [ColdWalletAlreadyInApp] when the address is already
+  /// here, checked against storage, and whatever a failed write throws.
+  Future<Account> connectColdWallet(String address) async {
+    Account? saved;
+    await _ref.read(shellNavigationProvider.notifier).run(() async {
+      if (!_ref.mounted) return;
+      final service = _ref.read(accountsServiceProvider);
+      final settings = _ref.read(settingsServiceProvider);
+      final accounts = await service.getAccounts();
+      final multisigs = await settings.getMultisigAccounts();
+      if (!_ref.mounted) return;
+      if (accounts.any((account) => account.accountId == address) ||
+          multisigs.any((multisig) => multisig.accountId == address) ||
+          _ref.read(creatingMultisigsProvider).any((multisig) => multisig.accountId == address)) {
+        throw const ColdWalletAlreadyInApp();
+      }
+      final walletIndex = nextWalletIndex(accounts);
+      final account = Account(
+        walletIndex: walletIndex,
+        index: await settings.getNextFreeAccountIndex(walletIndex),
+        name: coldWalletName,
+        accountId: address,
+        accountType: AccountType.keystone,
+      );
+      await service.addAccount(account);
+      saved = account;
+    });
+    return saved ?? (throw StateError('The cold wallet $address was not saved.'));
+  }
+
+  /// Shows [account], just connected, once its sheet has closed: it becomes
+  /// the active account with its wallet open. A switch that fails says so,
+  /// and the account is there all the same.
+  Future<void> finishConnectColdWallet(Account account) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    _ref.read(keptOpenWalletsProvider.notifier).keepOpen(account.walletIndex);
+    // Before the list reloads: the switch reads which wallet is being left.
+    await _ref.read(sidebarSelectionProvider.notifier).showInStep(RegularAccount(account));
+    if (!_ref.mounted) return;
+    _ref.invalidate(accountsProvider);
+    unawaited(registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId));
+  });
+
+  /// Opens the Create Multisig sheet. Like any sheet, it does not open over
+  /// another, and it opens only on an account that can create one.
+  Future<void> openCreateMultisig() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.createMultisig);
+
+  /// Opens the Manage Multisigs sheet. Like any sheet, it does not open over
+  /// another.
+  Future<void> openManageMultisigs() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.manageMultisigs);
+
+  /// Adds [multisig] under the lowest unused default name, after the
+  /// navigation asked for before, one at a time so two never take the same
+  /// name. A write that fails is thrown.
+  Future<void> addMultisig(MultisigAccount multisig) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final saved = await _ref.read(settingsServiceProvider).getMultisigAccounts();
+    if (!_ref.mounted) return;
+    final name = nextDefaultMultisigName(_ref.read(l10nProvider), saved);
+    await _ref.read(multisigAccountsProvider.notifier).add(multisig.copyWith(name: name));
+  });
+
+  /// Removes [multisig] from this app, after the navigation asked for
+  /// before. A write that fails is thrown.
+  Future<void> removeMultisig(MultisigAccount multisig) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (_ref.mounted) await disconnect(multisig);
+  });
+
+  /// Shows the wallet of [root], just imported, once its sheet has closed:
+  /// a field taking the focus under a sheet would lose it as the sheet left.
+  /// Its first account becomes active, unless the chain scan chose another
+  /// of its accounts because the first has no history. Its heading is then
+  /// ready to be named; with the sidebar hidden there is none, so a note by
+  /// the account's name says the wallet is in.
+  Future<void> finishImport(Account root) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final walletIndex = root.walletIndex;
+    final RegularAccount target;
+    try {
+      final active = await _ref.read(settingsServiceProvider).getActiveAccount();
+      final chosenId = active is RegularAccount && active.account.walletIndex == walletIndex
+          ? active.account.accountId
+          : root.accountId;
+      // From storage: the scan made its choice active under the name it was
+      // found with, before the account was given its own.
+      final accounts = await _ref.read(accountsServiceProvider).getAccounts();
+      target = RegularAccount(accounts.firstWhere((account) => account.accountId == chosenId));
+    } catch (e) {
+      quantusPrint('Showing the imported wallet failed: $e');
+      if (_ref.mounted) _ref.read(accountSwitchFailureProvider.notifier).report(RegularAccount(root), e);
+      return;
+    }
+    if (!_ref.mounted) return;
+
+    _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
+    await _ref.read(sidebarSelectionProvider.notifier).showInStep(target);
+    if (!_ref.mounted) return;
+
+    // A switch that failed has said so, and the wallet is there all the same.
+    if (_ref.read(activeAccountProvider).value?.account.accountId != target.account.accountId) return;
+    if (_ref.read(sidebarVisibleProvider)) {
+      startRenameWallet(walletIndex);
+    } else {
+      _ref
+          .read(accountNoteProvider.notifier)
+          .show(
+            AccountNote(
+              accountId: target.account.accountId,
+              message: _ref.read(l10nProvider).desktopImportDone,
+              isError: false,
+            ),
+          );
+    }
+  });
+
+  void _noteNotAdded(Object error) {
+    quantusPrint('Adding an account failed: $error');
+    if (!_ref.mounted) return;
+    final active = _ref.read(activeAccountProvider).value?.account;
+    if (active == null) return;
+    _ref
+        .read(accountNoteProvider.notifier)
+        .show(
+          AccountNote(
+            accountId: active.accountId,
+            message: _ref.read(l10nProvider).createAccountErrorCouldNotAdd,
+            isError: true,
+          ),
+        );
   }
 
   /// Does [action] on the account active once the navigation asked for
@@ -363,11 +591,21 @@ class AccountManager {
         _ref.invalidate(activeAccountProvider);
       case Account():
         final service = _ref.read(accountsServiceProvider);
-        switch (disconnectPlanOf(account, _ref.read(accountsProvider).requireValue)) {
-          case DisconnectAccount() || DisconnectHardware():
+        final accounts = _ref.read(accountsProvider).requireValue;
+        switch (disconnectPlanOf(account, accounts)) {
+          case DisconnectAccount():
             await service.removeAccount(account);
+          case DisconnectHardware():
+            await service.removeAccount(account);
+            // A hardware wallet goes with its last account, and its index
+            // goes to the next wallet added.
+            final walletRemains = accounts.any(
+              (a) => a.walletIndex == account.walletIndex && a.accountId != account.accountId,
+            );
+            if (!walletRemains) _ref.read(keptOpenWalletsProvider.notifier).forget(account.walletIndex);
           case DisconnectWallet(:final walletIndex):
             await service.removeWallet(walletIndex);
+            _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
           case null:
             throw StateError('${account.accountId} cannot be disconnected');
         }

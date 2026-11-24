@@ -4,17 +4,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
 import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_flow.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/account_actions.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// Whether the sidebar is shown. The View menu hides and shows it.
@@ -180,9 +183,14 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
   Future<void> showAccount(DisplayAccount account) =>
       ref.read(shellNavigationProvider.notifier).run(() => _show(account));
 
+  /// Makes [account] the active account and selects it, from a navigation
+  /// step already running: [showAccount] would wait behind the steps asked
+  /// for after it. A failure is reported as [showAccount]'s is.
+  Future<void> showInStep(DisplayAccount account) => _show(account);
+
   /// Selects the row [rows] down from the one selected when the navigation
   /// asked for before has finished ([shellNavigationProvider]), going round
-  /// at the ends. The rows are the accounts, then Mining Rewards.
+  /// at the ends. The rows are the accounts showing, then Mining Rewards.
   Future<void> move(int rows) => ref.read(shellNavigationProvider.notifier).run(() => _move(rows));
 
   /// Whether a sheet opened since this switch was asked for: a sheet is for
@@ -191,6 +199,11 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   Future<void> _show(DisplayAccount account) async {
     if (!ref.mounted || _isUnderSheet) return;
+    // Before the switch, so the wallet being left never closes under the
+    // rows around the one clicked.
+    if (ref.read(activeWalletIndexProvider) case final wallet?) {
+      ref.read(keptOpenWalletsProvider.notifier).keepOpen(wallet);
+    }
     try {
       await ref.read(activeAccountProvider.notifier).switchActiveAccount(account);
     } catch (e) {
@@ -207,7 +220,7 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   Future<void> _move(int rows) async {
     if (!ref.mounted || _isUnderSheet) return;
-    final accounts = ref.read(sidebarAccountsProvider);
+    final accounts = ref.read(visibleSidebarAccountsProvider);
     final activeId = ref.read(activeAccountProvider).value?.account.accountId;
     final selected = state == SidebarSelection.miningRewards
         ? accounts.length
@@ -230,6 +243,28 @@ final sidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
   final multisigs = ref.watch(multisigAccountsProvider).value;
   if (accounts == null || multisigs == null) return const [];
   return accountsInSidebarOrder(groupWallets(accounts: accounts, multisigs: multisigs));
+});
+
+/// The account that would create a new multisig, sign for it and pay: the
+/// active account, where its key signs in this app. Null on an Encrypted,
+/// Keystone or multisig account, and until the saved multisigs are known,
+/// which a new one must not collide with.
+final multisigCreatorProvider = Provider<Account?>((ref) {
+  if (!ref.watch(multisigAccountsProvider).hasValue) return null;
+  return switch (ref.watch(activeAccountProvider).value) {
+    RegularAccount(:final account) when account.signsLocally => account,
+    _ => null,
+  };
+});
+
+/// The multisigs being created, as they will be once the chain has them.
+final creatingMultisigsProvider = Provider<List<MultisigAccount>>((ref) {
+  final creating = ref.watch(pendingMultisigCreationsProvider);
+  final records = ref.read(pendingMultisigCreationsProvider.notifier);
+  return [
+    for (final event in creating)
+      if (records.recordFor(event.multisigAddress) case final record?) record.draft,
+  ];
 });
 
 /// The sheet over the window, or null when there is none.
@@ -273,12 +308,19 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   /// Whether the active account offers [sheet]; a sheet that does not act
   /// on an account always is.
   bool _isOffered(ShellSheet sheet) {
+    if (sheet == ShellSheet.createMultisig) return ref.read(multisigCreatorProvider) != null;
+    if (sheet == ShellSheet.connectColdWallet) return ref.read(remoteConfigProvider).enableKeystoneHardwareWallet;
     final kind = switch (sheet) {
       ShellSheet.receive => AccountActionKind.receive,
       ShellSheet.send => AccountActionKind.send,
       ShellSheet.propose => AccountActionKind.propose,
       ShellSheet.swap => AccountActionKind.swap,
-      ShellSheet.addAccount || ShellSheet.settings || ShellSheet.accountInfo => null,
+      ShellSheet.settings ||
+      ShellSheet.accountInfo ||
+      ShellSheet.importWallet ||
+      ShellSheet.connectColdWallet ||
+      ShellSheet.createMultisig ||
+      ShellSheet.manageMultisigs => null,
     };
     if (kind == null) return true;
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);

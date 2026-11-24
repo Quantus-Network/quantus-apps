@@ -424,6 +424,14 @@ void main() {
       expect(_isEnabled(tester, 'Import Wallet'), isTrue);
     });
 
+    testOnMac('its phrase field does not take the focus on opening', (tester) async {
+      await pumpShell(tester, overrides: FakeWalletDevice().overrides);
+
+      await _openImport(tester);
+
+      expect(tester.widget<EditableText>(find.byType(EditableText)).focusNode.hasFocus, isFalse);
+    });
+
     testOnMac('Back returns to Welcome', (tester) async {
       await pumpShell(tester, overrides: FakeWalletDevice().overrides);
       await _openImport(tester);
