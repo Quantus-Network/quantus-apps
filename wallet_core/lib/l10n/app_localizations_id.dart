@@ -304,6 +304,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
+  String get multisigCreateNotSavedToast =>
+      'Multisig Anda telah dibuat, tetapi tidak dapat disimpan di perangkat ini. Mulai ulang aplikasi untuk menambahkannya.';
+
+  @override
   String get multisigCreateAuthReason => 'Autentikasi untuk membuat multisig ini';
 
   @override

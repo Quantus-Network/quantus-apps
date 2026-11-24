@@ -632,6 +632,12 @@ abstract class AppLocalizations {
   /// **'Multisig creation is taking longer than expected. Check the chain or try again.'**
   String get multisigCreateTimeoutToast;
 
+  /// Toast when a multisig is confirmed on chain but storing it on this device fails; the next start adds it
+  ///
+  /// In en, this message translates to:
+  /// **'Your multisig was created, but it could not be saved on this device. Restart the app to add it.'**
+  String get multisigCreateNotSavedToast;
+
   /// Local auth prompt when submitting create multisig
   ///
   /// In en, this message translates to:

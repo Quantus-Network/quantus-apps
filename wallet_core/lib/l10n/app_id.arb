@@ -89,6 +89,7 @@
   "multisigCreateAlreadyExists": "Multisig dengan alamat ini sudah ada on-chain.",
   "multisigCreateInsufficientBalance": "Saldo tidak cukup untuk biaya pembuatan multisig.",
   "multisigCreateTimeoutToast": "Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.",
+  "multisigCreateNotSavedToast": "Multisig Anda telah dibuat, tetapi tidak dapat disimpan di perangkat ini. Mulai ulang aplikasi untuk menambahkannya.",
   "multisigCreateAuthReason": "Autentikasi untuk membuat multisig ini",
   "multisigCreateSignersLabel": "PENANDATANGAN",
   "multisigCreateSignersSubtitle": "Tambahkan setidaknya satu penandatangan selain diri Anda.",
