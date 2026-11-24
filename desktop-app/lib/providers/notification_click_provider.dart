@@ -12,6 +12,7 @@ import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/utils/polling_refresh_scope.dart';
 
 /// Where a notification's metadata holds the hash of its transaction.
 const notificationHashKey = 'extrinsicHash';
@@ -112,7 +113,8 @@ class NotificationClick {
     ];
   }
 
-  /// Opens what the transaction [hash] was, once the lists hold it.
+  /// Opens what the transaction [hash] was, once the lists hold it: as they
+  /// are, or else read once more.
   Future<void> _openListed(Object click, String accountId, String hash, {required bool isMultisig}) async {
     String? proposalId;
     if (isMultisig) {
@@ -121,15 +123,24 @@ class NotificationClick {
       proposalId = created.proposalId;
     }
 
-    final listsLoaded = await _until(click, [
-      activityViewProvider,
-      openProposalsViewProvider,
-    ], () => _isShowing(click, accountId) ? _listsLoaded() : false);
-    if (!listsLoaded) return;
-
-    final activity = _listedActivity(hash: hash, proposalId: proposalId);
+    if (!await _untilListsLoaded(click, accountId)) return;
+    var activity = _listedActivity(hash: hash, proposalId: proposalId);
+    if (activity == null) {
+      // What the notification is about can be newer than the rows last
+      // read, and showing the account already in front reads nothing.
+      await silentRefreshActiveAccount(_ref);
+      if (!await _untilListsLoaded(click, accountId)) return;
+      activity = _listedActivity(hash: hash, proposalId: proposalId);
+    }
     if (activity != null) _ref.read(openedActivityProvider.notifier).open(activity);
   }
+
+  /// Waits for the lists of the account in front. False when they cannot be
+  /// read, or the click is no longer followed there.
+  Future<bool> _untilListsLoaded(Object click, String accountId) => _until(click, [
+    activityViewProvider,
+    openProposalsViewProvider,
+  ], () => _isShowing(click, accountId) ? _listsLoaded() : false);
 
   /// Whether the click is still the latest and its account still in front.
   bool _isShowing(Object click, String accountId) =>
