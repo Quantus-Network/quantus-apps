@@ -6,6 +6,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
@@ -51,6 +52,9 @@ enum MultisigActionError {
 
   /// The chain did not take it.
   submitFailed,
+
+  /// The signer's account cannot pay the network fee.
+  feePayerInsufficient,
 }
 
 class MultisigActionConfirmState {
@@ -68,6 +72,9 @@ class MultisigActionConfirmState {
   final BigInt? fee;
   final bool feeUnavailable;
 
+  /// What the signer's account can spend, once known.
+  final BigInt? signerBalance;
+
   final bool submitting;
   final MultisigActionError? error;
 
@@ -79,12 +86,18 @@ class MultisigActionConfirmState {
     this.loadingFee = true,
     this.fee,
     this.feeUnavailable = false,
+    this.signerBalance,
     this.submitting = false,
     this.error,
   });
 
-  /// Never while the call is not known to be the one stored on chain.
-  bool get canConfirm => !submitting && !loadingCall && !callUnavailable;
+  /// The signer's account holds less than the fee. A fee or a balance not
+  /// known is no objection, as when proposing.
+  bool get cannotPayFee => _cannotPay(signerBalance, fee);
+
+  /// Never while the call is not known to be the one stored on chain, nor
+  /// while the signer cannot pay the fee.
+  bool get canConfirm => !submitting && !loadingCall && !callUnavailable && !cannotPayFee;
 
   MultisigActionConfirmState copyWith({
     bool? loadingCall,
@@ -94,6 +107,7 @@ class MultisigActionConfirmState {
     bool? loadingFee,
     BigInt? fee,
     bool? feeUnavailable,
+    BigInt? Function()? signerBalance,
     bool? submitting,
     MultisigActionError? Function()? error,
   }) => MultisigActionConfirmState(
@@ -104,10 +118,13 @@ class MultisigActionConfirmState {
     loadingFee: loadingFee ?? this.loadingFee,
     fee: fee ?? this.fee,
     feeUnavailable: feeUnavailable ?? this.feeUnavailable,
+    signerBalance: signerBalance != null ? signerBalance() : this.signerBalance,
     submitting: submitting ?? this.submitting,
     error: error != null ? error() : this.error,
   );
 }
+
+bool _cannotPay(BigInt? balance, BigInt? fee) => balance != null && fee != null && balance < fee;
 
 sealed class MultisigActionOutcome {
   const MultisigActionOutcome();
@@ -157,9 +174,15 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
 
   @override
   MultisigActionConfirmState build() {
+    final balance = effectiveBalanceProviderFamily(request.signer.accountId);
+    ref.listen(balance, (_, next) => state = state.copyWith(signerBalance: () => next.value));
     unawaited(Future.microtask(_prepare));
-    return const MultisigActionConfirmState();
+    return MultisigActionConfirmState(signerBalance: ref.read(balance).value);
   }
+
+  /// The signer's account cannot pay the fee, as it stands now.
+  bool _cannotPayNow() =>
+      _cannotPay(ref.read(effectiveBalanceProviderFamily(request.signer.accountId)).value, state.fee);
 
   Future<void> _prepare() async {
     final List<int> bytes;
@@ -215,6 +238,9 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   /// Sends the action, once the person at the device approves it; a Keystone
   /// signer is handed to the QR flow instead.
   Future<MultisigActionOutcome> confirm() async {
+    // What the signer holds can have moved since the review was drawn, and
+    // again while the approval was asked for.
+    if (_cannotPayNow()) return _fail(MultisigActionError.feePayerInsufficient);
     if (!state.canConfirm) throw StateError('$_logPrefix confirmed before it could be');
     state = state.copyWith(submitting: true, error: () => null);
 
@@ -229,6 +255,7 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
     final approval = await ref.read(userApprovalProvider).approve(reason: _authReason(ref.read(l10nProvider)));
     if (!ref.mounted) return const MultisigActionDropped();
     if (approval != ApprovalResult.approved) return _fail(MultisigActionError.approvalRequired);
+    if (_cannotPayNow()) return _fail(MultisigActionError.feePayerInsufficient);
 
     try {
       final hash = await _submit(signer);

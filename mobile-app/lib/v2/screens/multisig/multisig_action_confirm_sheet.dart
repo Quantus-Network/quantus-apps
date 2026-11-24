@@ -133,9 +133,11 @@ class MultisigActionConfirmSheet extends ConsumerWidget {
     final decoded = state.decodedCall;
     final headline = _headline(ref, l10n, decoded);
     final error = switch (state.error) {
+      null when state.cannotPayFee => l10n.multisigProposeFeePayerInsufficient,
       null => null,
       MultisigActionError.approvalRequired => l10n.multisigAuthRequired,
       MultisigActionError.submitFailed => labels.failedMessage(l10n),
+      MultisigActionError.feePayerInsufficient => l10n.multisigProposeFeePayerInsufficient,
     };
 
     return BottomSheetContainer(

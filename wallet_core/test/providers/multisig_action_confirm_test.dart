@@ -12,6 +12,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/controllers/multisig_action_confirm_controller.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -167,11 +168,18 @@ void main() {
   late _Chain chain;
   late _Submission submission;
 
+  /// What each account holds; one not here holds plenty. While [balanceHeld]
+  /// is set, no balance is known.
+  late Map<String, BigInt> holds;
+  Completer<BigInt>? balanceHeld;
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     bed = WalletTestBed();
     chain = _Chain();
     submission = _Submission();
+    holds = {};
+    balanceHeld = null;
   });
 
   /// Opens the confirmation of [kind] by [signer], this device's member unless
@@ -189,6 +197,9 @@ void main() {
           transactionSubmissionServiceProvider.overrideWithValue(submission),
           accountsProvider.overrideWith(
             (ref) => AccountsNotifier(bed.accounts, initialAccounts: [_one, _two, _keystone]),
+          ),
+          balanceProviderFamily.overrideWith(
+            (ref, accountId) => balanceHeld?.future ?? holds[accountId] ?? _fee * BigInt.from(1000),
           ),
         ],
         child: Consumer(
@@ -249,6 +260,71 @@ void main() {
       expect(confirm.state().feeUnavailable, isTrue);
       expect(confirm.state().fee, isNull);
       expect(confirm.state().canConfirm, isTrue);
+    });
+  });
+
+  group('what the signer holds', () {
+    testWidgets('less than the fee: said, Confirm unavailable, and a confirm asks nothing and sends nothing', (
+      tester,
+    ) async {
+      holds[_two.accountId] = _fee - BigInt.one;
+      final confirm = await open(tester, MultisigActionKind.execute, signer: _two);
+      await tester.pump();
+
+      expect(confirm.state().cannotPayFee, isTrue);
+      expect(confirm.state().canConfirm, isFalse);
+
+      final outcome = await confirm.controller.confirm();
+
+      expect((outcome as MultisigActionFailed).error, MultisigActionError.feePayerInsufficient);
+      expect(bed.userApproval.reasons, isEmpty);
+      expect(submission.submitted, isEmpty);
+    });
+
+    testWidgets('exactly the fee is enough', (tester) async {
+      holds[_one.accountId] = _fee;
+      final confirm = await open(tester, MultisigActionKind.cancel);
+      await tester.pump();
+
+      expect(confirm.state().cannotPayFee, isFalse);
+      expect(await confirm.controller.confirm(), isA<MultisigActionSubmitted>());
+    });
+
+    testWidgets('a balance not known yet is no objection', (tester) async {
+      balanceHeld = Completer<BigInt>();
+      final confirm = await open(tester, MultisigActionKind.approve);
+      await tester.pump();
+
+      expect(confirm.state().fee, _fee);
+      expect(confirm.state().cannotPayFee, isFalse);
+      expect(confirm.state().canConfirm, isTrue);
+    });
+
+    testWidgets('falling below the fee while approval is asked sends nothing, and says so', (tester) async {
+      holds[_one.accountId] = _fee;
+      final confirm = await open(tester, MultisigActionKind.approve);
+      await tester.pump();
+      bed.userApproval.answer = () async {
+        holds[_one.accountId] = _fee - BigInt.one;
+        confirm.ref.invalidate(balanceProviderFamily(_one.accountId));
+        return ApprovalResult.approved;
+      };
+
+      final outcome = await confirm.controller.confirm();
+
+      expect((outcome as MultisigActionFailed).error, MultisigActionError.feePayerInsufficient);
+      expect(bed.userApproval.reasons, hasLength(1));
+      expect(submission.submitted, isEmpty);
+    });
+
+    testWidgets('a Keystone signer that cannot pay gets no signing session', (tester) async {
+      holds[_keystone.accountId] = BigInt.zero;
+      final confirm = await open(tester, MultisigActionKind.approve, signer: _keystone);
+      await tester.pump();
+
+      final outcome = await confirm.controller.confirm();
+
+      expect((outcome as MultisigActionFailed).error, MultisigActionError.feePayerInsufficient);
     });
   });
 
