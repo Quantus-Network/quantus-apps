@@ -116,8 +116,9 @@ class NotificationClick {
   Future<void> _openListed(Object click, String accountId, String hash, {required bool isMultisig}) async {
     String? proposalId;
     if (isMultisig) {
-      proposalId = await _proposalCreatedIn(hash);
-      if (proposalId == null || !_isShowing(click, accountId)) return;
+      final created = await _proposalCreatedIn(hash);
+      if (created == null || !_isShowing(click, accountId)) return;
+      proposalId = created.proposalId;
     }
 
     final listsLoaded = await _until(click, [
@@ -139,13 +140,16 @@ class NotificationClick {
       _ref.read(activeAccountProvider).value?.account.accountId == accountId;
 
   /// The id of the proposal created in the transaction [hash], which is what
-  /// the lists know it by. Null when it cannot be told.
-  Future<String?> _proposalCreatedIn(String hash) async {
+  /// the lists know it by; no id when the transaction created none, as a
+  /// transfer the multisig received did not. Null when it cannot be told.
+  Future<({String? proposalId})?> _proposalCreatedIn(String hash) async {
     try {
       final created = await _ref
           .read(chainHistoryServiceProvider)
           .searchProposalCreatedByExtrinsicHash(extrinsicHash: hash);
-      return created?.proposal?.entityId;
+      if (created == null) return (proposalId: null);
+      final proposalId = created.proposal?.entityId;
+      return proposalId == null ? null : (proposalId: proposalId);
     } catch (e) {
       quantusPrint('The proposal of a clicked notification could not be read: $e');
       if (_ref.mounted) _ref.read(telemetryProvider).sendError('desktop_notification_proposal_unread', error: e);

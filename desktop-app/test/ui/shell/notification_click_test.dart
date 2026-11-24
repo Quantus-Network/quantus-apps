@@ -296,6 +296,32 @@ void main() {
       expect(_opened(container), OpenedTransaction(row));
     });
 
+    testOnMac('a transfer a multisig received: its transaction created no proposal', (tester) async {
+      final row = TransferEvent(
+        id: 'received',
+        from: 'qzAlice',
+        to: teamMultisig.accountId,
+        amount: oneToken,
+        timestamp: _when,
+        fee: BigInt.zero,
+        extrinsicHash: _hash,
+        blockNumber: 10,
+        blockHash: '0xblock',
+      );
+      final notifications = FakeNotificationPlugin();
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [row],
+        ];
+      final container = await _openWallet(tester, notifications, chain: chain, multisigs: [teamMultisig]);
+
+      notifications.click(_aboutTransaction(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), teamMultisig.accountId);
+      expect(_opened(container), OpenedTransaction(row));
+    });
+
     testOnMac('a created proposal, from Open Proposals of its multisig', (tester) async {
       final proposal = _proposal();
       final notifications = FakeNotificationPlugin();
