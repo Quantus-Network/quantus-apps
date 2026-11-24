@@ -13,6 +13,7 @@ import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/activity/in_progress_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
+import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -611,6 +612,21 @@ void main() {
       await _press(tester, _inPanel(find.text(_l10n.desktopSwapCancel)));
       expect(settings.activeSwaps, isEmpty, reason: 'its slot is given back');
       expect(find.byType(SwapRowView), findsNothing);
+    });
+
+    testOnMac("a swap whose account the wallet no longer holds counts on the open account's badge in the sidebar, "
+        'beside its own', (tester) async {
+      final own = fakeActiveSwap();
+      final orphaned = fakeActiveSwap(account: tradingAccount, depositAddress: _secondAddress);
+      await _open(tester, followed: [own, orphaned]);
+      expect(_rowIds(tester), [orphaned.id, own.id]);
+
+      Finder countOf(String account) => find.descendant(
+        of: find.descendant(of: find.byType(Sidebar), matching: find.widgetWithText(SidebarRow, account)),
+        matching: find.byKey(DesktopAccountBadge.countKey),
+      );
+      expect(find.descendant(of: countOf('Main'), matching: find.text('2')), findsOne);
+      expect(find.descendant(of: countOf('Savings'), matching: find.text('1')), findsOne);
     });
 
     testOnMac('swaps kept from the last run are all listed, one still awaiting its deposit with them', (tester) async {
