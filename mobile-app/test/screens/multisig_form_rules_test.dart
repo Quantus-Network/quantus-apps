@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:local_auth_platform_interface/local_auth_platform_interface.dart';
 import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
@@ -32,6 +34,26 @@ class _Substrate extends FakeSubstrateService {
 
   @override
   Future<BigInt> queryBalance(String address) async => balance;
+}
+
+/// A device with a lock screen that approves every request. The real
+/// platform answers outside the test's clock, so nothing after it would run.
+class _ApprovingLocalAuth extends LocalAuthPlatform {
+  /// The reasons approval was asked for.
+  final asked = <String>[];
+
+  @override
+  Future<bool> isDeviceSupported() async => true;
+
+  @override
+  Future<bool> authenticate({
+    required String localizedReason,
+    required Iterable<AuthMessages> authMessages,
+    AuthenticationOptions options = const AuthenticationOptions(),
+  }) async {
+    asked.add(localizedReason);
+    return true;
+  }
 }
 
 /// Thrown by [_FakeMultisigService.submitCreateMultisigExtrinsic], so a
@@ -410,14 +432,26 @@ void main() {
       if (ToastController.instance.value?.message case final message?) toasts.add(message);
     }
 
+    late _ApprovingLocalAuth approval;
+    late LocalAuthPlatform realLocalAuth;
+
     setUp(() {
       toasts.clear();
       ToastController.instance
         ..registerHost()
         ..addListener(record);
+      realLocalAuth = LocalAuthPlatform.instance;
+      LocalAuthPlatform.instance = approval = _ApprovingLocalAuth();
+      // A creation that is submitted reports it.
+      recordTelemetry();
     });
 
     tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('telemetrydecksdk'),
+        null,
+      );
+      LocalAuthPlatform.instance = realLocalAuth;
       ToastController.instance
         ..removeListener(record)
         ..unregisterHost();
@@ -439,6 +473,7 @@ void main() {
 
       await pressCreate(tester);
 
+      expect(approval.asked, [l10n.multisigCreateAuthReason]);
       expect(service.submitted, [
         [second.accountId, signerA],
       ]);
