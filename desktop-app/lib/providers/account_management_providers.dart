@@ -9,6 +9,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/providers/wallet_settings_providers.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
@@ -609,10 +610,10 @@ class AccountManager {
             final walletRemains = accounts.any(
               (a) => a.walletIndex == account.walletIndex && a.accountId != account.accountId,
             );
-            if (!walletRemains) _ref.read(keptOpenWalletsProvider.notifier).forget(account.walletIndex);
+            if (!walletRemains) _forgetWallet(account.walletIndex);
           case DisconnectWallet(:final walletIndex):
             await service.removeWallet(walletIndex);
-            _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
+            _forgetWallet(walletIndex);
           case null:
             throw StateError('${account.accountId} cannot be disconnected');
         }
@@ -620,6 +621,14 @@ class AccountManager {
       default:
         throw StateError('${account.accountId} cannot be disconnected');
     }
+  }
+
+  /// What this app kept for the wallet at [walletIndex], just removed, goes:
+  /// whether it was open, and its settings, so the next wallet added at its
+  /// index starts without them.
+  void _forgetWallet(int walletIndex) {
+    _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
+    walletSettingsProviders(walletIndex).forEach(_ref.invalidate);
   }
 
   /// The accounts and the active one are read again, as after any change to
