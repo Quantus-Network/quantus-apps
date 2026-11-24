@@ -301,7 +301,8 @@ Import the account
 2. Tap Import Key, type the 24 words separated by spaces, tap Import Key.
    Leave Advanced untouched: it already selects ML-DSA-87, account 0.
 3. Tap Enable Face ID, then Go To Wallet. An iPhone keeps the key behind Face
-   ID alone, so it needs a passcode and Face ID set up. An Android phone also
+   ID; with a passcode but no Face ID set up it offers Use your passcode
+   instead, and with no passcode it asks for one first. An Android phone also
    offers Use Passcode only.
 4. The wallet shows the address and checkphrase above.
 
@@ -310,8 +311,8 @@ Sign a request
 Tap Scan Transaction and point the camera at a code in qr/. A request too
 large for one code has one image per part; scan the parts one after the
 other. Check the review screen and tap Approve and Sign; an iPhone asks for
-Face ID at every signature. The wallet shows the signature as a QR code for
-the hot wallet to scan. Tap Done.
+Face ID, or for the passcode it keeps the key behind, at every signature. The
+wallet shows the signature as a QR code for the hot wallet to scan. Tap Done.
 
 A code in qr/refused/ opens a screen saying why the wallet will not sign it,
 with the reason listed below.
@@ -395,8 +396,8 @@ on the "Network Detected" screen lifts this lock.</p>
 <h2>2. Import the demo key</h2>
 <ol class="steps">
 <li>Tap <b>Import Key</b>, type the 24 words below separated by spaces, and tap <b>Import Key</b>.</li>
-<li>Tap <b>Enable Face ID</b>, then <b>Go To Wallet</b>. The iPhone keeps the key behind Face ID alone, so it
-needs a passcode and Face ID set up.</li>
+<li>Tap <b>Enable Face ID</b>, then <b>Go To Wallet</b>. On an iPhone with a passcode but no Face ID set up the
+button reads <b>Use your passcode</b>; an iPhone with no passcode is asked to set one first.</li>
 <li>The wallet shows this account:<br><span class="mono">$signer</span><br>checkphrase <b>${esc.convert(checkphrase)}</b></li>
 </ol>
 <ol class="words">$words</ol>
@@ -406,7 +407,7 @@ needs a passcode and Face ID set up.</li>
 <li>Tap <b>Scan Transaction</b> and allow camera access.</li>
 <li>Point the camera at any QR code on the following pages, on screen or printed.${requests.any((r) => r.parts.length > 1) ? ' A transaction marked "part 1 of 2" is in two codes: scan both, one after the other.' : ''}</li>
 <li>The review screen shows the transaction in the heading of its code. Tap <b>Approve and Sign</b> and confirm
-with Face ID, which the wallet asks for at every signature.</li>
+with Face ID, or with the passcode on an iPhone without Face ID, which the wallet asks for at every signature.</li>
 <li>The signature appears as a QR code, which the hot wallet would scan to submit the transaction. Tap <b>Done</b>.
 <b>Cancel Transaction</b> rejects a request instead.</li>
 </ol>
