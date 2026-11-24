@@ -290,8 +290,10 @@ class IncomingActivityNotifications {
       id: 'proposal_${happened.kind.name}_${happened.id}',
       accountId: multisig.accountId,
       accountName: multisig.name,
-      // What the lists know the proposal by: a click opens it.
       extrinsicHash: happened.creationHash,
+      // What the lists know the proposal by: a click opens it. The
+      // transaction that created it may have created others too.
+      proposalId: proposal.entityId,
       intent: NotificationIntent.others,
       title: title,
       // A proposal that is not a transfer has no recipient and no amount.

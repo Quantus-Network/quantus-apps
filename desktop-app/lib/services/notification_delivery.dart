@@ -58,6 +58,7 @@ class NotificationDelivery {
     required String accountId,
     required String accountName,
     required String? extrinsicHash,
+    String? proposalId,
     required NotificationIntent intent,
     required String title,
     required String body,
@@ -79,7 +80,9 @@ class NotificationDelivery {
       message: body,
       accountName: accountName,
       timestamp: clock.now(),
-      metadata: extrinsicHash == null ? null : {notificationHashKey: extrinsicHash},
+      metadata: extrinsicHash == null && proposalId == null
+          ? null
+          : {notificationHashKey: ?extrinsicHash, notificationProposalKey: ?proposalId},
       persistent: false,
     );
     holdWhile(_showNow(notification));
