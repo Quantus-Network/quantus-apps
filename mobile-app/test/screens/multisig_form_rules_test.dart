@@ -15,6 +15,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
+import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
 import '../extensions.dart';
@@ -450,6 +451,32 @@ void main() {
       substrate.balance = cost - BigInt.one;
       await seed();
       await openForm(tester);
+      await addSigner(tester, signerA);
+
+      await pressCreate(tester);
+
+      expect(toasts, [l10n.multisigCreateInsufficientBalance]);
+      expect(service.submitted, isEmpty);
+      ToastController.instance.dismiss();
+    });
+
+    testWidgets('with a pending send that leaves too little, it says so and submits nothing', (tester) async {
+      substrate.balance = cost;
+      await seed();
+      await openForm(tester);
+      ProviderScope.containerOf(tester.element(find.byType(AddMultisigScreen)))
+          .read(pendingTransactionsProvider.notifier)
+          .add(
+            PendingTransactionEvent(
+              tempId: 'pending-send',
+              from: second.accountId,
+              to: signerB,
+              amount: BigInt.one,
+              fee: BigInt.zero,
+              timestamp: DateTime.now(),
+              blockNumber: 0,
+            ),
+          );
       await addSigner(tester, signerA);
 
       await pressCreate(tester);
