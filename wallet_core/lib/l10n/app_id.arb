@@ -952,5 +952,18 @@
   "desktopQuitPendingTitle": "Transaksi Masih Berjalan",
   "desktopQuitPendingBody": "Keluar sekarang dapat membuat transaksi tidak selesai. Dompet dapat menyelesaikannya dulu, lalu keluar dengan sendirinya.",
   "desktopQuitFinishFirst": "Selesaikan, Lalu Keluar",
-  "desktopQuitNow": "Keluar Sekarang"
+  "desktopQuitNow": "Keluar Sekarang",
+  "desktopKeystoneStepShow": "Tampilkan",
+  "desktopKeystoneStepCheckAndScan": "Periksa dan pindai kembali",
+  "desktopKeystoneOnColdWallet": "Di cold wallet Anda",
+  "desktopKeystoneShowStepScan": "Buka cold wallet Anda dan pilih Pindai.",
+  "desktopKeystoneShowStepHold": "Arahkan ke kode QR ini sampai transaksinya muncul.",
+  "desktopKeystoneShowStepContinue": "Lalu lanjutkan di sini.",
+  "desktopKeystoneCheckTitle": "Periksa layar cold wallet Anda",
+  "desktopKeystoneCheckBody": "Setujui di sana hanya jika layarnya menampilkan persis ini.",
+  "desktopKeystoneThen": "Lalu",
+  "desktopKeystoneScanStepHold": "Arahkan kode QR tanda tangannya ke kamera komputer ini.",
+  "desktopKeystoneScanStepKeep": "Tahan di sana sampai semua bagian diterima.",
+  "desktopKeystoneRejectStep2Title": "Jangan coba lagi dari komputer ini.",
+  "desktopKeystoneRejectStep3Body": "Kunci tidak pernah meninggalkan perangkat. Pindah ke komputer tepercaya sebelum mengirim lagi."
 }

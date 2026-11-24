@@ -6295,6 +6295,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quit Now'**
   String get desktopQuitNow;
+
+  /// Desktop signing with a cold wallet: the step strip's first step, where the request QR code is shown
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get desktopKeystoneStepShow;
+
+  /// Desktop signing with a cold wallet: the step strip's second step, where the person checks the cold wallet's screen and scans its signature
+  ///
+  /// In en, this message translates to:
+  /// **'Check and scan back'**
+  String get desktopKeystoneStepCheckAndScan;
+
+  /// Desktop signing with a cold wallet: heading over what to do on the cold wallet while the request QR code is shown
+  ///
+  /// In en, this message translates to:
+  /// **'On your cold wallet'**
+  String get desktopKeystoneOnColdWallet;
+
+  /// Desktop signing with a cold wallet: first thing to do on the cold wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Open your cold wallet and choose Scan.'**
+  String get desktopKeystoneShowStepScan;
+
+  /// Desktop signing with a cold wallet: second thing to do on the cold wallet, pointing it at the QR code on the computer's screen
+  ///
+  /// In en, this message translates to:
+  /// **'Hold it up to this QR code until it shows the transaction.'**
+  String get desktopKeystoneShowStepHold;
+
+  /// Desktop signing with a cold wallet: last step before pressing Continue on the computer
+  ///
+  /// In en, this message translates to:
+  /// **'Then continue here.'**
+  String get desktopKeystoneShowStepContinue;
+
+  /// Desktop signing with a cold wallet: heading over the details the cold wallet's screen must show
+  ///
+  /// In en, this message translates to:
+  /// **'Check your cold wallet\'s screen'**
+  String get desktopKeystoneCheckTitle;
+
+  /// Desktop signing with a cold wallet: under the heading, before the amount and address to compare
+  ///
+  /// In en, this message translates to:
+  /// **'Approve there only if it shows exactly this.'**
+  String get desktopKeystoneCheckBody;
+
+  /// Desktop signing with a cold wallet: heading over the steps for scanning the signature back
+  ///
+  /// In en, this message translates to:
+  /// **'Then'**
+  String get desktopKeystoneThen;
+
+  /// Desktop signing with a cold wallet: after approving on the cold wallet, show its signature QR code to the computer's camera
+  ///
+  /// In en, this message translates to:
+  /// **'Hold its signature QR code up to this computer\'s camera.'**
+  String get desktopKeystoneScanStepHold;
+
+  /// Desktop signing with a cold wallet: the signature QR code is animated, so it must stay in view until every frame is read
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it there until every part has arrived.'**
+  String get desktopKeystoneScanStepKeep;
+
+  /// Desktop guide after the cold wallet showed different details: second step's title (the computer may be compromised)
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t retry from this computer.'**
+  String get desktopKeystoneRejectStep2Title;
+
+  /// Desktop guide after the cold wallet showed different details: third step's body
+  ///
+  /// In en, this message translates to:
+  /// **'Keys never left the device. Move to a trusted computer before sending again.'**
+  String get desktopKeystoneRejectStep3Body;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

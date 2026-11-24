@@ -3513,4 +3513,44 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopQuitNow => 'Keluar Sekarang';
+
+  @override
+  String get desktopKeystoneStepShow => 'Tampilkan';
+
+  @override
+  String get desktopKeystoneStepCheckAndScan => 'Periksa dan pindai kembali';
+
+  @override
+  String get desktopKeystoneOnColdWallet => 'Di cold wallet Anda';
+
+  @override
+  String get desktopKeystoneShowStepScan => 'Buka cold wallet Anda dan pilih Pindai.';
+
+  @override
+  String get desktopKeystoneShowStepHold => 'Arahkan ke kode QR ini sampai transaksinya muncul.';
+
+  @override
+  String get desktopKeystoneShowStepContinue => 'Lalu lanjutkan di sini.';
+
+  @override
+  String get desktopKeystoneCheckTitle => 'Periksa layar cold wallet Anda';
+
+  @override
+  String get desktopKeystoneCheckBody => 'Setujui di sana hanya jika layarnya menampilkan persis ini.';
+
+  @override
+  String get desktopKeystoneThen => 'Lalu';
+
+  @override
+  String get desktopKeystoneScanStepHold => 'Arahkan kode QR tanda tangannya ke kamera komputer ini.';
+
+  @override
+  String get desktopKeystoneScanStepKeep => 'Tahan di sana sampai semua bagian diterima.';
+
+  @override
+  String get desktopKeystoneRejectStep2Title => 'Jangan coba lagi dari komputer ini.';
+
+  @override
+  String get desktopKeystoneRejectStep3Body =>
+      'Kunci tidak pernah meninggalkan perangkat. Pindah ke komputer tepercaya sebelum mengirim lagi.';
 }
