@@ -3302,6 +3302,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopMenuConnectColdWallet => 'Hubungkan Cold Wallet…';
 
   @override
+  String get desktopColdWalletAddAccountTitle => 'Tambah Akun Cold Wallet';
+
+  @override
   String get desktopColdWalletStepHold => 'Arahkan ke kamera ini';
 
   @override

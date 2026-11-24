@@ -892,6 +892,7 @@
   "desktopCreateMultisigFailed": "Tidak dapat membuat multisig ini: {error}",
   "desktopCreateMultisigTimedOut": "Multisig belum terkonfirmasi",
   "desktopMenuConnectColdWallet": "Hubungkan Cold Wallet…",
+  "desktopColdWalletAddAccountTitle": "Tambah Akun Cold Wallet",
   "desktopColdWalletStepHold": "Arahkan ke kamera ini",
   "desktopColdWalletLooking": "Mencari kode QR",
   "desktopColdWalletNotAddress": "Kode QR itu bukan alamat akun.",
