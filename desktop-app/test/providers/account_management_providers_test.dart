@@ -565,6 +565,35 @@ void main() {
       await _close(tester, container);
     });
 
+    for (final (kind, account) in [('a hardware', _cold), ('a software', _trading)]) {
+      testWidgets('$kind wallet that goes with its last account takes its name: a wallet added at its index has none', (
+        tester,
+      ) async {
+        final (device, container) = await _device(tester);
+        final walletIndex = account.walletIndex;
+        await _manager(container).renameWallet(walletIndex, 'Retired wallet');
+        expect(container.read(walletNameProvider(walletIndex)), 'Retired wallet');
+
+        await _manager(container).disconnect(account);
+        device.storage.accounts.add(Account(walletIndex: walletIndex, index: 0, name: 'Next', accountId: 'qzNext'));
+        await _settle(tester, container);
+
+        expect(container.read(walletNameProvider(walletIndex)), isNull);
+        await _close(tester, container);
+      });
+    }
+
+    testWidgets('an account whose wallet keeps another keeps the wallet\'s name', (tester) async {
+      final (_, container) = await _device(tester);
+      await _manager(container).renameWallet(0, 'Everyday');
+
+      await _manager(container).disconnect(mainAccount);
+      await _settle(tester, container);
+
+      expect(container.read(walletNameProvider(0)), 'Everyday');
+      await _close(tester, container);
+    });
+
     testWidgets('a multisig leaves the multisigs', (tester) async {
       final (device, container) = await _device(tester);
 

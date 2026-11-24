@@ -739,6 +739,61 @@ void main() {
     Future<String?> activeIdIn(SettingsService settings) async =>
         (await settings.getActiveAccount())?.account.accountId;
 
+    final claim = AirdropClaimRecord(
+      claimedAt: DateTime.utc(2026, 11, 1),
+      rewardHundredths: 150,
+      claimAccount: 'id_trading',
+    );
+
+    /// Stores the Trading wallet, active, with its phrase and every setting
+    /// a wallet keeps, while every write is still stored.
+    Future<void> givenTradingWallet() async {
+      await given([first, trading], active: trading);
+      await settings.setMnemonic('trading phrase', 1);
+      // These two write without waiting; each is let finish before the next.
+      settings.setWalletOrigin(1, WalletOrigin.imported);
+      await pumpEventQueue();
+      settings.setRecoveryPhraseViewed(1);
+      await pumpEventQueue();
+      await settings.setWalletName(1, 'Trading wallet');
+      await settings.setPendingAccountScan(1, trading.accountId);
+      await settings.setAirdropClaim(1, claim);
+    }
+
+    const cold = Account(
+      walletIndex: 1,
+      index: 0,
+      name: 'Cold Wallet',
+      accountId: 'id_cold',
+      accountType: AccountType.keystone,
+    );
+    const cold2 = Account(
+      walletIndex: 1,
+      index: 1,
+      name: 'Cold Wallet 2',
+      accountId: 'id_cold2',
+      accountType: AccountType.keystone,
+    );
+
+    /// Stores [first] and the hardware wallet of [coldAccounts], named, with
+    /// [cold] active, while every write is still stored.
+    Future<void> givenColdWallet(List<Account> coldAccounts) async {
+      await given([first, ...coldAccounts], active: cold);
+      await settings.setWalletName(1, 'Retired hardware wallet');
+    }
+
+    /// The Trading wallet is as [givenTradingWallet] stored it, in [current].
+    Future<void> expectTradingWalletWhole(SettingsService current) async {
+      expect(await idsIn(current), [first.accountId, trading.accountId]);
+      expect(await activeIdIn(current), trading.accountId);
+      expect(await current.getMnemonic(1), 'trading phrase');
+      expect(current.getWalletOrigin(1), WalletOrigin.imported);
+      expect(current.recoveryPhraseViewed(1), isTrue);
+      expect(current.getWalletName(1), 'Trading wallet');
+      expect(current.pendingAccountScan(1), trading.accountId);
+      expect(current.getAirdropClaim(1)?.toJson(), claim.toJson());
+    }
+
     final vault = MultisigAccount(
       name: 'Vault',
       accountId: 'id_vault',
@@ -823,54 +878,60 @@ void main() {
       });
 
       test('a $how wallet removal throws and leaves the wallet whole', () async {
-        await given([first, trading], active: trading);
-        await settings.setMnemonic('trading phrase', 1);
-        await settings.setWalletName(1, 'Trading wallet');
-        await settings.setPendingAccountScan(1, trading.accountId);
+        await givenTradingWallet();
         fail('accounts_v5');
 
         await expectLater(settings.removeWallet(1), throwsA(anything));
 
         for (final current in [settings, await restarted()]) {
-          expect(await idsIn(current), [first.accountId, trading.accountId]);
-          expect(await activeIdIn(current), trading.accountId);
-          expect(await current.getMnemonic(1), 'trading phrase');
-          expect(current.getWalletName(1), 'Trading wallet');
-          expect(current.pendingAccountScan(1), trading.accountId);
+          await expectTradingWalletWhole(current);
         }
       });
 
-      test('a $how active account write, removing the active wallet, throws and keeps its scan pending', () async {
-        await given([first, trading], active: trading);
-        await settings.setMnemonic('trading phrase', 1);
-        await settings.setPendingAccountScan(1, trading.accountId);
+      for (final setting in [
+        'pending_account_scan_1',
+        'wallet_origin_1',
+        'recovery_phrase_viewed_1',
+        'wallet_name_1',
+        'airdrop_claim_1',
+      ]) {
+        test('a $how removal of $setting throws and leaves the wallet whole', () async {
+          await givenTradingWallet();
+          fail(setting);
+
+          await expectLater(settings.removeWallet(1), throwsA(anything));
+
+          for (final current in [settings, await restarted()]) {
+            await expectTradingWalletWhole(current);
+          }
+        });
+      }
+
+      test('a $how active account write, removing the active wallet, throws and leaves the wallet whole', () async {
+        await givenTradingWallet();
         fail('active_display_account');
 
         await expectLater(settings.removeWallet(1), throwsA(anything));
 
         for (final current in [settings, await restarted()]) {
-          expect(await idsIn(current), [first.accountId, trading.accountId]);
-          expect(await activeIdIn(current), trading.accountId);
-          expect(await current.getMnemonic(1), 'trading phrase');
-          expect(current.pendingAccountScan(1), trading.accountId);
+          await expectTradingWalletWhole(current);
         }
       });
 
-      test('a $how removal of the pending scan throws and leaves the wallet whole', () async {
-        await given([first, trading], active: trading);
-        await settings.setMnemonic('trading phrase', 1);
-        await settings.setPendingAccountScan(1, trading.accountId);
-        fail('pending_account_scan_1');
+      for (final write in ['wallet_name_1', 'accounts_v5', 'active_display_account']) {
+        test('a $how write of $write, disconnecting a hardware wallet\'s last account, throws and keeps it', () async {
+          await givenColdWallet([cold]);
+          fail(write);
 
-        await expectLater(settings.removeWallet(1), throwsA(anything));
+          await expectLater(settings.removeAccount(cold), throwsA(anything));
 
-        for (final current in [settings, await restarted()]) {
-          expect(await idsIn(current), [first.accountId, trading.accountId]);
-          expect(await activeIdIn(current), trading.accountId);
-          expect(await current.getMnemonic(1), 'trading phrase');
-          expect(current.pendingAccountScan(1), trading.accountId);
-        }
-      });
+          for (final current in [settings, await restarted()]) {
+            expect(await idsIn(current), [first.accountId, cold.accountId]);
+            expect(await activeIdIn(current), cold.accountId);
+            expect(current.getWalletName(1), 'Retired hardware wallet');
+          }
+        });
+      }
 
       test('a $how multisig add throws and adds nothing', () async {
         await given([first], active: first);
@@ -944,9 +1005,7 @@ void main() {
     }
 
     test('a wallet whose phrase cannot be deleted is kept whole, and the removal throws', () async {
-      await given([first, trading], active: trading);
-      await settings.setMnemonic('trading phrase', 1);
-      await settings.setPendingAccountScan(1, trading.accountId);
+      await givenTradingWallet();
       FlutterSecureStoragePlatform.instance = _UndeletableSecureStorage(
         (FlutterSecureStoragePlatform.instance as TestFlutterSecureStoragePlatform).data,
       );
@@ -954,10 +1013,49 @@ void main() {
       await expectLater(settings.removeWallet(1), throwsA(isA<PlatformException>()));
 
       for (final current in [settings, await restarted()]) {
-        expect(await idsIn(current), [first.accountId, trading.accountId]);
-        expect(await activeIdIn(current), trading.accountId);
-        expect(await current.getMnemonic(1), 'trading phrase');
-        expect(current.pendingAccountScan(1), trading.accountId);
+        await expectTradingWalletWhole(current);
+      }
+    });
+
+    test('a wallet removed takes its phrase and every setting it kept with it', () async {
+      await givenTradingWallet();
+
+      await settings.removeWallet(1);
+
+      for (final current in [settings, await restarted()]) {
+        expect(await idsIn(current), [first.accountId]);
+        expect(await activeIdIn(current), first.accountId);
+        expect(await current.getMnemonic(1), isNull);
+        expect(current.getWalletOrigin(1), isNull);
+        expect(current.recoveryPhraseViewed(1), isFalse);
+        expect(current.getWalletName(1), isNull);
+        expect(current.pendingAccountScan(1), isNull);
+        expect(current.getAirdropClaim(1), isNull);
+      }
+    });
+
+    test('disconnecting a hardware wallet\'s last account clears its name, and the next wallet at its index starts '
+        'without it', () async {
+      await givenColdWallet([cold]);
+
+      await settings.removeAccount(cold);
+
+      for (final current in [settings, await restarted()]) {
+        expect(await idsIn(current), [first.accountId]);
+        expect(current.getWalletName(1), isNull);
+      }
+      await settings.addAccount(trading);
+      expect(settings.getWalletName(1), isNull);
+    });
+
+    test('disconnecting a hardware account its wallet still has others of keeps the wallet\'s name', () async {
+      await givenColdWallet([cold, cold2]);
+
+      await settings.removeAccount(cold);
+
+      for (final current in [settings, await restarted()]) {
+        expect(await idsIn(current), [first.accountId, cold2.accountId]);
+        expect(current.getWalletName(1), 'Retired hardware wallet');
       }
     });
   });
