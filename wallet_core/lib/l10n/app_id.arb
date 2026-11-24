@@ -950,5 +950,15 @@
   "desktopQuitPendingTitle": "Transaksi Masih Berjalan",
   "desktopQuitPendingBody": "Keluar sekarang dapat membuat transaksi tidak selesai. Dompet dapat menyelesaikannya dulu, lalu keluar dengan sendirinya.",
   "desktopQuitFinishFirst": "Selesaikan, Lalu Keluar",
-  "desktopQuitNow": "Keluar Sekarang"
+  "desktopQuitNow": "Keluar Sekarang",
+  "addKeystoneAppBarTitle": "Tambah Cold Wallet",
+  "addKeystoneIntroTitle": "Cold Wallet",
+  "addKeystoneIntroSubtitle": "Dompet air-gapped yang terhubung ke aplikasi ini hanya melalui kode QR. Kunci tidak pernah meninggalkan perangkat.",
+  "addKeystoneConnectButton": "Hubungkan Cold Wallet",
+  "addKeystoneConnectTitle": "Hubungkan Cold Wallet",
+  "addKeystoneConnectSubtitle": "Pindai kode QR perangkat Anda untuk menghubungkan.",
+  "addKeystoneOnYourKeystone": "DI COLD WALLET ANDA",
+  "addKeystoneStepUnlock": "Buka kunci cold wallet Anda",
+  "addKeystoneStepSelectQuantus": "Tampilkan kode QR akun Anda",
+  "addKeystoneReadyToScan": "Siap Memindai"
 }
