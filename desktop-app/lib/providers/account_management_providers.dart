@@ -7,6 +7,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
@@ -375,14 +376,20 @@ class AccountManager {
   /// another.
   Future<void> openManageMultisigs() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.manageMultisigs);
 
-  /// Adds [multisig] under the lowest unused default name, after the
-  /// navigation asked for before, one at a time so two never take the same
-  /// name. A write that fails is thrown.
+  /// Adds [multisig] under the lowest default name that neither a saved
+  /// multisig nor one being created has, after the navigation asked for
+  /// before, one at a time so two never take the same name. A write that
+  /// fails is thrown.
   Future<void> addMultisig(MultisigAccount multisig) => _ref.read(shellNavigationProvider.notifier).run(() async {
     if (!_ref.mounted) return;
     final saved = await _ref.read(settingsServiceProvider).getMultisigAccounts();
+    final pending = _ref.read(pendingMultisigCreationsProvider.notifier);
+    await pending.ready;
     if (!_ref.mounted) return;
-    final name = nextDefaultMultisigName(_ref.read(l10nProvider), saved);
+    final name = nextDefaultMultisigName(_ref.read(l10nProvider), [
+      ...saved,
+      ...pending.records.map((record) => record.draft),
+    ]);
     await _ref.read(multisigAccountsProvider.notifier).add(multisig.copyWith(name: name));
   });
 

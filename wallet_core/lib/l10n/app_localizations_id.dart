@@ -903,35 +903,35 @@ class AppLocalizationsId extends AppLocalizations {
   String get innerHashLoadError => 'Gagal memuat inner hash';
 
   @override
-  String get addKeystoneAppBarTitle => 'Add Cold Wallet';
+  String get addKeystoneAppBarTitle => 'Tambah Cold Wallet';
 
   @override
   String get addKeystoneIntroTitle => 'Cold Wallet';
 
   @override
   String get addKeystoneIntroSubtitle =>
-      'An air-gapped wallet that talks to this app only through QR codes. Keys never leave the device.';
+      'Dompet air-gapped yang terhubung ke aplikasi ini hanya melalui kode QR. Kunci tidak pernah meninggalkan perangkat.';
 
   @override
-  String get addKeystoneConnectButton => 'Connect Cold Wallet';
+  String get addKeystoneConnectButton => 'Hubungkan Cold Wallet';
 
   @override
-  String get addKeystoneConnectTitle => 'Connect Cold Wallet';
+  String get addKeystoneConnectTitle => 'Hubungkan Cold Wallet';
 
   @override
-  String get addKeystoneConnectSubtitle => 'Scan your device\'s QR code to connect.';
+  String get addKeystoneConnectSubtitle => 'Pindai kode QR perangkat Anda untuk menghubungkan.';
 
   @override
-  String get addKeystoneOnYourKeystone => 'ON YOUR COLD WALLET';
+  String get addKeystoneOnYourKeystone => 'DI COLD WALLET ANDA';
 
   @override
-  String get addKeystoneStepUnlock => 'Unlock your cold wallet';
+  String get addKeystoneStepUnlock => 'Buka kunci cold wallet Anda';
 
   @override
-  String get addKeystoneStepSelectQuantus => 'Show your account QR code';
+  String get addKeystoneStepSelectQuantus => 'Tampilkan kode QR akun Anda';
 
   @override
-  String get addKeystoneReadyToScan => 'Ready to Scan';
+  String get addKeystoneReadyToScan => 'Siap Memindai';
 
   @override
   String get invalidAddress => 'Alamat tidak valid';
