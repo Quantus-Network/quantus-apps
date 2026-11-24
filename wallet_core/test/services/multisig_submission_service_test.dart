@@ -144,7 +144,7 @@ void main() {
     await expectLater(preflight(), refusedWithSpendable(cost - BigInt.one));
   });
 
-  test("what other accounts have pending does not count", () async {
+  test('what other accounts have pending does not count', () async {
     chain.balance = cost;
     container.read(pendingTransactionsProvider.notifier).add(send(from: _other, amount: BigInt.one));
     await creating(creator: _other);
