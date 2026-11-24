@@ -177,9 +177,10 @@ List<String> get _allNotes => [
   _l10n.multisigProposalCancellingNote,
   _l10n.multisigProposalExecutingNote,
   _l10n.multisigProposalApprovingNote,
-  _l10n.multisigExecuteUnavailableNote,
+  _l10n.multisigProposalExpiredNote,
+  _l10n.multisigNoSignerHereNote,
+  _l10n.multisigCancelWaitsNote,
   _l10n.multisigProposalAlreadySignedNote,
-  _l10n.multisigApproveUnavailableNote,
 ];
 
 /// The note shown, or null when there is none.
@@ -333,18 +334,18 @@ void main() {
       expect(_note(), _l10n.multisigProposalCancellingNote);
     });
 
-    testWidgets('expired: Approve unavailable, with the unavailable note', (tester) async {
+    testWidgets('expired: Approve unavailable, with the expired note', (tester) async {
       await _open(tester, _proposal(expiryBlock: _currentBlock));
 
       expect(_isOffered(tester, _l10n.multisigApproveButton), isFalse);
-      expect(_note(), _l10n.multisigApproveUnavailableNote);
+      expect(_note(), _l10n.multisigProposalExpiredNote);
     });
 
-    testWidgets('no signer of it in this wallet: Approve unavailable, with the unavailable note', (tester) async {
+    testWidgets('no signer of it in this wallet: Approve unavailable, with the no-signer note', (tester) async {
       await _open(tester, _proposal(), accounts: [makeAccount(9)]);
 
       expect(_isOffered(tester, _l10n.multisigApproveButton), isFalse);
-      expect(_note(), _l10n.multisigApproveUnavailableNote);
+      expect(_note(), _l10n.multisigNoSignerHereNote);
     });
   });
 
@@ -430,20 +431,18 @@ void main() {
       expect(_note(), _l10n.multisigProposalExecutingNote);
     });
 
-    testWidgets('expired: Execute unavailable, with the execute-unavailable note', (tester) async {
+    testWidgets('expired: Execute unavailable, with the expired note', (tester) async {
       await _open(tester, ready(expiryBlock: _currentBlock));
 
       expect(_isOffered(tester, _l10n.multisigExecuteButton), isFalse);
-      expect(_note(), _l10n.multisigExecuteUnavailableNote);
+      expect(_note(), _l10n.multisigProposalExpiredNote);
     });
 
-    testWidgets('no signer of it in this wallet: Execute unavailable, with the execute-unavailable note', (
-      tester,
-    ) async {
+    testWidgets('no signer of it in this wallet: Execute unavailable, with the no-signer note', (tester) async {
       await _open(tester, ready(), accounts: [makeAccount(9)]);
 
       expect(_isOffered(tester, _l10n.multisigExecuteButton), isFalse);
-      expect(_note(), _l10n.multisigExecuteUnavailableNote);
+      expect(_note(), _l10n.multisigNoSignerHereNote);
     });
   });
 
