@@ -237,6 +237,45 @@ void main() {
       expect(actions.note, ProposalActionNote.executeUnavailable);
     });
 
+    test('the member and another signer here: Execute offered, by either, the member first', () {
+      final actions = _open(_actions(_ready(), accounts: [_two, _one]));
+
+      expect(actions.primaryState, ProposalActionState.offered);
+      expect(_ids(actions.executors), [_one.accountId, _two.accountId]);
+    });
+
+    test('the member not here but another signer is: Execute offered, by that signer', () {
+      final actions = _open(_actions(_ready(), accounts: [_two]));
+
+      expect(actions.primaryState, ProposalActionState.offered);
+      expect(_ids(actions.executors), [_two.accountId]);
+    });
+
+    test('an execution under way from a signer that is not the member: Execute in flight, with its note', () {
+      final actions = _open(
+        _actions(
+          _ready(),
+          accounts: [_one, _two],
+          executions: [
+            PendingMultisigExecutionEvent.create(
+              multisigAddress: _msig.accountId,
+              proposalId: 1,
+              executorId: _two.accountId,
+              recipient: 'qzbob${'x' * 40}',
+              amount: BigInt.one,
+            ),
+          ],
+        ),
+      );
+
+      expect(actions.primaryState, ProposalActionState.inFlight);
+      expect(actions.note, ProposalActionNote.executing);
+    });
+
+    test('not ready: no one executes', () {
+      expect(_open(_actions(_proposal(), accounts: [_one, _two])).executors, isEmpty);
+    });
+
     test('no signer of it in this wallet: Execute unavailable, with the execute-unavailable note', () {
       final actions = _open(_actions(_ready(), accounts: [makeAccount(9)]));
 

@@ -5,16 +5,15 @@ import 'package:wallet_core/providers/controllers/multisig_action_confirm_contro
 
 /// Shows the confirmation sheet for approving a multisig proposal.
 ///
-/// When more than one local account can still approve, pass [signer] after the
-/// user picks an account. Falls back to [MultisigAccount.myMemberAccountId]
-/// when [signer] is omitted.
+/// [signer] approves: when more than one local account can still approve,
+/// the one the user picked.
 ///
 /// Keystone signers open the shared hardware QR flow instead of signing locally.
 void showMultisigApproveConfirmSheet(
   BuildContext context, {
   required MultisigAccount msig,
   required MultisigProposal proposal,
-  Account? signer,
+  required Account signer,
 }) {
   BottomSheetContainer.show(
     context,

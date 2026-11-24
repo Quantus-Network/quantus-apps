@@ -223,7 +223,7 @@ bool _isOffered(WidgetTester tester, String label) {
 }
 
 void _approve(BuildContext context, {Account? signer}) =>
-    showMultisigApproveConfirmSheet(context, msig: _msig, proposal: _proposal, signer: signer);
+    showMultisigApproveConfirmSheet(context, msig: _msig, proposal: _proposal, signer: signer ?? _one);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -332,7 +332,8 @@ void main() {
     ('approve', _approve, () => _l10n.multisigApproveConfirmYes, () => _l10n.multisigApproveAuthReason),
     (
       'execute',
-      (BuildContext context) => showMultisigExecuteConfirmSheet(context, msig: _msig, proposal: _proposal),
+      (BuildContext context) =>
+          showMultisigExecuteConfirmSheet(context, msig: _msig, proposal: _proposal, signer: _one),
       () => _l10n.multisigExecuteConfirmYes,
       () => _l10n.multisigExecuteAuthReason,
     ),
@@ -358,7 +359,7 @@ void main() {
       tester,
       chain,
       submission,
-      (context) => showMultisigExecuteConfirmSheet(context, msig: _msig, proposal: _proposal),
+      (context) => showMultisigExecuteConfirmSheet(context, msig: _msig, proposal: _proposal, signer: _one),
     );
 
     expect(chain.callReads, 1);

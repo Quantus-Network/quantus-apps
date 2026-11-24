@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
@@ -24,15 +23,14 @@ List<int> requireCallBytes(List<int>? callBytes, String action) {
   return callBytes;
 }
 
-/// What is being confirmed: [kind] on [proposal] of [msig], by [signer], or by
-/// the multisig's own member account when null.
+/// What is being confirmed: [kind] on [proposal] of [msig], by [signer].
 class MultisigActionRequest {
   final MultisigActionKind kind;
   final MultisigAccount msig;
   final MultisigProposal proposal;
-  final Account? signer;
+  final Account signer;
 
-  const MultisigActionRequest({required this.kind, required this.msig, required this.proposal, this.signer});
+  const MultisigActionRequest({required this.kind, required this.msig, required this.proposal, required this.signer});
 
   @override
   bool operator ==(Object other) =>
@@ -40,10 +38,10 @@ class MultisigActionRequest {
       other.kind == kind &&
       other.msig.accountId == msig.accountId &&
       other.proposal.id == proposal.id &&
-      other.signer?.accountId == signer?.accountId;
+      other.signer.accountId == signer.accountId;
 
   @override
-  int get hashCode => Object.hash(kind, msig.accountId, proposal.id, signer?.accountId);
+  int get hashCode => Object.hash(kind, msig.accountId, proposal.id, signer.accountId);
 }
 
 /// Why a confirmation did not go out.
@@ -179,7 +177,7 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
     state = state.copyWith(loadingCall: false, callBytes: bytes, decodedCall: decoded);
 
     try {
-      final fee = await _estimateFee(_requireSigner(), bytes);
+      final fee = await _estimateFee(request.signer, bytes);
       if (!ref.mounted) return;
       state = state.copyWith(loadingFee: false, fee: fee);
     } catch (e, st) {
@@ -187,17 +185,6 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       if (!ref.mounted) return;
       state = state.copyWith(loadingFee: false, feeUnavailable: true);
     }
-  }
-
-  /// The chosen signer, or the multisig's own member account in this wallet.
-  Account _requireSigner() {
-    if (request.signer case final signer?) return signer;
-    final accounts = ref.read(accountsProvider).value;
-    if (accounts == null) throw StateError('No signer account available');
-    return accounts.firstWhere(
-      (a) => a.accountId == _msig.myMemberAccountId,
-      orElse: () => throw StateError('Member account not found in local wallet'),
-    );
   }
 
   Future<BigInt> _estimateFee(Account signer, List<int> callBytes) {
@@ -231,7 +218,7 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
     if (!state.canConfirm) throw StateError('$_logPrefix confirmed before it could be');
     state = state.copyWith(submitting: true, error: () => null);
 
-    final signer = _requireSigner();
+    final signer = request.signer;
     if (signer.signsWithHardware) {
       state = state.copyWith(submitting: false);
       return MultisigActionNeedsHardwareSignature(

@@ -337,7 +337,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
         open.primaryState,
         label: l10n.multisigExecuteButton,
         inFlightLabel: l10n.multisigProposalExecutingLabel,
-        onTap: () => showMultisigExecuteConfirmSheet(context, msig: msig, proposal: liveProposal),
+        onTap: () => _startExecute(context, liveProposal: liveProposal, executors: open.executors),
       ),
       ProposalPrimaryAction.approve => _actionButton(
         open.primaryState,
@@ -388,16 +388,26 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     required MultisigProposal liveProposal,
     required List<Account> eligibleApprovers,
   }) async {
-    if (eligibleApprovers.isEmpty) return;
-
-    Account? signer = eligibleApprovers.first;
-    if (eligibleApprovers.length > 1) {
-      signer = await showMultisigSignerPickerSheet(context, accounts: eligibleApprovers);
-      if (signer == null || !context.mounted) return;
-    }
-
-    if (!context.mounted) return;
+    final signer = await _pickSigner(context, eligibleApprovers);
+    if (signer == null || !context.mounted) return;
     showMultisigApproveConfirmSheet(context, msig: msig, proposal: liveProposal, signer: signer);
+  }
+
+  Future<void> _startExecute(
+    BuildContext context, {
+    required MultisigProposal liveProposal,
+    required List<Account> executors,
+  }) async {
+    final signer = await _pickSigner(context, executors);
+    if (signer == null || !context.mounted) return;
+    showMultisigExecuteConfirmSheet(context, msig: msig, proposal: liveProposal, signer: signer);
+  }
+
+  /// Which of [signers] acts: the only one, or the one picked; null when
+  /// there is none or the picker was dismissed.
+  Future<Account?> _pickSigner(BuildContext context, List<Account> signers) async {
+    if (signers.length <= 1) return signers.firstOrNull;
+    return showMultisigSignerPickerSheet(context, accounts: signers);
   }
 
   Widget _actionNote(BuildContext context, AppLocalizations l10n, ProposalActionNote? note) {

@@ -279,7 +279,7 @@ void main() {
 
       expect(find.text(_l10n.multisigSignerPickerTitle), findsNothing);
       final confirm = tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet));
-      expect(confirm.signer?.accountId, _one.accountId);
+      expect(confirm.signer.accountId, _one.accountId);
     });
 
     testWidgets('two local signers still to approve: Approve asks which first, and that one approves', (tester) async {
@@ -297,7 +297,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final confirm = tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet));
-      expect(confirm.signer?.accountId, _two.accountId);
+      expect(confirm.signer.accountId, _two.accountId);
     });
 
     testWidgets('one local signer approving and another still to: Approve stays, for the other only', (tester) async {
@@ -311,7 +311,7 @@ void main() {
 
       expect(find.text(_l10n.multisigSignerPickerTitle), findsNothing);
       final confirm = tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet));
-      expect(confirm.signer?.accountId, _two.accountId);
+      expect(confirm.signer.accountId, _two.accountId);
     });
 
     testWidgets('the only local signer approving: "Approving…", unavailable, with its note', (tester) async {
@@ -365,7 +365,42 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text(_l10n.multisigExecuteConfirmTitle), findsOneWidget);
-      expect(tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet)).signer, isNull);
+      expect(
+        tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet)).signer.accountId,
+        _one.accountId,
+      );
+    });
+
+    testWidgets('two signers here: Execute asks which first, and that one executes', (tester) async {
+      await _open(tester, ready(), accounts: [_one, _two]);
+
+      await tester.tap(find.text(_l10n.multisigExecuteButton));
+      await tester.pumpAndSettle();
+
+      // The picker is the topmost sheet, so its rows are the last of each name.
+      expect(find.text(_l10n.multisigSignerPickerTitle), findsOneWidget);
+      await tester.tap(find.text(_two.name).last);
+      await tester.pumpAndSettle();
+
+      expect(find.text(_l10n.multisigExecuteConfirmTitle), findsOneWidget);
+      expect(
+        tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet)).signer.accountId,
+        _two.accountId,
+      );
+    });
+
+    testWidgets('the member not here but another signer is: Execute offered, by that signer', (tester) async {
+      await _open(tester, ready(), accounts: [_two]);
+
+      expect(_isOffered(tester, _l10n.multisigExecuteButton), isTrue);
+      await tester.tap(find.text(_l10n.multisigExecuteButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_l10n.multisigSignerPickerTitle), findsNothing);
+      expect(
+        tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet)).signer.accountId,
+        _two.accountId,
+      );
     });
 
     testWidgets('an approval from this device under way: Execute unavailable, with the approving note', (tester) async {
@@ -437,7 +472,7 @@ void main() {
 
       expect(find.text(_l10n.multisigCancelConfirmTitle), findsOneWidget);
       expect(
-        tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet)).signer?.accountId,
+        tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet)).signer.accountId,
         _two.accountId,
       );
     });
