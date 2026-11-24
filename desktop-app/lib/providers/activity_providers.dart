@@ -261,14 +261,19 @@ final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
   };
 });
 
-/// The swaps followed from the account [accountId], newest first: its rows
-/// in In progress, one awaiting its deposit among them.
-final accountSwapsProvider = Provider.family<List<ActiveSwap>, String>(
-  (ref, accountId) => [
+/// The swaps listed in In progress of the account [accountId], newest first:
+/// those followed from it, one awaiting its deposit among them, and with them
+/// any whose account the wallet no longer holds, as after that account was
+/// disconnected. Such a swap has no account of its own to be listed under,
+/// so it is reached from whichever is open. While the accounts load, no swap
+/// is taken for one.
+final accountSwapsProvider = Provider.family<List<ActiveSwap>, String>((ref, accountId) {
+  final held = ref.watch(accountsProvider).value?.map((account) => account.accountId).toSet();
+  return [
     for (final swap in ref.watch(activeSwapsProvider).reversed)
-      if (swap.accountId == accountId) swap,
-  ],
-);
+      if (swap.accountId == accountId || (held != null && !held.contains(swap.accountId))) swap,
+  ];
+});
 
 /// One of the swaps being followed, told apart by its id ([ActiveSwap.id]).
 final class OpenedSwap extends OpenedActivity {

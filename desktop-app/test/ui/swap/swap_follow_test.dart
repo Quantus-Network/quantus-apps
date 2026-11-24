@@ -595,6 +595,24 @@ void main() {
       expect(_rowIds(tester), [ofSavings.id]);
     });
 
+    testOnMac('a swap whose account the wallet no longer holds is listed under the open account, and opens', (
+      tester,
+    ) async {
+      // As after Trading was disconnected with its swap still followed.
+      final orphaned = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: tradingAccount);
+      final settings = await _open(tester, followed: [orphaned]);
+      expect(_rowIds(tester), [orphaned.id]);
+
+      await _openRow(tester, orphaned);
+      expect(_panelSwapId(tester), orphaned.id);
+      expect(_inPanel(find.text(swapDepositAddress)), findsOne, reason: 'where to send the deposit is still had');
+      expect(_inPanel(find.text('Trading')), findsOne, reason: 'the account by the name it had');
+
+      await _press(tester, _inPanel(find.text(_l10n.desktopSwapCancel)));
+      expect(settings.activeSwaps, isEmpty, reason: 'its slot is given back');
+      expect(find.byType(SwapRowView), findsNothing);
+    });
+
     testOnMac('swaps kept from the last run are all listed, one still awaiting its deposit with them', (tester) async {
       final running = fakeActiveSwap();
       final awaited = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, depositAddress: _secondAddress);

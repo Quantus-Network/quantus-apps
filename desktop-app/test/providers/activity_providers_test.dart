@@ -84,6 +84,9 @@ void main() {
         ],
       );
       container.listen(openedActivityViewProvider, (_, _) {});
+      // Listened to, as the sidebar does, so the accounts have loaded before
+      // the swaps are read against them.
+      container.listen(accountsProvider, (_, _) {});
       await tester.pump(const Duration(milliseconds: 20));
       return container;
     }
@@ -102,6 +105,28 @@ void main() {
       expect(container.read(accountSwapsProvider(mainAccount.accountId)).map((s) => s.id), [awaited.id, first.id]);
       expect(container.read(accountSwapsProvider(savingsAccount.accountId)).map((s) => s.id), [ofSavings.id]);
       expect(container.read(accountSwapsProvider(encryptedAccount.accountId)), isEmpty);
+
+      await close(tester, container);
+    });
+
+    testWidgets('while the accounts load, no swap is taken for one whose account is gone', (tester) async {
+      final loaded = Completer<List<Account>>();
+      final ofSavings = fakeActiveSwap(account: savingsAccount);
+      final container = ProviderContainer(
+        overrides: shellOverrides(
+          loadAccounts: () => loaded.future,
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwaps = [ofSavings],
+          balances: oneTokenEach,
+        ),
+      );
+      container.listen(accountSwapsProvider(mainAccount.accountId), (_, _) {});
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(container.read(accountSwapsProvider(mainAccount.accountId)), isEmpty);
+
+      loaded.complete(const [mainAccount, savingsAccount]);
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(container.read(accountSwapsProvider(mainAccount.accountId)), isEmpty);
+      expect(container.read(accountSwapsProvider(savingsAccount.accountId)).map((s) => s.id), [ofSavings.id]);
 
       await close(tester, container);
     });

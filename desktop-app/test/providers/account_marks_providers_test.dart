@@ -188,6 +188,15 @@ void main() {
     await close(tester, container);
   });
 
+  testWidgets('a swap whose account the wallet no longer holds counts on no account', (tester) async {
+    final container = await wallet(tester, FakeSendChain(), swap: fakeActiveSwap(account: tradingAccount));
+
+    for (final account in [mainAccount, savingsAccount, encryptedAccount]) {
+      expect(markOf(container, account.accountId), const AccountMark(), reason: account.name);
+    }
+    await close(tester, container);
+  });
+
   testWidgets("a transfer still scheduled counts for an account never opened, all accounts' read at once", (
     tester,
   ) async {
