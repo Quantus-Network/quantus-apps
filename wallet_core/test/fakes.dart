@@ -142,10 +142,16 @@ class FakeSettingsService extends Fake implements SettingsService {
   /// When set, a save is recorded and then answers only once this completes.
   Completer<void>? holdMultisigSave;
 
+  /// When set, a save stores nothing and fails with this, after
+  /// [holdMultisigSave].
+  Object? addMultisigError;
+
   @override
   Future<void> addMultisigAccount(MultisigAccount account) async {
-    savedMultisigs.add(account);
+    final error = addMultisigError;
+    if (error == null) savedMultisigs.add(account);
     await holdMultisigSave?.future;
+    if (error != null) throw error;
   }
 }
 
