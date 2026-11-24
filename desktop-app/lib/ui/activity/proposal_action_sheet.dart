@@ -519,7 +519,8 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               if (call != null && call.summary is TransferSummary) ...[
-                ..._subject(call).skip(1),
+                // Who it pays, without the amount the headline already says.
+                ..._subject(call).skip(2),
                 const SizedBox(height: 18),
               ],
               const MenuDivider(),
