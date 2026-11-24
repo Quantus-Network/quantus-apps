@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:collection/collection.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 
@@ -244,6 +245,13 @@ class SwapLiveDecision {
 
   const SwapLiveDecision.end() : command = SwapLiveCommand.end, content = null;
 }
+
+/// The one swap of those followed that the lock-screen card, and a tap on
+/// it, is about: the newest still with 1Click, else the one that settled
+/// last.
+ActiveSwap? swapOnCard(List<ActiveSwap> swaps, DateTime now) =>
+    swaps.lastWhereOrNull((s) => s.inProgressAt(now)) ??
+    maxBy(swaps.where((s) => s.settledAt != null), (s) => s.settledAt!);
 
 /// The card to show, or [SwapLiveDecision.end] when the lock screen should
 /// drop it. A swap that is still waiting for the user to send the deposit

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/mining_rewards_provider.dart';
@@ -60,7 +60,7 @@ class LogoutService {
 
     // Before the wipe: a status answer still in flight must not write the
     // old wallet's swap back, and nothing of it may reach the next session.
-    await _ref.read(activeSwapProvider.notifier).clear();
+    await _ref.read(activeSwapsProvider.notifier).clearAll();
     await _ref.read(substrateServiceProvider).logout();
   }
 

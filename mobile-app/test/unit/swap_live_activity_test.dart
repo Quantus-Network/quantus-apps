@@ -242,6 +242,24 @@ void main() {
     });
   });
 
+  test('the card is about the newest swap still with 1Click, else the one that settled last', () {
+    final now = started.add(const Duration(minutes: 1));
+    ActiveSwap settledAt(SwapStatus status, DateTime at) => swap(SwapStatus.processing).withOrder(
+      SwapOrder(quote: quote, status: status),
+      now: at,
+    );
+    final olderRunning = swap(SwapStatus.processing);
+    final newerRunning = swap(SwapStatus.knownDepositTx);
+    final settledFirst = settledAt(SwapStatus.success, started);
+    final settledLast = settledAt(SwapStatus.refunded, now);
+    final waiting = swap(SwapStatus.pendingDeposit, byHand: true);
+
+    expect(swapOnCard([olderRunning, newerRunning, settledLast, waiting], now), same(newerRunning));
+    expect(swapOnCard([settledLast, settledFirst, waiting], now), same(settledLast));
+    expect(swapOnCard([waiting], now), isNull);
+    expect(swapOnCard(const [], now), isNull);
+  });
+
   test('registration body is the display contract Senoti echoes', () {
     final content = decide(swap(SwapStatus.knownDepositTx)).content!;
     final body = swapLiveActivityRegistrationBody(token: 'abc', platform: 'ios', content: content);

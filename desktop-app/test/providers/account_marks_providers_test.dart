@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -21,6 +22,7 @@ void main() {
     FakeSendChain chain, {
     List<MultisigAccount> multisigs = const [],
     ActiveSwap? swap,
+    List<ActiveSwap> swaps = const [],
   }) async {
     clock = DateTime(2026, 11, 20, 14, 2);
     final container = ProviderContainer(
@@ -28,13 +30,15 @@ void main() {
         ...shellOverrides(
           accounts: const [mainAccount, savingsAccount, encryptedAccount],
           settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs)
-            ..activeSwap = swap,
+            ..activeSwaps = [?swap, ...swaps],
           // Read as the chain answers: later, never at once.
           balanceOf: (_) async => oneToken,
           encryptedBalances: {0: oneToken},
           chain: chain,
         ),
         currentTimeProvider.overrideWithValue(() => clock),
+        // As the app has it: a swap awaiting its deposit is kept at launch.
+        keepsUnpaidSwapsProvider.overrideWithValue(true),
       ],
     );
     container.listen(accountMarksProvider, (_, _) {});
@@ -142,9 +146,8 @@ void main() {
     }
   });
 
-  testWidgets('a swap that has ended counts no more: complete, refunded, short-paid, or never paid in time', (
-    tester,
-  ) async {
+  testWidgets('a swap that has ended still counts until it is put away: complete, refunded, short-paid, or never paid '
+      'in time', (tester) async {
     final ended = [
       ('complete', fakeActiveSwap(status: SwapStatus.success)),
       ('refunded', fakeActiveSwap(status: SwapStatus.refunded)),
@@ -160,10 +163,38 @@ void main() {
     ];
     for (final (state, swap) in ended) {
       final container = await wallet(tester, FakeSendChain(), swap: swap);
+      expect(markOf(container, mainAccount.accountId), const AccountMark(inProgress: 1), reason: state);
 
-      expect(markOf(container, mainAccount.accountId), const AccountMark(), reason: state);
+      await container.read(activeSwapsProvider.notifier).remove(swap.id);
+      expect(markOf(container, mainAccount.accountId), const AccountMark(), reason: '$state, put away');
       await close(tester, container);
     }
+  });
+
+  testWidgets('each swap counts, for its own account: two from one count two', (tester) async {
+    final container = await wallet(
+      tester,
+      FakeSendChain(),
+      swaps: [
+        fakeActiveSwap(),
+        fakeActiveSwap(status: SwapStatus.refunded, depositAddress: '0x1111111111111111111111111111111111111111'),
+        fakeActiveSwap(account: savingsAccount, depositAddress: '0x2222222222222222222222222222222222222222'),
+      ],
+    );
+
+    expect(markOf(container, mainAccount.accountId), const AccountMark(inProgress: 2));
+    expect(markOf(container, savingsAccount.accountId), const AccountMark(inProgress: 1));
+    expect(markOf(container, encryptedAccount.accountId), const AccountMark());
+    await close(tester, container);
+  });
+
+  testWidgets('a swap whose account the wallet no longer holds counts on no account', (tester) async {
+    final container = await wallet(tester, FakeSendChain(), swap: fakeActiveSwap(account: tradingAccount));
+
+    for (final account in [mainAccount, savingsAccount, encryptedAccount]) {
+      expect(markOf(container, account.accountId), const AccountMark(), reason: account.name);
+    }
+    await close(tester, container);
   });
 
   testWidgets("a transfer still scheduled counts for an account never opened, all accounts' read at once", (
