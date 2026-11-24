@@ -30,9 +30,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorRemoveConfirm => 'Hapus';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
-
-  @override
   String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk mengakses wallet';
 
   @override

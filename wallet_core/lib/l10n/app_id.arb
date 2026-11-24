@@ -6,7 +6,6 @@
   "walletInitErrorRemoveTitle": "Hapus semua wallet dari perangkat ini?",
   "walletInitErrorRemoveBody": "Ini tidak dapat dibatalkan.",
   "walletInitErrorRemoveConfirm": "Hapus",
-  "walletInitErrorButtonLabel": "OK",
   "authUseDeviceBiometricsToUnlock": "Gunakan biometrik untuk mengakses wallet",
   "authAuthenticating": "Mengotentikasi...",
   "authUnlockWallet": "Buka Wallet",

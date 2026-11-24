@@ -30,9 +30,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletInitErrorRemoveConfirm => 'Remove';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
-
-  @override
   String get authUseDeviceBiometricsToUnlock => 'Use device biometrics to unlock';
 
   @override

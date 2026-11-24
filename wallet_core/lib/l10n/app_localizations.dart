@@ -134,12 +134,6 @@ abstract class AppLocalizations {
   /// **'Remove'**
   String get walletInitErrorRemoveConfirm;
 
-  /// Label for the button on the error dialog when the wallet is not found
-  ///
-  /// In en, this message translates to:
-  /// **'OK'**
-  String get walletInitErrorButtonLabel;
-
   /// Text for the text on the lock screen when using device biometrics to unlock
   ///
   /// In en, this message translates to:
