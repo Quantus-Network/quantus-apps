@@ -67,7 +67,8 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   }
 
   /// Says the first wallet's recovery phrase cannot be read, and asks until
-  /// the person chooses: Try Again reads it again, and the wallet is wiped
+  /// the person chooses: Try Again reads it again (a read that fails asks
+  /// again too), and the wallet is wiped
   /// only when its removal is confirmed. The phrase may still be on the
   /// device, hidden from the app for now. A sheet dismissed without a choice
   /// is shown again.
@@ -102,7 +103,16 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       if (!mounted) return;
       switch (choice) {
         case _LostPhraseChoice.tryAgain:
-          if (await _settingsService.getMnemonic(0) != null) {
+          final String? mnemonic;
+          try {
+            mnemonic = await _settingsService.getMnemonic(0);
+          } catch (e) {
+            // Still unreadable: asked again, as when it reads as missing.
+            quantusPrint('Reading the recovery phrase again failed: $e');
+            TelemetryService().sendError('Reading the recovery phrase again failed', error: e);
+            continue;
+          }
+          if (mnemonic != null) {
             if (mounted) _open(hasWallet: true);
             return;
           }

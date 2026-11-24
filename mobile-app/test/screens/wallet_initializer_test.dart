@@ -1,3 +1,6 @@
+import 'dart:collection';
+
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -28,6 +31,31 @@ class _CountingLogout extends Fake implements LogoutService {
   Future<void> logout() async => logouts++;
 }
 
+/// The keychain the secure-storage test platform reads, which can be made to
+/// fail every read, as a locked keychain does.
+class _LockableKeychain extends MapBase<String, String> {
+  final _entries = <String, String>{};
+  Object? readError;
+
+  @override
+  String? operator [](Object? key) {
+    if (readError case final error?) throw error;
+    return _entries[key];
+  }
+
+  @override
+  void operator []=(String key, String value) => _entries[key] = value;
+
+  @override
+  void clear() => _entries.clear();
+
+  @override
+  Iterable<String> get keys => _entries.keys;
+
+  @override
+  String? remove(Object? key) => _entries.remove(key);
+}
+
 /// What the app does at start when the first wallet's recovery phrase cannot
 /// be read: it is wiped only when the person asks, and confirms.
 void main() {
@@ -36,17 +64,20 @@ void main() {
   const confirmTitle = 'Remove all wallets from this device?';
 
   late _CountingLogout logout;
+  late _LockableKeychain keychain;
+  late List<MethodCall> telemetry;
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
+    keychain = _LockableKeychain();
+    FlutterSecureStorage.setMockInitialValues(keychain);
     final settings = SettingsService();
     await settings.initialize();
     await settings.saveAccounts([root]);
     await settings.setActiveAccount(const RegularAccount(root));
     await settings.setMainnetMigrationDone();
     logout = _CountingLogout();
-    recordTelemetry();
+    telemetry = recordTelemetry();
   });
 
   Finder button(String label) => find.widgetWithText(QuantusButton, label);
@@ -122,6 +153,32 @@ void main() {
     expect(find.text(notice), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(logout.logouts, 0);
+  });
+
+  testWidgets('Try Again with the keychain failing to read keeps the sheet, reports the failure and wipes nothing', (
+    tester,
+  ) async {
+    await pumpStart(tester);
+    keychain.readError = PlatformException(code: 'keychain-locked', message: 'The keychain is locked.');
+
+    await tap(tester, button('Try Again'));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(notice), findsOneWidget);
+    expect(button('Try Again'), findsOneWidget);
+    expect(button('Remove Wallet'), findsOneWidget);
+    expect(
+      telemetry.where((call) => '${call.arguments}'.contains('Reading the recovery phrase again failed')),
+      hasLength(1),
+    );
+    expect(logout.logouts, 0);
+
+    // Once the keychain reads again, Try Again opens the wallet.
+    keychain.readError = null;
+    await SettingsService().setMnemonic('a stored recovery phrase', 0);
+    await tap(tester, button('Try Again'));
+
+    expect(find.byType(HomeScreen), findsOneWidget);
   });
 
   testWidgets('Remove Wallet, once confirmed, wipes and shows Welcome', (tester) async {
