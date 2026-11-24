@@ -215,9 +215,9 @@ class SettingsService {
   /// mnemonic from secure storage. The primary wallet (index 0) cannot be
   /// removed.
   ///
-  /// Throws when its accounts cannot be dropped or its mnemonic cannot be
-  /// deleted, and the wallet is then kept whole: its accounts, mnemonic and
-  /// settings, and the active account, are what they were.
+  /// Throws when its account scan cannot be stopped, its accounts dropped or
+  /// its mnemonic deleted, and the wallet is then kept whole: its accounts,
+  /// mnemonic and settings, and the active account, are what they were.
   Future<void> removeWallet(int walletIndex) async {
     if (walletIndex == 0) {
       throw Exception('Cant remove the primary wallet!');
@@ -232,25 +232,35 @@ class SettingsService {
     }
     final previousAccounts = _prefs.getString(_accountsKey);
     final previousActive = _prefs.getString(_activeDisplayAccountKey);
-    final activeId = await _getActiveAccountId();
-    final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
-    if (activeRemoved) {
-      await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
-    }
+    final scanKey = _pendingAccountScanKey(walletIndex);
+    final previousScan = _prefs.getString(scanKey);
+    // The wallet's account scan adds accounts only while it is pending, so it
+    // is stopped first, before any step that waits, and is pending again only
+    // if the removal is undone.
     try {
-      await saveAccounts(remaining);
+      if (!await _prefs.remove(scanKey)) throw Exception('Could not remove $scanKey');
+      final activeId = await _getActiveAccountId();
+      final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
+      if (activeRemoved) {
+        await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
+      }
+      try {
+        await saveAccounts(remaining);
+      } catch (_) {
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
+      }
+      try {
+        await deleteMnemonic(walletIndex);
+      } catch (_) {
+        await _putBack(_accountsKey, previousAccounts);
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
+      }
     } catch (_) {
-      await _putBack(_activeDisplayAccountKey, previousActive);
+      await _putBack(scanKey, previousScan);
       rethrow;
     }
-    try {
-      await deleteMnemonic(walletIndex);
-    } catch (_) {
-      await _putBack(_accountsKey, previousAccounts);
-      await _putBack(_activeDisplayAccountKey, previousActive);
-      rethrow;
-    }
-    await _prefs.remove(_pendingAccountScanKey(walletIndex));
     await _prefs.remove(_walletOriginKey(walletIndex));
     await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
     await _prefs.remove(_walletNameKey(walletIndex));

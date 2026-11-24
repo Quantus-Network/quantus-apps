@@ -788,6 +788,38 @@ void main() {
         }
       });
 
+      test('a $how active account write, removing the active wallet, throws and keeps its scan pending', () async {
+        await given([first, trading], active: trading);
+        await settings.setMnemonic('trading phrase', 1);
+        await settings.setPendingAccountScan(1, trading.accountId);
+        fail('active_display_account');
+
+        await expectLater(settings.removeWallet(1), throwsA(anything));
+
+        for (final current in [settings, await restarted()]) {
+          expect(await idsIn(current), [first.accountId, trading.accountId]);
+          expect(await activeIdIn(current), trading.accountId);
+          expect(await current.getMnemonic(1), 'trading phrase');
+          expect(current.pendingAccountScan(1), trading.accountId);
+        }
+      });
+
+      test('a $how removal of the pending scan throws and leaves the wallet whole', () async {
+        await given([first, trading], active: trading);
+        await settings.setMnemonic('trading phrase', 1);
+        await settings.setPendingAccountScan(1, trading.accountId);
+        fail('pending_account_scan_1');
+
+        await expectLater(settings.removeWallet(1), throwsA(anything));
+
+        for (final current in [settings, await restarted()]) {
+          expect(await idsIn(current), [first.accountId, trading.accountId]);
+          expect(await activeIdIn(current), trading.accountId);
+          expect(await current.getMnemonic(1), 'trading phrase');
+          expect(current.pendingAccountScan(1), trading.accountId);
+        }
+      });
+
       test('a $how move of an old single account throws and keeps its old keys', () async {
         await store.setValue('String', 'flutter.account_id', 'id_old');
         await store.setValue('String', 'flutter.wallet_name', 'Old');
@@ -806,6 +838,7 @@ void main() {
     test('a wallet whose phrase cannot be deleted is kept whole, and the removal throws', () async {
       await given([first, trading], active: trading);
       await settings.setMnemonic('trading phrase', 1);
+      await settings.setPendingAccountScan(1, trading.accountId);
       FlutterSecureStoragePlatform.instance = _UndeletableSecureStorage(
         (FlutterSecureStoragePlatform.instance as TestFlutterSecureStoragePlatform).data,
       );
@@ -816,6 +849,7 @@ void main() {
         expect(await idsIn(current), [first.accountId, trading.accountId]);
         expect(await activeIdIn(current), trading.accountId);
         expect(await current.getMnemonic(1), 'trading phrase');
+        expect(current.pendingAccountScan(1), trading.accountId);
       }
     });
   });
