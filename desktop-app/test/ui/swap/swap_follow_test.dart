@@ -797,6 +797,27 @@ void main() {
       expect(find.byType(SwapSheet), findsOneWidget);
     });
 
+    testOnMac('with as many others running as can be followed, puts the swap away and opens the sheet on the limit', (
+      tester,
+    ) async {
+      final failed = fakeActiveSwap(status: SwapStatus.failed);
+      final running = [
+        for (var i = 1; i <= ActiveSwapsNotifier.maxFollowed; i++)
+          fakeActiveSwap(depositAddress: '0x${i.toRadixString(16) * 40}'),
+      ];
+      // The newest, so that its row is at the top of a long list.
+      final settings = await _open(tester, followed: [...running, failed]);
+      await _openRow(tester, failed);
+
+      await _press(tester, _inPanel(find.byKey(SwapDetail.startNewKey)));
+
+      expect(settings.activeSwaps.map((s) => s.id), running.map((s) => s.id));
+      expect(find.byType(SwapDetail), findsNothing);
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(find.text(_l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed)), findsOneWidget);
+      expect(find.byKey(SwapSheet.amountFieldKey), findsNothing);
+    });
+
     testOnMac('is not offered where swaps are no longer available', (tester) async {
       await _open(tester, swap: fakeActiveSwap(status: SwapStatus.failed), swapAvailable: false);
       await _openSwap(tester);
