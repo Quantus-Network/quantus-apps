@@ -12,11 +12,15 @@ class AccountsNotifier extends StateNotifier<AsyncValue<List<Account>>> {
     if (initialAccounts == null) _loadAccounts();
   }
 
+  /// A list replaced while it loads answers no one: the one that replaced it
+  /// loads for itself.
   Future<void> _loadAccounts() async {
     try {
       final accounts = await _accountsService.getAccounts();
+      if (!mounted) return;
       state = AsyncValue.data(accounts);
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
