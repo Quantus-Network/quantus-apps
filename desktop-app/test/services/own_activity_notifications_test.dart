@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
@@ -20,6 +21,7 @@ import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 import '../fakes.dart';
 import 'fake_notification_plugin.dart';
@@ -57,20 +59,22 @@ TransferEvent _indexedSend(BigInt amount) => TransferEvent(
 
 /// The chain, its indexer holding Main's send to Bob as having moved
 /// [sentAmount], or not holding it when that is null.
-FakeSendChain _chain({required BigInt? sentAmount}) {
-  final chain = FakeSendChain();
+FakeSendChain _chain({required BigInt? sentAmount, Completer<void>? holdAmountLookup}) {
+  final chain = FakeSendChain()..holdHashSearch = holdAmountLookup;
   if (sentAmount != null) chain.indexedTransfers[_sendHash] = _indexedSend(sentAmount);
   return chain;
 }
 
 /// A wallet of Main and Savings, with the Team multisig, whose notifications
 /// are started on [platform] in the language [locale]. The indexer holds
-/// Main's send to Bob as having moved [sentAmount], 12.5 unless said.
+/// Main's send to Bob as having moved [sentAmount], 12.5 unless said; reading
+/// it waits for [holdAmountLookup] when that is set.
 Future<({ProviderContainer container, FakeNotificationPlugin notifications, _RecordingTelemetry telemetry})> _open({
   TargetPlatform platform = TargetPlatform.windows,
   String locale = 'en',
   BigInt? sentAmount,
   bool indexed = true,
+  Completer<void>? holdAmountLookup,
 }) async {
   debugDefaultTargetPlatformOverride = platform;
   addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -83,7 +87,7 @@ Future<({ProviderContainer container, FakeNotificationPlugin notifications, _Rec
       ...shellOverrides(
         accounts: const [mainAccount, savingsAccount],
         settings: settings,
-        chain: _chain(sentAmount: indexed ? sentAmount ?? _amount : null),
+        chain: _chain(sentAmount: indexed ? sentAmount ?? _amount : null, holdAmountLookup: holdAmountLookup),
       ),
       notificationPluginProvider.overrideWithValue(notifications),
       telemetryProvider.overrideWithValue(telemetry),
@@ -282,6 +286,51 @@ void main() {
       await _settleDown();
 
       expect(notifications.shown, isEmpty);
+    });
+
+    group('whose amount is read as a wallet reset starts', () {
+      /// Found, and its amount being read as the wipe starts.
+      Future<
+        ({
+          ProviderContainer container,
+          FakeNotificationPlugin notifications,
+          WalletSession session,
+          Completer<void> lookup,
+        })
+      >
+      readingDuringTheWipe() async {
+        final lookup = Completer<void>();
+        final (:container, :notifications, telemetry: _) = await _open(holdAmountLookup: lookup);
+        _broadcast(container);
+        _found(container);
+        await _settleDown();
+        final session = container.read(walletSessionProvider)..beginReset();
+        lookup.complete();
+        await _settleDown();
+        return (container: container, notifications: notifications, session: session, lookup: lookup);
+      }
+
+      test('notifies nothing when the reset goes through', () async {
+        final (:container, :notifications, :session, lookup: _) = await readingDuringTheWipe();
+        expect(notifications.shown, isEmpty);
+
+        session.finishReset();
+        await _settleDown();
+
+        expect(notifications.shown, isEmpty);
+        expect(container.read(workHoldsProvider), isEmpty);
+      });
+
+      test('notifies once the wipe has failed', () async {
+        final (:container, :notifications, :session, lookup: _) = await readingDuringTheWipe();
+        expect(notifications.shown, isEmpty);
+
+        session.cancelReset();
+        await _settleDown();
+
+        expect(_shown(notifications), [('Sent 12.5 QTC', 'From Main')]);
+        expect(container.read(workHoldsProvider), isEmpty);
+      });
     });
 
     test('still watched for when the wallet is wiped notifies nothing about it', () async {

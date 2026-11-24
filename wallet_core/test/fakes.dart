@@ -221,6 +221,16 @@ class FakeSubstrateService extends Fake implements SubstrateService {
     return Uint8List.fromList([1]);
   }
 
+  /// When set, a broadcast signed off-device answers with what this completes
+  /// with.
+  Completer<Uint8List>? holdExternalBroadcast;
+
+  @override
+  Future<Uint8List> submitExtrinsicWithExternalSignature(
+    UnsignedTransactionData unsignedData,
+    Uint8List signatureWithPublicKey,
+  ) async => await holdExternalBroadcast?.future ?? Uint8List.fromList([1]);
+
   /// When set, the wipe waits for it: after clearing the preferences, as the
   /// real one then goes on to the keychain and the files, or before failing
   /// with [logoutError].

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// Configuration for polling the indexer until a submitted extrinsic appears.
@@ -24,6 +25,9 @@ class ExtrinsicIndexerPollingConfig<TPending, TContext> {
   final bool Function(Ref ref, String id) isStillPending;
   final void Function(Ref ref, String id) removePending;
   final void Function(Ref ref) showTimeoutToast;
+
+  /// Answers true once nothing is left to watch for. What it read for a wallet
+  /// since reset must not be written: see [WalletSession.survivesReset].
   final Future<bool> Function(Ref ref, TContext context, TPending pending) confirmIfIndexed;
 
   /// When polling times out, attempt to reconcile from chain state without a
@@ -96,6 +100,9 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
 
   Future<void> _handleTimeout(TContext context, TPending pending) async {
     final key = _config.getId(pending);
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
+    final dropping = '${_config.logPrefix} the end of the watch for $key';
     try {
       quantusPrint('${_config.logPrefix} final indexer check before timeout for $key');
       final confirmed = await _config.confirmIfIndexed(_ref, context, pending);
@@ -119,6 +126,7 @@ class ExtrinsicIndexerPollingService<TPending, TContext> {
       }
     }
 
+    if (!await session.survivesReset(ticket, dropping: dropping)) return;
     if (!_config.isStillPending(_ref, key)) return;
 
     quantusPrint('${_config.logPrefix} giving up on $key');
