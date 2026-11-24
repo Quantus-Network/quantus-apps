@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - 'desktop-app/**'
+      - 'desktop_qr_camera/**'
       - '.github/workflows/desktop_app_build.yml'
 
 permissions:
@@ -40,8 +41,9 @@ jobs:
           brew install cocoapods || brew reinstall cocoapods
           pod --version
 
+      # Fails if a package no longer matches the hash in the committed lockfile.
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
         working-directory: ./desktop-app
 
       - name: Build macOS debug
@@ -79,9 +81,33 @@ jobs:
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
 
+      # Fails if a package no longer matches the hash in the committed lockfile.
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
         working-directory: ./desktop-app
+
+      # Every camera frame on Windows and Linux goes through this conversion,
+      # and every Linux preview paint through the texture's buffer.
+      - name: Check the camera frame conversion under the sanitizers
+        working-directory: ./desktop_qr_camera
+        run: |
+          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
+            -I native test/native/yuy2_test.cpp -o "$RUNNER_TEMP/yuy2_test"
+          "$RUNNER_TEMP/yuy2_test"
+          clang++ -std=c++14 -Wall -Wextra -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
+            -I linux test/native/camera_texture_buffer_test.cpp -o "$RUNNER_TEMP/camera_texture_buffer_test"
+          "$RUNNER_TEMP/camera_texture_buffer_test"
+          clang++ -std=c++17 -Wall -Wextra -Wno-unused-parameter -Werror -pthread \
+            -fsanitize=address,undefined -fno-sanitize-recover=undefined -I test/native/fake_flutter -I windows \
+            test/native/texture_handler_test.cpp windows/texture_handler.cpp -o "$RUNNER_TEMP/texture_handler_test"
+          "$RUNNER_TEMP/texture_handler_test"
+          clang++ -std=c++14 -Wall -Wextra -Wno-unused-parameter -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined \
+            -I native test/native/windows_format_test.cpp -o "$RUNNER_TEMP/windows_format_test"
+          "$RUNNER_TEMP/windows_format_test"
+          clang++ -std=c++14 -Wall -Wextra -Werror -pthread -fsanitize=address,undefined -fno-sanitize-recover=undefined \
+            -I test/native/fake_v4l2 -I native test/native/camera_linux_open_test.cpp \
+            -o "$RUNNER_TEMP/camera_linux_open_test"
+          "$RUNNER_TEMP/camera_linux_open_test"
 
       # The only run of the login password check against a real libpam. The
       # app's PAM service is installed as its package will install it, and the
@@ -116,8 +142,9 @@ jobs:
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
 
+      # Fails if a package no longer matches the hash in the committed lockfile.
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
         working-directory: ./desktop-app
 
       - name: Build Windows debug

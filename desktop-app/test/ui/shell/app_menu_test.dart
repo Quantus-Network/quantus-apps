@@ -185,6 +185,7 @@ void main() {
           ('Swap', true),
           ('New Account', true),
           ('Import Wallet…', true),
+          ('Create Multisig…', true),
           ('Manage Multisigs…', true),
         ],
       ),
@@ -198,6 +199,7 @@ void main() {
           ('Swap', false),
           ('New Account', true),
           ('Import Wallet…', true),
+          ('Create Multisig…', false),
           ('Manage Multisigs…', true),
         ],
       ),
@@ -209,6 +211,7 @@ void main() {
           ('Propose', true),
           ('New Account', true),
           ('Import Wallet…', true),
+          ('Create Multisig…', false),
           ('Manage Multisigs…', true),
         ],
       ),
@@ -220,7 +223,8 @@ void main() {
         expect([for (final item in items) (item.label, item.onSelected != null)], expected);
 
         final onToolbar = expected.where(
-          (entry) => !const {'New Account', 'Import Wallet…', 'Manage Multisigs…'}.contains(entry.$1),
+          (entry) =>
+              !const {'New Account', 'Import Wallet…', 'Create Multisig…', 'Manage Multisigs…'}.contains(entry.$1),
         );
         for (final (label, enabled) in onToolbar) {
           expect(_toolbarButton(label), findsOneWidget, reason: label);
@@ -253,6 +257,7 @@ void main() {
       expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), [
         'New Account',
         'Import Wallet…',
+        'Create Multisig…',
         'Manage Multisigs…',
         'Main',
       ]);
@@ -720,6 +725,7 @@ void main() {
           ('Disconnect Hardware Account…', true),
           ('New Account', true),
           ('Import Wallet…', true),
+          ('Create Multisig…', false),
           ('Manage Multisigs…', true),
           ('Main', true),
           ('Team', true),

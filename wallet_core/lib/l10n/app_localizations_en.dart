@@ -1559,9 +1559,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Help & Support';
 
   @override
-  String get settingsHelpDiscord => 'Discord';
-
-  @override
   String get settingsHelpTelegram => 'Telegram';
 
   @override
@@ -1719,9 +1716,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get swapSaveAddress => 'Save for future swaps';
-
-  @override
-  String get swapSaveAddressFailed => 'Could not save the address.';
 
   @override
   String get swapContinue => 'Continue to Swap';
@@ -2076,9 +2070,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Contact Support';
-
-  @override
-  String get commonSupportScamWarning => 'Support will never DM you first or ask for your recovery phrase.';
 
   @override
   String get commonRetry => 'Retry';
@@ -3188,11 +3179,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
-    return '$amount from $account didn’t finish sending. Part of it may have gone through.';
-  }
-
-  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal created';
 
   @override
@@ -3245,6 +3231,70 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String desktopManageMultisigsSignsAs(String approvals, String name) {
     return '$approvals · you sign as $name';
+  }
+
+  @override
+  String get desktopMenuCreateMultisig => 'Create Multisig…';
+
+  @override
+  String get desktopCreateMultisigSigners => 'Signers';
+
+  @override
+  String get desktopCreateMultisigApprovalsNeeded => 'Approvals needed';
+
+  @override
+  String get desktopCreateMultisigApprovals => 'Approvals';
+
+  @override
+  String desktopCreateMultisigApprovalsValue(int count, int total) {
+    return '$count of $total signers';
+  }
+
+  @override
+  String get desktopCreateMultisigAddress => 'Address';
+
+  @override
+  String get desktopCreateMultisigPaidBy => 'Paid by';
+
+  @override
+  String get desktopCreateMultisigCreationFee => 'Creation fee';
+
+  @override
+  String get desktopCreateMultisigRemoveSigner => 'Remove signer';
+
+  @override
+  String desktopCreateMultisigPreviewFailed(String error) {
+    return 'Could not work out the new address: $error';
+  }
+
+  @override
+  String desktopCreateMultisigCantAfford(String name) {
+    return '$name can’t cover what this costs';
+  }
+
+  @override
+  String get desktopCreateMultisigDeclined => 'Creating this multisig needs your approval';
+
+  @override
+  String desktopCreateMultisigFailed(String error) {
+    return 'Could not create this multisig: $error';
+  }
+
+  @override
+  String get desktopCreateMultisigTimedOut => 'Multisig not confirmed';
+
+  @override
+  String get settingsHelpDiscord => 'Discord';
+
+  @override
+  String get swapSaveAddressFailed => 'Could not save the address.';
+
+  @override
+  String get commonSupportScamWarning => 'Support will never DM you first or ask for your recovery phrase.';
+
+  @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount from $account didn’t finish sending. Part of it may have gone through.';
   }
 
   @override

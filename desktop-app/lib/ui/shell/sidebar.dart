@@ -18,6 +18,7 @@ import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart'
 import 'package:quantus_desktop_wallet/ui/components/inline_name_field.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
+import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -108,6 +109,7 @@ class Sidebar extends ConsumerWidget {
       ref.read(softwareWalletsProvider),
       ref.read(accountManagerProvider),
       offersMultisigs: ref.read(remoteConfigProvider).enableMultisig,
+      canCreateMultisig: ref.read(multisigCreatorProvider) != null,
     );
     final box = row.findRenderObject()! as RenderBox;
     unawaited(showPullDownMenu(row, anchor: box.localToGlobal(Offset.zero) & box.size, items: items));
@@ -133,6 +135,11 @@ class Sidebar extends ConsumerWidget {
     if (grouping.wallets.isEmpty && grouping.standaloneMultisigs.isEmpty) {
       return [_message(context, l10n.accountsSheetNoAccountsFound)];
     }
+    final creating = ref.watch(creatingMultisigsProvider);
+    // One whose creator has since been disconnected is in no wallet here.
+    final creatingAlone = creating.where(
+      (multisig) => !grouping.wallets.any((wallet) => wallet.contains(multisig.myMemberAccountId)),
+    );
 
     final selectedAccountId = selection == SidebarSelection.account ? active.value?.account.accountId : null;
     // Keyed: a wallet opening or closing moves what is below it, and a row or
@@ -153,16 +160,24 @@ class Sidebar extends ConsumerWidget {
           isOpen: open.contains(wallet.walletIndex),
           holdsActiveAccount: wallet.walletIndex == activeWallet,
         ),
-        if (open.contains(wallet.walletIndex))
+        if (open.contains(wallet.walletIndex)) ...[
           for (final account in walletAccountsInOrder(wallet)) row(account),
+          // Where each will be once the chain has it: after the wallet's
+          // multisigs.
+          for (final multisig in creating)
+            if (wallet.contains(multisig.myMemberAccountId))
+              _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
+        ],
       ],
-      if (grouping.standaloneMultisigs.isNotEmpty) ...[
+      if (grouping.standaloneMultisigs.isNotEmpty || creatingAlone.isNotEmpty) ...[
         if (grouping.wallets.isNotEmpty) ...[
           const SizedBox(height: 12),
           const MenuDivider(),
           const SizedBox(height: 12),
         ],
         for (final multisig in grouping.standaloneMultisigs) row(MultisigDisplayAccount(multisig)),
+        for (final multisig in creatingAlone)
+          _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
       ],
     ];
   }
@@ -337,6 +352,24 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// A multisig the chain has yet to confirm: its name and a moving status. It
+/// is not an account yet, so nothing selects it, and it has no menu.
+class _CreatingRow extends ConsumerWidget {
+  const _CreatingRow({super.key, required this.multisig});
+
+  final MultisigAccount multisig;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SidebarRow(
+      title: multisig.name,
+      leading: DesktopAccountBadge(account: multisig, size: _AccountRow._badgeSize),
+      subtitle: TerminalBusyLine(label: ref.watch(l10nProvider).multisigCreateCreatingButton),
+      onTap: null,
     );
   }
 }

@@ -298,6 +298,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
       onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
       offersMultisigs: read(remoteConfigProvider).enableMultisig,
+      canCreateMultisig: hasWallet && read(multisigCreatorProvider) != null,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),

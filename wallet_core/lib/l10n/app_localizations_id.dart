@@ -1562,9 +1562,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
 
   @override
-  String get settingsHelpDiscord => 'Discord';
-
-  @override
   String get settingsHelpTelegram => 'Telegram';
 
   @override
@@ -1722,9 +1719,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapSaveAddress => 'Simpan untuk swap berikutnya';
-
-  @override
-  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
 
   @override
   String get swapContinue => 'Lanjutkan ke Swap';
@@ -2079,10 +2073,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Hubungi Dukungan';
-
-  @override
-  String get commonSupportScamWarning =>
-      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
 
   @override
   String get commonRetry => 'Coba Lagi';
@@ -3194,11 +3184,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
-    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
-  }
-
-  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal dibuat';
 
   @override
@@ -3251,6 +3236,71 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String desktopManageMultisigsSignsAs(String approvals, String name) {
     return '$approvals · Anda menandatangani sebagai $name';
+  }
+
+  @override
+  String get desktopMenuCreateMultisig => 'Buat Multisig…';
+
+  @override
+  String get desktopCreateMultisigSigners => 'Penanda tangan';
+
+  @override
+  String get desktopCreateMultisigApprovalsNeeded => 'Persetujuan diperlukan';
+
+  @override
+  String get desktopCreateMultisigApprovals => 'Persetujuan';
+
+  @override
+  String desktopCreateMultisigApprovalsValue(int count, int total) {
+    return '$count dari $total penanda tangan';
+  }
+
+  @override
+  String get desktopCreateMultisigAddress => 'Alamat';
+
+  @override
+  String get desktopCreateMultisigPaidBy => 'Dibayar oleh';
+
+  @override
+  String get desktopCreateMultisigCreationFee => 'Biaya pembuatan';
+
+  @override
+  String get desktopCreateMultisigRemoveSigner => 'Hapus penanda tangan';
+
+  @override
+  String desktopCreateMultisigPreviewFailed(String error) {
+    return 'Tidak dapat menentukan alamat baru: $error';
+  }
+
+  @override
+  String desktopCreateMultisigCantAfford(String name) {
+    return '$name tidak dapat menutup biayanya';
+  }
+
+  @override
+  String get desktopCreateMultisigDeclined => 'Membuat multisig ini memerlukan persetujuan Anda';
+
+  @override
+  String desktopCreateMultisigFailed(String error) {
+    return 'Tidak dapat membuat multisig ini: $error';
+  }
+
+  @override
+  String get desktopCreateMultisigTimedOut => 'Multisig belum terkonfirmasi';
+
+  @override
+  String get settingsHelpDiscord => 'Discord';
+
+  @override
+  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
+
+  @override
+  String get commonSupportScamWarning =>
+      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
+
+  @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
   }
 
   @override

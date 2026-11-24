@@ -309,6 +309,10 @@ class AccountManager {
   /// another.
   Future<void> openImportWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.importWallet);
 
+  /// Opens the Create Multisig sheet. Like any sheet, it does not open over
+  /// another, and it opens only on an account that can create one.
+  Future<void> openCreateMultisig() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.createMultisig);
+
   /// Opens the Manage Multisigs sheet. Like any sheet, it does not open over
   /// another.
   Future<void> openManageMultisigs() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.manageMultisigs);
