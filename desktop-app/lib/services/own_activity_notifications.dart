@@ -1,13 +1,9 @@
-import 'dart:async';
-
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_desktop_wallet/models/notification_status.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
-import 'package:quantus_desktop_wallet/providers/notification_click_provider.dart';
-import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
+import 'package:quantus_desktop_wallet/services/notification_delivery.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/notification_models.dart';
@@ -16,7 +12,6 @@ import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
-import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -52,16 +47,7 @@ class _EncryptedSend {
 /// What happens elsewhere (funds received, what other signers do) is for
 /// remote notifications.
 class OwnActivityNotifications {
-  /// How long a notification handed over still needs the app: macOS's
-  /// notification plugin answers before macOS has taken it.
-  static const settleDelay = Duration(seconds: 2);
-
   OwnActivityNotifications(this._ref) {
-    _ref.onDispose(() {
-      for (final timer in _settling) {
-        timer.cancel();
-      }
-    });
     _ref.listen(pendingTransactionsProvider, (_, sends) => _onSends(sends));
     _ref.listen(pendingMultisigProposalsProvider, (_, proposals) => _onProposals(proposals));
     _ref.listen(
@@ -75,6 +61,8 @@ class OwnActivityNotifications {
   }
 
   final Ref _ref;
+
+  NotificationDelivery get _delivery => _ref.read(notificationDeliveryProvider);
 
   /// The Encrypted sends handed to the node and not yet seen on the chain, by
   /// the hash of the last transaction of each.
@@ -102,21 +90,6 @@ class OwnActivityNotifications {
   /// leaves the pending proposals before that.
   final _proposals = <String, PendingMultisigProposalEvent>{};
 
-  /// One for each notification handed over less than [settleDelay] ago.
-  final _settling = <Timer>{};
-
-  /// Whether a notification was handed over so recently that quitting now
-  /// could still lose it.
-  bool get isSettling => _settling.isNotEmpty;
-
-  /// Counts [delivering], which reports its own failures, as work under way
-  /// until it is done.
-  void _holdWhile(Future<void> delivering) {
-    final holds = _ref.read(workHoldsProvider.notifier);
-    holds.hold(delivering);
-    unawaited(delivering.whenComplete(() => holds.release(delivering)));
-  }
-
   void _onSends(List<PendingTransactionEvent> sends) {
     final now = clock.now();
     for (final send in sends) {
@@ -126,7 +99,7 @@ class OwnActivityNotifications {
           _sends[send.id] = (send: send, broadcastAt: now);
         case TransactionState.inHistory when watched != null:
           _sends.remove(send.id);
-          _holdWhile(_notifySent(send));
+          _delivery.holdWhile(_notifySent(send));
         case TransactionState.failed when watched != null:
           _sends.remove(send.id);
           // The amount it was recorded with: what it set out to send.
@@ -340,10 +313,10 @@ class OwnActivityNotifications {
         continue;
       }
       final l10n = _ref.read(l10nProvider);
-      final amount = _amountText(proposal.amount);
+      final amount = _delivery.amountText(proposal.amount);
       switch (outcome) {
         case SendConfirmation.confirmed:
-          _show(
+          _delivery.show(
             id: 'proposal_created_$hash',
             accountId: multisig.accountId,
             accountName: multisig.name,
@@ -353,7 +326,7 @@ class OwnActivityNotifications {
             body: l10n.desktopNotificationProposalCreatedBody(amount, multisig.name),
           );
         case SendConfirmation.unconfirmed:
-          _show(
+          _delivery.show(
             id: 'proposal_not_confirmed_$hash',
             accountId: multisig.accountId,
             accountName: multisig.name,
@@ -393,8 +366,8 @@ class OwnActivityNotifications {
       return;
     }
     final l10n = _ref.read(l10nProvider);
-    final amountText = _amountText(amount);
-    _show(
+    final amountText = _delivery.amountText(amount);
+    _delivery.show(
       id: 'send_$id',
       accountId: account.accountId,
       accountName: account.name,
@@ -403,57 +376,6 @@ class OwnActivityNotifications {
       title: title(l10n, amountText),
       body: body(l10n, amountText, account.name),
     );
-  }
-
-  String _amountText(BigInt amount) {
-    final formatted = _ref.read(numberFormattingServiceProvider).formatBalance(amount, smartDecimals: 4);
-    return _ref.read(l10nProvider).commonAmountBalance(formatted, AppConstants.tokenSymbol);
-  }
-
-  /// Shows a notification when the person wants it and the system allows it.
-  void _show({
-    required String id,
-    required String accountId,
-    required String accountName,
-    required String? extrinsicHash,
-    required NotificationIntent intent,
-    required String title,
-    required String body,
-  }) {
-    final config = _ref.read(notificationConfigProvider);
-    if (!config.enabled || !config.isIntentEnabled(intent)) return;
-    final status = _ref.read(desktopLocalNotificationsProvider);
-    if (status is! NotificationsAllowed) {
-      quantusPrint('Not notifying "$title": notifications are ${status.runtimeType}');
-      return;
-    }
-    final notification = NotificationData(
-      id: id,
-      accountId: accountId,
-      type: NotificationType.info,
-      intent: intent,
-      source: NotificationSource.local,
-      title: title,
-      message: body,
-      accountName: accountName,
-      timestamp: clock.now(),
-      metadata: extrinsicHash == null ? null : {notificationHashKey: extrinsicHash},
-      persistent: false,
-    );
-    _holdWhile(_showNow(notification));
-  }
-
-  Future<void> _showNow(NotificationData notification) async {
-    try {
-      await _ref.read(desktopLocalNotificationsProvider.notifier).showOrScheduleNotification(notification);
-      if (!_ref.mounted) return;
-      late final Timer settled;
-      settled = Timer(settleDelay, () => _settling.remove(settled));
-      _settling.add(settled);
-    } catch (e) {
-      quantusPrint('Showing a notification failed: $e');
-      _ref.read(telemetryProvider).sendError('desktop_notification_show_failed', error: e);
-    }
   }
 }
 
