@@ -2954,12 +2954,6 @@ abstract class AppLocalizations {
   /// **'Help & Support'**
   String get settingsHelpScreenTitle;
 
-  /// Discord support row title
-  ///
-  /// In en, this message translates to:
-  /// **'Discord'**
-  String get settingsHelpDiscord;
-
   /// Telegram row title
   ///
   /// In en, this message translates to:
@@ -3229,12 +3223,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save for future swaps'**
   String get swapSaveAddress;
-
-  /// Error toast when the entered swap address could not be saved for future swaps
-  ///
-  /// In en, this message translates to:
-  /// **'Could not save the address.'**
-  String get swapSaveAddressFailed;
 
   /// Button that quotes the swap with the entered address
   ///
@@ -3877,12 +3865,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact Support'**
   String get commonContactSupport;
-
-  /// Warning against impostors, shown wherever the app sends someone to the support Discord
-  ///
-  /// In en, this message translates to:
-  /// **'Support will never DM you first or ask for your recovery phrase.'**
-  String get commonSupportScamWarning;
 
   /// Retry action on various screens
   ///
@@ -4550,11 +4532,11 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get desktopMenuAccount;
 
-  /// Desktop Account menu item that opens the add account sheet
+  /// Desktop: the item that adds a Transparent account to a wallet, at once, with its name ready to be typed over; in the Account menu and the sidebar's Add Account menu
   ///
   /// In en, this message translates to:
-  /// **'Add Account…'**
-  String get desktopMenuAddAccount;
+  /// **'New Account'**
+  String get desktopMenuNewAccount;
 
   /// Desktop menu bar: View menu title
   ///
@@ -5768,12 +5750,6 @@ abstract class AppLocalizations {
   /// **'{amount} from {account} was not sent.'**
   String desktopNotificationSendFailedBody(String amount, String account);
 
-  /// Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol
-  ///
-  /// In en, this message translates to:
-  /// **'{amount} from {account} didn’t finish sending. Part of it may have gone through.'**
-  String desktopNotificationEncryptedSendFailedBody(String amount, String account);
-
   /// Desktop notification title: a multisig proposal made on this computer was created on the chain
   ///
   /// In en, this message translates to:
@@ -5797,6 +5773,342 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The proposal to send {amount} from {multisig} wasn’t seen on the chain in time.'**
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig);
+
+  /// Desktop sidebar, read by screen readers: how many accounts a closed wallet holds, as the number on its heading says
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 account} other{{count} accounts}}'**
+  String desktopWalletAccountCount(int count);
+
+  /// Import: the recovery phrase typed is that of a wallet already in the app; nothing was stored
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet is already in the app'**
+  String get importWalletAlreadyAdded;
+
+  /// Desktop: the item that opens the Import Wallet sheet, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Import Wallet…'**
+  String get desktopMenuImportWallet;
+
+  /// Desktop Import Wallet sheet: a line with a spinner while the wallet is saved and its accounts are found on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Finding this wallet\'s accounts'**
+  String get desktopImportFinding;
+
+  /// Desktop Import Wallet sheet: under the phrase when saving the wallet failed; the phrase stays to try again
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t import the wallet'**
+  String get desktopImportFailed;
+
+  /// Desktop: a short note by the account name in the top bar after importing a wallet with the sidebar hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet imported'**
+  String get desktopImportDone;
+
+  /// Desktop: menu item in Add Account and the Account menu; opens the list that adds and removes multisigs
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs…'**
+  String get desktopMenuManageMultisigs;
+
+  /// Desktop Manage Multisigs sheet: its title
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs'**
+  String get desktopManageMultisigsTitle;
+
+  /// Desktop Manage Multisigs sheet: the sentence under the title
+  ///
+  /// In en, this message translates to:
+  /// **'Multisigs on chain where one of your accounts is a signer. Switching one off removes it from this app only.'**
+  String get desktopManageMultisigsLead;
+
+  /// Desktop Manage Multisigs sheet: a moving line while the chain is read
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your multisigs on chain'**
+  String get desktopManageMultisigsFinding;
+
+  /// Desktop Manage Multisigs sheet: a row's detail line, e.g. '2 of 3 · you sign as Savings'
+  ///
+  /// In en, this message translates to:
+  /// **'{approvals} · you sign as {name}'**
+  String desktopManageMultisigsSignsAs(String approvals, String name);
+
+  /// Desktop: menu item in Add Account and the Account menu; opens the form that creates a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Create Multisig…'**
+  String get desktopMenuCreateMultisig;
+
+  /// Desktop Create Multisig sheet: label of the list of signers
+  ///
+  /// In en, this message translates to:
+  /// **'Signers'**
+  String get desktopCreateMultisigSigners;
+
+  /// Desktop Create Multisig form: label of the choice of how many signers must approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals needed'**
+  String get desktopCreateMultisigApprovalsNeeded;
+
+  /// Desktop Create Multisig review: label of how many signers must approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get desktopCreateMultisigApprovals;
+
+  /// Desktop Create Multisig review: how many signers must approve, e.g. '2 of 3 signers'
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} signers'**
+  String desktopCreateMultisigApprovalsValue(int count, int total);
+
+  /// Desktop Create Multisig review: label of the address the new multisig will have
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get desktopCreateMultisigAddress;
+
+  /// Desktop Create Multisig review: label of the account that signs and pays for the creation
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by'**
+  String get desktopCreateMultisigPaidBy;
+
+  /// Desktop Create Multisig review: label of the chain's fixed fee for creating a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Creation fee'**
+  String get desktopCreateMultisigCreationFee;
+
+  /// Desktop Create Multisig form: what a screen reader and the tooltip call the cross on a signer's row
+  ///
+  /// In en, this message translates to:
+  /// **'Remove signer'**
+  String get desktopCreateMultisigRemoveSigner;
+
+  /// Desktop Create Multisig form: the new multisig's address could not be worked out
+  ///
+  /// In en, this message translates to:
+  /// **'Could not work out the new address: {error}'**
+  String desktopCreateMultisigPreviewFailed(String error);
+
+  /// Desktop Create Multisig: the account that pays does not hold enough for the fees
+  ///
+  /// In en, this message translates to:
+  /// **'{name} can’t cover what this costs'**
+  String desktopCreateMultisigCantAfford(String name);
+
+  /// Desktop Create Multisig review: the system's approval was declined, so nothing was submitted
+  ///
+  /// In en, this message translates to:
+  /// **'Creating this multisig needs your approval'**
+  String get desktopCreateMultisigDeclined;
+
+  /// Desktop Create Multisig: the check or the submission failed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create this multisig: {error}'**
+  String desktopCreateMultisigFailed(String error);
+
+  /// Desktop: short note on the active account's sidebar row when a multisig being created was not confirmed in time
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig not confirmed'**
+  String get desktopCreateMultisigTimedOut;
+
+  /// Desktop: the item that opens the Connect Cold Wallet sheet, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Cold Wallet…'**
+  String get desktopMenuConnectColdWallet;
+
+  /// Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device
+  ///
+  /// In en, this message translates to:
+  /// **'Hold it up to this camera'**
+  String get desktopColdWalletStepHold;
+
+  /// Desktop Connect Cold Wallet sheet: a line with a spinner while the camera is on
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for a QR code'**
+  String get desktopColdWalletLooking;
+
+  /// Desktop Connect Cold Wallet sheet: the camera read a QR code that is not an address
+  ///
+  /// In en, this message translates to:
+  /// **'That QR code isn\'t an account address.'**
+  String get desktopColdWalletNotAddress;
+
+  /// Desktop Connect Cold Wallet sheet: the address read is already an account or multisig here
+  ///
+  /// In en, this message translates to:
+  /// **'That account is already in this app.'**
+  String get desktopColdWalletAlreadyAdded;
+
+  /// Desktop Connect Cold Wallet sheet: the step showing the address read, before it is added
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Address'**
+  String get desktopColdWalletConfirmTitle;
+
+  /// Desktop Connect Cold Wallet sheet: above the address read
+  ///
+  /// In en, this message translates to:
+  /// **'Check that this matches the address on your cold wallet.'**
+  String get desktopColdWalletConfirmBody;
+
+  /// Desktop Connect Cold Wallet sheet: forgets the address read and turns the camera back on
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Again'**
+  String get desktopColdWalletScanAgain;
+
+  /// Desktop Connect Cold Wallet sheet: adds the address read as a cold wallet account
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get desktopColdWalletConnect;
+
+  /// Desktop Connect Cold Wallet sheet: saving the account failed; the address stays to try again
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect this cold wallet'**
+  String get desktopColdWalletSaveFailed;
+
+  /// Desktop camera: this computer has no camera
+  ///
+  /// In en, this message translates to:
+  /// **'No camera found'**
+  String get desktopCameraNoneTitle;
+
+  /// Desktop camera: what to do when there is no camera
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a camera to this computer, then try again.'**
+  String get desktopCameraNoneBody;
+
+  /// Desktop camera: the system refused this app the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off'**
+  String get desktopCameraPermissionTitle;
+
+  /// Desktop camera, macOS: where to allow the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Quantus Wallet under Privacy & Security, Camera.'**
+  String get desktopCameraPermissionMac;
+
+  /// Desktop camera, Windows: where to allow the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera access under Privacy & security, Camera.'**
+  String get desktopCameraPermissionWindows;
+
+  /// Desktop camera, Linux: what to check when the camera is refused
+  ///
+  /// In en, this message translates to:
+  /// **'Check that your user is allowed to use the camera.'**
+  String get desktopCameraPermissionLinux;
+
+  /// Desktop camera: opens the system's camera privacy settings
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get desktopCameraOpenSettings;
+
+  /// Desktop camera: another app holds the camera
+  ///
+  /// In en, this message translates to:
+  /// **'The camera is in use'**
+  String get desktopCameraBusyTitle;
+
+  /// Desktop camera: what to do when another app holds the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Close the other app using it, then try again.'**
+  String get desktopCameraBusyBody;
+
+  /// Desktop camera: the camera offers no picture format the app reads
+  ///
+  /// In en, this message translates to:
+  /// **'This camera can\'t be used'**
+  String get desktopCameraUnsupportedTitle;
+
+  /// Desktop camera: why the camera cannot be used
+  ///
+  /// In en, this message translates to:
+  /// **'It offers no picture format this app can read.'**
+  String get desktopCameraUnsupportedBody;
+
+  /// Desktop camera, Windows N: the system lacks its media components
+  ///
+  /// In en, this message translates to:
+  /// **'Camera support is missing'**
+  String get desktopCameraMediaTitle;
+
+  /// Desktop camera, Windows N: what to install
+  ///
+  /// In en, this message translates to:
+  /// **'Install the Media Feature Pack for Windows, then try again.'**
+  String get desktopCameraMediaBody;
+
+  /// Desktop camera: it was working and stopped, as when unplugged
+  ///
+  /// In en, this message translates to:
+  /// **'The camera stopped'**
+  String get desktopCameraStoppedTitle;
+
+  /// Desktop camera: what to do after it stopped
+  ///
+  /// In en, this message translates to:
+  /// **'Check that it\'s connected, then try again.'**
+  String get desktopCameraStoppedBody;
+
+  /// Desktop camera: any other failure
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t use the camera'**
+  String get desktopCameraFailedTitle;
+
+  /// Desktop camera: any other failure, what to do
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong with the camera. Try again.'**
+  String get desktopCameraFailedBody;
+
+  /// Discord support row title
+  ///
+  /// In en, this message translates to:
+  /// **'Discord'**
+  String get settingsHelpDiscord;
+
+  /// Error toast when the entered swap address could not be saved for future swaps
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the address.'**
+  String get swapSaveAddressFailed;
+
+  /// Warning against impostors, shown wherever the app sends someone to the support Discord
+  ///
+  /// In en, this message translates to:
+  /// **'Support will never DM you first or ask for your recovery phrase.'**
+  String get commonSupportScamWarning;
+
+  /// Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} from {account} didn’t finish sending. Part of it may have gone through.'**
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account);
 
   /// Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet
   ///
@@ -5947,6 +6259,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unavailable: {reason}'**
   String desktopNotificationUnavailable(String reason);
+
+  /// Desktop menu bar icon's menu: shows the app's window again
+  ///
+  /// In en, this message translates to:
+  /// **'Open {appName}'**
+  String desktopStatusItemOpen(String appName);
+
+  /// Desktop menu bar icon's menu: quits the app
+  ///
+  /// In en, this message translates to:
+  /// **'Quit {appName}'**
+  String desktopStatusItemQuit(String appName);
+
+  /// Desktop dialog when the person quits while a send or multisig action is still under way: its title
+  ///
+  /// In en, this message translates to:
+  /// **'A Transaction Is Still Under Way'**
+  String get desktopQuitPendingTitle;
+
+  /// Desktop dialog when the person quits with work under way: what quitting now risks and what the app can do instead
+  ///
+  /// In en, this message translates to:
+  /// **'Quitting now could leave it unfinished. The wallet can finish first, then quit on its own.'**
+  String get desktopQuitPendingBody;
+
+  /// Desktop dialog when quitting with work under way: hides the window, finishes the work, then quits
+  ///
+  /// In en, this message translates to:
+  /// **'Finish, Then Quit'**
+  String get desktopQuitFinishFirst;
+
+  /// Desktop dialog when quitting with work under way: quits at once, even though work is under way
+  ///
+  /// In en, this message translates to:
+  /// **'Quit Now'**
+  String get desktopQuitNow;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

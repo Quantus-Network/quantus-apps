@@ -1,5 +1,9 @@
-# melos_managed_dependency_overrides: quantus_sdk,wallet_core
+# melos_managed_dependency_overrides: desktop_qr_camera,mobile_scanner,quantus_sdk,wallet_core
 dependency_overrides:
+  desktop_qr_camera:
+    path: ../desktop_qr_camera
+  mobile_scanner:
+    path: ../third_party/mobile_scanner
   quantus_sdk:
     path: ../quantus_sdk
   wallet_core:

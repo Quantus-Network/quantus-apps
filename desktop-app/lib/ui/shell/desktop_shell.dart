@@ -7,12 +7,14 @@ import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
-import 'package:quantus_desktop_wallet/services/app_exit.dart';
+import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
@@ -32,9 +34,11 @@ import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/provider_reader.dart';
 
 /// The window's frame: the menus, and under them onboarding until the device
@@ -71,6 +75,27 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     return bar.localToGlobal(Offset(0, bar.size.height), ancestor: overlay).dy;
   }
 
+  /// The first account of a wallet the Import Wallet sheet just imported,
+  /// to be shown once the sheet has closed.
+  Account? _imported;
+
+  /// The account the Connect Cold Wallet sheet just saved, to be shown once
+  /// the sheet has closed.
+  Account? _connectedColdWallet;
+
+  /// Imports a wallet into the next free slot, on the shell's ref: the
+  /// wallet's encrypted account is restored after the sheet has gone.
+  Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) async {
+    final accounts = await ref.read(settingsServiceProvider).getAccounts();
+    if (!mounted) return;
+    _imported = await importSoftwareWallet(
+      ref,
+      mnemonic: mnemonic,
+      walletIndex: nextWalletIndex(accounts),
+      onScanFailed: onScanFailed,
+    );
+  }
+
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
     final top = _sheetTop();
@@ -83,12 +108,23 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       pageBuilder: (_, animation, _) => _SheetPlacement(
         animation: animation,
         top: top,
-        child: ShellSheetView(sheet: sheet),
+        child: ShellSheetView(
+          sheet: sheet,
+          importWallet: _importWallet,
+          onColdWalletConnected: (account) => _connectedColdWallet = account,
+        ),
       ),
       // The sheet slides itself; the barrier fades on its own.
       transitionBuilder: (_, _, _, child) => child,
     ).whenComplete(() {
-      if (mounted) ref.read(shellSheetProvider.notifier).closed();
+      if (!mounted) return;
+      ref.read(shellSheetProvider.notifier).closed();
+      final imported = _imported;
+      _imported = null;
+      if (imported != null) unawaited(ref.read(accountManagerProvider).finishImport(imported));
+      final connected = _connectedColdWallet;
+      _connectedColdWallet = null;
+      if (connected != null) unawaited(ref.read(accountManagerProvider).finishConnectColdWallet(connected));
     });
   }
 
@@ -158,6 +194,27 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     if (mounted) ref.read(accountSwitchFailureProvider.notifier).clear();
   }
 
+  /// Asks what to do about the work under way, the person having asked to
+  /// quit. Only the two answers close the question.
+  Future<void> _askAboutQuitting() async {
+    final l10n = ref.read(l10nProvider);
+    final finishFirst = await showQuantusDialog(
+      context,
+      title: l10n.desktopQuitPendingTitle,
+      body: l10n.desktopQuitPendingBody,
+      actionLabel: l10n.desktopQuitFinishFirst,
+      cancelLabel: l10n.desktopQuitNow,
+      barrierDismissible: false,
+    );
+    if (!mounted) return;
+    final background = ref.read(backgroundModeProvider);
+    if (finishFirst) {
+      await background.finishThenQuit();
+    } else {
+      background.quitNow();
+    }
+  }
+
   /// Finishes what an earlier run left undone: an import's account scan that
   /// was skipped or interrupted, and a software wallet's encrypted account.
   Future<void> _finishWalletSetup() async {
@@ -178,6 +235,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     ref.listen<PasswordPromptRequest?>(passwordPromptProvider, (_, request) {
       if (request != null) unawaited(_askForPassword(request));
     });
+    ref.listen<bool>(quitQuestionProvider, (_, isAsking) {
+      if (isAsking) unawaited(_askAboutQuitting());
+    });
     ref.listen<AsyncValue<WalletPresence>>(walletPresenceProvider, _onWalletPresence);
     ref.listen<AccountSwitchFailure?>(accountSwitchFailureProvider, (_, failure) {
       if (failure != null) unawaited(_reportSwitchFailure(failure));
@@ -190,8 +250,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     return Scaffold(
       body: AppMenuBar(
         useNativeMenuBar: useNativeMenuBar,
-        menus: _menus(ref.watch, useNativeMenuBar: useNativeMenuBar),
-        resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar),
+        menus: _menus(ref.watch, useNativeMenuBar: useNativeMenuBar, answersKeys: false),
+        resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar, answersKeys: true),
         child: switch (presence) {
           AsyncError(:final error) => _StartFailure(error: error),
           AsyncValue(value: WalletPresence.present) => LiveDataScope(child: _wallet(isSidebarVisible)),
@@ -219,20 +279,38 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   /// The app's menus for what [read] finds: watched, as they are drawn; read
-  /// at a key press, as they are at that moment.
-  List<PlatformMenu> _menus(ProviderReader read, {required bool useNativeMenuBar}) {
+  /// at a key press, as they are at that moment. With [answersKeys], New
+  /// Account's shortcut follows a switch still being saved; an item chosen
+  /// from the drawn menus keeps the wallet it names.
+  List<PlatformMenu> _menus(ProviderReader read, {required bool useNativeMenuBar, required bool answersKeys}) {
     // The Account and View menus act on the wallet, so they wait for one.
     final hasWallet = read(walletPresenceProvider).value == WalletPresence.present;
     final hasSheet = read(shellSheetProvider) != null;
     // A sheet is for the account it opened on, so nothing moves under it.
     final canNavigate = hasWallet && !hasSheet;
     final sidebar = ref.read(sidebarSelectionProvider.notifier);
+    final manager = ref.read(accountManagerProvider);
+    final newAccountWallets = hasWallet ? read(softwareWalletsProvider) : const <SoftwareWallet>[];
+    final activeWallet = read(activeWalletIndexProvider);
 
     return buildAppMenus(
       l10n: read(l10nProvider),
       useNativeMenuBar: useNativeMenuBar,
       accountActions: read(menuAccountActionsProvider),
       accountItems: hasWallet ? _accountItems(read) : const [],
+      newAccountWallets: newAccountWallets,
+      // While a switch is being saved, ⌘N is meant for the account it ends
+      // on, which may be in a software wallet even if the active one is not.
+      newAccountShortcutWallet: newAccountWallets.any((wallet) => wallet.walletIndex == activeWallet)
+          ? activeWallet
+          : read(shellNavigationProvider)
+          ? newAccountWallets.firstOrNull?.walletIndex
+          : null,
+      onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
+      onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
+      offersColdWallets: read(remoteConfigProvider).enableKeystoneHardwareWallet,
+      offersMultisigs: read(remoteConfigProvider).enableMultisig,
+      canCreateMultisig: hasWallet && read(multisigCreatorProvider) != null,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),
@@ -242,7 +320,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       onMoveInSidebar: canNavigate ? (rows) => unawaited(sidebar.move(rows)) : null,
       onToggleSidebar: hasWallet ? () => ref.read(sidebarVisibleProvider.notifier).toggle() : null,
       onRefresh: hasWallet ? () => unawaited(refreshWallet(ref)) : null,
-      onCloseWindow: () => ref.read(requestAppExitProvider)(),
+      onCloseWindow: () => unawaited(ref.read(backgroundModeProvider).closeWindow()),
     );
   }
 

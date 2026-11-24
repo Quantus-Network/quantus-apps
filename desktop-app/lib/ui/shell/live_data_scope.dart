@@ -2,11 +2,17 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
+import 'package:wallet_core/providers/global_toast_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/services/history_polling_manager.dart';
+import 'package:wallet_core/services/multisig_creation_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
 
 /// Keeps what the open wallet shows current: the shared polling
@@ -17,6 +23,10 @@ import 'package:wallet_core/services/telemetry.dart';
 /// hidden: what the wallet watches for, such as a send that never lands, is
 /// noticed and notified then too. What only matters on screen still pauses
 /// with a window no one can see ([appLifecycleStateProvider]).
+///
+/// With the window closed ([windowClosedProvider]) it does not poll at all: a
+/// poll reloads an Encrypted account, which reads its recovery phrase, and
+/// the work the app stayed for is watched by its own timers.
 class LiveDataScope extends ConsumerStatefulWidget {
   const LiveDataScope({super.key, required this.child});
 
@@ -31,6 +41,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
   late final AppLifecycleListener _window;
   bool _isOnScreen = _onScreen(WidgetsBinding.instance.lifecycleState);
   bool _isOnline = true;
+  bool _isWindowClosed = false;
   bool _isPaused = false;
 
   /// Whether a window in [state] can be seen. Before the system has said, it
@@ -49,6 +60,16 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
       _isOnline = isOnline;
       _update();
     }, fireImmediately: true);
+    ref.listenManual<bool>(windowClosedProvider, (_, isClosed) {
+      _isWindowClosed = isClosed;
+      _update();
+    }, fireImmediately: true);
+    // Before the polling starts, as it may find an expired creation at once.
+    ref.listenManual<ToastMessage?>(globalToastProvider, (_, toast) {
+      if (toast?.message == ref.read(l10nProvider).multisigCreateTimeoutToast) _noteCreationTimedOut();
+    });
+    // Picks up a creation that quitting interrupted.
+    ref.read(multisigCreationPollingServiceProvider);
     // A window that opens hidden says so once the first frame is built: no
     // provider may change while one is.
     if (!_isOnScreen) {
@@ -78,11 +99,34 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
     ref.read(appLifecycleStateProvider.notifier).state = _isOnScreen ? AppLifecycleState.resumed : state;
   }
 
-  /// Pauses the polling when there is no network to poll, and resumes it,
-  /// caught up, once there is.
+  /// Says on the active account's row that a multisig was not confirmed in
+  /// time: the shared polling reports it as a toast, and the desktop shows
+  /// status where it belongs instead. At start the account may still be
+  /// loading.
+  void _noteCreationTimedOut() {
+    final message = ref.read(l10nProvider).desktopCreateMultisigTimedOut;
+    final notes = ref.read(accountNoteProvider.notifier);
+    void note(DisplayAccount? active) {
+      if (active == null) return;
+      notes.show(AccountNote(accountId: active.account.accountId, message: message, isError: true));
+    }
+
+    final active = ref.read(activeAccountProvider);
+    if (!active.isLoading) return note(active.value);
+    late final ProviderSubscription<AsyncValue<DisplayAccount?>> loading;
+    loading = ref.listenManual(activeAccountProvider, (_, next) {
+      if (next.isLoading) return;
+      loading.close();
+      note(next.value);
+    });
+  }
+
+  /// Pauses the polling when there is no network to poll or the window is
+  /// closed, and resumes it, caught up, once neither is so.
   void _update() {
-    if (_isOnline == !_isPaused) return;
-    _isPaused = !_isOnline;
+    final shouldPoll = _isOnline && !_isWindowClosed;
+    if (shouldPoll == !_isPaused) return;
+    _isPaused = !shouldPoll;
     if (_isPaused) {
       _polling.pausePolling();
       return;

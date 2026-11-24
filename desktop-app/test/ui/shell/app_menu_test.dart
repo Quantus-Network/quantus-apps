@@ -63,7 +63,7 @@ Matcher _isShortcut(
 
 /// The Account menu's groups in order: the active account's actions (absent
 /// when there is no active account), its own items (Get Info and the rest,
-/// tested with the account menus), Add Account…, then the accounts.
+/// tested with the account menus), New Account, then the accounts.
 List<List<PlatformMenuItem>> _accountMenuGroups(WidgetTester tester) => [
   for (final entry in _nativeMenu(tester, 'Account').menus) (entry as PlatformMenuItemGroup).members,
 ];
@@ -116,7 +116,7 @@ Finder _toolbarButton(String label) =>
 
 List<Override> _withActive(DisplayAccount active) => shellOverrides(
   accounts: const [mainAccount, vaultAccount],
-  settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig]),
+  settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig], openWallets: const {0, 1}),
   balances: oneTokenEach,
 );
 
@@ -179,18 +179,44 @@ void main() {
       (
         'a local account',
         const RegularAccount(mainAccount),
-        [('Receive', true), ('Send', true), ('Swap', true), ('Add Account…', true)],
+        [
+          ('Receive', true),
+          ('Send', true),
+          ('Swap', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', true),
+          ('Manage Multisigs…', true),
+        ],
       ),
       (
         // Its key signs on the hardware wallet, which this app cannot ask yet.
         'a Keystone account',
         const RegularAccount(vaultAccount),
-        [('Receive', true), ('Send', false), ('Swap', false), ('Add Account…', true)],
+        [
+          ('Receive', true),
+          ('Send', false),
+          ('Swap', false),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', false),
+          ('Manage Multisigs…', true),
+        ],
       ),
       (
         'a multisig',
         MultisigDisplayAccount(teamMultisig),
-        [('Receive', true), ('Propose', true), ('Add Account…', true)],
+        [
+          ('Receive', true),
+          ('Propose', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', false),
+          ('Manage Multisigs…', true),
+        ],
       ),
     ]) {
       testOnMac('the Account menu offers what the toolbar offers for $description', (tester) async {
@@ -199,13 +225,22 @@ void main() {
         final items = _accountMenuActions(tester);
         expect([for (final item in items) (item.label, item.onSelected != null)], expected);
 
-        for (final (label, enabled) in expected.where((entry) => entry.$1 != 'Add Account…')) {
+        final onToolbar = expected.where(
+          (entry) => !const {
+            'New Account',
+            'Import Wallet…',
+            'Connect Cold Wallet…',
+            'Create Multisig…',
+            'Manage Multisigs…',
+          }.contains(entry.$1),
+        );
+        for (final (label, enabled) in onToolbar) {
           expect(_toolbarButton(label), findsOneWidget, reason: label);
           expect(tester.widget<ToolbarAction>(_toolbarButton(label)).onPressed != null, enabled, reason: label);
         }
         expect(
           find.descendant(of: find.byType(AccountToolbar), matching: find.byType(ToolbarAction)),
-          findsNWidgets(expected.length - 1),
+          findsNWidgets(onToolbar.length),
         );
       });
     }
@@ -219,7 +254,7 @@ void main() {
       expect(_sheetTitled('Send'), findsOneWidget);
     });
 
-    testOnMac('with no active account the Account menu offers no actions: Add Account… and the accounts', (
+    testOnMac('with no active account the Account menu offers no actions: adding one, and the accounts', (
       tester,
     ) async {
       await pumpShell(
@@ -227,15 +262,22 @@ void main() {
         overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
       );
 
-      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), ['Add Account…', 'Main']);
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), [
+        'New Account',
+        'Import Wallet…',
+        'Connect Cold Wallet…',
+        'Create Multisig…',
+        'Manage Multisigs…',
+        'Main',
+      ]);
     });
 
-    testOnMac('Receive, Send and Add Account… answer to ⌘R, ⌘S and ⌘N; Swap has no shortcut yet', (tester) async {
+    testOnMac('Receive, Send and New Account answer to ⌘R, ⌘S and ⌘N; Swap has no shortcut yet', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       expect(_nativeItem(tester, 'Account', 'Receive').shortcut, _isShortcut(LogicalKeyboardKey.keyR, meta: true));
       expect(_nativeItem(tester, 'Account', 'Send').shortcut, _isShortcut(LogicalKeyboardKey.keyS, meta: true));
-      expect(_nativeItem(tester, 'Account', 'Add Account…').shortcut, _isShortcut(LogicalKeyboardKey.keyN, meta: true));
+      expect(_nativeItem(tester, 'Account', 'New Account').shortcut, _isShortcut(LogicalKeyboardKey.keyN, meta: true));
       expect(_nativeItem(tester, 'Account', 'Swap').shortcut, isNull);
     });
 
@@ -258,6 +300,7 @@ void main() {
             for (var index = 0; index < 11; index++)
               Account(walletIndex: 0, index: index, name: 'Account ${index + 1}', accountId: 'qzAccount$index'),
           ],
+          settings: FakeSettingsService(openWallets: const {0}),
           balances: oneTokenEach,
         ),
       );
@@ -522,13 +565,13 @@ void main() {
     ) async {
       final polling = FakeHistoryPollingManager();
       await pumpShell(tester, polling: polling, overrides: _withActive(const RegularAccount(mainAccount)));
-      _nativeItem(tester, 'Account', 'Add Account…').onSelected!();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
       await tester.pumpAndSettle();
 
       _nativeItem(tester, 'View', 'Refresh').onSelected!();
       await tester.pumpAndSettle();
 
-      expect(_sheetTitled('Add Account'), findsOneWidget);
+      expect(_sheetTitled('Receive'), findsOneWidget);
       expect(polling.calls, ['manualRefresh']);
     });
 
@@ -547,10 +590,10 @@ void main() {
     testOnMac('while a sheet is open, the items that open sheets are disabled', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
-      _nativeItem(tester, 'Account', 'Add Account…').onSelected!();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
       await tester.pumpAndSettle();
 
-      expect(_sheetTitled('Add Account'), findsOneWidget);
+      expect(_sheetTitled('Receive'), findsOneWidget);
       expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
       // The accounts it lists among them: a sheet is for the account it opened on.
       expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), contains('Vault'));
@@ -597,7 +640,7 @@ void main() {
 
       expect(find.byType(WelcomePage), findsOneWidget);
       expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
-      expect(_nativeItem(tester, 'Account', 'Add Account…').onSelected, isNull);
+      expect(_nativeItem(tester, 'Account', 'New Account').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Hide Sidebar').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Next Sidebar Item').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Refresh').onSelected, isNull);
@@ -607,7 +650,7 @@ void main() {
       expect(exitRequests, 1);
     });
 
-    testOnMac('File → Close Window (⌘W) asks the app to exit', (tester) async {
+    testOnMac('with nothing under way, File → Close Window (⌘W) asks the app to exit', (tester) async {
       var exitRequests = 0;
       await pumpShell(
         tester,
@@ -689,7 +732,11 @@ void main() {
           ('Copy Address', true),
           ('Rename…', true),
           ('Disconnect Hardware Account…', true),
-          ('Add Account…', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', false),
+          ('Manage Multisigs…', true),
           ('Main', true),
           ('Team', true),
           ('Vault', true),
@@ -876,7 +923,6 @@ void main() {
     for (final (key, name, title) in [
       (LogicalKeyboardKey.keyR, 'Ctrl+R', 'Receive'),
       (LogicalKeyboardKey.keyS, 'Ctrl+S', 'Send'),
-      (LogicalKeyboardKey.keyN, 'Ctrl+N', 'Add Account'),
     ]) {
       testOnWindowsAndLinux('$name opens $title', (tester) async {
         await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));

@@ -5,7 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/connect_cold_wallet_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/import_wallet_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/manage_multisigs_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/onboarding/import_wallet_page.dart' show ImportWallet;
 import 'package:quantus_desktop_wallet/ui/receive/receive_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
@@ -21,9 +26,17 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 /// title row. Each feature fills in its own sheet as it arrives; one with
 /// steps of its own (Send, Swap, Settings) draws its own title row.
 class ShellSheetView extends ConsumerWidget {
-  const ShellSheetView({super.key, required this.sheet});
+  const ShellSheetView({super.key, required this.sheet, this.importWallet, this.onColdWalletConnected});
 
   final ShellSheet sheet;
+
+  /// What the Import Wallet sheet imports with: the shell's, as the wallet's
+  /// encrypted account is restored after the sheet has gone.
+  final ImportWallet? importWallet;
+
+  /// Told the account the Connect Cold Wallet sheet saved: the shell shows it
+  /// once the sheet has gone, as nothing moves under a sheet.
+  final ValueChanged<Account>? onColdWalletConnected;
 
   /// How wide a sheet grows, when the pane leaves room.
   static const double maxWidth = 700;
@@ -33,7 +46,12 @@ class ShellSheetView extends ConsumerWidget {
 
   bool get _actsOnAccount => switch (sheet) {
     ShellSheet.receive || ShellSheet.send || ShellSheet.propose || ShellSheet.swap => true,
-    ShellSheet.addAccount || ShellSheet.settings || ShellSheet.accountInfo => false,
+    ShellSheet.settings ||
+    ShellSheet.accountInfo ||
+    ShellSheet.importWallet ||
+    ShellSheet.connectColdWallet ||
+    ShellSheet.createMultisig ||
+    ShellSheet.manageMultisigs => false,
   };
 
   Widget? get _content => switch (sheet) {
@@ -41,9 +59,12 @@ class ShellSheetView extends ConsumerWidget {
     ShellSheet.send ||
     ShellSheet.propose ||
     ShellSheet.swap ||
-    ShellSheet.addAccount ||
     ShellSheet.settings ||
-    ShellSheet.accountInfo => null,
+    ShellSheet.accountInfo ||
+    ShellSheet.importWallet ||
+    ShellSheet.connectColdWallet ||
+    ShellSheet.createMultisig ||
+    ShellSheet.manageMultisigs => null,
   };
 
   @override
@@ -70,6 +91,10 @@ class ShellSheetView extends ConsumerWidget {
             ShellSheet.accountInfo => const AccountInfoSheet(),
             ShellSheet.send || ShellSheet.propose => const SendSheet(),
             ShellSheet.swap => const SwapSheet(),
+            ShellSheet.importWallet => ImportWalletSheet(importWallet: importWallet!),
+            ShellSheet.connectColdWallet => ConnectColdWalletSheet(onConnected: onColdWalletConnected!),
+            ShellSheet.createMultisig => const CreateMultisigSheet(),
+            ShellSheet.manageMultisigs => const ManageMultisigsSheet(),
             _ => _TitledSheet(
               title: sheetTitle(ref.watch(l10nProvider), sheet),
               actsOnAccount: _actsOnAccount,

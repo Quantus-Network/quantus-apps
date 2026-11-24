@@ -1562,9 +1562,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
 
   @override
-  String get settingsHelpDiscord => 'Discord';
-
-  @override
   String get settingsHelpTelegram => 'Telegram';
 
   @override
@@ -1722,9 +1719,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapSaveAddress => 'Simpan untuk swap berikutnya';
-
-  @override
-  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
 
   @override
   String get swapContinue => 'Lanjutkan ke Swap';
@@ -2087,10 +2081,6 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get commonContactSupport => 'Hubungi Dukungan';
-
-  @override
-  String get commonSupportScamWarning =>
-      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
 
   @override
   String get commonRetry => 'Coba Lagi';
@@ -2488,7 +2478,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopMenuAccount => 'Akun';
 
   @override
-  String get desktopMenuAddAccount => 'Tambah Akun…';
+  String get desktopMenuNewAccount => 'Akun Baru';
 
   @override
   String get desktopMenuView => 'Tampilan';
@@ -3202,11 +3192,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
-    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
-  }
-
-  @override
   String get desktopNotificationProposalCreatedTitle => 'Proposal dibuat';
 
   @override
@@ -3220,6 +3205,191 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig) {
     return 'Proposal untuk mengirim $amount dari $multisig tidak terlihat di rantai tepat waktu.';
+  }
+
+  @override
+  String desktopWalletAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count akun');
+    return '$_temp0';
+  }
+
+  @override
+  String get importWalletAlreadyAdded => 'Dompet ini sudah ada di aplikasi';
+
+  @override
+  String get desktopMenuImportWallet => 'Impor Dompet…';
+
+  @override
+  String get desktopImportFinding => 'Mencari akun dompet ini';
+
+  @override
+  String get desktopImportFailed => 'Tidak dapat mengimpor dompet';
+
+  @override
+  String get desktopImportDone => 'Dompet diimpor';
+
+  @override
+  String get desktopMenuManageMultisigs => 'Kelola Multisig…';
+
+  @override
+  String get desktopManageMultisigsTitle => 'Kelola Multisig';
+
+  @override
+  String get desktopManageMultisigsLead =>
+      'Multisig di chain dengan salah satu akun Anda sebagai penanda tangan. Mematikannya hanya menghapusnya dari aplikasi ini.';
+
+  @override
+  String get desktopManageMultisigsFinding => 'Mencari multisig Anda di chain';
+
+  @override
+  String desktopManageMultisigsSignsAs(String approvals, String name) {
+    return '$approvals · Anda menandatangani sebagai $name';
+  }
+
+  @override
+  String get desktopMenuCreateMultisig => 'Buat Multisig…';
+
+  @override
+  String get desktopCreateMultisigSigners => 'Penanda tangan';
+
+  @override
+  String get desktopCreateMultisigApprovalsNeeded => 'Persetujuan diperlukan';
+
+  @override
+  String get desktopCreateMultisigApprovals => 'Persetujuan';
+
+  @override
+  String desktopCreateMultisigApprovalsValue(int count, int total) {
+    return '$count dari $total penanda tangan';
+  }
+
+  @override
+  String get desktopCreateMultisigAddress => 'Alamat';
+
+  @override
+  String get desktopCreateMultisigPaidBy => 'Dibayar oleh';
+
+  @override
+  String get desktopCreateMultisigCreationFee => 'Biaya pembuatan';
+
+  @override
+  String get desktopCreateMultisigRemoveSigner => 'Hapus penanda tangan';
+
+  @override
+  String desktopCreateMultisigPreviewFailed(String error) {
+    return 'Tidak dapat menentukan alamat baru: $error';
+  }
+
+  @override
+  String desktopCreateMultisigCantAfford(String name) {
+    return '$name tidak dapat menutup biayanya';
+  }
+
+  @override
+  String get desktopCreateMultisigDeclined => 'Membuat multisig ini memerlukan persetujuan Anda';
+
+  @override
+  String desktopCreateMultisigFailed(String error) {
+    return 'Tidak dapat membuat multisig ini: $error';
+  }
+
+  @override
+  String get desktopCreateMultisigTimedOut => 'Multisig belum terkonfirmasi';
+
+  @override
+  String get desktopMenuConnectColdWallet => 'Hubungkan Cold Wallet…';
+
+  @override
+  String get desktopColdWalletStepHold => 'Arahkan ke kamera ini';
+
+  @override
+  String get desktopColdWalletLooking => 'Mencari kode QR';
+
+  @override
+  String get desktopColdWalletNotAddress => 'Kode QR itu bukan alamat akun.';
+
+  @override
+  String get desktopColdWalletAlreadyAdded => 'Akun itu sudah ada di aplikasi ini.';
+
+  @override
+  String get desktopColdWalletConfirmTitle => 'Konfirmasi Alamat';
+
+  @override
+  String get desktopColdWalletConfirmBody => 'Pastikan ini sama dengan alamat di cold wallet Anda.';
+
+  @override
+  String get desktopColdWalletScanAgain => 'Pindai Lagi';
+
+  @override
+  String get desktopColdWalletConnect => 'Hubungkan';
+
+  @override
+  String get desktopColdWalletSaveFailed => 'Tidak dapat menghubungkan cold wallet ini';
+
+  @override
+  String get desktopCameraNoneTitle => 'Kamera tidak ditemukan';
+
+  @override
+  String get desktopCameraNoneBody => 'Hubungkan kamera ke komputer ini, lalu coba lagi.';
+
+  @override
+  String get desktopCameraPermissionTitle => 'Akses kamera nonaktif';
+
+  @override
+  String get desktopCameraPermissionMac => 'Izinkan Quantus Wallet di Privasi & Keamanan, Kamera.';
+
+  @override
+  String get desktopCameraPermissionWindows => 'Izinkan akses kamera di Privasi & keamanan, Kamera.';
+
+  @override
+  String get desktopCameraPermissionLinux => 'Pastikan pengguna Anda diizinkan memakai kamera.';
+
+  @override
+  String get desktopCameraOpenSettings => 'Buka Pengaturan Sistem';
+
+  @override
+  String get desktopCameraBusyTitle => 'Kamera sedang digunakan';
+
+  @override
+  String get desktopCameraBusyBody => 'Tutup aplikasi lain yang memakainya, lalu coba lagi.';
+
+  @override
+  String get desktopCameraUnsupportedTitle => 'Kamera ini tidak dapat digunakan';
+
+  @override
+  String get desktopCameraUnsupportedBody => 'Kamera ini tidak menyediakan format gambar yang dapat dibaca aplikasi.';
+
+  @override
+  String get desktopCameraMediaTitle => 'Dukungan kamera tidak tersedia';
+
+  @override
+  String get desktopCameraMediaBody => 'Pasang Media Feature Pack untuk Windows, lalu coba lagi.';
+
+  @override
+  String get desktopCameraStoppedTitle => 'Kamera berhenti';
+
+  @override
+  String get desktopCameraStoppedBody => 'Pastikan kamera terhubung, lalu coba lagi.';
+
+  @override
+  String get desktopCameraFailedTitle => 'Tidak dapat menggunakan kamera';
+
+  @override
+  String get desktopCameraFailedBody => 'Terjadi masalah pada kamera. Coba lagi.';
+
+  @override
+  String get settingsHelpDiscord => 'Discord';
+
+  @override
+  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
+
+  @override
+  String get commonSupportScamWarning =>
+      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
+
+  @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
   }
 
   @override
@@ -3320,4 +3490,27 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopNotificationUnavailable(String reason) {
     return 'Tidak tersedia: $reason';
   }
+
+  @override
+  String desktopStatusItemOpen(String appName) {
+    return 'Buka $appName';
+  }
+
+  @override
+  String desktopStatusItemQuit(String appName) {
+    return 'Keluar dari $appName';
+  }
+
+  @override
+  String get desktopQuitPendingTitle => 'Transaksi Masih Berjalan';
+
+  @override
+  String get desktopQuitPendingBody =>
+      'Keluar sekarang dapat membuat transaksi tidak selesai. Dompet dapat menyelesaikannya dulu, lalu keluar dengan sendirinya.';
+
+  @override
+  String get desktopQuitFinishFirst => 'Selesaikan, Lalu Keluar';
+
+  @override
+  String get desktopQuitNow => 'Keluar Sekarang';
 }

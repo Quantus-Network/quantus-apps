@@ -4,12 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/push_registration.dart';
+import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 
 import '../fakes.dart';
@@ -32,6 +35,27 @@ final _team = MultisigAccount(
   myMemberAccountId: 'qzMain',
 );
 
+class _NoTelemetry implements Telemetry {
+  @override
+  void sendEvent(String eventName, {Map<String, String>? parameters}) {}
+
+  @override
+  void sendError(String errorName, {required Object error}) {}
+}
+
+class _RecordingPush implements PushRegistration {
+  final addresses = <String>[];
+
+  @override
+  Future<void> registerAddress(String address) async => addresses.add(address);
+
+  @override
+  Future<void> registerDevice() async {}
+
+  @override
+  Future<void> unregister() async {}
+}
+
 /// What the clipboard holds, or what writing it fails with.
 String? _clipboard;
 Object? _clipboardError;
@@ -51,7 +75,11 @@ void _recordClipboard(WidgetTester tester) {
 
 /// A device with Main and Savings in wallet 0 (Main active), their encrypted
 /// account, a Keystone account, Trading alone in wallet 2, and Team.
-Future<(FakeWalletDevice, ProviderContainer)> _device(WidgetTester tester, {String innerHash = '0xinner'}) async {
+Future<(FakeWalletDevice, ProviderContainer)> _device(
+  WidgetTester tester, {
+  String innerHash = '0xinner',
+  PushRegistration? push,
+}) async {
   final device = FakeWalletDevice()..store([mainAccount, savingsAccount, _encrypted]);
   device.storage.accounts.addAll([_cold, _trading]);
   device.storage.mnemonics[2] = 'trading words';
@@ -62,6 +90,8 @@ Future<(FakeWalletDevice, ProviderContainer)> _device(WidgetTester tester, {Stri
       encryptedAccountServiceProvider.overrideWith(
         (ref, walletIndex) => FakeEncryptedAccountService(() async => 'qzDeposit', innerHash: () async => innerHash),
       ),
+      pushRegistrationProvider.overrideWithValue(push ?? _RecordingPush()),
+      telemetryProvider.overrideWithValue(_NoTelemetry()),
     ],
   );
   // Listened to, as the sidebar does, so they load and reload at once.
@@ -309,85 +339,193 @@ void main() {
     });
   });
 
-  group('renameWallet', () {
-    testWidgets('stores the name trimmed, and the wallet is called by it', (tester) async {
+  group('createAccount', () {
+    Account stored(FakeWalletDevice device, String accountId) =>
+        device.storage.accounts.singleWhere((a) => a.accountId == accountId);
+
+    testWidgets('adds the wallet\'s next account, named by the count, and makes it active', (tester) async {
       final (device, container) = await _device(tester);
-      container.listen(walletLabelProvider(2), (_, _) {});
+      final before = device.storage.accounts.length;
 
-      await _manager(container).renameWallet(2, '  Trading desk  ');
-      await tester.pump();
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
 
-      expect(device.storage.names[2], 'Trading desk');
-      expect(container.read(walletLabelProvider(2)), 'Trading desk');
+      final added = stored(device, 'qzNew2-1');
+      expect((added.walletIndex, added.index, added.name), (2, 1, 'Account ${before + 1}'));
+      expect(container.read(activeAccountProvider).value?.account.accountId, 'qzNew2-1');
+      expect(container.read(accountsProvider).requireValue.map((a) => a.accountId), contains('qzNew2-1'));
       await _close(tester, container);
     });
 
-    testWidgets('a blank name clears it, and the wallet is called by its number again', (tester) async {
-      final (device, container) = await _device(tester);
-      device.storage.names[2] = 'Trading desk';
-      container.listen(walletLabelProvider(2), (_, _) {});
-
-      await _manager(container).renameWallet(2, '   ');
-      await tester.pump();
-
-      expect(device.storage.names.containsKey(2), isFalse);
-      expect(container.read(walletLabelProvider(2)), 'Wallet 2');
-      await _close(tester, container);
-    });
-
-    testWidgets('the name it is shown by, unchanged, writes nothing', (tester) async {
-      final (device, container) = await _device(tester);
-      device.storage.writeError = StateError('nothing should be written');
-
-      await _manager(container).renameWallet(2, ' Wallet 2 ');
-      await _manager(container).renameWallet(2, '');
-
-      expect(device.storage.names.containsKey(2), isFalse);
-      await _close(tester, container);
-    });
-
-    testWidgets('a write that fails is thrown, and the name stays', (tester) async {
-      final (device, container) = await _device(tester);
-      device.storage.names[2] = 'Trading desk';
-      device.storage.writeError = StateError('disk full');
-
-      await expectLater(_manager(container).renameWallet(2, 'Day trades'), throwsStateError);
-      expect(device.storage.names[2], 'Trading desk');
-      await _close(tester, container);
-    });
-  });
-
-  group('startRename', () {
-    testWidgets('with the sidebar showing, the account is renamed there', (tester) async {
+    testWidgets('its name opens to be typed over in the sidebar', (tester) async {
       final (_, container) = await _device(tester);
 
-      await _manager(container).startRename(savingsAccount);
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
 
-      expect(container.read(sidebarRenameProvider), const RenameAccount('qzSavings'));
+      expect(container.read(sidebarRenameProvider), const RenameAccount('qzNew2-1'));
       expect(container.read(shellSheetProvider), isNull);
       await _close(tester, container);
     });
 
-    testWidgets('with the sidebar hidden, Get Info opens on its name instead', (tester) async {
+    testWidgets('with the sidebar hidden, Get Info opens on its name', (tester) async {
       final (_, container) = await _device(tester);
       container.read(sidebarVisibleProvider.notifier).toggle();
 
-      await _manager(container).startRename(savingsAccount);
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
 
       expect(container.read(sidebarRenameProvider), isNull);
       expect(container.read(shellSheetProvider), ShellSheet.accountInfo);
       final target = container.read(accountInfoTargetProvider);
-      expect((target?.accountId, target?.start), ('qzSavings', AccountInfoStart.rename));
+      expect((target?.accountId, target?.start), ('qzNew2-1', AccountInfoStart.rename));
       await _close(tester, container);
     });
 
-    testWidgets('a wallet is renamed in the sidebar', (tester) async {
+    testWidgets('a closed wallet opens, and the wallet left stays open', (tester) async {
       final (_, container) = await _device(tester);
+      container.listen(openWalletsProvider, (_, _) {});
+      await _settle(tester, container);
+      expect(container.read(openWalletsProvider), {0});
 
-      _manager(container).startRenameWallet(2);
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
 
-      expect(container.read(sidebarRenameProvider), const RenameWallet(2));
+      expect(container.read(openWalletsProvider), {0, 2});
       await _close(tester, container);
+    });
+
+    testWidgets('a Cold Wallet is refused: nothing is added, and the active account says so', (tester) async {
+      final (device, container) = await _device(tester);
+      final before = List.of(device.storage.accounts);
+
+      await _manager(container).createAccount(1);
+      await _settle(tester, container);
+
+      expect(device.storage.accounts, before);
+      expect(container.read(activeAccountProvider).value?.account.accountId, 'qzMain');
+      final note = container.read(accountNoteProvider);
+      expect((note?.accountId, note?.message, note?.isError), ('qzMain', 'Could not add account.', true));
+      await _close(tester, container);
+    });
+
+    testWidgets('one that fails adds nothing, keeps the active account, and says so on its row', (tester) async {
+      final (device, container) = await _device(tester);
+      final before = List.of(device.storage.accounts);
+      device.storage.addAccountError = StateError('disk full');
+
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
+
+      expect(device.storage.accounts, before);
+      expect(container.read(activeAccountProvider).value?.account.accountId, 'qzMain');
+      expect(container.read(sidebarRenameProvider), isNull);
+      final note = container.read(accountNoteProvider);
+      expect((note?.accountId, note?.message, note?.isError), ('qzMain', 'Could not add account.', true));
+      await _close(tester, container);
+    });
+
+    testWidgets('an account added but not made active opens no name to type', (tester) async {
+      final (device, container) = await _device(tester);
+      device.storage.activeWriteError = StateError('disk full');
+
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
+
+      expect(stored(device, 'qzNew2-1').walletIndex, 2);
+      expect(container.read(activeAccountProvider).value?.account.accountId, 'qzMain');
+      expect(container.read(sidebarRenameProvider), isNull);
+      expect(container.read(accountSwitchFailureProvider)?.account.account.accountId, 'qzNew2-1');
+      await _close(tester, container);
+    });
+
+    testWidgets('two quick presses add two accounts in order, without clashing', (tester) async {
+      final (device, container) = await _device(tester);
+      final before = device.storage.accounts.length;
+
+      await Future.wait([_manager(container).createAccount(2), _manager(container).createAccount(2)]);
+      await _settle(tester, container);
+
+      expect(stored(device, 'qzNew2-1').name, 'Account ${before + 1}');
+      expect(stored(device, 'qzNew2-2').name, 'Account ${before + 2}');
+      expect(container.read(accountNoteProvider), isNull);
+      expect(container.read(activeAccountProvider).value?.account.accountId, 'qzNew2-2');
+      await _close(tester, container);
+    });
+
+    testWidgets('nothing is added under a sheet that opened first', (tester) async {
+      final (device, container) = await _device(tester);
+      final before = device.storage.accounts.length;
+      await container.read(shellSheetProvider.notifier).open(ShellSheet.settings);
+
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
+
+      expect(device.storage.accounts, hasLength(before));
+      await _close(tester, container);
+    });
+
+    testWidgets('its address is registered for notifications, once', (tester) async {
+      final push = _RecordingPush();
+      final (_, container) = await _device(tester, push: push);
+
+      await _manager(container).createAccount(2);
+      await _settle(tester, container);
+
+      expect(push.addresses, ['qzNew2-1']);
+      await _close(tester, container);
+    });
+
+    group('in the active account\'s wallet (⌘N)', () {
+      testWidgets('goes to the wallet of the active account', (tester) async {
+        final (device, container) = await _device(tester);
+
+        await _manager(container).createInActiveWallet();
+        await _settle(tester, container);
+
+        expect(stored(device, 'qzNew0-2').walletIndex, 0);
+        await _close(tester, container);
+      });
+
+      testWidgets('pressed during a switch, goes to the wallet switched to', (tester) async {
+        final (device, container) = await _device(tester);
+
+        final switching = container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_trading));
+        final creating = _manager(container).createInActiveWallet();
+        await Future.wait([switching, creating]);
+        await _settle(tester, container);
+
+        expect(stored(device, 'qzNew2-1').walletIndex, 2);
+        await _close(tester, container);
+      });
+
+      testWidgets('a switch that fails drops it', (tester) async {
+        final (device, container) = await _device(tester);
+        final before = device.storage.accounts.length;
+        device.storage.activeWriteError = StateError('disk full');
+
+        final switching = container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_trading));
+        final creating = _manager(container).createInActiveWallet();
+        await Future.wait([switching, creating]);
+        await _settle(tester, container);
+
+        expect(device.storage.accounts, hasLength(before));
+        await _close(tester, container);
+      });
+
+      testWidgets('with a Cold Wallet account active, does nothing', (tester) async {
+        final (device, container) = await _device(tester);
+        final before = device.storage.accounts.length;
+        await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_cold));
+        await _settle(tester, container);
+
+        await _manager(container).createInActiveWallet();
+        await _settle(tester, container);
+
+        expect(device.storage.accounts, hasLength(before));
+        expect(container.read(accountNoteProvider), isNull);
+        await _close(tester, container);
+      });
     });
   });
 

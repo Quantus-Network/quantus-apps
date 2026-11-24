@@ -44,6 +44,9 @@ class QuantusTextField extends StatefulWidget {
   final Color? fillColor;
   final BorderRadius? borderRadius;
 
+  /// Whether the field takes the focus when it first appears.
+  final bool autofocus;
+
   const QuantusTextField({
     super.key,
     required this.controller,
@@ -71,6 +74,7 @@ class QuantusTextField extends StatefulWidget {
     this.textStyle,
     this.fillColor,
     this.borderRadius,
+    this.autofocus = false,
   }) : assert(!showClearButton || trailing == null, 'showClearButton and trailing are mutually exclusive'),
        assert(!expands || (maxLines == null && height != null), 'expands needs maxLines: null and an explicit height'),
        assert(footer == null || expands, 'a footer needs a field that expands');
@@ -149,6 +153,7 @@ class _QuantusTextFieldState extends State<QuantusTextField> {
     final textField = TextField(
       controller: widget.controller,
       focusNode: _focusNode,
+      autofocus: widget.autofocus,
       enabled: widget.enabled,
       obscureText: widget.obscureText,
       enableSuggestions: widget.enableSuggestions,

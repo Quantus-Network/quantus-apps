@@ -7,15 +7,18 @@ import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_context_menus.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_note_text.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/add_account_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_balance_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/inline_name_field.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
+import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -23,6 +26,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
@@ -82,11 +86,13 @@ class Sidebar extends ConsumerWidget {
                   leading: Icon(CupertinoIcons.gear, size: _iconSize, color: colors.textMuted),
                   onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.settings),
                 ),
-                SidebarRow(
-                  title: l10n.accountsSheetAddAccount,
-                  isSecondary: true,
-                  leading: const QuantusIcon(QuantusIcons.plus, size: _iconSize),
-                  onTap: () => ref.read(shellSheetProvider.notifier).open(ShellSheet.addAccount),
+                Builder(
+                  builder: (row) => SidebarRow(
+                    title: l10n.accountsSheetAddAccount,
+                    isSecondary: true,
+                    leading: const QuantusIcon(QuantusIcons.plus, size: _iconSize),
+                    onTap: () => _openAddMenu(row, ref),
+                  ),
                 ),
               ],
             ),
@@ -94,6 +100,20 @@ class Sidebar extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Pulls down what can be added from the Add Account row at [row].
+  void _openAddMenu(BuildContext row, WidgetRef ref) {
+    final items = addAccountMenuItems(
+      ref.read(l10nProvider),
+      ref.read(softwareWalletsProvider),
+      ref.read(accountManagerProvider),
+      offersColdWallets: ref.read(remoteConfigProvider).enableKeystoneHardwareWallet,
+      offersMultisigs: ref.read(remoteConfigProvider).enableMultisig,
+      canCreateMultisig: ref.read(multisigCreatorProvider) != null,
+    );
+    final box = row.findRenderObject()! as RenderBox;
+    unawaited(showPullDownMenu(row, anchor: box.localToGlobal(Offset.zero) & box.size, items: items));
   }
 
   List<Widget> _accounts(BuildContext context, WidgetRef ref, AppLocalizations l10n, SidebarSelection selection) {
@@ -116,23 +136,49 @@ class Sidebar extends ConsumerWidget {
     if (grouping.wallets.isEmpty && grouping.standaloneMultisigs.isEmpty) {
       return [_message(context, l10n.accountsSheetNoAccountsFound)];
     }
+    final creating = ref.watch(creatingMultisigsProvider);
+    // One whose creator has since been disconnected is in no wallet here.
+    final creatingAlone = creating.where(
+      (multisig) => !grouping.wallets.any((wallet) => wallet.contains(multisig.myMemberAccountId)),
+    );
 
     final selectedAccountId = selection == SidebarSelection.account ? active.value?.account.accountId : null;
-    Widget row(DisplayAccount display) =>
-        _AccountRow(display: display, isSelected: display.account.accountId == selectedAccountId);
+    // Keyed: a wallet opening or closing moves what is below it, and a row or
+    // heading keeps what it holds, a name being typed or a failure, as it moves.
+    Widget row(DisplayAccount display) => _AccountRow(
+      key: ValueKey('sidebar-account-${display.account.accountId}'),
+      display: display,
+      isSelected: display.account.accountId == selectedAccountId,
+    );
+    final open = ref.watch(openWalletsProvider);
+    final activeWallet = ref.watch(activeWalletIndexProvider);
 
     return [
       for (final wallet in grouping.wallets) ...[
-        _WalletHeader(wallet: wallet),
-        for (final account in walletAccountsInOrder(wallet)) row(account),
+        _WalletHeader(
+          key: ValueKey('sidebar-wallet-${wallet.walletIndex}'),
+          wallet: wallet,
+          isOpen: open.contains(wallet.walletIndex),
+          holdsActiveAccount: wallet.walletIndex == activeWallet,
+        ),
+        if (open.contains(wallet.walletIndex)) ...[
+          for (final account in walletAccountsInOrder(wallet)) row(account),
+          // Where each will be once the chain has it: after the wallet's
+          // multisigs.
+          for (final multisig in creating)
+            if (wallet.contains(multisig.myMemberAccountId))
+              _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
+        ],
       ],
-      if (grouping.standaloneMultisigs.isNotEmpty) ...[
+      if (grouping.standaloneMultisigs.isNotEmpty || creatingAlone.isNotEmpty) ...[
         if (grouping.wallets.isNotEmpty) ...[
           const SizedBox(height: 12),
           const MenuDivider(),
           const SizedBox(height: 12),
         ],
         for (final multisig in grouping.standaloneMultisigs) row(MultisigDisplayAccount(multisig)),
+        for (final multisig in creatingAlone)
+          _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
       ],
     ];
   }
@@ -145,10 +191,15 @@ class Sidebar extends ConsumerWidget {
   }
 }
 
+/// A wallet's heading, which opens and closes the wallet, as the HIG groups a
+/// long sidebar. The wallet of the active account stays open, so it is always
+/// clear which wallet that account is in: its heading is not a control.
 class _WalletHeader extends ConsumerStatefulWidget {
-  const _WalletHeader({required this.wallet});
+  const _WalletHeader({super.key, required this.wallet, required this.isOpen, required this.holdsActiveAccount});
 
   final WalletGroup wallet;
+  final bool isOpen;
+  final bool holdsActiveAccount;
 
   @override
   ConsumerState<_WalletHeader> createState() => _WalletHeaderState();
@@ -193,6 +244,12 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
     return null;
   }
 
+  void _toggle() {
+    // A Control-click opens the menu instead.
+    if (ContextMenuRegion.isControlClick) return;
+    ref.read(keptOpenWalletsProvider.notifier).toggle(widget.wallet.walletIndex);
+  }
+
   void _showError(String message) {
     _clearError?.cancel();
     setState(() => _error = message);
@@ -223,21 +280,7 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
               onCancel: () => ref.read(sidebarRenameProvider.notifier).end(_target),
             ),
           )
-        // Drawn in capitals, which is a look and not the name: a screen
-        // reader gets the name as it is written.
-        : Semantics(
-            label: name,
-            excludeSemantics: true,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 14, 10, 6),
-              child: Text(
-                name.toUpperCase(),
-                style: text.caption.copyWith(color: colors.textMuted2, fontWeight: FontWeight.w500, letterSpacing: 0.8),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          );
+        : _heading(name, l10n);
     // One column whether or not an error shows under the title, so the title,
     // and a name being typed in it, stays as it is when the error comes or goes.
     final heading = Column(
@@ -256,10 +299,84 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
     );
     return WalletContextMenu(wallet: widget.wallet, child: heading);
   }
+
+  /// The name, with the wallet's chevron and, while it is closed, how many
+  /// accounts it holds.
+  Widget _heading(String name, AppLocalizations l10n) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    final radius = context.radiusV3.smBorder;
+    final isControl = !widget.holdsActiveAccount;
+    final isOpen = widget.isOpen;
+    final count = widget.wallet.accountCount;
+    final quiet = text.caption.copyWith(color: colors.textMuted2);
+
+    // Drawn in capitals, which is a look and not the name: a screen reader
+    // gets the name as it is written.
+    return Semantics(
+      label: name,
+      value: isOpen ? null : l10n.desktopWalletAccountCount(count),
+      button: isControl,
+      expanded: isOpen,
+      onTap: isControl ? _toggle : null,
+      excludeSemantics: true,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          child: InkWell(
+            onTap: isControl ? _toggle : null,
+            borderRadius: radius,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      name.toUpperCase(),
+                      style: quiet.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.8),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (!isOpen) ...[Text('$count', style: quiet), const SizedBox(width: 7)],
+                  if (isControl)
+                    Icon(
+                      isOpen ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
+                      size: 11,
+                      color: colors.textMuted2,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A multisig the chain has yet to confirm: its name and a moving status. It
+/// is not an account yet, so nothing selects it, and it has no menu.
+class _CreatingRow extends ConsumerWidget {
+  const _CreatingRow({super.key, required this.multisig});
+
+  final MultisigAccount multisig;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SidebarRow(
+      title: multisig.name,
+      leading: DesktopAccountBadge(account: multisig, size: _AccountRow._badgeSize),
+      subtitle: TerminalBusyLine(label: ref.watch(l10nProvider).multisigCreateCreatingButton),
+      onTap: null,
+    );
+  }
 }
 
 class _AccountRow extends ConsumerWidget {
-  const _AccountRow({required this.display, required this.isSelected});
+  const _AccountRow({super.key, required this.display, required this.isSelected});
 
   final DisplayAccount display;
   final bool isSelected;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/providers/location_recheck_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
+import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -17,6 +18,7 @@ class QuantusDesktopApp extends ConsumerWidget {
     ref.watch(notificationsStartupProvider);
     ref.watch(ownActivityNotificationsProvider);
     ref.watch(locationRecheckProvider);
+    ref.watch(backgroundModeProvider);
     final theme = AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop());
 
     return MaterialApp(

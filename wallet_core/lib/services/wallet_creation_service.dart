@@ -35,11 +35,9 @@ class WalletCreationService {
   /// Saves [mnemonic] for [walletIndex], inserts its root account and makes
   /// that the active account.
   ///
-  /// The root insert is the commit point: a failure up to and including it
-  /// leaves nothing behind (the mnemonic is deleted again), so the caller may
-  /// retry. After it the wallet exists, so the remaining writes are best-effort
-  /// and only logged — surfacing them would prompt a retry that creates a
-  /// second wallet.
+  /// Storing the root is the commit point (see [_saveRoot]). After it the
+  /// wallet exists, so the remaining writes are best-effort and only logged —
+  /// surfacing them would prompt a retry that creates a second wallet.
   Future<Account> createNewWallet({
     required String name,
     required String mnemonic,
@@ -56,13 +54,7 @@ class WalletCreationService {
       scheme: scheme,
       derivationPath: derivationPath,
     );
-    await _settings.setMnemonic(mnemonic, walletIndex);
-    try {
-      await _accounts.addAccount(account);
-    } catch (_) {
-      await _settings.deleteMnemonic(walletIndex);
-      rethrow;
-    }
+    await _saveRoot(mnemonic: mnemonic, root: account, scanPending: false);
 
     try {
       _settings.setWalletOrigin(walletIndex, WalletOrigin.created);
@@ -77,15 +69,33 @@ class WalletCreationService {
 
   /// Saves [mnemonic] and inserts [root]. The account scan is marked pending
   /// first, so an app stopped before the scan finishes it on the next start.
-  Future<void> importWallet({required String mnemonic, required Account root}) async {
+  ///
+  /// Storing the root is the commit point (see [_saveRoot]).
+  Future<void> importWallet({required String mnemonic, required Account root}) =>
+      _saveRoot(mnemonic: mnemonic, root: root, scanPending: !HdWalletService.isDevAccount(mnemonic));
+
+  /// Saves [mnemonic] in the wallet's slot and stores [root].
+  ///
+  /// If [root] is not stored, the slot is put back as it was and the error
+  /// rethrown, so the caller may retry and a phrase the slot held is not lost.
+  /// Once [root] is stored its phrase stays: a failure to make it active is
+  /// only logged, because an account must never outlive its secret.
+  Future<void> _saveRoot({required String mnemonic, required Account root, required bool scanPending}) async {
     final walletIndex = root.walletIndex;
+    final previous = await _settings.getMnemonic(walletIndex);
     await _settings.setMnemonic(mnemonic, walletIndex);
-    if (HdWalletService.isDevAccount(mnemonic)) return _accounts.addAccount(root);
-    await _settings.setPendingAccountScan(walletIndex, root.accountId);
     try {
+      if (scanPending) await _settings.setPendingAccountScan(walletIndex, root.accountId);
       await _accounts.addAccount(root);
+    } on AccountNotActivatedException catch (e) {
+      quantusPrint('Wallet $walletIndex was stored but activating its root failed: ${e.cause}');
     } catch (_) {
-      await _settings.setPendingAccountScan(walletIndex, null);
+      if (previous == null) {
+        await _settings.deleteMnemonic(walletIndex);
+      } else {
+        await _settings.setMnemonic(previous, walletIndex);
+      }
+      if (scanPending) await _settings.setPendingAccountScan(walletIndex, null);
       rethrow;
     }
   }
@@ -223,7 +233,7 @@ Future<Account> createSoftwareWallet(WidgetRef ref) async {
   return account;
 }
 
-/// A recovery phrase that is not 12 or 24 words long.
+/// A recovery phrase that is not 12 or 24 words long, or is already in a wallet.
 class InvalidRecoveryPhraseException implements Exception {
   const InvalidRecoveryPhraseException(this.message);
 
@@ -258,6 +268,7 @@ Future<Account> importSoftwareWallet(
   final settings = ref.read(settingsServiceProvider);
   final hdWallet = ref.read(hdWalletServiceProvider);
   final creation = ref.read(walletCreationServiceProvider);
+  final l10n = ref.read(l10nProvider);
   // Read before the first await: the encrypted account is restored after the
   // widget behind [ref] may be gone.
   final telemetry = ref.read(telemetryProvider);
@@ -267,8 +278,11 @@ Future<Account> importSoftwareWallet(
   if (!(kDebugMode && phrase.startsWith('//'))) {
     final words = recoveryPhraseWords(phrase);
     if (words.length != 12 && words.length != 24) {
-      throw InvalidRecoveryPhraseException(ref.read(l10nProvider).importWalletValidationError);
+      throw InvalidRecoveryPhraseException(l10n.importWalletValidationError);
     }
+  }
+  if (await _isPhraseInAWallet(settings, phrase)) {
+    throw InvalidRecoveryPhraseException(l10n.importWalletAlreadyAdded);
   }
 
   const scheme = DilithiumSchemeExtension.current;
@@ -309,6 +323,17 @@ Future<Account> importSoftwareWallet(
 
   unawaited(registerForRemoteNotificationsBestEffort(ref.read, insertAddress: walletIndex > 0 ? root.accountId : null));
   return root;
+}
+
+/// Whether a wallet that has accounts holds [phrase], however it is spaced.
+/// Compares the phrases, not the first account, which may be disconnected.
+Future<bool> _isPhraseInAWallet(SettingsService settings, String phrase) async {
+  final words = recoveryPhraseWords(phrase);
+  for (final walletIndex in (await settings.getAccounts()).map((a) => a.walletIndex).toSet()) {
+    final stored = await settings.getMnemonic(walletIndex);
+    if (stored != null && listEquals(recoveryPhraseWords(stored), words)) return true;
+  }
+  return false;
 }
 
 /// Restores the wallet's encrypted account and warms its wormhole address

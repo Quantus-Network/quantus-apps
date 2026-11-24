@@ -6,6 +6,7 @@ packages:
   - cold-wallet-app
   - quantus_sdk
   - wallet_core
+  - desktop_qr_camera
 
 ide:
   intellij:
@@ -94,6 +95,7 @@ scripts:
       melos exec --concurrency=1 --scope="wallet_core" -- "flutter test"
       melos exec --concurrency=1 --scope="resonance_network_wallet" -- "flutter test"
       melos exec --concurrency=1 --scope="quantus_desktop_wallet" -- "flutter test"
+      melos exec --concurrency=1 --scope="desktop_qr_camera" -- "flutter test"
       melos exec --concurrency=1 --scope="quantus_cold_wallet" -- "flutter test"
 
   # Get dependencies for all packages
