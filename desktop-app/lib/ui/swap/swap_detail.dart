@@ -78,7 +78,6 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
     return accountActions(
       active,
       swapAvailable: ref.watch(remoteConfigProvider.select((config) => config.swapAvailable)),
-      hasActiveSwap: false,
     ).any((action) => action.kind == AccountActionKind.swap && action.isEnabled);
   }
 

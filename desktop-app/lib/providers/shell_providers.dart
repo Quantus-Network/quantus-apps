@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
@@ -257,13 +256,6 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       quantusPrint('${sheet.name} is not offered on the active account; nothing is opened.');
       return;
     }
-    // A swap being followed lives in the window, not in a sheet: Swap opens
-    // it in the panel at the right, from whichever account.
-    final followed = ref.read(followedSwapProvider);
-    if (sheet == ShellSheet.swap && followed != null) {
-      ref.read(openedActivityProvider.notifier).open(OpenedSwap(followed.id));
-      return;
-    }
     if (sheet == ShellSheet.send || sheet == ShellSheet.propose) _beginSend();
     // A swap starts from this sheet, so where swaps are allowed is asked
     // again as it opens: the answer in hand may be from another place.
@@ -310,11 +302,7 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final canSend = sendStrategyFor(active, accounts: ref.watch(accountsProvider).value ?? const []) != null;
   bool sends(AccountActionKind kind) => kind == AccountActionKind.send || kind == AccountActionKind.propose;
   return [
-    for (final action in accountActions(
-      active,
-      swapAvailable: ref.watch(remoteConfigProvider).swapAvailable,
-      hasActiveSwap: ref.watch(followedSwapProvider) != null,
-    ))
+    for (final action in accountActions(active, swapAvailable: ref.watch(remoteConfigProvider).swapAvailable))
       if (sends(action.kind) && !canSend) AccountAction(action.kind, isEnabled: false) else action,
   ];
 });

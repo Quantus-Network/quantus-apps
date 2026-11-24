@@ -58,6 +58,7 @@ Future<FakeSettingsService> _open(
   FakeSwapService? swaps,
   FakeSendChain? chain,
   List<Uri>? opened,
+  bool swapAvailable = true,
 }) async {
   final settings = FakeSettingsService(activeAccount: active)..activeSwaps = [?swap, ...followed];
   await pumpShell(
@@ -70,6 +71,7 @@ Future<FakeSettingsService> _open(
         encryptedBalances: {0: oneToken},
         chain: chain,
         swaps: swaps,
+        swapAvailable: swapAvailable,
       ),
       if (opened != null) openExternalUrlProvider.overrideWithValue((url) async => opened.add(url)),
     ],
@@ -764,18 +766,25 @@ void main() {
       }
     });
 
-    testOnMac('is not offered from an account that cannot swap', (tester) async {
-      await _open(
-        tester,
-        swap: fakeActiveSwap(status: SwapStatus.failed),
-        active: const RegularAccount(encryptedAccount),
-      );
-      await tester.tap(
-        find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(ToolbarAction, _l10n.homeSwap)),
-      );
-      await tester.pumpAndSettle();
+    testOnMac('leaves another swap followed, its row in place', (tester) async {
+      final failed = fakeActiveSwap(status: SwapStatus.failed);
+      final running = fakeActiveSwap(depositAddress: _secondAddress);
+      final settings = await _open(tester, followed: [failed, running]);
+      await _openRow(tester, failed);
 
-      expect(find.byType(SwapDetail), findsOneWidget);
+      await _press(tester, _inPanel(find.byKey(SwapDetail.startNewKey)));
+
+      expect(settings.activeSwaps.map((s) => s.id), [running.id]);
+      expect(_rowIds(tester), [running.id]);
+      expect(find.byType(SwapDetail), findsNothing);
+      expect(find.byType(SwapSheet), findsOneWidget);
+    });
+
+    testOnMac('is not offered where swaps are no longer available', (tester) async {
+      await _open(tester, swap: fakeActiveSwap(status: SwapStatus.failed), swapAvailable: false);
+      await _openSwap(tester);
+
+      expect(_inPanel(find.text(_l10n.commonDone)), findsOne);
       expect(_inPanel(find.byKey(SwapDetail.startNewKey)), findsNothing);
     });
   });
@@ -784,28 +793,43 @@ void main() {
     Finder swapAction() =>
         find.descendant(of: find.byType(AccountToolbar), matching: find.widgetWithText(ToolbarAction, _l10n.homeSwap));
 
-    testOnMac("opens the swap's panel, and no sheet", (tester) async {
-      await _open(tester, swap: fakeActiveSwap());
+    testOnMac('opens the form for another swap, and not the swap followed', (tester) async {
+      final settings = await _open(tester, swap: fakeActiveSwap());
 
       await tester.tap(swapAction());
       await tester.pumpAndSettle();
 
-      expect(find.byType(SwapDetail), findsOne);
-      expect(find.byType(ShellSheetView), findsNothing);
-      expect(_container(tester).read(shellSheetProvider), isNull);
-      expect(tester.widget<SwapRowView>(find.byType(SwapRowView)).isSelected, isTrue);
+      expect(find.byType(SwapSheet), findsOne);
+      expect(_container(tester).read(shellSheetProvider), ShellSheet.swap);
+      expect(find.byType(SwapDetail), findsNothing);
+      expect(tester.widget<SwapRowView>(find.byType(SwapRowView)).isSelected, isFalse);
+      expect(settings.activeSwaps, hasLength(1));
     });
 
-    testOnMac('from another account too, where the swap has no row', (tester) async {
+    testOnMac('from another account opens the form on that account', (tester) async {
       await _open(tester, swap: fakeActiveSwap(), active: const RegularAccount(savingsAccount));
       expect(find.byType(SwapRowView), findsNothing);
 
       await tester.tap(swapAction());
       await tester.pumpAndSettle();
 
-      expect(find.byType(SwapDetail), findsOne);
-      expect(_container(tester).read(shellSheetProvider), isNot(ShellSheet.swap));
-      expect(_inPanel(find.text('250 QTC')), findsOne);
+      expect(find.byType(SwapDetail), findsNothing);
+      expect(
+        find.descendant(of: find.byType(SwapSheet), matching: find.textContaining('Savings', findRichText: true)),
+        findsWidgets,
+      );
+    });
+
+    testOnMac('is offered by the account alone: a swap followed does not bring it where the account cannot swap', (
+      tester,
+    ) async {
+      await _open(tester, swap: fakeActiveSwap(), active: const RegularAccount(encryptedAccount));
+      expect(tester.widget<ToolbarAction>(swapAction()).onPressed, isNull);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _open(tester, swap: fakeActiveSwap(), swapAvailable: false);
+      expect(swapAction(), findsNothing);
+      expect(find.byType(SwapRowView), findsOne, reason: 'the swap is still reached by its row');
     });
   });
 

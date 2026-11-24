@@ -20,6 +20,7 @@ import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/services/user_approval.dart';
@@ -748,6 +749,45 @@ void main() {
       expect(find.byType(SwapRowView), findsOneWidget);
       expect(settings.activeSwap?.depositTxHash, '0xhash');
       expect(settings.activeSwap?.depositByHand, isFalse);
+    });
+
+    testOnMac('beside a swap already followed, both are followed and the panel shows the new one', (tester) async {
+      const earlierAddress = '0x1111111111111111111111111111111111111111';
+      final earlier = fakeActiveSwap(depositAddress: earlierAddress);
+      final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwaps = [earlier];
+      await _openSheet(tester, settings: settings);
+      await _openReview(tester);
+
+      await _press(tester, SwapSheet.confirmKey);
+
+      expect(find.byType(SwapSheet), findsNothing);
+      expect(settings.activeSwaps, hasLength(2));
+      final started = settings.activeSwaps.last;
+      expect(started.id, isNot(earlier.id));
+      expect(tester.widget<SwapDetail>(find.byType(SwapDetail)).swapId, started.id);
+      final rows = tester.widgetList<SwapRowView>(find.byType(SwapRowView)).toList();
+      expect(rows.map((row) => row.swap.id), [started.id, earlier.id]);
+      expect(rows.map((row) => row.isSelected), [true, false]);
+    });
+
+    testOnMac('with as many swaps running as can be followed, Confirm says so and starts nothing', (tester) async {
+      final running = [
+        for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++) fakeActiveSwap(depositAddress: '0x${'$i' * 40}'),
+      ];
+      final chain = FakeSendChain();
+      final approval = FakeUserApproval();
+      final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwaps = running;
+      final swaps = await _openSheet(tester, chain: chain, approval: approval, settings: settings);
+      await _openReview(tester);
+
+      await _press(tester, SwapSheet.confirmKey);
+
+      expect(_text(tester, SwapSheet.noticeKey), _l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(swaps.created, isEmpty, reason: 'no live order was asked for');
+      expect(approval.reasons, isEmpty);
+      expect(chain.transfers, isEmpty);
+      expect(settings.activeSwaps.map((s) => s.id), running.map((s) => s.id));
     });
 
     testOnMac('a swap in sends nothing: the sheet gives way to the deposit to make', (tester) async {

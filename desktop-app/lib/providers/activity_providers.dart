@@ -261,10 +261,7 @@ final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
   };
 });
 
-/// The swap this app follows. It follows one at a time: while there is one,
-/// Swap opens it instead of the form for another. Should a second have started
-/// all the same, as when a deposit lands after its sheet was left, it is the
-/// newest, and the one before it shows once that is put away.
+/// The newest swap followed: the one the sidebar counts for its account.
 final followedSwapProvider = Provider<ActiveSwap?>((ref) => ref.watch(activeSwapsProvider).lastOrNull);
 
 /// The swaps followed from the account [accountId], newest first: its rows
