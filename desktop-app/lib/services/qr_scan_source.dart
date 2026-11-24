@@ -37,6 +37,15 @@ final qrScanSourceFactoryProvider = Provider<QrScanSource Function()>(
       () => defaultTargetPlatform == TargetPlatform.macOS ? MacQrScanSource() : FrameQrScanSource(),
 );
 
+/// Makes the scan source for an animated code, whose frames change faster
+/// than one read every 200 ms: macOS reads every frame. Windows and Linux
+/// read as for one code.
+final animatedQrScanSourceFactoryProvider = Provider<QrScanSource Function()>(
+  (ref) =>
+      () =>
+          defaultTargetPlatform == TargetPlatform.macOS ? MacQrScanSource(readsEveryFrame: true) : FrameQrScanSource(),
+);
+
 /// Windows and Linux: reads the newest frame about five times a second and
 /// decodes it in a worker. A frame that arrives during a decode is never
 /// queued, as the next read takes only the newest.
@@ -145,11 +154,15 @@ class FrameQrScanSource implements QrScanSource {
 /// macOS, through `mobile_scanner`. Its controller keeps a failed start's
 /// error to itself and ignores a stop while it is starting, so starts and
 /// stops take turns here and each start's outcome is checked.
+///
+/// It reads a frame every 200 ms, or, with [readsEveryFrame], every frame the
+/// camera gives, as an animated code needs.
 class MacQrScanSource implements QrScanSource {
-  MacQrScanSource()
+  MacQrScanSource({bool readsEveryFrame = false})
     : _controller = MobileScannerController(
         autoStart: false,
         formats: const [BarcodeFormat.qrCode],
+        detectionSpeed: readsEveryFrame ? DetectionSpeed.unrestricted : DetectionSpeed.normal,
         detectionTimeoutMs: 200,
       );
 
