@@ -185,26 +185,53 @@ class SettingsService {
     }
   }
 
-  /// Removes [account], making another active if it was. Throws when the
-  /// change cannot be stored, and the accounts are then what they were.
+  /// Removes [account], making another active if it was. When it was its
+  /// wallet's last account, as a hardware wallet's can be, the wallet's
+  /// settings go too: the next wallet added takes its index. Throws when the
+  /// change cannot be stored, and the accounts and settings are then what
+  /// they were.
   Future<void> removeAccount(Account account) async {
     final accounts = await getAccounts();
     if (accounts.length == 1) {
       throw Exception('Cant remove last account!');
     }
     final previousActive = _prefs.getString(_activeDisplayAccountKey);
-    if (account.accountId == await _getActiveAccountId()) {
-      final replacement = _preferNonEncrypted(accounts.where((a) => a.accountId != account.accountId));
-      await setActiveAccount(RegularAccount(replacement));
-    }
-    accounts.removeWhere((a) => a.accountId == account.accountId);
+    final remaining = accounts.where((a) => a.accountId != account.accountId).toList();
+    final walletIndex = account.walletIndex;
+    final settingsKeys = remaining.any((a) => a.walletIndex == walletIndex)
+        ? const <String>[]
+        : [_pendingAccountScanKey(walletIndex), ..._walletSettingsKeys(walletIndex)];
+    final previousSettings = {for (final key in settingsKeys) key: _prefs.get(key)};
     try {
-      await saveAccounts(accounts);
+      // First, as in [removeWallet]: a pending account scan adds accounts.
+      for (final key in settingsKeys) {
+        if (!await _prefs.remove(key)) throw Exception('Could not remove $key');
+      }
+      if (account.accountId == await _getActiveAccountId()) {
+        await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
+      }
+      try {
+        await saveAccounts(remaining);
+      } catch (_) {
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
+      }
     } catch (_) {
-      await _putBack(_activeDisplayAccountKey, previousActive);
+      for (final MapEntry(:key, :value) in previousSettings.entries) {
+        await _putBack(key, value);
+      }
       rethrow;
     }
   }
+
+  /// The settings a wallet keeps besides its accounts, mnemonic and pending
+  /// account scan.
+  List<String> _walletSettingsKeys(int walletIndex) => [
+    _walletOriginKey(walletIndex),
+    _recoveryPhraseViewedKey(walletIndex),
+    _walletNameKey(walletIndex),
+    _airdropClaimKey(walletIndex),
+  ];
 
   /// Picks a replacement active account, avoiding encrypted (wormhole)
   /// accounts unless they are the only option.
@@ -235,12 +262,7 @@ class SettingsService {
     final previousAccounts = _prefs.getString(_accountsKey);
     final previousActive = _prefs.getString(_activeDisplayAccountKey);
     final scanKey = _pendingAccountScanKey(walletIndex);
-    final settingsKeys = [
-      _walletOriginKey(walletIndex),
-      _recoveryPhraseViewedKey(walletIndex),
-      _walletNameKey(walletIndex),
-      _airdropClaimKey(walletIndex),
-    ];
+    final settingsKeys = _walletSettingsKeys(walletIndex);
     final previousScan = _prefs.get(scanKey);
     final previousSettings = {for (final key in settingsKeys) key: _prefs.get(key)};
     // The wallet's account scan adds accounts only while it is pending, so it

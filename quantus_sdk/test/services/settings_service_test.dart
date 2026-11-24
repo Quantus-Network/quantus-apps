@@ -730,6 +730,28 @@ void main() {
       await settings.setAirdropClaim(1, claim);
     }
 
+    const cold = Account(
+      walletIndex: 1,
+      index: 0,
+      name: 'Cold Wallet',
+      accountId: 'id_cold',
+      accountType: AccountType.keystone,
+    );
+    const cold2 = Account(
+      walletIndex: 1,
+      index: 1,
+      name: 'Cold Wallet 2',
+      accountId: 'id_cold2',
+      accountType: AccountType.keystone,
+    );
+
+    /// Stores [first] and the hardware wallet of [coldAccounts], named, with
+    /// [cold] active, while every write is still stored.
+    Future<void> givenColdWallet(List<Account> coldAccounts) async {
+      await given([first, ...coldAccounts], active: cold);
+      await settings.setWalletName(1, 'Retired hardware wallet');
+    }
+
     /// The Trading wallet is as [givenTradingWallet] stored it, in [current].
     Future<void> expectTradingWalletWhole(SettingsService current) async {
       expect(await idsIn(current), [first.accountId, trading.accountId]);
@@ -866,6 +888,21 @@ void main() {
         }
       });
 
+      for (final write in ['wallet_name_1', 'accounts_v5', 'active_display_account']) {
+        test('a $how write of $write, disconnecting a hardware wallet\'s last account, throws and keeps it', () async {
+          await givenColdWallet([cold]);
+          fail(write);
+
+          await expectLater(settings.removeAccount(cold), throwsA(anything));
+
+          for (final current in [settings, await restarted()]) {
+            expect(await idsIn(current), [first.accountId, cold.accountId]);
+            expect(await activeIdIn(current), cold.accountId);
+            expect(current.getWalletName(1), 'Retired hardware wallet');
+          }
+        });
+      }
+
       test('a $how multisig add throws and adds nothing', () async {
         await given([first], active: first);
         fail('multisig_accounts_v1');
@@ -964,6 +1001,31 @@ void main() {
         expect(current.getWalletName(1), isNull);
         expect(current.pendingAccountScan(1), isNull);
         expect(current.getAirdropClaim(1), isNull);
+      }
+    });
+
+    test('disconnecting a hardware wallet\'s last account clears its name, and the next wallet at its index starts '
+        'without it', () async {
+      await givenColdWallet([cold]);
+
+      await settings.removeAccount(cold);
+
+      for (final current in [settings, await restarted()]) {
+        expect(await idsIn(current), [first.accountId]);
+        expect(current.getWalletName(1), isNull);
+      }
+      await settings.addAccount(trading);
+      expect(settings.getWalletName(1), isNull);
+    });
+
+    test('disconnecting a hardware account its wallet still has others of keeps the wallet\'s name', () async {
+      await givenColdWallet([cold, cold2]);
+
+      await settings.removeAccount(cold);
+
+      for (final current in [settings, await restarted()]) {
+        expect(await idsIn(current), [first.accountId, cold2.accountId]);
+        expect(current.getWalletName(1), 'Retired hardware wallet');
       }
     });
   });
