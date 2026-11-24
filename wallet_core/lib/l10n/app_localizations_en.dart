@@ -2880,6 +2880,108 @@ class AppLocalizationsEn extends AppLocalizations {
       'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.';
 
   @override
+  String get desktopProposalApproving => 'Approving';
+
+  @override
+  String get desktopProposalExecuting => 'Executing';
+
+  @override
+  String get desktopProposalCancelling => 'Cancelling';
+
+  @override
+  String get desktopProposalSignsAs => 'Signs as';
+
+  @override
+  String get desktopProposalSignedAs => 'Signed as';
+
+  @override
+  String get desktopProposalDepositRefunded => 'Deposit refunded';
+
+  @override
+  String desktopProposalApprovalsChange(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String desktopProposalKeystoneApprove(String name) {
+    return '$name signs with a Keystone, which this app cannot sign with yet. Approve on your phone.';
+  }
+
+  @override
+  String desktopProposalKeystoneExecute(String name) {
+    return '$name signs with a Keystone, which this app cannot sign with yet. Execute on your phone.';
+  }
+
+  @override
+  String desktopProposalKeystoneCancel(String name) {
+    return '$name signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.';
+  }
+
+  @override
+  String desktopProposalApprovingTitle(String what) {
+    return 'Approving $what';
+  }
+
+  @override
+  String desktopProposalApprovedTitle(String what) {
+    return '$what approved';
+  }
+
+  @override
+  String desktopProposalExecutingTitle(String what) {
+    return 'Executing $what';
+  }
+
+  @override
+  String desktopProposalExecutedTitle(String what) {
+    return '$what executed';
+  }
+
+  @override
+  String desktopProposalCancellingTitle(String what) {
+    return 'Cancelling $what';
+  }
+
+  @override
+  String get desktopProposalCancelledTitle => 'Proposal cancelled';
+
+  @override
+  String get desktopProposalApprovalWaiting => 'Waiting for the network to record your approval.';
+
+  @override
+  String get desktopProposalExecutionWaiting => 'Waiting for the network to record your execution.';
+
+  @override
+  String get desktopProposalCancellationWaiting => 'Waiting for the network to record your cancellation.';
+
+  @override
+  String get desktopProposalReadyToExecute => 'It has every approval it needs, and can be executed.';
+
+  @override
+  String desktopProposalApprovalsNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more approvals needed.',
+      one: '1 more approval needed.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopProposalExecutedDone => 'The proposal has run.';
+
+  @override
+  String get desktopProposalCancelledDone => 'Your deposit is refunded.';
+
+  @override
+  String get desktopProposalExecutedByAnother => 'Executed by another signer';
+
+  @override
+  String get desktopProposalExecutedByAnotherBody =>
+      'Another signer executed this proposal first, so your transaction did not go through. Its network fee was still paid.';
+
+  @override
   String get desktopFooterMainnet => 'Mainnet';
 
   @override

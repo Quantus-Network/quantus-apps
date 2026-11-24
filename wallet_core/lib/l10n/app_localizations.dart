@@ -5252,6 +5252,156 @@ abstract class AppLocalizations {
   /// **'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.'**
   String get desktopProposalUnreadable;
 
+  /// Desktop proposal action review: the caps line over the proposal being approved
+  ///
+  /// In en, this message translates to:
+  /// **'Approving'**
+  String get desktopProposalApproving;
+
+  /// Desktop proposal action review: the caps line over the proposal being executed
+  ///
+  /// In en, this message translates to:
+  /// **'Executing'**
+  String get desktopProposalExecuting;
+
+  /// Desktop proposal action review: the caps line over the proposal being cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling'**
+  String get desktopProposalCancelling;
+
+  /// Desktop proposal action review: the row naming the account of this wallet that signs, or the choice of them
+  ///
+  /// In en, this message translates to:
+  /// **'Signs as'**
+  String get desktopProposalSignsAs;
+
+  /// Desktop proposal action receipt: the row naming the account that signed
+  ///
+  /// In en, this message translates to:
+  /// **'Signed as'**
+  String get desktopProposalSignedAs;
+
+  /// Desktop proposal cancel review: the row with the proposal deposit that cancelling returns
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit refunded'**
+  String get desktopProposalDepositRefunded;
+
+  /// Desktop proposal approve review: the approval count before and after this approval, each as desktopProposeCountOf
+  ///
+  /// In en, this message translates to:
+  /// **'{before} → {after}'**
+  String desktopProposalApprovalsChange(String before, String after);
+
+  /// Desktop proposal panel: why Approve is unavailable when the only account that could approve is a Keystone
+  ///
+  /// In en, this message translates to:
+  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Approve on your phone.'**
+  String desktopProposalKeystoneApprove(String name);
+
+  /// Desktop proposal panel: why Execute is unavailable when the member that executes is a Keystone
+  ///
+  /// In en, this message translates to:
+  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Execute on your phone.'**
+  String desktopProposalKeystoneExecute(String name);
+
+  /// Desktop proposal panel: why Cancel Proposal is unavailable when the proposer is a Keystone
+  ///
+  /// In en, this message translates to:
+  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.'**
+  String desktopProposalKeystoneCancel(String name);
+
+  /// Desktop proposal action receipt headline while the approval is confirmed; what is the amount or the call's name
+  ///
+  /// In en, this message translates to:
+  /// **'Approving {what}'**
+  String desktopProposalApprovingTitle(String what);
+
+  /// Desktop proposal action receipt headline once the approval is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'{what} approved'**
+  String desktopProposalApprovedTitle(String what);
+
+  /// Desktop proposal action receipt headline while the execution is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Executing {what}'**
+  String desktopProposalExecutingTitle(String what);
+
+  /// Desktop proposal action receipt headline once the proposal was executed, by this wallet or another signer
+  ///
+  /// In en, this message translates to:
+  /// **'{what} executed'**
+  String desktopProposalExecutedTitle(String what);
+
+  /// Desktop proposal action receipt headline while the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling {what}'**
+  String desktopProposalCancellingTitle(String what);
+
+  /// Desktop proposal action receipt headline once the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cancelled'**
+  String get desktopProposalCancelledTitle;
+
+  /// Desktop proposal action receipt: while the approval is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to record your approval.'**
+  String get desktopProposalApprovalWaiting;
+
+  /// Desktop proposal action receipt: while the execution is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to record your execution.'**
+  String get desktopProposalExecutionWaiting;
+
+  /// Desktop proposal action receipt: while the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to record your cancellation.'**
+  String get desktopProposalCancellationWaiting;
+
+  /// Desktop proposal action receipt: an approval that brought the proposal to its threshold
+  ///
+  /// In en, this message translates to:
+  /// **'It has every approval it needs, and can be executed.'**
+  String get desktopProposalReadyToExecute;
+
+  /// Desktop proposal action receipt: an approval after which the proposal still needs more
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more approval needed.} other{{count} more approvals needed.}}'**
+  String desktopProposalApprovalsNeeded(int count);
+
+  /// Desktop proposal action receipt: once this wallet's execution is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'The proposal has run.'**
+  String get desktopProposalExecutedDone;
+
+  /// Desktop proposal action receipt: once the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Your deposit is refunded.'**
+  String get desktopProposalCancelledDone;
+
+  /// Desktop proposal action receipt status: the proposal was executed, but not by this wallet's transaction
+  ///
+  /// In en, this message translates to:
+  /// **'Executed by another signer'**
+  String get desktopProposalExecutedByAnother;
+
+  /// Desktop proposal action receipt: under 'Executed by another signer'
+  ///
+  /// In en, this message translates to:
+  /// **'Another signer executed this proposal first, so your transaction did not go through. Its network fee was still paid.'**
+  String get desktopProposalExecutedByAnotherBody;
+
   /// Desktop footer: the network the wallet is on, beside a dot that is green while online
   ///
   /// In en, this message translates to:
