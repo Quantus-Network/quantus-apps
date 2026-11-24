@@ -270,13 +270,13 @@ class TransactionSubmissionService {
   /// [callBytes] should be the bytes the confirmation sheet already read from
   /// chain storage, so the fee estimate and the submitted extrinsic cover the
   /// same call; omitting them makes the service fetch them itself.
-  Future<void> approveProposal({
+  Future<String> approveProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
   }) async {
-    await _submitAndTrackApproval(
+    return _submitAndTrackApproval(
       msig: msig,
       proposal: proposal,
       approverId: signer.accountId,
@@ -358,14 +358,14 @@ class TransactionSubmissionService {
   /// Awaits acceptance of the extrinsic by the chain before completing;
   /// indexer polling then continues in the background. Rethrows on submission
   /// failure so callers can surface the error.
-  Future<void> executeProposal({
+  Future<String> executeProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
     BigInt? fee,
   }) async {
-    await _submitAndTrackExecution(
+    return _submitAndTrackExecution(
       msig: msig,
       proposal: proposal,
       executorId: signer.accountId,
@@ -446,13 +446,13 @@ class TransactionSubmissionService {
   /// Awaits acceptance of the extrinsic by the chain before completing;
   /// indexer polling then continues in the background. Rethrows on submission
   /// failure so callers can surface the error.
-  Future<void> cancelProposal({
+  Future<String> cancelProposal({
     required MultisigAccount msig,
     required Account proposer,
     required MultisigProposal proposal,
     BigInt? fee,
   }) async {
-    await _submitAndTrackCancellation(
+    return _submitAndTrackCancellation(
       msig: msig,
       proposal: proposal,
       proposerId: proposer.accountId,

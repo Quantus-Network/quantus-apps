@@ -130,13 +130,14 @@ class _FakeSubmission extends Fake implements TransactionSubmissionService {
 
   final submitted = <(String action, String signer, BigInt? fee, List<int>? callBytes)>[];
 
-  Future<void> _submit(String action, Account signer, BigInt? fee, List<int>? callBytes) async {
+  Future<String> _submit(String action, Account signer, BigInt? fee, List<int>? callBytes) async {
     if (error case final error?) throw error;
     submitted.add((action, signer.accountId, fee, callBytes));
+    return '0x${submitted.length}';
   }
 
   @override
-  Future<void> approveProposal({
+  Future<String> approveProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
@@ -144,7 +145,7 @@ class _FakeSubmission extends Fake implements TransactionSubmissionService {
   }) => _submit('approve', signer, null, callBytes);
 
   @override
-  Future<void> executeProposal({
+  Future<String> executeProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
@@ -153,7 +154,7 @@ class _FakeSubmission extends Fake implements TransactionSubmissionService {
   }) => _submit('execute', signer, fee, callBytes);
 
   @override
-  Future<void> cancelProposal({
+  Future<String> cancelProposal({
     required MultisigAccount msig,
     required Account proposer,
     required MultisigProposal proposal,
