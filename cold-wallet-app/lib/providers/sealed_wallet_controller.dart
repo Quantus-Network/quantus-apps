@@ -8,17 +8,19 @@ import 'package:quantus_cold_wallet/providers/wallet_controller.dart';
 import 'package:quantus_cold_wallet/services/cold_key_service.dart';
 import 'package:quantus_cold_wallet/services/held_account_store.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
+import 'package:quantus_cold_wallet/ui/seal_wording.dart';
 
-/// The wallet on a device that seals the recovery phrase behind Face ID.
-/// Nothing is unlocked for a session: the app opens without a prompt on the
-/// public half of its accounts, and each signature takes the phrase out of
-/// the keychain inside Rust, behind its own Face ID match, and wipes it.
+/// The wallet on a device that seals the recovery phrase: behind its
+/// biometrics, or behind its passcode while it has none enrolled. Nothing is
+/// unlocked for a session: the app opens without a prompt on the public half
+/// of its accounts, and each signature takes the phrase out of the sealed
+/// store inside Rust, behind its own prompt, and wipes it.
 class SealedWalletController extends WalletController {
-  static const _keyLostMessage =
-      'iOS removed the signing key from this iPhone. Go back and restore it from your recovery phrase.';
-  static const _notRecognisedMessage =
-      'Face ID did not match. If it is locked, lock the phone and unlock it with your passcode. If it is turned off '
-      'for this app, allow it in Settings.';
+  static const _signPrompt = 'Sign this transaction';
+  static const _revealPrompt = 'Show your recovery phrase';
+  static const _confirmPrompt = 'Confirm your new signing key';
+  static const _addAccountPrompt = 'Add an account';
+  static const _movePrompt = 'Move your signing key';
   static const _otherWalletMessage = 'This recovery phrase belongs to a different wallet.';
 
   final HeldAccountStore _store = HeldAccountStore();
@@ -36,7 +38,7 @@ class SealedWalletController extends WalletController {
   @override
   Future<WalletState> load() async {
     final held = await _store.read();
-    final hasPhrase = await _use(_keys.hasSealedPhrase);
+    final hasPhrase = await _use(_keys.sealedPolicy) != null;
     if (held != null) {
       _held = held;
       if (hasPhrase) await _discardLegacyVault();
@@ -47,12 +49,20 @@ class SealedWalletController extends WalletController {
       await _use(_keys.delete);
     }
     if (!await _vault.hasWallet()) return const WalletState(status: WalletStatus.needsSetup);
-    final interrupted = await _vault.undoInterruptedMigration(canProtect: await auth.deviceCanProtect());
+    final canProtect = await auth.deviceCanProtect();
+    final interrupted = await _vault.undoInterruptedMigration(canProtect: canProtect);
     return WalletState(
       status: WalletStatus.needsMigration,
-      biometricEnabled: !interrupted && await _vault.isBiometricEnabled(),
+      biometricEnabled: !interrupted && await _legacyHasDeviceKey(canProtect),
     );
   }
+
+  /// Where even looking into the protected store prompts, a device that can
+  /// protect is taken to hold the old vault's key there, and the migration
+  /// finds out.
+  Future<bool> _legacyHasDeviceKey(bool canProtect) async =>
+      await _vault.hasPlainKey() ||
+      (auth.storeAuthenticatesOncePerProcess ? canProtect : await _vault.hasProtectedKey());
 
   /// Runs one call into the key service and turns what it refused into what
   /// the screens show.
@@ -65,14 +75,15 @@ class SealedWalletController extends WalletController {
         case SealedKeyFailure.cancelled:
           throw VaultAccessCancelled(PlatformException(code: e.failure.name, message: e.detail));
         case SealedKeyFailure.notRecognised:
-          throw const KeyRefused(_notRecognisedMessage);
+          throw KeyRefused(notRecognisedMessage);
         case SealedKeyFailure.missing:
           if (_held != null) state = state.copyWith(status: WalletStatus.keyLost);
-          throw const KeyRefused(_keyLostMessage);
-        case SealedKeyFailure.unsupported ||
-            SealedKeyFailure.wrongAccount ||
-            SealedKeyFailure.invalid ||
-            SealedKeyFailure.keychain:
+          throw KeyRefused(
+            'This $deviceName no longer holds the signing key. Go back and restore it from your recovery phrase.',
+          );
+        case SealedKeyFailure.unavailable:
+          throw KeyRefused(lockRequiredMessage);
+        case SealedKeyFailure.wrongAccount || SealedKeyFailure.invalid || SealedKeyFailure.platform:
           throw StateError('Signing key ${e.failure.name}: ${e.detail}');
       }
     }
@@ -98,16 +109,16 @@ class SealedWalletController extends WalletController {
 
   @override
   Future<Uint8List> signExtrinsic(String address, Uint8List message, {required int specVersion}) =>
-      _use(() => _keys.signExtrinsic(_holding(address).account, address, message, specVersion));
+      _use(() => _keys.signExtrinsic(_holding(address).account, address, message, specVersion, _signPrompt));
 
   @override
   Future<Uint8List> signNear(String address, List<int> transaction) =>
-      _use(() => _keys.signNear(_holding(address).account, address, transaction));
+      _use(() => _keys.signNear(_holding(address).account, address, transaction, _signPrompt));
 
   @override
   Future<String?> revealPhrase() async {
     try {
-      return await _use(_keys.reveal);
+      return await _use(() => _keys.reveal(_revealPrompt));
     } on VaultAccessCancelled {
       return null;
     }
@@ -129,15 +140,17 @@ class SealedWalletController extends WalletController {
   @override
   Future<void> checkPhrase(String phrase, List<ColdAccount> accounts) => _derive(phrase, accounts);
 
-  /// Seals [phrase] and proves with one Face ID read that the device releases
-  /// it and that it derives the key expected. Anything short of that removes
-  /// the phrase again and rethrows, so a wallet whose key cannot be used never
-  /// survives its creation.
+  /// Seals [phrase] behind the strongest policy the device enforces and
+  /// proves with one prompted read that the device releases it and that it
+  /// derives the key expected. Anything short of that removes the phrase again
+  /// and rethrows, so a wallet whose key cannot be used never survives its
+  /// creation.
   Future<void> _seal(String phrase, List<ColdAccount> accounts) async {
     final held = await _derive(phrase, accounts);
-    await _use(() => _keys.seal(phrase));
+    final policy = await _use(_keys.availablePolicy) ?? (throw KeyRefused(lockRequiredMessage));
+    await _use(() => _keys.seal(phrase, policy));
     try {
-      final released = await _use(() => _keys.sealedKeys([accounts.first]));
+      final released = await _use(() => _keys.sealedKeys([accounts.first], _confirmPrompt));
       if (released.single.address != held.accounts.first.address) {
         throw StateError('The sealed phrase derives another key than the phrase entered');
       }
@@ -161,15 +174,17 @@ class SealedWalletController extends WalletController {
 
   /// Opens the old vault with its device key, or with [password] when it has
   /// none, seals its phrase and only then removes the vault. A device key that
-  /// no longer opens the vault leaves the password as the way in.
+  /// is missing or no longer opens the vault leaves the password as the way in.
   @override
   Future<bool> migrateLegacy(String password, {required bool protected}) async {
     final withDeviceKey = state.biometricEnabled;
     final UnlockResult legacy;
     try {
       legacy = withDeviceKey ? await _vault.unlockWithBiometricKey() : await _vault.unlockWithPassword(password);
-    } on SecretBoxAuthenticationError {
-      debugPrint('Migration: the old vault did not open with ${withDeviceKey ? 'its device key' : 'the password'}');
+    } catch (e) {
+      final noDeviceKey = withDeviceKey && e is StateError;
+      if (e is! SecretBoxAuthenticationError && !noDeviceKey) rethrow;
+      debugPrint('Migration: the old vault did not open with ${withDeviceKey ? 'its device key' : 'the password'}: $e');
       if (withDeviceKey) state = state.copyWith(biometricEnabled: false);
       return false;
     }
@@ -178,18 +193,27 @@ class SealedWalletController extends WalletController {
     return true;
   }
 
+  /// The vault goes first; the key entry that opened it follows as far as its
+  /// store allows, and unlocks nothing once the vault is gone.
   Future<void> _discardLegacyVault() async {
-    if (await _vault.hasWallet()) await _vault.wipe();
+    if (await _vault.hasWallet()) await _vault.discardVault();
   }
 
   @override
-  Future<KeyProtection> keyProtection() async => KeyProtection.biometryEachUse;
+  Future<KeyProtection> keyProtection() async => switch (await _use(_keys.sealedPolicy)) {
+    SealPolicy.biometry => KeyProtection.biometryEachUse,
+    SealPolicy.devicePasscode => KeyProtection.passcodeEachUse,
+    null => throw StateError('No sealed phrase on this device'),
+  };
+
+  @override
+  Future<void> sealBehindBiometrics() => _use(() => _keys.reseal(SealPolicy.biometry, _movePrompt));
 
   /// Nothing is held between uses, so there is nothing to lock.
   @override
   void lockOnBackground() {}
 
-  /// Adding an account derives its public key, which is one Face ID prompt;
+  /// Adding an account derives its public key, which is one prompt;
   /// renaming and removing touch only the public list.
   @override
   Future<void> saveAccounts(List<ColdAccount> accounts) async {
@@ -197,7 +221,9 @@ class SealedWalletController extends WalletController {
     HeldAccount? holding(ColdAccount account) =>
         held.accounts.where((h) => h.account.derivesSameKey(account)).firstOrNull;
     final added = accounts.where((account) => holding(account) == null).toList();
-    final keys = added.isEmpty ? const <AccountPublicKey>[] : await _use(() => _keys.sealedKeys(added));
+    final keys = added.isEmpty
+        ? const <AccountPublicKey>[]
+        : await _use(() => _keys.sealedKeys(added, _addAccountPrompt));
     await _publish(
       held.withAccounts([
         for (final account in accounts)
@@ -210,7 +236,7 @@ class SealedWalletController extends WalletController {
   Future<void> wipe() async {
     await _use(_keys.delete);
     await _store.delete();
-    await _vault.wipe();
+    await _discardLegacyVault();
     _held = null;
     state = const WalletState(status: WalletStatus.needsSetup);
   }

@@ -143,7 +143,7 @@ class VaultWalletController extends WalletController {
       await _vault.storeBiometricKey(keyBytes, protected: protected);
     } catch (e, st) {
       debugPrint('Create wallet failed, removing the vault: $e\n$st');
-      await _vault.discardIncompleteVault();
+      await _vault.discardVault();
       rethrow;
     }
     _keyBytes = keyBytes;
@@ -181,6 +181,9 @@ class VaultWalletController extends WalletController {
     return plainKey == PlainKeyKind.legacy ? KeyProtection.legacyPrompt : KeyProtection.none;
   }
 
+  @override
+  Future<void> sealBehindBiometrics() => throw StateError('A vault key is never sealed');
+
   /// The one way to the key: the prompt its protection needs, the read, and
   /// for a plain entry the device can now protect, the move behind user
   /// presence, whose own prompt is what gates that read. Null when a prompt
@@ -190,7 +193,7 @@ class VaultWalletController extends WalletController {
     final passed = switch (protection) {
       KeyProtection.none => true,
       KeyProtection.legacyPrompt => await auth.authenticate(reason),
-      KeyProtection.biometryEachUse => throw StateError('A vault key is never sealed'),
+      KeyProtection.biometryEachUse || KeyProtection.passcodeEachUse => throw StateError('A vault key is never sealed'),
       // Android's store answers silently once it has prompted in this
       // process; the first read of a process and every iOS read are gated by
       // the store itself.
@@ -330,8 +333,7 @@ class VaultWalletController extends WalletController {
   }
 }
 
-/// A device that can seal the phrase behind Face ID holds it that way; every
-/// other device keeps the vault.
+/// An iPhone seals the phrase; every other device keeps the vault.
 final walletControllerProvider = NotifierProvider<WalletController, WalletState>(
   () => Platform.isIOS ? SealedWalletController() : VaultWalletController(),
 );

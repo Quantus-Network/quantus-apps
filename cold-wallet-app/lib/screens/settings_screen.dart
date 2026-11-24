@@ -7,6 +7,8 @@ import 'package:quantus_cold_wallet/providers/settings_providers.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/show_secret_phrase_screen.dart';
 import 'package:quantus_cold_wallet/components/cold_dialog.dart';
+import 'package:quantus_cold_wallet/services/vault_service.dart' show VaultAccessCancelled;
+import 'package:quantus_cold_wallet/ui/seal_wording.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -27,6 +29,20 @@ class SettingsScreen extends ConsumerWidget {
       isDestructive: true,
     );
     if (confirmed) await ref.read(coldSettingsProvider.notifier).setWifiOverrideEnabled(true);
+  }
+
+  Future<void> _sealBehindBiometrics(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(walletControllerProvider.notifier).sealBehindBiometrics();
+    } on VaultAccessCancelled {
+      if (context.mounted) context.showInfoToaster(message: 'Cancelled. The signing key has not moved.');
+      return;
+    } catch (e, st) {
+      debugPrint('The signing key did not move behind biometrics: $e\n$st');
+      if (context.mounted) context.showErrorToaster(message: 'The signing key has not moved: $e');
+      return;
+    }
+    ref.invalidate(keyProtectionProvider);
   }
 
   Future<void> _showSecretPhrase(BuildContext context, WidgetRef ref) async {
@@ -53,6 +69,11 @@ class SettingsScreen extends ConsumerWidget {
     final text = context.themeTextV3;
     final settings = ref.watch(coldSettingsProvider);
     final protection = ref.watch(keyProtectionProvider).value;
+    final sealed = ref.read(walletControllerProvider.notifier).sealed;
+    final canSealBehindBiometrics =
+        protection == KeyProtection.passcodeEachUse && ref.watch(sealPolicyProvider).value == SealPolicy.biometry;
+    final biometrics = SealPolicy.biometry.credential;
+    final passcode = SealPolicy.devicePasscode.credential;
 
     return ScaffoldBase(
       appBar: const V2AppBar(title: 'Settings'),
@@ -77,9 +98,16 @@ class SettingsScreen extends ConsumerWidget {
                 KeyProtection.none =>
                   'None. This phone has no device lock, so the signing key is stored without user presence.',
                 KeyProtection.biometryEachUse =>
-                  'Face ID, every time. This iPhone releases the signing key for one signature at a time, and only '
-                      'after a Face ID match. Changing Face ID or turning the passcode off removes the key.',
+                  '${SealPolicy.biometry.credentialTitle}, every time. This $deviceName releases the signing key for '
+                      'one signature at a time, and only to $biometrics. Changing $biometrics or turning the '
+                      '$screenLockName off removes the key.',
+                KeyProtection.passcodeEachUse =>
+                  '${SealPolicy.devicePasscode.credentialTitle}, every time. Weaker than $biometrics: anyone who '
+                      'knows $passcode can sign. '
+                      '${canSealBehindBiometrics ? 'Tap to move' : 'Set up $biometrics in the system settings to move'} '
+                      'the signing key behind it.',
               },
+              onTap: canSealBehindBiometrics ? () => _sealBehindBiometrics(context, ref) : null,
             ),
             const SizedBox(height: 12),
             _SettingsCard(
@@ -119,8 +147,8 @@ class SettingsScreen extends ConsumerWidget {
             const _SectionLabel('DANGER ZONE'),
             _SettingsCard(
               title: 'Reset wallet',
-              subtitle: protection == KeyProtection.biometryEachUse
-                  ? 'Erase the signing key and the list of accounts from this iPhone.'
+              subtitle: sealed
+                  ? 'Erase the signing key and the list of accounts from this $deviceName.'
                   : 'Erase the encrypted key and its device-protected unlock key from this phone.',
               titleColor: colors.semanticEmber,
               onTap: () => confirmResetWallet(context, ref),

@@ -1,17 +1,20 @@
 //! The cold wallet's signing key, used without handing key material to Dart.
 //!
-//! On iOS the recovery phrase lives in the sealed keychain item
-//! ([`crate::sealed_phrase`]). Each `sealed_*` call takes it out for that one
-//! operation, behind one biometric prompt, and wipes it before returning:
-//! only public keys and signatures cross the bridge. None of them is `sync`,
-//! because the prompt blocks and must not hold the UI thread.
+//! The recovery phrase is a sealed secret ([`crate::sealed_secret`]): the
+//! device releases it for one operation after authenticating its owner. Each
+//! `sealed_*` call takes it out behind one prompt and wipes it before
+//! returning, so only public keys and signatures cross the bridge. None of
+//! them is `sync`, because the prompt blocks and must not hold the UI thread.
 
 use crate::api::crypto::{address_of, dispatch, DilithiumScheme};
 use crate::api::near::{sign_declared_transaction, ML_DSA_65_ONLY};
-use crate::sealed_phrase;
+use crate::sealed_secret::{self, Failure, Refusal, SealPolicy};
 use crate::sensitive::SensitiveVec;
 use crate::signing_context;
 use qp_rusty_crystals_hdwallet::{mnemonic_to_seed, SensitiveBytes32, SensitiveBytes64};
+
+/// The slot of the sealed store that holds the recovery phrase.
+const PHRASE_SLOT: &str = "cold_wallet_recovery_phrase";
 
 /// Where an account's key sits under the phrase.
 pub struct AccountPath {
@@ -28,21 +31,21 @@ pub struct AccountPublicKey {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SealedKeyFailure {
-    /// The biometric prompt was dismissed.
+    /// The prompt was dismissed.
     Cancelled,
-    /// No biometric match, or biometrics are locked out.
+    /// No match, or the device has locked its biometrics.
     NotRecognised,
-    /// No sealed phrase on this device: never stored, or destroyed by iOS
-    /// when the passcode was turned off or the enrolled biometrics changed.
+    /// No sealed phrase on this device: never stored, or destroyed by the
+    /// operating system when the screen lock or the biometrics changed.
     Missing,
-    /// This platform has no sealed store.
-    Unsupported,
+    /// The device cannot enforce the policy asked for, or cannot prompt now.
+    Unavailable,
     /// The path derives another account than the one the caller named.
     WrongAccount,
     /// The phrase, path or request cannot be used.
     Invalid,
-    /// The keychain refused for another reason; the detail carries its status.
-    Keychain,
+    /// The platform refused for a reason of its own, named in the detail.
+    Platform,
 }
 
 #[derive(Debug)]
@@ -62,15 +65,15 @@ fn invalid(detail: impl ToString) -> SealedKeyError {
     failed(SealedKeyFailure::Invalid, detail)
 }
 
-fn keychain(status: i32) -> SealedKeyError {
-    let failure = match status {
-        sealed_phrase::USER_CANCELED => SealedKeyFailure::Cancelled,
-        sealed_phrase::AUTH_FAILED => SealedKeyFailure::NotRecognised,
-        sealed_phrase::ITEM_NOT_FOUND => SealedKeyFailure::Missing,
-        sealed_phrase::UNIMPLEMENTED => SealedKeyFailure::Unsupported,
-        _ => SealedKeyFailure::Keychain,
+fn refused(refusal: Refusal) -> SealedKeyError {
+    let failure = match refusal.failure {
+        Failure::Cancelled => SealedKeyFailure::Cancelled,
+        Failure::NotRecognised => SealedKeyFailure::NotRecognised,
+        Failure::Missing => SealedKeyFailure::Missing,
+        Failure::Unavailable => SealedKeyFailure::Unavailable,
+        Failure::Platform => SealedKeyFailure::Platform,
     };
-    failed(failure, format!("Keychain status {status}"))
+    failed(failure, refusal.detail)
 }
 
 /// Stretches `phrase` into `seed`. The phrase is wiped on every path.
@@ -79,16 +82,16 @@ fn stretch(phrase: String, seed: &mut SensitiveBytes64) -> Result<(), SealedKeyE
 }
 
 /// Takes the sealed phrase out for one operation. Prompts.
-fn sealed_text() -> Result<String, SealedKeyError> {
-    let mut phrase = sealed_phrase::read().map_err(keychain)?;
+fn sealed_text(prompt: &str) -> Result<String, SealedKeyError> {
+    let mut phrase = sealed_secret::read(PHRASE_SLOT, prompt).map_err(refused)?;
     String::from_utf8(std::mem::take(&mut phrase.0)).map_err(|error| {
         drop(SensitiveVec(error.into_bytes()));
         invalid("The sealed phrase is not text")
     })
 }
 
-fn sealed_seed(seed: &mut SensitiveBytes64) -> Result<(), SealedKeyError> {
-    stretch(sealed_text()?, seed)
+fn sealed_seed(prompt: &str, seed: &mut SensitiveBytes64) -> Result<(), SealedKeyError> {
+    stretch(sealed_text(prompt)?, seed)
 }
 
 fn public_key_at(
@@ -168,7 +171,7 @@ fn sign_near_at(
 }
 
 /// Public keys from a phrase the caller still holds: at creation, import and
-/// restore, before it is sealed. Never touches the sealed item.
+/// restore, before it is sealed. Never touches the sealed phrase.
 pub fn derive_account_keys(
     phrase: String,
     accounts: Vec<AccountPath>,
@@ -178,23 +181,39 @@ pub fn derive_account_keys(
     public_keys(&seed, &accounts)
 }
 
-/// Whether a sealed phrase is on this device. Never prompts.
-pub fn sealed_phrase_exists() -> Result<bool, SealedKeyError> {
-    sealed_phrase::exists().map_err(keychain)
+/// The strongest policy this device can seal under now: a biometric where
+/// one is enrolled, the device passcode where none is, `None` without a
+/// screen lock. Never prompts.
+pub fn seal_policy_available() -> Result<Option<SealPolicy>, SealedKeyError> {
+    sealed_secret::available().map_err(refused)
 }
 
-/// Seals `phrase`, replacing any phrase already sealed. Never prompts.
-pub fn seal_phrase(phrase: String) -> Result<(), SealedKeyError> {
+/// The policy the phrase on this device is sealed under, or `None` when there
+/// is no sealed phrase. Never prompts.
+pub fn sealed_phrase_policy() -> Result<Option<SealPolicy>, SealedKeyError> {
+    sealed_secret::stored(PHRASE_SLOT).map_err(refused)
+}
+
+/// Seals `phrase` under `policy`, replacing any phrase already sealed. Never
+/// prompts.
+pub fn seal_phrase(phrase: String, policy: SealPolicy) -> Result<(), SealedKeyError> {
     let phrase = SensitiveVec(phrase.into_bytes());
-    sealed_phrase::store(&phrase).map_err(keychain)
+    sealed_secret::store(PHRASE_SLOT, &phrase, policy).map_err(refused)
+}
+
+/// Moves the sealed phrase under `policy`. Two prompts: one under the policy
+/// it has, one under the new; it keeps the policy it has unless both pass.
+pub fn reseal_phrase(policy: SealPolicy, prompt: String) -> Result<(), SealedKeyError> {
+    sealed_secret::reseal(PHRASE_SLOT, policy, &prompt).map_err(refused)
 }
 
 /// Public keys of `accounts` under the sealed phrase. One prompt for the batch.
 pub fn sealed_account_keys(
     accounts: Vec<AccountPath>,
+    prompt: String,
 ) -> Result<Vec<AccountPublicKey>, SealedKeyError> {
     let mut seed = SensitiveBytes64::zeroed();
-    sealed_seed(&mut seed)?;
+    sealed_seed(&prompt, &mut seed)?;
     public_keys(&seed, &accounts)
 }
 
@@ -206,9 +225,10 @@ pub fn sealed_sign_extrinsic(
     message: Vec<u8>,
     spec_version: u32,
     entropy: Option<[u8; 32]>,
+    prompt: String,
 ) -> Result<Vec<u8>, SealedKeyError> {
     let mut seed = SensitiveBytes64::zeroed();
-    sealed_seed(&mut seed)?;
+    sealed_seed(&prompt, &mut seed)?;
     sign_extrinsic_at(&seed, &account, &address, &message, spec_version, entropy)
 }
 
@@ -220,20 +240,21 @@ pub fn sealed_sign_near(
     address: String,
     transaction: Vec<u8>,
     entropy: Option<[u8; 32]>,
+    prompt: String,
 ) -> Result<Vec<u8>, SealedKeyError> {
     let mut seed = SensitiveBytes64::zeroed();
-    sealed_seed(&mut seed)?;
+    sealed_seed(&prompt, &mut seed)?;
     sign_near_at(&seed, &account, &address, &transaction, entropy)
 }
 
 /// The sealed phrase itself, for the screen that shows it. One prompt.
-pub fn reveal_sealed_phrase() -> Result<String, SealedKeyError> {
-    sealed_text()
+pub fn reveal_sealed_phrase(prompt: String) -> Result<String, SealedKeyError> {
+    sealed_text(&prompt)
 }
 
 /// Removes the sealed phrase. Never prompts; a missing phrase is not an error.
 pub fn delete_sealed_phrase() -> Result<(), SealedKeyError> {
-    sealed_phrase::delete().map_err(keychain)
+    sealed_secret::delete(PHRASE_SLOT).map_err(refused)
 }
 
 #[cfg(test)]
@@ -244,6 +265,7 @@ mod tests {
         verify_message,
     };
     use crate::api::near::{sign_near_transaction, tests::tx_for};
+    use crate::sealed_secret::backend::device;
 
     const PHRASE: &str = "orchard answer curve patient visual flower maze noise retreat penalty cage small earth domain scan pitch bottom crunch theme club client swap slice raven";
     const PATH_87: &str = "m/44'/189189'/0'/0'/0'";
@@ -363,23 +385,84 @@ mod tests {
         assert_eq!(error.failure, SealedKeyFailure::Invalid);
     }
 
+    fn seal_on_a_device_enforcing(policy: SealPolicy) {
+        set_default_ss58_prefix(189);
+        device(|d| d.enrolled = Some(policy));
+        seal_phrase(PHRASE.to_string(), policy).unwrap();
+    }
+
+    fn sign_sealed() -> Result<Vec<u8>, SealedKeyError> {
+        sealed_sign_extrinsic(
+            account(PATH_87, DilithiumScheme::MlDsa87),
+            ADDRESS_87.to_string(),
+            b"payload".to_vec(),
+            SPEC,
+            None,
+            "prompt".to_string(),
+        )
+    }
+
     #[test]
-    fn has_no_sealed_store_off_ios() {
+    fn uses_the_sealed_phrase_behind_one_prompt_per_operation() {
+        seal_on_a_device_enforcing(SealPolicy::Biometry);
+        assert_eq!(sealed_phrase_policy().unwrap(), Some(SealPolicy::Biometry));
+        assert_eq!(device(|d| d.prompts), 0);
+
+        let keypair =
+            generate_derived_keypair(PHRASE.to_string(), PATH_87, DilithiumScheme::MlDsa87)
+                .unwrap();
         assert_eq!(
-            sealed_phrase_exists().unwrap_err().failure,
-            SealedKeyFailure::Unsupported
+            sign_sealed().unwrap(),
+            sign_message_with_pubkey(&keypair, b"payload", None, SPEC)
         );
+        assert_eq!(device(|d| d.prompts), 1);
+
+        let keys = sealed_account_keys(
+            vec![account(PATH_65, DilithiumScheme::MlDsa65)],
+            "prompt".to_string(),
+        )
+        .unwrap();
+        assert_eq!(keys[0].address, ADDRESS_65);
+        assert_eq!(reveal_sealed_phrase("prompt".to_string()).unwrap(), PHRASE);
+        assert_eq!(device(|d| d.prompts), 3);
+    }
+
+    #[test]
+    fn signs_nothing_when_the_device_does_not_release_the_phrase() {
+        seal_on_a_device_enforcing(SealPolicy::DevicePasscode);
+        for (refusal, failure) in [
+            (Failure::Cancelled, SealedKeyFailure::Cancelled),
+            (Failure::NotRecognised, SealedKeyFailure::NotRecognised),
+        ] {
+            device(|d| d.refusals = vec![refusal]);
+            assert_eq!(sign_sealed().unwrap_err().failure, failure);
+        }
+
+        delete_sealed_phrase().unwrap();
         assert_eq!(
-            seal_phrase(PHRASE.to_string()).unwrap_err().failure,
-            SealedKeyFailure::Unsupported
+            sign_sealed().unwrap_err().failure,
+            SealedKeyFailure::Missing
         );
-        assert_eq!(
-            reveal_sealed_phrase().unwrap_err().failure,
-            SealedKeyFailure::Unsupported
-        );
-        assert_eq!(
-            delete_sealed_phrase().unwrap_err().failure,
-            SealedKeyFailure::Unsupported
-        );
+        assert_eq!(sealed_phrase_policy().unwrap(), None);
+    }
+
+    #[test]
+    fn seals_only_under_a_policy_the_device_enforces() {
+        assert_eq!(seal_policy_available().unwrap(), None);
+        let error = seal_phrase(PHRASE.to_string(), SealPolicy::DevicePasscode).unwrap_err();
+        assert_eq!(error.failure, SealedKeyFailure::Unavailable);
+        assert_eq!(sealed_phrase_policy().unwrap(), None);
+    }
+
+    #[test]
+    fn moves_the_sealed_phrase_behind_a_biometric_enrolled_later() {
+        seal_on_a_device_enforcing(SealPolicy::DevicePasscode);
+        device(|d| d.enrolled = Some(SealPolicy::Biometry));
+        assert_eq!(seal_policy_available().unwrap(), Some(SealPolicy::Biometry));
+
+        reseal_phrase(SealPolicy::Biometry, "prompt".to_string()).unwrap();
+
+        assert_eq!(sealed_phrase_policy().unwrap(), Some(SealPolicy::Biometry));
+        assert_eq!(reveal_sealed_phrase("prompt".to_string()).unwrap(), PHRASE);
     }
 }

@@ -35,6 +35,7 @@ class _ColdWalletAppState extends ConsumerState<ColdWalletApp> with WidgetsBindi
     if (state == AppLifecycleState.paused) {
       ref.read(walletControllerProvider.notifier).lockOnBackground();
     }
+    if (state == AppLifecycleState.resumed) ref.invalidate(sealPolicyProvider);
   }
 
   @override

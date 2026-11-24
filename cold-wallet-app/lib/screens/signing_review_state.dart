@@ -17,7 +17,7 @@ mixin SigningReviewState<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   String? signError;
 
   /// Has the wallet [sign], which uses the key at that point only, and shows
-  /// the signature. A wallet that seals its key asks for Face ID here.
+  /// the signature. A wallet that seals its key prompts here.
   Future<void> approve(Future<Uint8List> Function(WalletController wallet) sign) async {
     setState(() {
       signing = true;

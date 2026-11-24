@@ -27,7 +27,7 @@ class _ShowSecretPhraseScreenState extends ConsumerState<ShowSecretPhraseScreen>
   }
 
   /// A sealed wallet has no lock to cover the phrase when the app leaves the
-  /// foreground, so the screen goes instead and the next look needs Face ID.
+  /// foreground, so the screen goes instead and the next look prompts again.
   void _closeIfSealed() {
     if (ref.read(walletControllerProvider.notifier).sealed) Navigator.pop(context);
   }

@@ -7,14 +7,9 @@ import 'package:quantus_cold_wallet/screens/key_created_screen.dart';
 import 'package:quantus_cold_wallet/screens/secure_element_warning_screen.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/ui/seal_wording.dart';
 import 'package:quantus_cold_wallet/components/cold_icon.dart';
 import 'package:quantus_cold_wallet/components/cold_button.dart';
-
-/// What a device that seals the phrase says while it cannot: sealing needs a
-/// passcode and an enrolled Face ID, and there is no weaker way to continue.
-const faceIdRequiredMessage =
-    'Turn on a passcode and Face ID in Settings, then come back. This iPhone releases the signing key only to '
-    'Face ID.';
 
 enum _Method {
   /// Biometrics enrolled: the user picks (Figma 798:6205). Both choices store
@@ -28,10 +23,14 @@ enum _Method {
   /// No device lock, accepted on the warning screen: a plain key entry.
   none,
 
-  /// A sealed phrase: Face ID alone, for every use of the key.
+  /// A sealed phrase: the biometrics alone, for every use of the key.
   eachUse,
 
-  /// A device that seals the phrase but has no passcode or enrolled Face ID.
+  /// A sealed phrase on a device with no biometric enrolled: its passcode,
+  /// for every use of the key.
+  passcodeEachUse,
+
+  /// A device that seals the phrase but has no screen lock to seal it behind.
   unavailable,
 }
 
@@ -61,16 +60,13 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _probe());
+    if (!ref.read(walletControllerProvider.notifier).sealed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _probe());
+    }
   }
 
   Future<void> _probe() async {
     final auth = ref.read(coldAuthServiceProvider);
-    if (ref.read(walletControllerProvider.notifier).sealed) {
-      final biometrics = await auth.canUseBiometrics();
-      if (mounted) setState(() => _method = biometrics ? _Method.eachUse : _Method.unavailable);
-      return;
-    }
     final canProtect = await auth.deviceCanProtect();
     if (!mounted) return;
     if (!canProtect) {
@@ -129,8 +125,21 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final method = _method;
-    final usesFaceId = method == _Method.faceId || method == _Method.eachUse;
+    final sealPolicy = ref.read(walletControllerProvider.notifier).sealed ? ref.watch(sealPolicyProvider) : null;
+    final method = switch (sealPolicy) {
+      null => _method,
+      AsyncData(:final value) => switch (value) {
+        SealPolicy.biometry => _Method.eachUse,
+        SealPolicy.devicePasscode => _Method.passcodeEachUse,
+        null => _Method.unavailable,
+      },
+      AsyncError() => _Method.unavailable,
+      _ => null,
+    };
+    final error =
+        _error ?? (sealPolicy is AsyncError<SealPolicy?> ? 'Secure storage failed.\n${sealPolicy.error}' : null);
+    const biometry = SealPolicy.biometry;
+    const passcode = SealPolicy.devicePasscode;
 
     return ScaffoldBase(
       appBar: V2AppBar(title: widget.restoring ? 'Restore Key' : 'New Key'),
@@ -144,7 +153,8 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
                   child: switch (method) {
                     _Method.faceId ||
                     _Method.eachUse => ColdIcon(ColdIcons.faceId, size: 60, color: colors.accentFlare),
-                    _Method.passcode => QuantusIcon(QuantusIcons.lock, size: 60, color: colors.accentFlare),
+                    _Method.passcode ||
+                    _Method.passcodeEachUse => QuantusIcon(QuantusIcons.lock, size: 60, color: colors.accentFlare),
                     _Method.none ||
                     _Method.unavailable => ColdIcon(ColdIcons.warning, size: 60, color: colors.semanticSand),
                   },
@@ -155,8 +165,9 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
                     _Method.faceId => 'Unlock with Face ID',
                     _Method.passcode => 'Unlock with your passcode',
                     _Method.none => 'No device lock',
-                    _Method.eachUse => 'Sign with Face ID',
-                    _Method.unavailable => 'Face ID is off',
+                    _Method.eachUse => 'Sign with ${biometry.credential}',
+                    _Method.passcodeEachUse => 'Sign with ${passcode.credential}',
+                    _Method.unavailable => lockRequiredTitle,
                   },
                   style: text.titleHero.copyWith(color: colors.textContent),
                   textAlign: TextAlign.center,
@@ -168,9 +179,14 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
                     _Method.passcode => 'Asked every time you open this device.',
                     _Method.none => 'The signing key is stored without user presence.',
                     _Method.eachUse =>
-                      'Asked for every signature, with no passcode fallback. Changing Face ID or turning the '
-                          'passcode off removes the key from this iPhone; your recovery phrase puts it back.',
-                    _Method.unavailable => faceIdRequiredMessage,
+                      'Asked for every signature, with no $screenLockName fallback. Changing ${biometry.credential} or '
+                          'turning the $screenLockName off removes the key from this $deviceName; your recovery phrase '
+                          'puts it back.',
+                    _Method.passcodeEachUse =>
+                      'Asked for every signature. Anyone who knows ${passcode.credential} can sign, so set up '
+                          '${biometry.credential} when you can: Settings then moves the key behind it. Turning the '
+                          '$screenLockName off removes the key from this $deviceName; your recovery phrase puts it back.',
+                    _Method.unavailable => lockRequiredMessage,
                   },
                   style: text.bodyLarge.copyWith(color: colors.textMuted),
                   textAlign: TextAlign.center,
@@ -178,17 +194,19 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
                 if (_cancelled) ...[
                   const SizedBox(height: 16),
                   Text(
-                    usesFaceId
-                        ? 'Face ID was cancelled. Tap to try again.'
-                        : 'Unlock was cancelled. Tap Continue to try again.',
+                    switch (method) {
+                      _Method.faceId => 'Face ID was cancelled. Tap to try again.',
+                      _Method.eachUse || _Method.passcodeEachUse => 'Cancelled. Tap to try again.',
+                      _ => 'Unlock was cancelled. Tap Continue to try again.',
+                    },
                     style: text.caption.copyWith(color: colors.textMuted),
                     textAlign: TextAlign.center,
                   ),
                 ],
-                if (_error != null) ...[
+                if (error != null) ...[
                   const SizedBox(height: 16),
                   Text(
-                    _error!,
+                    error,
                     style: text.caption.copyWith(color: colors.semanticEmber),
                     textAlign: TextAlign.center,
                   ),
@@ -202,10 +220,19 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
               child: Column(
                 children: [
                   if (method == _Method.unavailable)
-                    QuantusButton.simple(label: 'Check again', padding: coldButtonPadding, onTap: _probe)
+                    QuantusButton.simple(
+                      label: 'Check again',
+                      padding: coldButtonPadding,
+                      onTap: () => ref.invalidate(sealPolicyProvider),
+                    )
                   else
                     QuantusButton.simple(
-                      label: usesFaceId ? 'Enable Face ID' : 'Continue',
+                      label: switch (method) {
+                        _Method.faceId => 'Enable Face ID',
+                        _Method.eachUse => 'Enable ${biometry.credential}',
+                        _Method.passcodeEachUse => 'Use ${passcode.credential}',
+                        _ => 'Continue',
+                      },
                       padding: coldButtonPadding,
                       isLoading: _busy,
                       onTap: _busy ? null : _create,

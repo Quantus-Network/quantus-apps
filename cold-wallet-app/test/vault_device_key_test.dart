@@ -175,7 +175,7 @@ void main() {
     storage.unavailableKey = protectedKeyEntry;
     storage.unavailableWith = androidCancel;
 
-    await vault.discardIncompleteVault();
+    await vault.discardVault();
 
     expect(storage.data.containsKey(vaultEntry), isFalse);
     expect(storage.data.containsKey(plainKeyEntry), isFalse);

@@ -344,7 +344,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
     }
 
     final path = account.derivationPath;
-    // A sealed wallet releases the phrase only to Face ID, so there the address
+    // A sealed wallet releases the phrase only behind its prompt, so there the address
     // is derived once, when the account is added.
     final address = ref.read(walletControllerProvider.notifier).sealed
         ? null
@@ -365,7 +365,7 @@ class _AddAccountScreenState extends ConsumerState<AddAccountScreen> {
           Text(path, style: text.caption.copyWith(color: colors.textMuted)),
           const SizedBox(height: 4),
           if (address == null)
-            _notice(context, 'Face ID derives the address when you add this account.', isError: false)
+            _notice(context, 'The address is derived when you add this account.', isError: false)
           else
             address.when(
               data: (value) => AddressWithCheckphrase(label: 'Address', address: value),

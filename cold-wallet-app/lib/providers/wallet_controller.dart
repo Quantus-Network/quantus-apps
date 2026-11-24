@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart' show SealPolicy;
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/cold_key_service.dart';
 
-/// [keyLost] is a sealed wallet whose phrase iOS destroyed: its accounts are
+/// [keyLost] is a sealed wallet whose phrase the device destroyed: its accounts are
 /// still listed, and only the recovery phrase brings their key back.
 enum WalletStatus { initializing, needsSetup, needsMigration, locked, unlocked, keyLost }
 
@@ -13,9 +14,10 @@ enum WalletStatus { initializing, needsSetup, needsMigration, locked, unlocked, 
 /// presence, and that move's prompt gates the read. [legacyPrompt] is a plain
 /// entry the previous app version kept behind its own device prompt, which
 /// stays in front of it. [none] was accepted on the no-lock warning.
-/// [biometryEachUse] is a sealed phrase: there is no device key, and every
-/// use of the phrase needs a biometric match.
-enum KeyProtection { userPresence, upgradePending, legacyPrompt, none, biometryEachUse }
+/// [biometryEachUse] and [passcodeEachUse] are a sealed phrase: there is no
+/// device key, and every use of the phrase needs a biometric match, or the
+/// device passcode on a device that had no biometric enrolled.
+enum KeyProtection { userPresence, upgradePending, legacyPrompt, none, biometryEachUse, passcodeEachUse }
 
 /// [WalletState.error] after the user dismissed the device prompt.
 const unlockCancelledError = 'cancelled';
@@ -69,8 +71,20 @@ class KeyRefused implements Exception {
 /// Injectable so a test can stand in for the platform biometric prompt.
 final coldAuthServiceProvider = Provider<ColdAuthService>((ref) => ColdAuthService());
 
-/// Injectable so a test can stand in for the Rust signer and the keychain.
+/// Injectable so a test can stand in for the Rust signer and the sealed store.
 final coldKeyServiceProvider = Provider<ColdKeyService>((ref) => ColdKeyService());
+
+/// What a phrase sealed now would be behind, or null on a device without a
+/// screen lock. Read again whenever the app returns to the foreground, since
+/// the user changes it in the system settings.
+final sealPolicyProvider = FutureProvider.autoDispose<SealPolicy?>((ref) async {
+  try {
+    return await ref.watch(coldKeyServiceProvider).availablePolicy();
+  } catch (e, st) {
+    debugPrint('The device did not say what it can seal behind: $e\n$st');
+    rethrow;
+  }
+}, retry: (_, _) => null);
 
 /// What every screen asks of the wallet, whichever way the device holds its
 /// recovery phrase.
@@ -101,8 +115,8 @@ abstract class WalletController extends Notifier<WalletState> {
   @protected
   Future<WalletState> load();
 
-  /// Whether the phrase is sealed behind biometrics: every use of the key
-  /// prompts, and nothing is derived from the phrase without one.
+  /// Whether the phrase is sealed: every use of the key prompts, and nothing
+  /// is derived from the phrase without one.
   bool get sealed;
 
   /// Every account by its address, in the order the accounts were added.
@@ -138,6 +152,10 @@ abstract class WalletController extends Notifier<WalletState> {
   Future<bool> migrateLegacy(String password, {required bool protected});
 
   Future<KeyProtection> keyProtection();
+
+  /// Moves a phrase sealed behind the passcode behind the biometrics enrolled
+  /// since. Throws as [signExtrinsic] does, and then nothing has moved.
+  Future<void> sealBehindBiometrics();
 
   void lockOnBackground();
 

@@ -16,6 +16,7 @@ import 'package:quantus_cold_wallet/screens/root_gate.dart';
 import 'package:quantus_cold_wallet/screens/settings_screen.dart';
 import 'package:quantus_cold_wallet/screens/show_secret_phrase_screen.dart';
 import 'package:quantus_cold_wallet/screens/unlock_method_screen.dart';
+import 'package:quantus_cold_wallet/ui/seal_wording.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes/account_fixtures.dart' show coldApp, launcher;
@@ -43,8 +44,12 @@ class _KeyLostController extends SealedWalletController {
   WalletState build() => WalletState(status: WalletStatus.keyLost, accounts: testAccounts);
 }
 
-/// What the screens show and ask on a device that seals the recovery phrase.
+/// What the screens show and ask on a device that seals the recovery phrase,
+/// in the words of the platform they run on.
 void main() {
+  final iphone = TargetPlatformVariant.only(TargetPlatform.iOS);
+  final android = TargetPlatformVariant.only(TargetPlatform.android);
+
   TestWidgetsFlutterBinding.ensureInitialized();
   CheckphraseText.resolveOverride = (_) async => 'check phrase';
 
@@ -56,18 +61,17 @@ void main() {
     keys = FakeColdKeys();
   });
 
-  /// A launch over what the keychain holds now, with [controller] standing in
+  /// A launch over what the device holds now, with [controller] standing in
   /// for the wallet when the state itself is what the test sets up.
   Future<ProviderContainer> launch(
     WidgetTester tester, {
-    bool biometrics = true,
     SealedWalletController Function() controller = SealedWalletController.new,
   }) async {
     final container = ProviderContainer(
       overrides: [
         walletControllerProvider.overrideWith(controller),
         coldKeyServiceProvider.overrideWithValue(keys),
-        coldAuthServiceProvider.overrideWithValue(FakeColdAuth(biometrics: biometrics)),
+        coldAuthServiceProvider.overrideWithValue(FakeColdAuth(biometrics: true)),
       ],
     );
     addTearDown(container.dispose);
@@ -113,28 +117,68 @@ void main() {
 
       expect(find.byType(KeyCreatedScreen), findsOneWidget);
       expect(keys.sealed, testMnemonic);
+      expect(keys.sealedUnder, SealPolicy.biometry);
       expect(stateOf(container).status, WalletStatus.unlocked);
       expect(stateOf(container).mnemonic, isNull);
-    });
+    }, variant: iphone);
 
-    testWidgets('is not created while Face ID is off, and there is no way around it', (tester) async {
-      final container = await launch(tester, biometrics: false);
+    testWidgets('is created behind biometrics on Android, in its words', (tester) async {
+      final container = await launch(tester);
       await open(tester, container, screen);
 
-      expect(find.text('Face ID is off'), findsOneWidget);
-      expect(find.text(faceIdRequiredMessage), findsOneWidget);
+      expect(find.text('Sign with biometrics'), findsOneWidget);
+      expect(find.textContaining('with no screen lock fallback. Changing biometrics'), findsOneWidget);
+
+      await tester.tap(find.text('Enable biometrics'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(KeyCreatedScreen), findsOneWidget);
+      expect(keys.sealedUnder, SealPolicy.biometry);
+    }, variant: android);
+
+    testWidgets('is created behind the passcode where no biometric is enrolled, and told what that means', (
+      tester,
+    ) async {
+      keys.available = SealPolicy.devicePasscode;
+      final container = await launch(tester);
+      await open(tester, container, screen);
+
+      expect(find.text('Sign with your passcode'), findsOneWidget);
+      expect(find.textContaining('Anyone who knows your passcode can sign, so set up Face ID'), findsOneWidget);
+      expect(find.text('Enable Face ID'), findsNothing);
+
+      await tester.tap(find.text('Use your passcode'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(KeyCreatedScreen), findsOneWidget);
+      expect(keys.sealedUnder, SealPolicy.devicePasscode);
+    }, variant: iphone);
+
+    testWidgets('is not created without a screen lock, and there is no way around it but setting one', (tester) async {
+      keys.available = null;
+      final container = await launch(tester);
+      await open(tester, container, screen);
+
+      expect(find.text('Set a passcode first'), findsOneWidget);
+      expect(find.text(lockRequiredMessage), findsOneWidget);
       expect(find.text('Enable Face ID'), findsNothing);
       expect(find.text('Continue anyway'), findsNothing);
 
       await tester.tap(find.text('Check again'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Face ID is off'), findsOneWidget);
+      expect(find.text('Set a passcode first'), findsOneWidget);
       expect(keys.sealed, isNull);
       expect(stateOf(container).status, WalletStatus.needsSetup);
-    });
 
-    testWidgets('is not created by a dismissed Face ID prompt, which can be tried again', (tester) async {
+      keys.available = SealPolicy.devicePasscode;
+      await tester.tap(find.text('Check again'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sign with your passcode'), findsOneWidget);
+    }, variant: iphone);
+
+    testWidgets('is not created by a dismissed prompt, which can be tried again', (tester) async {
       final container = await launch(tester);
       await open(tester, container, screen);
       keys.refuseNext = SealedKeyFailure.cancelled;
@@ -142,7 +186,7 @@ void main() {
       await tester.tap(find.text('Enable Face ID'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Face ID was cancelled. Tap to try again.'), findsOneWidget);
+      expect(find.text('Cancelled. Tap to try again.'), findsOneWidget);
       expect(keys.sealed, isNull);
 
       await tester.tap(find.text('Enable Face ID'));
@@ -150,11 +194,55 @@ void main() {
 
       expect(find.byType(KeyCreatedScreen), findsOneWidget);
       expect(keys.sealed, testMnemonic);
-    });
+    }, variant: iphone);
+  });
+
+  group('a key behind the passcode', () {
+    Future<ProviderContainer> launchBehindPasscode(WidgetTester tester) {
+      keys.available = SealPolicy.devicePasscode;
+      return launchWithWallet(tester);
+    }
+
+    testWidgets('is called the weaker way in Settings, with what would strengthen it', (tester) async {
+      final container = await launchBehindPasscode(tester);
+      await pump(tester, container, const SettingsScreen());
+
+      expect(find.textContaining('Your passcode, every time. Weaker than Face ID'), findsOneWidget);
+      expect(find.textContaining('Set up Face ID in the system settings to move the signing key'), findsOneWidget);
+      expect(keys.prompts, 1);
+    }, variant: iphone);
+
+    testWidgets('moves behind Face ID from Settings once Face ID is set up', (tester) async {
+      final container = await launchBehindPasscode(tester);
+      keys.available = SealPolicy.biometry;
+      await pump(tester, container, const SettingsScreen());
+
+      await tester.tap(find.textContaining('Tap to move the signing key behind it.'));
+      await tester.pumpAndSettle();
+
+      expect(keys.sealedUnder, SealPolicy.biometry);
+      expect(keys.prompted, ['Confirm your new signing key', 'Move your signing key', 'Move your signing key']);
+      expect(find.textContaining('Face ID, every time.'), findsOneWidget);
+    }, variant: iphone);
+
+    testWidgets('stays behind the passcode when the move is dismissed', (tester) async {
+      final container = await launchBehindPasscode(tester);
+      keys.available = SealPolicy.biometry;
+      await pump(tester, container, const SettingsScreen());
+      keys.refuseNext = SealedKeyFailure.cancelled;
+
+      await tester.tap(find.textContaining('Tap to move the signing key behind it.'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Cancelled. The signing key has not moved.'), findsOneWidget);
+      expect(keys.sealedUnder, SealPolicy.devicePasscode);
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+    }, variant: iphone);
   });
 
   group('the recovery phrase', () {
-    testWidgets('is shown only after its own Face ID prompt', (tester) async {
+    testWidgets('is shown only after its own prompt', (tester) async {
       final container = await launchWithWallet(tester);
       await pump(tester, container, const SettingsScreen());
 
@@ -170,7 +258,7 @@ void main() {
       await tester.tap(find.text('Tap to reveal'));
       await tester.pump();
       expect(find.text('abandon'), findsNWidgets(11));
-    });
+    }, variant: iphone);
 
     testWidgets('stays closed when the prompt is dismissed', (tester) async {
       final container = await launchWithWallet(tester);
@@ -211,7 +299,7 @@ void main() {
     await tester.tap(find.text('ADVANCED'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Face ID derives the address when you add this account.'), findsOneWidget);
+    expect(find.text('The address is derived when you add this account.'), findsOneWidget);
     expect(keys.prompts, 1);
 
     await tester.ensureVisible(find.text('Create Account'));
@@ -223,7 +311,7 @@ void main() {
     expect(stateOf(container).accounts.map((a) => a.label), ['Main key', 'Account 2']);
   });
 
-  group('a key iOS removed', () {
+  group('a key the device removed', () {
     testWidgets('routes the app to its restore screen', (tester) async {
       final container = await launch(tester, controller: _KeyLostController.new);
       await pump(tester, container, const RootGate());
@@ -264,7 +352,7 @@ void main() {
       expect(find.byType(KeyCreatedScreen), findsNothing);
       expect(keys.sealed, testMnemonic);
       expect(stateOf(container).status, WalletStatus.unlocked);
-    });
+    }, variant: iphone);
   });
 
   group('a wallet behind an old device key', () {
@@ -274,25 +362,44 @@ void main() {
       await pump(tester, container, const MigrateVaultScreen());
 
       expect(find.text('Face ID for every signature'), findsOneWidget);
-      expect(find.textContaining('Face ID is asked twice now'), findsOneWidget);
+      expect(find.textContaining('behind Face ID alone'), findsOneWidget);
+      expect(find.textContaining('You are asked up to twice now'), findsOneWidget);
       expect(find.byType(PasswordField), findsNothing);
 
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
 
       expect(controller.passwords, ['']);
-    });
+    }, variant: iphone);
 
-    testWidgets('stays where it is while Face ID is off', (tester) async {
-      final controller = _OldVaultController();
-      final container = await launch(tester, biometrics: false, controller: () => controller);
+    testWidgets('says it moves behind the passcode where no biometric is enrolled', (tester) async {
+      keys.available = SealPolicy.devicePasscode;
+      final container = await launch(tester, controller: _OldVaultController.new);
       await pump(tester, container, const MigrateVaultScreen());
+
+      expect(find.text('Your passcode for every signature'), findsOneWidget);
+      expect(find.textContaining('behind your passcode alone'), findsOneWidget);
+    }, variant: iphone);
+
+    testWidgets('stays where it is until the phone has a screen lock', (tester) async {
+      keys.available = null;
+      final controller = _OldVaultController();
+      final container = await launch(tester, controller: () => controller);
+      await pump(tester, container, const MigrateVaultScreen());
+
+      expect(find.text('Set a screen lock first'), findsOneWidget);
+      expect(find.text(lockRequiredMessage), findsOneWidget);
+      expect(find.text('Continue'), findsNothing);
+
+      keys.available = SealPolicy.devicePasscode;
+      await tester.tap(find.text('Check again'));
+      await tester.pumpAndSettle();
+      expect(find.text('Your screen lock for every signature'), findsOneWidget);
+      expect(controller.passwords, isEmpty);
 
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
-
-      expect(find.text(faceIdRequiredMessage), findsOneWidget);
-      expect(controller.passwords, isEmpty);
+      expect(controller.passwords, ['']);
     });
   });
 }

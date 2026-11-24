@@ -102,7 +102,7 @@ void main() {
 
     await submit(tester, 'alpha');
 
-    expect(find.text('Face ID is needed to finish moving your wallet.'), findsOneWidget);
+    expect(find.text('Cancelled. Your wallet has not moved yet.'), findsOneWidget);
   });
 
   testWidgets('a storage failure says nothing changed', (tester) async {

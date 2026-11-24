@@ -9,6 +9,7 @@ import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/providers/sealed_wallet_controller.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
+import 'package:quantus_cold_wallet/ui/seal_wording.dart';
 
 import 'fakes/fake_cold_keys.dart';
 import 'fakes/fault_injecting_storage.dart';
@@ -20,7 +21,7 @@ final second = ColdAccount(label: 'Account 2', index: 1, scheme: DilithiumScheme
 final near65 = ColdAccount(label: 'NEAR', index: 0, scheme: DilithiumScheme.mlDsa65);
 
 /// The wallet of a device that seals the recovery phrase: nothing is unlocked
-/// for a session, and every use of the key is its own Face ID prompt.
+/// for a session, and every use of the key is its own prompt.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -29,13 +30,13 @@ void main() {
   late ProviderContainer container;
   final message = Uint8List.fromList([1, 2, 3]);
 
-  /// A new process over the same keychain: its own controller.
-  Future<ProviderContainer> launch() async {
+  /// A new process over the same device: its own controller.
+  Future<ProviderContainer> launch({FakeColdAuth? auth}) async {
     final c = ProviderContainer(
       overrides: [
         walletControllerProvider.overrideWith(SealedWalletController.new),
         coldKeyServiceProvider.overrideWithValue(keys),
-        coldAuthServiceProvider.overrideWithValue(FakeColdAuth(biometrics: true)),
+        coldAuthServiceProvider.overrideWithValue(auth ?? FakeColdAuth(biometrics: true)),
       ],
     );
     addTearDown(c.dispose);
@@ -68,12 +69,57 @@ void main() {
     expect(state().status, WalletStatus.unlocked);
     expect(state().mnemonic, isNull);
     expect(keys.sealed, testMnemonic);
-    expect(keys.prompts, 1);
+    expect(keys.prompted, ['Confirm your new signing key']);
     expect(container.read(addressesProvider).keys, [addressOf(testAccounts.single)]);
     expect(controller().phraseWords, 12);
     expect(storage.data.keys, [heldAccountsEntry]);
     expect(storage.data[heldAccountsEntry], isNot(contains('abandon')));
     expect(await controller().keyProtection(), KeyProtection.biometryEachUse);
+  });
+
+  test('a device with no biometric enrolled seals behind its passcode, and says so', () async {
+    keys.available = SealPolicy.devicePasscode;
+
+    await create();
+
+    expect(keys.sealedUnder, SealPolicy.devicePasscode);
+    expect(keys.prompts, 1);
+    expect(await controller().keyProtection(), KeyProtection.passcodeEachUse);
+  });
+
+  test('a device without a screen lock seals nothing', () async {
+    keys.available = null;
+
+    await expectLater(create(), throwsA(isA<KeyRefused>().having((e) => e.message, 'message', lockRequiredMessage)));
+
+    expect(keys.sealed, isNull);
+    expect(storage.data, isEmpty);
+    expect(state().status, WalletStatus.needsSetup);
+  });
+
+  group('a phrase behind the passcode', () {
+    setUp(() async {
+      keys.available = SealPolicy.devicePasscode;
+      await create();
+      keys.available = SealPolicy.biometry;
+    });
+
+    test('moves behind biometrics enrolled since, with a prompt under each', () async {
+      await controller().sealBehindBiometrics();
+
+      expect(keys.sealedUnder, SealPolicy.biometry);
+      expect(keys.prompts, 3);
+      expect(await controller().keyProtection(), KeyProtection.biometryEachUse);
+    });
+
+    test('stays there when the prompt is dismissed', () async {
+      keys.refuseNext = SealedKeyFailure.cancelled;
+
+      await expectLater(controller().sealBehindBiometrics(), throwsA(isA<VaultAccessCancelled>()));
+
+      expect(keys.sealedUnder, SealPolicy.devicePasscode);
+      expect(state().status, WalletStatus.unlocked);
+    });
   });
 
   test('a dismissed confirmation leaves no wallet behind', () async {
@@ -113,6 +159,7 @@ void main() {
 
     final signed = await controller().signExtrinsic(addressOf(testAccounts.single), message, specVersion: 148);
     expect(signed, [1, 2, 3, 148]);
+    expect(keys.prompted.last, 'Sign this transaction');
     expect(keys.prompts, 2);
 
     expect(await controller().signNear(addressOf(near65), [7, 8]), [7, 8]);
@@ -132,13 +179,13 @@ void main() {
     expect(state().status, WalletStatus.unlocked);
   });
 
-  test('a face that does not match is refused with what to do about it', () async {
+  test('a prompt that does not recognise the user is refused with what to do about it', () async {
     await create();
     keys.refuseNext = SealedKeyFailure.notRecognised;
 
     await expectLater(
       controller().signExtrinsic(addressOf(testAccounts.single), message, specVersion: 148),
-      throwsA(isA<KeyRefused>().having((e) => e.message, 'message', contains('Face ID did not match'))),
+      throwsA(isA<KeyRefused>().having((e) => e.message, 'message', contains('did not recognise you'))),
     );
 
     expect(state().status, WalletStatus.unlocked);
@@ -198,7 +245,7 @@ void main() {
     expect(state().accounts, hasLength(1));
   });
 
-  group('a phrase iOS destroyed', () {
+  group('a phrase the device destroyed', () {
     setUp(() async {
       await create([testAccounts.single, second]);
       keys.sealed = null;
@@ -330,6 +377,37 @@ void main() {
       expect(await controller().migrateLegacy('hunter2', protected: true), isTrue);
       expect(state().status, WalletStatus.unlocked);
       expect(keys.sealed, testMnemonic);
+      expect(storage.data.keys, [heldAccountsEntry]);
+    });
+
+    test(
+      'on a device whose key store prompts even to be looked into learns at the move that it has no device key',
+      () async {
+        await VaultService().createVault(mnemonic: testMnemonic, password: 'hunter2', accounts: accounts);
+        container = await launch(auth: FakeColdAuth(storePromptsOnce: true));
+        expect(state().biometricEnabled, isTrue);
+
+        expect(await controller().migrateLegacy('', protected: true), isFalse);
+        expect(state().biometricEnabled, isFalse);
+        expect(keys.sealed, isNull);
+        expect(storage.data.keys, [vaultEntry]);
+
+        expect(await controller().migrateLegacy('hunter2', protected: true), isTrue);
+        expect(keys.sealed, testMnemonic);
+        expect(storage.data.keys, [heldAccountsEntry]);
+      },
+    );
+
+    test('is gone after the move even when its key store refuses to open for the cleanup', () async {
+      await leaveDeviceKeyVault();
+      container = await launch();
+      await controller().migrateLegacy('', protected: true);
+      await VaultService().createVault(mnemonic: testMnemonic, password: 'hunter2', accounts: accounts);
+      storage.unavailableKey = protectedKeyEntry;
+
+      final relaunched = await launch();
+
+      expect(relaunched.read(walletControllerProvider).status, WalletStatus.unlocked);
       expect(storage.data.keys, [heldAccountsEntry]);
     });
 

@@ -368,11 +368,12 @@ class VaultService {
     await _deletePlainEntries();
   }
 
-  /// Removes a vault whose creation did not finish. Nothing can open it, so
-  /// it goes first; the protected entry follows as far as the store allows,
-  /// since its prompt may be cancelled too, and an entry left behind is
-  /// overwritten by the next creation.
-  Future<void> discardIncompleteVault() async {
+  /// Removes a vault nothing should open again: one whose creation did not
+  /// finish, or one whose phrase has moved to the sealed store. The vault goes
+  /// first; the protected entry follows as far as the store allows, since its
+  /// prompt may be cancelled too, and an entry left behind opens nothing and
+  /// is overwritten by the next creation.
+  Future<void> discardVault() async {
     await _deletePlainEntries();
     await _deleteProtectedEntry(keepOnCancel: false);
   }

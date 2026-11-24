@@ -18,6 +18,7 @@ import 'dart:convert';
 import 'frb_generated.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
+import 'sealed_secret.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({
@@ -64,6 +65,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ProofInput dco_decode_box_autoadd_proof_input(dynamic raw);
+
+  @protected
+  SealPolicy dco_decode_box_autoadd_seal_policy(dynamic raw);
 
   @protected
   int dco_decode_box_autoadd_u_32(dynamic raw);
@@ -132,6 +136,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt? dco_decode_opt_U128(dynamic raw);
 
   @protected
+  SealPolicy? dco_decode_opt_box_autoadd_seal_policy(dynamic raw);
+
+  @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
 
   @protected
@@ -148,6 +155,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ProofOutput dco_decode_proof_output(dynamic raw);
+
+  @protected
+  SealPolicy dco_decode_seal_policy(dynamic raw);
 
   @protected
   SealedKeyError dco_decode_sealed_key_error(dynamic raw);
@@ -220,6 +230,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ProofInput sse_decode_box_autoadd_proof_input(SseDeserializer deserializer);
 
   @protected
+  SealPolicy sse_decode_box_autoadd_seal_policy(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
@@ -286,6 +299,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt? sse_decode_opt_U128(SseDeserializer deserializer);
 
   @protected
+  SealPolicy? sse_decode_opt_box_autoadd_seal_policy(SseDeserializer deserializer);
+
+  @protected
   int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
@@ -302,6 +318,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ProofOutput sse_decode_proof_output(SseDeserializer deserializer);
+
+  @protected
+  SealPolicy sse_decode_seal_policy(SseDeserializer deserializer);
 
   @protected
   SealedKeyError sse_decode_sealed_key_error(SseDeserializer deserializer);
@@ -376,6 +395,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_box_autoadd_proof_input(ProofInput self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_seal_policy(SealPolicy self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
 
   @protected
@@ -442,6 +464,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_opt_U128(BigInt? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_seal_policy(SealPolicy? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
 
   @protected
@@ -458,6 +483,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_proof_output(ProofOutput self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_seal_policy(SealPolicy self, SseSerializer serializer);
 
   @protected
   void sse_encode_sealed_key_error(SealedKeyError self, SseSerializer serializer);

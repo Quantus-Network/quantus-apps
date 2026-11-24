@@ -7,9 +7,10 @@ import 'package:quantus_cold_wallet/components/outcome_view.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/import_wallet_screen.dart';
 import 'package:quantus_cold_wallet/ui/cold_theme.dart';
+import 'package:quantus_cold_wallet/ui/seal_wording.dart';
 
-/// A sealed wallet whose phrase iOS destroyed, which it does when Face ID is
-/// changed or the passcode turned off. The accounts are still listed; the
+/// A sealed wallet whose phrase the device destroyed, which it does when the
+/// biometrics change or the screen lock is turned off. The accounts are still listed; the
 /// recovery phrase puts their key back, and a reset forgets them.
 class KeyLostScreen extends ConsumerWidget {
   const KeyLostScreen({super.key});
@@ -22,7 +23,8 @@ class KeyLostScreen extends ConsumerWidget {
     glyphColor: context.colorsV3.semanticSand,
     title: 'Restore your key',
     body:
-        'iOS removed the signing key from this iPhone because Face ID was changed or the passcode was turned off. '
+        'This $deviceName removed the signing key because ${SealPolicy.biometry.credential} changed or the '
+        '$screenLockName was turned off. '
         'Your accounts and funds are untouched. Enter your recovery phrase to put the key back.',
     bottom: Column(
       children: [
