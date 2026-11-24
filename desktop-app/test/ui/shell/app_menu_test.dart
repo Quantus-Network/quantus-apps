@@ -641,7 +641,7 @@ void main() {
       expect(exitRequests, 1);
     });
 
-    testOnMac('File → Close Window (⌘W) asks the app to exit', (tester) async {
+    testOnMac('with nothing under way, File → Close Window (⌘W) asks the app to exit', (tester) async {
       var exitRequests = 0;
       await pumpShell(
         tester,

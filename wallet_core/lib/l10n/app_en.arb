@@ -4973,5 +4973,39 @@
           "type": "String"
         }
       }
+    },
+    "desktopStatusItemOpen": "Open {appName}",
+    "@desktopStatusItemOpen": {
+      "description": "Desktop menu bar icon's menu: shows the app's window again",
+      "placeholders": {
+        "appName": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopStatusItemQuit": "Quit {appName}",
+    "@desktopStatusItemQuit": {
+      "description": "Desktop menu bar icon's menu: quits the app",
+      "placeholders": {
+        "appName": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopQuitPendingTitle": "A Transaction Is Still Under Way",
+    "@desktopQuitPendingTitle": {
+      "description": "Desktop dialog when the person quits while a send or multisig action is still under way: its title"
+    },
+    "desktopQuitPendingBody": "Quitting now could leave it unfinished. The wallet can finish first, then quit on its own.",
+    "@desktopQuitPendingBody": {
+      "description": "Desktop dialog when the person quits with work under way: what quitting now risks and what the app can do instead"
+    },
+    "desktopQuitFinishFirst": "Finish, Then Quit",
+    "@desktopQuitFinishFirst": {
+      "description": "Desktop dialog when quitting with work under way: hides the window, finishes the work, then quits"
+    },
+    "desktopQuitNow": "Quit Now",
+    "@desktopQuitNow": {
+      "description": "Desktop dialog when quitting with work under way: quits at once, even though work is under way"
     }
 }

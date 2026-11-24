@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
@@ -11,6 +15,7 @@ import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -226,6 +231,91 @@ void main() {
       await _tap(tester, SendSheet.closeKey);
 
       expect(proving.wasDisposed, isTrue);
+    });
+  });
+
+  testOnMac('closing the window leaves a private send being proved running', (tester) async {
+    final proving = await _startSend(tester);
+    expect(proving.starts, hasLength(1));
+    await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+
+    final closing = ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(backgroundModeProvider).closeWindow();
+    await tester.pump();
+    await closing;
+    await tester.pumpAndSettle();
+
+    expect(proving.cancels, 0);
+    expect(proving.wasDisposed, isFalse);
+    expect(find.byKey(SendSheet.stepKey(5)), findsOneWidget);
+  });
+
+  group('as work under way', () {
+    ProviderContainer container(WidgetTester tester) =>
+        ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+
+    testOnMac('counts from the press of Send, before anything is recorded, until the approval is declined', (
+      tester,
+    ) async {
+      final answer = Completer<ApprovalResult>();
+      await _openSend(tester, approval: FakeUserApproval()..answer = () => answer.future);
+      await _fill(tester);
+      await _tap(tester, SendSheet.reviewKey);
+      expect(container(tester).read(pendingWorkProvider), isFalse);
+
+      await tester.tap(find.byKey(SendSheet.sendKey));
+      await tester.pump();
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+
+      answer.complete(ApprovalResult.declined);
+      await tester.pumpAndSettle();
+      expect(container(tester).read(pendingWorkProvider), isFalse);
+    });
+
+    testOnMac('still counts once the proving succeeds, with no gap: the chain has yet to show the send', (
+      tester,
+    ) async {
+      final proving = await _startSend(tester, notifications: FakeNotificationPlugin(grants: false));
+      await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+
+      proving.report(EncryptedSendState(phase: EncryptedSendPhase.succeeded, txHashes: const ['0xabc']));
+
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+      await tester.pumpAndSettle();
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+    });
+
+    for (final (ending, state) in [
+      ('fails', EncryptedSendState(phase: EncryptedSendPhase.failed, errorMessage: 'no')),
+      ('is cancelled', EncryptedSendState(phase: EncryptedSendPhase.cancelled)),
+      ('goes stale', EncryptedSendState(phase: EncryptedSendPhase.planStale)),
+    ]) {
+      testOnMac('counts while proving and stopping, until the proving $ending, with no frame needed', (tester) async {
+        // Notifications off: one on its way would count as work of its own.
+        final proving = await _startSend(tester, notifications: FakeNotificationPlugin(grants: false));
+        await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+        expect(container(tester).read(pendingWorkProvider), isTrue);
+        await _report(tester, proving, _partWay(EncryptedSendPhase.canceling));
+        expect(container(tester).read(pendingWorkProvider), isTrue);
+
+        // A closed window draws no frames, so this must not wait for one.
+        proving.report(state);
+
+        expect(container(tester).read(pendingWorkProvider), isFalse);
+        await tester.pumpAndSettle();
+      });
+    }
+
+    testOnMac('stops counting when the sheet goes away with the proving under way', (tester) async {
+      final proving = await _startSend(tester);
+      await _report(tester, proving, _partWay(EncryptedSendPhase.running));
+      expect(container(tester).read(pendingWorkProvider), isTrue);
+
+      tester.state<NavigatorState>(find.byType(Navigator).first).pop();
+      await tester.pumpAndSettle();
+
+      expect(container(tester).read(pendingWorkProvider), isFalse);
     });
   });
 
