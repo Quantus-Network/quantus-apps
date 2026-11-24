@@ -19,9 +19,12 @@ import 'package:wallet_core/services/telemetry.dart';
 /// at the next interval; the error leaves it once a poll succeeds. Polls
 /// pause while the app is in the background, except on Android, where the
 /// swap card's foreground service keeps the process alive so the polls keep
-/// the lock-screen card current. An overdue swap is not polled on the
-/// interval, whatever else is: it is polled once when the app starts, once
-/// on each return to the foreground, and when a refresh is asked for.
+/// the lock-screen card current. An interval polls the swaps that were not
+/// overdue as it began: one that turns overdue meanwhile is polled that last
+/// time, so what settled just before is learned of, and on no interval
+/// after, whatever else still runs. An overdue swap is polled once when the
+/// app starts, once on each return to the foreground, and when a refresh is
+/// asked for.
 final activeSwapsProvider = NotifierProvider<ActiveSwapsNotifier, List<ActiveSwap>>(ActiveSwapsNotifier.new);
 
 /// Whether a swap still waiting for its deposit by hand is kept when the app
@@ -43,9 +46,9 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
   Timer? _timer;
   Future<void>? _inFlight;
 
-  /// Whether the poll in flight reaches the overdue swaps: an interval's
-  /// does not.
-  bool _inFlightPollsOverdue = false;
+  /// The ids of the swaps the poll in flight is limited to, as an
+  /// interval's is; null when it polls every unsettled swap.
+  Set<String>? _inFlightOnly;
   final _tickets = <Object>{};
 
   bool get _pollsInBackground => defaultTargetPlatform == TargetPlatform.android;
@@ -163,23 +166,25 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
 
   /// Polls every unsettled swap now instead of at the next interval, the
   /// overdue ones too, or joins the poll in flight.
-  Future<void> refresh() => _poll(overdue: true);
+  Future<void> refresh() => _poll();
 
-  /// Polls the unsettled swaps, the [overdue] ones only when asked to, or
-  /// joins the poll in flight. Where that is an interval's, which leaves the
-  /// overdue swaps out, a poll that is to reach them polls them once it ends.
-  Future<void> _poll({required bool overdue}) {
+  /// Polls the unsettled swaps, all of them or [only] those with these ids,
+  /// or joins the poll in flight. Where that one is limited, as an
+  /// interval's is, a poll of all polls the swaps it leaves out once it
+  /// ends.
+  Future<void> _poll({Set<String>? only}) {
     _timer?.cancel();
     final inFlight = _inFlight;
-    if (inFlight != null && (_inFlightPollsOverdue || !overdue)) return inFlight;
+    final inFlightOnly = _inFlightOnly;
+    if (inFlight != null && (inFlightOnly == null || only != null)) return inFlight;
     late final Future<void> poll;
-    final polling = inFlight == null
-        ? _pollAll(overdue: overdue)
-        : inFlight.then((_) => _pollAll(current: false, overdue: true));
+    final polling = inFlight == null || inFlightOnly == null
+        ? _pollAll((swap) => only == null || only.contains(swap.id))
+        : inFlight.then((_) => _pollAll((swap) => !inFlightOnly.contains(swap.id)));
     poll = polling.whenComplete(() {
       if (identical(_inFlight, poll)) _inFlight = null;
     });
-    _inFlightPollsOverdue = overdue;
+    _inFlightOnly = only;
     return _inFlight = poll;
   }
 
@@ -202,18 +207,22 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
   void _schedule(List<ActiveSwap> swaps) {
     _timer?.cancel();
     final now = clock.now();
-    if (!swaps.any((s) => _polled(s) && !s.overdue(now))) return;
+    // The interval is theirs: a swap overdue by now has had its last one.
+    final current = {
+      for (final swap in swaps)
+        if (_polled(swap) && !swap.overdue(now)) swap.id,
+    };
+    if (current.isEmpty) return;
     if (!_pollsInBackground && !ref.read(appInForegroundProvider)) return;
-    _timer = Timer(SwapService.statusPollInterval, () => unawaited(_poll(overdue: false)));
+    _timer = Timer(SwapService.statusPollInterval, () => unawaited(_poll(only: current)));
   }
 
-  /// Polls each unsettled swap in turn, the [current] ones, the [overdue]
-  /// ones or both, and merges the answer into the swap as it is by then, so
-  /// a deposit marked sent while the request was out stays sent; a swap put
-  /// away meanwhile is left alone.
-  Future<void> _pollAll({bool current = true, required bool overdue}) async {
-    final now = clock.now();
-    for (final swap in state.where((s) => _polled(s) && (s.overdue(now) ? overdue : current)).toList()) {
+  /// Polls in turn each unsettled swap [polls] holds for, and merges the
+  /// answer into the swap as it is by then, so a deposit marked sent while
+  /// the request was out stays sent; a swap put away meanwhile is left
+  /// alone.
+  Future<void> _pollAll(bool Function(ActiveSwap swap) polls) async {
+    for (final swap in state.where((s) => _polled(s) && polls(s)).toList()) {
       try {
         final order = await ref.read(swapServiceProvider).getSwapStatus(swap.order);
         _merge(swap.id, (latest) => latest.withOrder(order, now: clock.now()));

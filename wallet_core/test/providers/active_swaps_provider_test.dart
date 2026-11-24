@@ -55,9 +55,11 @@ ActiveSwap _swapIn(String depositAddress, {required bool sent}) => ActiveSwap(
 
 /// A swap out of QTC the app sent the deposit of to [depositAddress], with
 /// 1Click: still within its time, or [overdue], ten minutes and more past
-/// its deadline with nothing settled.
-ActiveSwap _swapOut(String depositAddress, {required bool overdue}) {
-  final deadline = overdue
+/// its deadline with nothing settled, or overdue once [overdueIn] has passed.
+ActiveSwap _swapOut(String depositAddress, {required bool overdue, Duration? overdueIn}) {
+  final deadline = overdueIn != null
+      ? clock.now().subtract(ActiveSwap.finishGrace).add(overdueIn)
+      : overdue
       ? clock.now().subtract(ActiveSwap.finishGrace + const Duration(minutes: 1))
       : clock.now().add(const Duration(minutes: 20));
   return ActiveSwap(
@@ -113,15 +115,15 @@ void main() {
     late _OneClick oneClick;
     late ProviderContainer container;
 
-    /// Launches following an overdue swap at 0xold and a running one at
-    /// 0xnow, and lets the launch's poll end.
-    Future<void> launch(WidgetTester tester) async {
+    /// Launches following [swaps], an overdue swap at 0xold and a running
+    /// one at 0xnow unless said, and lets the launch's poll end.
+    Future<void> launch(WidgetTester tester, {List<ActiveSwap>? swaps}) async {
       oneClick = _OneClick();
       container = ProviderContainer(
         overrides: [
           settingsServiceProvider.overrideWithValue(
             FakeSettingsService()
-              ..activeSwaps.addAll([_swapOut('0xold', overdue: true), _swapOut('0xnow', overdue: false)]),
+              ..activeSwaps.addAll(swaps ?? [_swapOut('0xold', overdue: true), _swapOut('0xnow', overdue: false)]),
           ),
           swapServiceProvider.overrideWithValue(oneClick),
         ],
@@ -148,6 +150,32 @@ void main() {
       await interval(tester);
 
       expect(oneClick.polled, ['0xold', '0xnow', '0xnow', '0xnow', '0xnow']);
+      await close(tester);
+    });
+
+    testWidgets('a swap that turns overdue between intervals is polled on the one already begun, and on none after', (
+      tester,
+    ) async {
+      await launch(
+        tester,
+        swaps: [
+          _swapOut('0xturning', overdue: false, overdueIn: SwapService.statusPollInterval * 1.5),
+          _swapOut('0xnow', overdue: false),
+        ],
+      );
+      expect(oneClick.polled, isEmpty, reason: 'nothing is overdue at launch');
+
+      await interval(tester);
+      expect(oneClick.polled, ['0xturning', '0xnow']);
+
+      // It turned overdue half an interval ago: what settled just before is
+      // still learned of.
+      await interval(tester);
+      expect(oneClick.polled, ['0xturning', '0xnow', '0xturning', '0xnow']);
+
+      await interval(tester);
+      await interval(tester);
+      expect(oneClick.polled, ['0xturning', '0xnow', '0xturning', '0xnow', '0xnow', '0xnow']);
       await close(tester);
     });
 
