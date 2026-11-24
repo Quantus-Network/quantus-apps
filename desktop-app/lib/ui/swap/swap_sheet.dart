@@ -539,8 +539,8 @@ class _SwapSheetState extends ConsumerState<SwapSheet> {
       );
       if (!mounted) return;
       switch (outcome) {
-        case SwapConfirmed():
-          ref.read(openedActivityProvider.notifier).open(const OpenedSwap());
+        case SwapConfirmed(:final swap):
+          ref.read(openedActivityProvider.notifier).open(OpenedSwap(swap.id));
           Navigator.of(context).pop();
         case SwapConfirmDropped():
           break;

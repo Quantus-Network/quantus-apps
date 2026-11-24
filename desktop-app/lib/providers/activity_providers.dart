@@ -64,7 +64,7 @@ class WalletRefreshingNotifier extends Notifier<bool> {
 }
 
 /// What the panel at the window's right shows: a transaction, a proposal, or
-/// the swap being followed.
+/// a swap being followed.
 sealed class OpenedActivity {
   const OpenedActivity();
 
@@ -261,35 +261,44 @@ final ownAccountsByAddressProvider = Provider<Map<String, BaseAccount>>((ref) {
   };
 });
 
-/// The swap this app follows. It follows one at a time: while there is one,
-/// Swap opens it instead of the form for another. Should a second have started
-/// all the same, as when a deposit lands after its sheet was left, it is the
-/// newest, and the one before it shows once that is put away.
-final followedSwapProvider = Provider<ActiveSwap?>((ref) => ref.watch(activeSwapsProvider).lastOrNull);
+/// The swaps listed in In progress of the account [accountId], newest first:
+/// those followed from it, one awaiting its deposit among them, and with them
+/// any whose account the wallet no longer holds, as after that account was
+/// disconnected. Such a swap has no account of its own to be listed under,
+/// so it is reached from whichever is open. While the accounts load, no swap
+/// is taken for one.
+final accountSwapsProvider = Provider.family<List<ActiveSwap>, String>((ref, accountId) {
+  final held = ref.watch(accountsProvider).value?.map((account) => account.accountId).toSet();
+  return [
+    for (final swap in ref.watch(activeSwapsProvider).reversed)
+      if (swap.accountId == accountId || (held != null && !held.contains(swap.accountId))) swap,
+  ];
+});
 
-/// The swap being followed: there is one at most, so it needs no more to be
-/// told apart.
+/// One of the swaps being followed, told apart by its id ([ActiveSwap.id]).
 final class OpenedSwap extends OpenedActivity {
-  const OpenedSwap();
+  const OpenedSwap(this.swapId);
+
+  final String swapId;
 
   @override
-  String get id => 'swap';
+  String get id => swapId;
 
   @override
-  bool operator ==(Object other) => other is OpenedSwap;
+  bool operator ==(Object other) => other is OpenedSwap && other.swapId == swapId;
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => swapId.hashCode;
 }
 
 /// What is open, as the lists hold it now: a transaction by its id, or, once
 /// it settled under the indexer's own id, by its hash; a proposal among the
-/// open ones or the past ones; the swap while one is followed. Null when it
-/// is no longer there. While the lists load, what was opened of them stands.
+/// open ones or the past ones; a swap while it is followed. Null when it is
+/// no longer there. While the lists load, what was opened of them stands.
 final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
   final opened = ref.watch(openedActivityProvider);
   if (opened == null) return null;
-  if (opened is OpenedSwap) return ref.watch(followedSwapProvider) == null ? null : opened;
+  if (opened is OpenedSwap) return ref.watch(activeSwapProvider(opened.swapId)) == null ? null : opened;
   final view = ref.watch(activityViewProvider).value;
   if (view == null) return opened;
   final activity = [...view.inProgress, ...view.settled];
@@ -303,7 +312,7 @@ final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
       final byHash = activity.where((other) => other.extrinsicHash == hash).firstOrNull;
       return byHash == null ? null : OpenedTransaction(byHash);
     case OpenedSwap():
-      throw StateError('The swap is answered for before the lists are read.');
+      throw StateError('A swap is answered for before the lists are read.');
     case OpenedProposal(:final proposal):
       final open = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
       final past = [

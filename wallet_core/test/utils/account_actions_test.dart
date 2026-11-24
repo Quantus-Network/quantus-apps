@@ -31,34 +31,26 @@ const _swapDisabled = AccountAction(AccountActionKind.swap, isEnabled: false);
 
 void main() {
   test('a local account gets Receive, Send and Swap, all enabled', () {
-    expect(accountActions(_local, swapAvailable: true, hasActiveSwap: false), [_receive, _send, _swap]);
+    expect(accountActions(_local, swapAvailable: true), [_receive, _send, _swap]);
   });
 
   test('where swaps are not offered, a local account gets no Swap', () {
-    expect(accountActions(_local, swapAvailable: false, hasActiveSwap: false), [_receive, _send]);
+    expect(accountActions(_local, swapAvailable: false), [_receive, _send]);
   });
 
   test('a Keystone account gets Swap disabled', () {
-    expect(accountActions(_keystone, swapAvailable: true, hasActiveSwap: false), [_receive, _send, _swapDisabled]);
+    expect(accountActions(_keystone, swapAvailable: true), [_receive, _send, _swapDisabled]);
   });
 
   test('the encrypted account gets Receive and Send, and Swap disabled', () {
-    expect(accountActions(_encrypted, swapAvailable: true, hasActiveSwap: false), [_receive, _send, _swapDisabled]);
+    expect(accountActions(_encrypted, swapAvailable: true), [_receive, _send, _swapDisabled]);
   });
 
   test('a multisig gets Receive and Propose, and no Send or Swap', () {
-    expect(accountActions(_multisig, swapAvailable: true, hasActiveSwap: false), [_receive, _propose]);
+    expect(accountActions(_multisig, swapAvailable: true), [_receive, _propose]);
   });
 
   test('an entrusted account gets no actions', () {
-    expect(accountActions(_entrusted, swapAvailable: true, hasActiveSwap: false), isEmpty);
-  });
-
-  test('while a swap is running, every account type gets Swap enabled', () {
-    expect(accountActions(_local, swapAvailable: false, hasActiveSwap: true), [_receive, _send, _swap]);
-    expect(accountActions(_keystone, swapAvailable: true, hasActiveSwap: true), [_receive, _send, _swap]);
-    expect(accountActions(_encrypted, swapAvailable: true, hasActiveSwap: true), [_receive, _send, _swap]);
-    expect(accountActions(_multisig, swapAvailable: true, hasActiveSwap: true), [_receive, _propose, _swap]);
-    expect(accountActions(_entrusted, swapAvailable: true, hasActiveSwap: true), [_swap]);
+    expect(accountActions(_entrusted, swapAvailable: true), isEmpty);
   });
 }

@@ -67,43 +67,101 @@ void main() {
     });
   });
 
-  testWidgets('the swap stays open while it is followed, and is no longer once it is put away', (tester) async {
-    final container = ProviderContainer(
-      overrides: shellOverrides(
-        accounts: const [mainAccount],
-        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwap = fakeActiveSwap(),
-        balances: oneTokenEach,
-      ),
-    );
-    container.listen(openedActivityViewProvider, (_, _) {});
-    await tester.pump(const Duration(milliseconds: 20));
+  group('the swaps followed', () {
+    const otherAddress = '0x1111111111111111111111111111111111111111';
+    const thirdAddress = '0x2222222222222222222222222222222222222222';
 
-    container.read(openedActivityProvider.notifier).open(const OpenedSwap());
-    expect(container.read(openedActivityViewProvider), const OpenedSwap());
+    Future<ProviderContainer> following(WidgetTester tester, List<ActiveSwap> swaps) async {
+      final container = ProviderContainer(
+        overrides: [
+          ...shellOverrides(
+            accounts: const [mainAccount, savingsAccount],
+            settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwaps = swaps,
+            balances: oneTokenEach,
+          ),
+          // As the app has it: a swap awaiting its deposit is kept at launch.
+          keepsUnpaidSwapsProvider.overrideWithValue(true),
+        ],
+      );
+      container.listen(openedActivityViewProvider, (_, _) {});
+      // Listened to, as the sidebar does, so the accounts have loaded before
+      // the swaps are read against them.
+      container.listen(accountsProvider, (_, _) {});
+      await tester.pump(const Duration(milliseconds: 20));
+      return container;
+    }
 
-    await container.read(activeSwapsProvider.notifier).clearAll();
-    expect(container.read(openedActivityViewProvider), isNull);
+    Future<void> close(WidgetTester tester, ProviderContainer container) async {
+      container.dispose();
+      await tester.pump(const Duration(minutes: 1));
+    }
 
-    container.dispose();
-    await tester.pump(const Duration(minutes: 1));
-  });
+    testWidgets("an account's swaps are its own, newest first, one awaiting its deposit among them", (tester) async {
+      final first = fakeActiveSwap();
+      final ofSavings = fakeActiveSwap(account: savingsAccount, depositAddress: otherAddress);
+      final awaited = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, depositAddress: thirdAddress);
+      final container = await following(tester, [first, ofSavings, awaited]);
 
-  testWidgets('with no swap, nothing of one is open', (tester) async {
-    final container = ProviderContainer(
-      overrides: shellOverrides(
-        accounts: const [mainAccount],
-        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
-        balances: oneTokenEach,
-      ),
-    );
-    container.listen(openedActivityViewProvider, (_, _) {});
-    await tester.pump(const Duration(milliseconds: 20));
+      expect(container.read(accountSwapsProvider(mainAccount.accountId)).map((s) => s.id), [awaited.id, first.id]);
+      expect(container.read(accountSwapsProvider(savingsAccount.accountId)).map((s) => s.id), [ofSavings.id]);
+      expect(container.read(accountSwapsProvider(encryptedAccount.accountId)), isEmpty);
 
-    container.read(openedActivityProvider.notifier).open(const OpenedSwap());
-    expect(container.read(openedActivityViewProvider), isNull);
+      await close(tester, container);
+    });
 
-    container.dispose();
-    await tester.pump(const Duration(minutes: 1));
+    testWidgets('while the accounts load, no swap is taken for one whose account is gone', (tester) async {
+      final loaded = Completer<List<Account>>();
+      final ofSavings = fakeActiveSwap(account: savingsAccount);
+      final container = ProviderContainer(
+        overrides: shellOverrides(
+          loadAccounts: () => loaded.future,
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwaps = [ofSavings],
+          balances: oneTokenEach,
+        ),
+      );
+      container.listen(accountSwapsProvider(mainAccount.accountId), (_, _) {});
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(container.read(accountSwapsProvider(mainAccount.accountId)), isEmpty);
+
+      loaded.complete(const [mainAccount, savingsAccount]);
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(container.read(accountSwapsProvider(mainAccount.accountId)), isEmpty);
+      expect(container.read(accountSwapsProvider(savingsAccount.accountId)).map((s) => s.id), [ofSavings.id]);
+
+      await close(tester, container);
+    });
+
+    testWidgets('a swap stays open while it is followed, and is no longer once it is put away, whatever else is', (
+      tester,
+    ) async {
+      final first = fakeActiveSwap();
+      final second = fakeActiveSwap(depositAddress: otherAddress);
+      final container = await following(tester, [first, second]);
+
+      container.read(openedActivityProvider.notifier).open(OpenedSwap(first.id));
+      expect(container.read(openedActivityViewProvider), OpenedSwap(first.id));
+
+      await container.read(activeSwapsProvider.notifier).remove(second.id);
+      expect(container.read(openedActivityViewProvider), OpenedSwap(first.id));
+
+      container.read(openedActivityProvider.notifier).open(OpenedSwap(second.id));
+      expect(container.read(openedActivityViewProvider), isNull, reason: 'it was put away');
+
+      container.read(openedActivityProvider.notifier).open(OpenedSwap(first.id));
+      await container.read(activeSwapsProvider.notifier).remove(first.id);
+      expect(container.read(openedActivityViewProvider), isNull);
+
+      await close(tester, container);
+    });
+
+    testWidgets('a swap that is not followed is not open', (tester) async {
+      final container = await following(tester, const []);
+
+      container.read(openedActivityProvider.notifier).open(const OpenedSwap(swapDepositAddress));
+      expect(container.read(openedActivityViewProvider), isNull);
+
+      await close(tester, container);
+    });
   });
 
   testWidgets('rows are kept over a reload only for their own account: one still loading shows as loading', (

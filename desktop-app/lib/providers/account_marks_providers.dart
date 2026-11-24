@@ -1,4 +1,3 @@
-import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
@@ -8,18 +7,18 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/activity/activity_progress.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/transaction_service.dart';
-import 'package:wallet_core/swap/swap_progress.dart';
 import 'package:wallet_core/utils/multisig_local_signers.dart';
 
 /// What of an account needs a look: how many of its transfers are in
-/// progress, as its In progress panel would list them, with the swap from
-/// it while that runs or awaits its deposit; and, for a multisig,
-/// how many of its open proposals wait for a signature from this wallet.
+/// progress, as its In progress panel would list them, with each swap from
+/// it that is not yet put away; and, for a multisig, how many of its open
+/// proposals wait for a signature from this wallet.
 @immutable
 class AccountMark {
   const AccountMark({this.inProgress = 0, this.waitingForSignature = 0});
@@ -81,12 +80,10 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
   final block = ref.watch(latestBlockProvider);
   final service = ref.read(transactionServiceProvider);
 
-  // The swap counts for the account it is from until it has ended, however
-  // it did.
-  final swap = ref.watch(followedSwapProvider);
-  final swapView = swap == null ? null : swapProgressViewOf(swap, clock.now());
-  final swapIsUnderWay = swapView == SwapProgressView.inProgress || swapView == SwapProgressView.deposit;
-  int swapsOf(BaseAccount account) => swapIsUnderWay && swap?.accountId == account.accountId ? 1 : 0;
+  // Each swap counts for the account it is from until it is put away: one
+  // that has ended is still to be looked at, and only its row leads to it.
+  final swaps = ref.watch(activeSwapsProvider);
+  int swapsOf(BaseAccount account) => swaps.where((swap) => swap.accountId == account.accountId).length;
 
   int inProgressOf(BaseAccount account) {
     final CombinedTransactionsList data;

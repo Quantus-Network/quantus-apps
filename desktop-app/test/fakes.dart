@@ -1577,11 +1577,12 @@ const swapDepositTx = '0x7f3c9a1e5b2d48c6a0f19e3b7d5c2a8e4f6b1d9c3a7e5f2b8d4c6a1
 /// A live quote: 250 QTC out of [account] for 104.37 USDC on Arbitrum at
 /// [swapRecipient], or, the other way, 100 USDC from outside for 236.9 QTC
 /// into it, refunded at [swapRecipient]. Its deposit goes to
-/// [swapDepositAddress] by [deadline], twenty minutes from now unless said.
+/// [depositAddress] by [deadline], twenty minutes from now unless said.
 SwapQuote fakeSwapQuote({
   bool swapOut = true,
   Account account = mainAccount,
   DateTime? deadline,
+  String depositAddress = swapDepositAddress,
   String? depositMemo,
 }) => SwapQuote(
   fromToken: swapOut ? listedQtc : usdcOnArbitrum,
@@ -1599,19 +1600,21 @@ SwapQuote fakeSwapQuote({
   timeEstimate: const Duration(minutes: 3),
   correlationId: 'c',
   signature: 's',
-  depositAddress: swapDepositAddress,
+  depositAddress: depositAddress,
   depositMemo: depositMemo,
 );
 
 /// A swap as it is followed, started [age] ago from [account]: the app sent
 /// a swap out's deposit, a swap in waits for one made by hand, [depositSent]
-/// once that was marked sent.
+/// once that was marked sent. Swaps followed together each need a
+/// [depositAddress] of their own: it is what tells them apart.
 ActiveSwap fakeActiveSwap({
   bool swapOut = true,
   SwapStatus status = SwapStatus.knownDepositTx,
   Account account = mainAccount,
   Duration age = const Duration(minutes: 3, seconds: 7),
   DateTime? deadline,
+  String depositAddress = swapDepositAddress,
   String? depositMemo,
   bool depositSent = false,
   BigInt? amountOut,
@@ -1621,7 +1624,13 @@ ActiveSwap fakeActiveSwap({
   final now = clock.now();
   return ActiveSwap(
     order: SwapOrder(
-      quote: fakeSwapQuote(swapOut: swapOut, account: account, deadline: deadline, depositMemo: depositMemo),
+      quote: fakeSwapQuote(
+        swapOut: swapOut,
+        account: account,
+        deadline: deadline,
+        depositAddress: depositAddress,
+        depositMemo: depositMemo,
+      ),
       status: status,
       amountOut: amountOut,
       refundReason: refundReason,

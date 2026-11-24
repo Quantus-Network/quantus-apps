@@ -70,24 +70,22 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
     );
   }
 
-  /// Whether the swap being followed is from [account], and so among its
-  /// rows.
-  bool _hasSwap(BaseAccount account) => ref.watch(followedSwapProvider)?.accountId == account.accountId;
-
   /// Every row that opens, in the order the lists show them.
   List<OpenedActivity> _openable() {
     final account = ref.read(activeAccountProvider).value?.account;
-    final swap = ref.read(followedSwapProvider);
-    final swapRow = [if (account != null && swap?.accountId == account.accountId) const OpenedSwap()];
+    final swapRows = [
+      if (account != null)
+        for (final swap in ref.read(accountSwapsProvider(account.accountId))) OpenedSwap(swap.id),
+    ];
     final view = ref.read(activityViewProvider).value;
-    if (view == null) return swapRow;
+    if (view == null) return swapRows;
     OpenedActivity of(TransactionEvent tx) => switch (tx) {
       MultisigProposalEvent(:final proposal) => OpenedProposal(proposal),
       _ => OpenedTransaction(tx),
     };
     final open = ref.read(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
     return [
-      ...swapRow,
+      ...swapRows,
       for (final tx in view.inProgress) of(tx),
       for (final proposal in open) OpenedProposal(proposal),
       for (final tx in view.settled) of(tx),
@@ -148,8 +146,8 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
     final view = ref.watch(activityViewProvider).value;
     final inProgress = view?.inProgress ?? const <TransactionEvent>[];
     final multisig = account is MultisigAccount ? account : null;
-    final hasSwap = _hasSwap(account);
-    final showsInProgress = inProgress.isNotEmpty || hasSwap;
+    final swaps = ref.watch(accountSwapsProvider(account.accountId));
+    final showsInProgress = inProgress.isNotEmpty || swaps.isNotEmpty;
     final opened = ref.watch(openedActivityViewProvider);
     final inspectorWidth = ref.watch(inspectorWidthProvider);
     final inspector = ref.read(inspectorWidthProvider.notifier);
@@ -161,7 +159,7 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
     final openProposals = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
     final holder = openId == null
         ? ActivityPanel
-        : (opened is OpenedSwap && hasSwap) || inProgress.any((tx) => tx.id == openId)
+        : swaps.any((swap) => swap.id == openId) || inProgress.any((tx) => tx.id == openId)
         ? InProgressPanel
         : openProposals.any((proposal) => proposal.entityId == openId)
         ? OpenProposalsPanel
@@ -191,7 +189,7 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
                   const SizedBox(height: Panel.gap),
                   InProgressPanel(
                     transactions: inProgress,
-                    hasSwap: hasSwap,
+                    swaps: swaps,
                     maxHeight: limit,
                     isFocused: holds(InProgressPanel),
                     rowsHaveKeys: listsHaveKeys,

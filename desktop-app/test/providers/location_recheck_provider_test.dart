@@ -100,14 +100,14 @@ void main() {
       expect(config.reads, 1);
     });
 
-    testOnMac('Swap opening the swap being followed does not ask: no swap starts from there', (tester) async {
+    testOnMac('Swap asks with a swap followed too: another can start from the form it opens', (tester) async {
       final config = FakeRemoteConfigService(RemoteConfigModel.defaults);
       await _openWallet(tester, config, swap: fakeActiveSwap());
 
       await _pressInToolbar(tester, _l10n.homeSwap);
 
-      expect(find.byType(ShellSheetView), findsNothing);
-      expect(config.reads, 1);
+      expect(find.byType(ShellSheetView), findsOneWidget);
+      expect(config.reads, 2);
     });
   });
 }
