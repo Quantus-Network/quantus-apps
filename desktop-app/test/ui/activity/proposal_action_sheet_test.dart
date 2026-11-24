@@ -78,7 +78,7 @@ String _money(WidgetTester tester, BigInt amount) {
 typedef _Sheet = ({FakeSendChain chain, FakeUserApproval approval, List<Uri> opened});
 
 /// Opens the sheet that does [kind] to [proposal], with [accounts] in the
-/// wallet.
+/// wallet holding [balances], a token each unless given.
 Future<_Sheet> _open(
   WidgetTester tester,
   MultisigActionKind kind,
@@ -86,6 +86,7 @@ Future<_Sheet> _open(
   List<Account> accounts = const [mainAccount],
   FakeSendChain? chain,
   FakeUserApproval? approval,
+  Map<String, BigInt>? balances,
 }) async {
   final sheet = (chain: chain ?? FakeSendChain(), approval: approval ?? FakeUserApproval(), opened: <Uri>[]);
   sheet.chain.openProposals = [proposal];
@@ -95,7 +96,7 @@ Future<_Sheet> _open(
       ...shellOverrides(
         accounts: accounts,
         settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(_team), multisigs: [_team]),
-        balances: oneTokenEach,
+        balances: balances ?? oneTokenEach,
         chain: sheet.chain,
         approval: sheet.approval,
       ),
@@ -288,6 +289,34 @@ void main() {
       await _confirm(tester);
 
       expect(sheet.chain.actions.map((action) => (action.$1, action.$2)), [('cancel', 'qzSavings')]);
+    });
+  });
+
+  group('what the signer holds', () {
+    testOnMac('less than the fee: said beside the buttons, and Confirm unavailable', (tester) async {
+      await _open(tester, MultisigActionKind.approve, _proposal(), balances: {...oneTokenEach, 'qzMain': BigInt.one});
+
+      expect(_inSheet(find.text(_l10n.multisigProposeFeePayerInsufficient)), findsOne);
+      expect(_offered(tester, ProposalActionSheet.confirmKey), isFalse);
+    });
+
+    testOnMac('the first choice cannot pay: choosing one that can clears it, and that one approves', (tester) async {
+      final sheet = await _open(
+        tester,
+        MultisigActionKind.approve,
+        _proposal(),
+        accounts: const [mainAccount, savingsAccount],
+        balances: {...oneTokenEach, 'qzMain': BigInt.one},
+      );
+      expect(_inSheet(find.text(_l10n.multisigProposeFeePayerInsufficient)), findsOne);
+
+      await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
+      await tester.pumpAndSettle();
+
+      expect(_inSheet(find.text(_l10n.multisigProposeFeePayerInsufficient)), findsNothing);
+      expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
+      await _confirm(tester);
+      expect(sheet.chain.actions.map((action) => (action.$1, action.$2)), [('approve', 'qzSavings')]);
     });
   });
 
