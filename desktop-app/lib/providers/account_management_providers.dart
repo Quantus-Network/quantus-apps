@@ -9,6 +9,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
@@ -363,11 +364,21 @@ class AccountManager {
         _ref.invalidate(activeAccountProvider);
       case Account():
         final service = _ref.read(accountsServiceProvider);
-        switch (disconnectPlanOf(account, _ref.read(accountsProvider).requireValue)) {
-          case DisconnectAccount() || DisconnectHardware():
+        final accounts = _ref.read(accountsProvider).requireValue;
+        switch (disconnectPlanOf(account, accounts)) {
+          case DisconnectAccount():
             await service.removeAccount(account);
+          case DisconnectHardware():
+            await service.removeAccount(account);
+            // A hardware wallet goes with its last account, and its index
+            // goes to the next wallet added.
+            final walletRemains = accounts.any(
+              (a) => a.walletIndex == account.walletIndex && a.accountId != account.accountId,
+            );
+            if (!walletRemains) _ref.read(keptOpenWalletsProvider.notifier).forget(account.walletIndex);
           case DisconnectWallet(:final walletIndex):
             await service.removeWallet(walletIndex);
+            _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
           case null:
             throw StateError('${account.accountId} cannot be disconnected');
         }

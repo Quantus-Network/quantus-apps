@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
@@ -40,7 +41,10 @@ class FakeSettingsService extends Fake implements SettingsService {
     this.multisigs = const [],
     this.walletNames = const {},
     Map<int, String>? mnemonics,
-  }) : mnemonics = mnemonics ?? {0: 'a stored recovery phrase'};
+    Set<int> openWallets = const {},
+  }) : mnemonics = mnemonics ?? {0: 'a stored recovery phrase'} {
+    if (openWallets.isNotEmpty) strings[KeptOpenWalletsNotifier.settingsKey] = openWallets.join(',');
+  }
 
   DisplayAccount? activeAccount;
   final List<MultisigAccount> multisigs;

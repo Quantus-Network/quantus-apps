@@ -5786,6 +5786,12 @@ abstract class AppLocalizations {
   /// **'The proposal to send {amount} from {multisig} wasn’t seen on the chain in time.'**
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig);
 
+  /// Desktop sidebar, read by screen readers: how many accounts a closed wallet holds, as the number on its heading says
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 account} other{{count} accounts}}'**
+  String desktopWalletAccountCount(int count);
+
   /// Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet
   ///
   /// In en, this message translates to:

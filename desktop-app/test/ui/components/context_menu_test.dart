@@ -1,16 +1,12 @@
-import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton, PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 import '../../fakes.dart';
-
-const _cmdI = KeyCombo(LogicalKeyboardKey.keyI, KeyModifiers(meta: true));
 
 /// A region with three items in two groups, Disconnect alone and in red, placed by
 /// [alignment]; what is chosen lands in [chosen], and the region's own taps in [taps].
@@ -33,7 +29,7 @@ Future<void> _pump(
               alignment: alignment,
               child: ContextMenuRegion(
                 items: () => [
-                  ContextMenuItem('Get Info', keys: _cmdI, onSelected: () => chosen.add('info')),
+                  ContextMenuItem('Get Info', onSelected: () => chosen.add('info')),
                   ContextMenuItem('Rename…', onSelected: () => chosen.add('rename')),
                   null,
                   ContextMenuItem('Disconnect…', isDestructive: true, onSelected: () => chosen.add('disconnect')),
@@ -160,15 +156,6 @@ void main() {
     final disconnect = tester.widget<Text>(find.descendant(of: _menu, matching: find.text('Disconnect…')));
     final context = tester.element(_menu);
     expect(disconnect.style?.color, context.colorsV3.semanticEmber);
-  });
-
-  testOnMac('an item shows its shortcut, the modifiers as their symbols', (tester) async {
-    await _pump(tester, chosen: []);
-    await _rightClick(tester, tester.getCenter(find.text('Savings')));
-
-    final row = find.ancestor(of: find.text('Get Info'), matching: find.byType(MenuPanelRow));
-    expect(find.descendant(of: row, matching: find.byIcon(CupertinoIcons.command)), findsOneWidget);
-    expect(find.descendant(of: row, matching: find.text('I')), findsOneWidget);
   });
 
   testWidgets('near the window\'s corner the menu moves inside it', (tester) async {
