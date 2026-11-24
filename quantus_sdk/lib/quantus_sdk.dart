@@ -58,6 +58,7 @@ export 'src/rust/api/crypto.dart' hide crystalAlice, crystalCharlie, crystalBob;
 export 'src/rust/api/ur.dart';
 export 'src/utils/print.dart';
 export 'src/utils/ur_qr.dart';
+export 'src/utils/ur_scan_accumulator.dart';
 export 'src/rust/api/airdrop.dart';
 export 'src/rust/api/wormhole.dart';
 export 'src/rust/api/near.dart';
