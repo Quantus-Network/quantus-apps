@@ -709,6 +709,39 @@ void main() {
     Future<String?> activeIdIn(SettingsService settings) async =>
         (await settings.getActiveAccount())?.account.accountId;
 
+    final claim = AirdropClaimRecord(
+      claimedAt: DateTime.utc(2026, 11, 1),
+      rewardHundredths: 150,
+      claimAccount: 'id_trading',
+    );
+
+    /// Stores the Trading wallet, active, with its phrase and every setting
+    /// a wallet keeps, while every write is still stored.
+    Future<void> givenTradingWallet() async {
+      await given([first, trading], active: trading);
+      await settings.setMnemonic('trading phrase', 1);
+      // These two write without waiting; each is let finish before the next.
+      settings.setWalletOrigin(1, WalletOrigin.imported);
+      await pumpEventQueue();
+      settings.setRecoveryPhraseViewed(1);
+      await pumpEventQueue();
+      await settings.setWalletName(1, 'Trading wallet');
+      await settings.setPendingAccountScan(1, trading.accountId);
+      await settings.setAirdropClaim(1, claim);
+    }
+
+    /// The Trading wallet is as [givenTradingWallet] stored it, in [current].
+    Future<void> expectTradingWalletWhole(SettingsService current) async {
+      expect(await idsIn(current), [first.accountId, trading.accountId]);
+      expect(await activeIdIn(current), trading.accountId);
+      expect(await current.getMnemonic(1), 'trading phrase');
+      expect(current.getWalletOrigin(1), WalletOrigin.imported);
+      expect(current.recoveryPhraseViewed(1), isTrue);
+      expect(current.getWalletName(1), 'Trading wallet');
+      expect(current.pendingAccountScan(1), trading.accountId);
+      expect(current.getAirdropClaim(1)?.toJson(), claim.toJson());
+    }
+
     setUp(() async {
       SharedPreferences.setMockInitialValues({});
       FlutterSecureStorage.setMockInitialValues({});
@@ -771,22 +804,34 @@ void main() {
       });
 
       test('a $how wallet removal throws and leaves the wallet whole', () async {
-        await given([first, trading], active: trading);
-        await settings.setMnemonic('trading phrase', 1);
-        await settings.setWalletName(1, 'Trading wallet');
-        await settings.setPendingAccountScan(1, trading.accountId);
+        await givenTradingWallet();
         fail('accounts_v5');
 
         await expectLater(settings.removeWallet(1), throwsA(anything));
 
         for (final current in [settings, await restarted()]) {
-          expect(await idsIn(current), [first.accountId, trading.accountId]);
-          expect(await activeIdIn(current), trading.accountId);
-          expect(await current.getMnemonic(1), 'trading phrase');
-          expect(current.getWalletName(1), 'Trading wallet');
-          expect(current.pendingAccountScan(1), trading.accountId);
+          await expectTradingWalletWhole(current);
         }
       });
+
+      for (final setting in [
+        'pending_account_scan_1',
+        'wallet_origin_1',
+        'recovery_phrase_viewed_1',
+        'wallet_name_1',
+        'airdrop_claim_1',
+      ]) {
+        test('a $how removal of $setting throws and leaves the wallet whole', () async {
+          await givenTradingWallet();
+          fail(setting);
+
+          await expectLater(settings.removeWallet(1), throwsA(anything));
+
+          for (final current in [settings, await restarted()]) {
+            await expectTradingWalletWhole(current);
+          }
+        });
+      }
 
       test('a $how move of an old single account throws and keeps its old keys', () async {
         await store.setValue('String', 'flutter.account_id', 'id_old');
@@ -804,8 +849,7 @@ void main() {
     }
 
     test('a wallet whose phrase cannot be deleted is kept whole, and the removal throws', () async {
-      await given([first, trading], active: trading);
-      await settings.setMnemonic('trading phrase', 1);
+      await givenTradingWallet();
       FlutterSecureStoragePlatform.instance = _UndeletableSecureStorage(
         (FlutterSecureStoragePlatform.instance as TestFlutterSecureStoragePlatform).data,
       );
@@ -813,9 +857,24 @@ void main() {
       await expectLater(settings.removeWallet(1), throwsA(isA<PlatformException>()));
 
       for (final current in [settings, await restarted()]) {
-        expect(await idsIn(current), [first.accountId, trading.accountId]);
-        expect(await activeIdIn(current), trading.accountId);
-        expect(await current.getMnemonic(1), 'trading phrase');
+        await expectTradingWalletWhole(current);
+      }
+    });
+
+    test('a wallet removed takes its phrase and every setting it kept with it', () async {
+      await givenTradingWallet();
+
+      await settings.removeWallet(1);
+
+      for (final current in [settings, await restarted()]) {
+        expect(await idsIn(current), [first.accountId]);
+        expect(await activeIdIn(current), first.accountId);
+        expect(await current.getMnemonic(1), isNull);
+        expect(current.getWalletOrigin(1), isNull);
+        expect(current.recoveryPhraseViewed(1), isFalse);
+        expect(current.getWalletName(1), isNull);
+        expect(current.pendingAccountScan(1), isNull);
+        expect(current.getAirdropClaim(1), isNull);
       }
     });
   });

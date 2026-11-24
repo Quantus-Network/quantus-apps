@@ -215,9 +215,10 @@ class SettingsService {
   /// mnemonic from secure storage. The primary wallet (index 0) cannot be
   /// removed.
   ///
-  /// Throws when its accounts cannot be dropped or its mnemonic cannot be
-  /// deleted, and the wallet is then kept whole: its accounts, mnemonic and
-  /// settings, and the active account, are what they were.
+  /// Throws when its accounts cannot be dropped, its settings cleared or its
+  /// mnemonic deleted, and the wallet is then kept whole: its accounts,
+  /// mnemonic and settings, and the active account, are what they were. The
+  /// mnemonic goes last, as the one step that cannot be put back.
   Future<void> removeWallet(int walletIndex) async {
     if (walletIndex == 0) {
       throw Exception('Cant remove the primary wallet!');
@@ -232,6 +233,14 @@ class SettingsService {
     }
     final previousAccounts = _prefs.getString(_accountsKey);
     final previousActive = _prefs.getString(_activeDisplayAccountKey);
+    final settingsKeys = [
+      _pendingAccountScanKey(walletIndex),
+      _walletOriginKey(walletIndex),
+      _recoveryPhraseViewedKey(walletIndex),
+      _walletNameKey(walletIndex),
+      _airdropClaimKey(walletIndex),
+    ];
+    final previousSettings = {for (final key in settingsKeys) key: _prefs.get(key)};
     final activeId = await _getActiveAccountId();
     final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
     if (activeRemoved) {
@@ -244,17 +253,18 @@ class SettingsService {
       rethrow;
     }
     try {
+      for (final key in settingsKeys) {
+        if (!await _prefs.remove(key)) throw Exception('Could not remove $key');
+      }
       await deleteMnemonic(walletIndex);
     } catch (_) {
+      for (final MapEntry(:key, :value) in previousSettings.entries) {
+        await _putBack(key, value);
+      }
       await _putBack(_accountsKey, previousAccounts);
       await _putBack(_activeDisplayAccountKey, previousActive);
       rethrow;
     }
-    await _prefs.remove(_pendingAccountScanKey(walletIndex));
-    await _prefs.remove(_walletOriginKey(walletIndex));
-    await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
-    await _prefs.remove(_walletNameKey(walletIndex));
-    await _prefs.remove(_airdropClaimKey(walletIndex));
   }
 
   /// Stores [account] as the active account. Throws when it cannot be
