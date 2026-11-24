@@ -103,7 +103,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
       pendingCancellations: ref.read(pendingMultisigCancellationsProvider),
     );
     final signers = switch (actions) {
-      ProposalOpen(:final canceller) when _kind == MultisigActionKind.cancel => [if (canceller != null) canceller],
+      ProposalOpen(:final canceller) when _kind == MultisigActionKind.cancel => [?canceller],
       ProposalOpen(:final eligibleApprovers) => eligibleApprovers.where((a) => !a.signsWithHardware).toList(),
       ProposalOver() => const <Account>[],
     };
