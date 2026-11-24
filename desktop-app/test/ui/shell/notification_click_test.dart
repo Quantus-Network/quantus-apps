@@ -322,6 +322,61 @@ void main() {
       expect(_opened(container), OpenedTransaction(row));
     });
 
+    testOnMac('a transfer the open account received since its activity was last read: it is read again', (
+      tester,
+    ) async {
+      final row = _transfer();
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_transfer(hash: '0xolder', id: 'older')],
+        ];
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(tester, notifications, chain: chain);
+      expect(chain.historyReads, [0]);
+      chain.historyPages = [
+        [row, _transfer(hash: '0xolder', id: 'older')],
+      ];
+
+      notifications.click(_aboutTransaction(mainAccount.accountId));
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), mainAccount.accountId);
+      expect(_opened(container), OpenedTransaction(row));
+      expect(chain.historyReads, [0, 0], reason: 'read again once, and only its first page');
+    });
+
+    testOnMac('a transfer the open multisig received since its activity was last read: it is read again', (
+      tester,
+    ) async {
+      final row = TransferEvent(
+        id: 'received',
+        from: 'qzAlice',
+        to: teamMultisig.accountId,
+        amount: oneToken,
+        timestamp: _when,
+        fee: BigInt.zero,
+        extrinsicHash: _hash,
+        blockNumber: 10,
+        blockHash: '0xblock',
+      );
+      final notifications = FakeNotificationPlugin();
+      final chain = FakeSendChain();
+      final container = await _openWallet(tester, notifications, chain: chain, multisigs: [teamMultisig]);
+      notifications.click(_about(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+      expect(_activeAccountId(container), teamMultisig.accountId);
+      expect(container.read(activityViewProvider).value?.settled, isEmpty);
+      chain.historyPages = [
+        [row],
+      ];
+
+      notifications.click(_aboutTransaction(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), teamMultisig.accountId);
+      expect(_opened(container), OpenedTransaction(row));
+    });
+
     testOnMac('a created proposal, from Open Proposals of its multisig', (tester) async {
       final proposal = _proposal();
       final notifications = FakeNotificationPlugin();
@@ -612,6 +667,34 @@ void main() {
 
       await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(mainAccount));
       history.complete();
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), mainAccount.accountId);
+      expect(container.read(openedActivityProvider), isNull);
+    });
+
+    testOnMac('picking another account while the activity is read again: the click does not pull back', (tester) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_transfer(hash: '0xolder', id: 'older')],
+        ];
+      final notifications = FakeNotificationPlugin();
+      final container = await _openWallet(tester, notifications, chain: chain);
+      final history = Completer<void>();
+      chain
+        ..holdHistory = history
+        ..historyPages = [
+          [_transfer()],
+        ];
+
+      notifications.click(_aboutTransaction(mainAccount.accountId));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(chain.historyReads, [0, 0], reason: 'the activity is being read again');
+
+      await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(savingsAccount));
+      history.complete();
+      await tester.pumpAndSettle();
+      await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(mainAccount));
       await tester.pumpAndSettle();
 
       expect(_activeAccountId(container), mainAccount.accountId);
