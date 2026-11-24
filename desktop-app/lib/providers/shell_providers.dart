@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
 import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
@@ -183,7 +184,7 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   /// Selects the row [rows] down from the one selected when the navigation
   /// asked for before has finished ([shellNavigationProvider]), going round
-  /// at the ends. The rows are the accounts, then Mining Rewards.
+  /// at the ends. The rows are the accounts showing, then Mining Rewards.
   Future<void> move(int rows) => ref.read(shellNavigationProvider.notifier).run(() => _move(rows));
 
   /// Whether a sheet opened since this switch was asked for: a sheet is for
@@ -192,6 +193,11 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   Future<void> _show(DisplayAccount account) async {
     if (!ref.mounted || _isUnderSheet) return;
+    // Before the switch, so the wallet being left never closes under the
+    // rows around the one clicked.
+    if (ref.read(activeWalletIndexProvider) case final wallet?) {
+      ref.read(keptOpenWalletsProvider.notifier).keepOpen(wallet);
+    }
     try {
       await ref.read(activeAccountProvider.notifier).switchActiveAccount(account);
     } catch (e) {
@@ -208,7 +214,7 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   Future<void> _move(int rows) async {
     if (!ref.mounted || _isUnderSheet) return;
-    final accounts = ref.read(sidebarAccountsProvider);
+    final accounts = ref.read(visibleSidebarAccountsProvider);
     final activeId = ref.read(activeAccountProvider).value?.account.accountId;
     final selected = state == SidebarSelection.miningRewards
         ? accounts.length

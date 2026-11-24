@@ -116,7 +116,7 @@ Finder _toolbarButton(String label) =>
 
 List<Override> _withActive(DisplayAccount active) => shellOverrides(
   accounts: const [mainAccount, vaultAccount],
-  settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig]),
+  settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig], openWallets: const {0, 1}),
   balances: oneTokenEach,
 );
 
@@ -258,6 +258,7 @@ void main() {
             for (var index = 0; index < 11; index++)
               Account(walletIndex: 0, index: index, name: 'Account ${index + 1}', accountId: 'qzAccount$index'),
           ],
+          settings: FakeSettingsService(openWallets: const {0}),
           balances: oneTokenEach,
         ),
       );

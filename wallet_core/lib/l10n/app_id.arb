@@ -868,6 +868,7 @@
   "desktopNotificationProposalCreatedBody": "Kirim {amount} dari {multisig}",
   "desktopNotificationProposalNotConfirmedTitle": "Proposal belum terkonfirmasi",
   "desktopNotificationProposalNotConfirmedBody": "Proposal untuk mengirim {amount} dari {multisig} tidak terlihat di rantai tepat waktu.",
+  "desktopWalletAccountCount": "{count, plural, other{{count} akun}}",
   "desktopSwapAwaitingDeposit": "Menunggu deposit",
   "desktopSwapWaitingForDeposit": "Menunggu deposit Anda",
   "desktopSwapUntil": "hingga {time}",

@@ -1,8 +1,5 @@
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
-import 'package:quantus_desktop_wallet/ui/components/key_caps.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// The surface every menu the app draws itself sits on (a pop-up button's
@@ -56,9 +53,9 @@ class MenuPanel extends StatelessWidget {
   }
 }
 
-/// One row of a [MenuPanel]: a check mark's place, the label, and the
-/// item's shortcut at the end. The highlighted row is filled with the
-/// accent; a destructive item's label is ember.
+/// One row of a [MenuPanel]: a check mark's place and the label. The
+/// highlighted row is filled with the accent; a destructive item's label is
+/// ember.
 class MenuPanelRow extends StatelessWidget {
   const MenuPanelRow({
     super.key,
@@ -66,14 +63,12 @@ class MenuPanelRow extends StatelessWidget {
     this.isHighlighted = false,
     this.isChecked = false,
     this.isDestructive = false,
-    this.keys,
   });
 
   final String label;
   final bool isHighlighted;
   final bool isChecked;
   final bool isDestructive;
-  final KeyCombo? keys;
 
   static const double height = 22;
 
@@ -97,7 +92,6 @@ class MenuPanelRow extends StatelessWidget {
         : isDestructive
         ? colors.semanticEmber
         : colors.textContent;
-    final keys = this.keys;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: MenuPanel.rowInset),
@@ -124,50 +118,11 @@ class MenuPanelRow extends StatelessWidget {
                 Expanded(
                   child: Text(label, style: text.body.copyWith(height: 1, color: color)),
                 ),
-                if (keys != null) ...[
-                  const SizedBox(width: 24),
-                  _MenuKeys(combo: keys, color: isHighlighted ? colors.textVoid : colors.textMuted),
-                ],
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-}
-
-/// A shortcut as a menu writes it: on the Mac its modifiers' symbols then the
-/// key ("⇧⌘C"), drawn as icons since the app's fonts have no symbols;
-/// elsewhere the names joined by "+" ("Ctrl+Shift+C").
-class _MenuKeys extends StatelessWidget {
-  const _MenuKeys({required this.combo, required this.color});
-
-  final KeyCombo combo;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = context.themeTextV3.body.copyWith(height: 1, color: color);
-    final held = combo.modifiers;
-    final key = KeyCaps.keyName(combo.key);
-
-    if (defaultTargetPlatform != TargetPlatform.macOS) {
-      final names = [if (held.meta) 'Win', if (held.control) 'Ctrl', if (held.alt) 'Alt', if (held.shift) 'Shift', key];
-      return Text(names.join('+'), style: style);
-    }
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final symbol in [
-          if (held.control) CupertinoIcons.control,
-          if (held.alt) CupertinoIcons.option,
-          if (held.shift) CupertinoIcons.shift,
-          if (held.meta) CupertinoIcons.command,
-        ])
-          Icon(symbol, size: 12, color: color),
-        Text(key, style: style),
-      ],
     );
   }
 }

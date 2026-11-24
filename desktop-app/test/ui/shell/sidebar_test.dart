@@ -33,7 +33,7 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: _allAccounts,
-        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), openWallets: const {1, 2}),
         balances: oneTokenEach,
         encryptedBalances: {0: oneToken},
       ),
@@ -73,7 +73,7 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, tradingAccount],
-        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), openWallets: const {2}),
         balances: oneTokenEach,
       ),
     );
@@ -90,7 +90,11 @@ void main() {
     final balance = oneToken * BigInt.from(3) ~/ BigInt.from(2);
     await pumpShell(
       tester,
-      overrides: shellOverrides(accounts: const [mainAccount], balances: {'qzMain': balance}),
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: {'qzMain': balance},
+      ),
     );
 
     final container = ProviderScope.containerOf(tester.element(find.byType(Sidebar)));
@@ -106,14 +110,24 @@ void main() {
     final never = Completer<BigInt>();
     await pumpShell(
       tester,
-      overrides: shellOverrides(accounts: const [mainAccount], balanceOf: (_) => never.future),
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balanceOf: (_) => never.future,
+      ),
     );
 
     expect(find.descendant(of: _row('Main'), matching: find.text('Loading...')), findsOneWidget);
   });
 
   testOnMac('a row says the balance is unavailable when it fails to load', (tester) async {
-    await pumpShell(tester, overrides: shellOverrides(accounts: const [mainAccount]));
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+      ),
+    );
 
     expect(find.descendant(of: _row('Main'), matching: find.text('Balance unavailable')), findsOneWidget);
   });
@@ -125,7 +139,11 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, vaultAccount],
-        settings: FakeSettingsService(multisigs: [orphanMultisig, teamMultisig]),
+        settings: FakeSettingsService(
+          activeAccount: const RegularAccount(mainAccount),
+          multisigs: [orphanMultisig, teamMultisig],
+          openWallets: const {1},
+        ),
         balances: oneTokenEach,
       ),
     );
@@ -183,7 +201,11 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, encryptedAccount, vaultAccount],
-        settings: FakeSettingsService(multisigs: [teamMultisig]),
+        settings: FakeSettingsService(
+          activeAccount: const RegularAccount(mainAccount),
+          multisigs: [teamMultisig],
+          openWallets: const {1},
+        ),
         balances: oneTokenEach,
         encryptedBalances: {0: oneToken},
       ),
@@ -226,6 +248,7 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, encryptedAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
         balances: oneTokenEach,
         encryptedBalances: {0: balance},
       ),

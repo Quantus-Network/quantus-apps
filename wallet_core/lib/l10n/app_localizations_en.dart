@@ -3209,6 +3209,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopWalletAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count accounts', one: '1 account');
+    return '$_temp0';
+  }
+
+  @override
   String get desktopSwapAwaitingDeposit => 'Awaiting deposit';
 
   @override

@@ -4719,6 +4719,15 @@
         }
       }
     },
+    "desktopWalletAccountCount": "{count, plural, =1{1 account} other{{count} accounts}}",
+    "@desktopWalletAccountCount": {
+      "description": "Desktop sidebar, read by screen readers: how many accounts a closed wallet holds, as the number on its heading says",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
     "desktopSwapAwaitingDeposit": "Awaiting deposit",
     "@desktopSwapAwaitingDeposit": {
       "description": "Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet"
