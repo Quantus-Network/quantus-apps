@@ -189,7 +189,7 @@ String? _spinnerFace(WidgetTester tester) {
 
 void main() {
   group('where Propose is offered', () {
-    for (final (why, member) in [('signs on a hardware wallet', 'qzVault'), ('is not in this wallet', 'qzGone')]) {
+    for (final (why, member) in [('is not in this wallet', 'qzGone')]) {
       testOnMac('it is unavailable, in the toolbar and the menu, for a multisig whose member $why', (tester) async {
         final multisig = MultisigAccount(
           name: 'Team',

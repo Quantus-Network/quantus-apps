@@ -121,23 +121,23 @@ List<Override> _withActive(DisplayAccount active) => shellOverrides(
   balances: oneTokenEach,
 );
 
-/// A multisig whose member in this wallet is Vault, whose key is on a cold
-/// wallet: this app cannot propose from it yet.
-final _coldTeam = MultisigAccount(
-  name: 'Cold Team',
-  accountId: 'qzColdTeam',
-  signers: const ['qzVault', 'qzOther'],
+/// A multisig whose member is not among this wallet's accounts: no account
+/// here can propose for it.
+final _strayTeam = MultisigAccount(
+  name: 'Stray Team',
+  accountId: 'qzStrayTeam',
+  signers: const ['qzGone', 'qzOther'],
   threshold: 2,
   nonce: BigInt.zero,
-  myMemberAccountId: 'qzVault',
+  myMemberAccountId: 'qzGone',
 );
 
-/// Main, Vault and [_coldTeam], with Cold Team active.
-List<Override> _withColdTeamActive() => shellOverrides(
+/// Main, Vault and [_strayTeam], with Stray Team active.
+List<Override> _withStrayTeamActive() => shellOverrides(
   accounts: const [mainAccount, vaultAccount],
   settings: FakeSettingsService(
-    activeAccount: MultisigDisplayAccount(_coldTeam),
-    multisigs: [_coldTeam],
+    activeAccount: MultisigDisplayAccount(_strayTeam),
+    multisigs: [_strayTeam],
     openWallets: const {0, 1},
   ),
   balances: oneTokenEach,
@@ -410,7 +410,7 @@ void main() {
     testOnMac('while a switch is still being saved, Send is offered, to be checked against the account switched to', (
       tester,
     ) async {
-      final settings = SlowSettingsService(activeAccount: MultisigDisplayAccount(_coldTeam), multisigs: [_coldTeam]);
+      final settings = SlowSettingsService(activeAccount: MultisigDisplayAccount(_strayTeam), multisigs: [_strayTeam]);
       await pumpShell(
         tester,
         overrides: shellOverrides(
@@ -497,7 +497,7 @@ void main() {
     });
 
     testOnMac('⌘P, pressed on a multisig this app cannot propose from, opens nothing', (tester) async {
-      await pumpShell(tester, overrides: _withColdTeamActive());
+      await pumpShell(tester, overrides: _withStrayTeamActive());
       expect(_nativeItem(tester, 'Account', 'Propose').onSelected, isNull);
 
       await pressWithCommand(tester, [LogicalKeyboardKey.keyP]);
@@ -530,7 +530,7 @@ void main() {
     ) async {
       final settings = SlowSettingsService(
         activeAccount: const RegularAccount(mainAccount),
-        multisigs: [_coldTeam],
+        multisigs: [_strayTeam],
         openWallets: const {0, 1},
       );
       await pumpShell(
@@ -542,10 +542,10 @@ void main() {
         ),
       );
 
-      await pressWithCommand(tester, [_digitOf(tester, 'Cold Team'), LogicalKeyboardKey.keyP]);
+      await pressWithCommand(tester, [_digitOf(tester, 'Stray Team'), LogicalKeyboardKey.keyP]);
       await settings.finishWrites(tester);
 
-      expect(_selected(tester), 'Cold Team');
+      expect(_selected(tester), 'Stray Team');
       expect(find.byType(ShellSheetView), findsNothing);
     });
 
@@ -1086,7 +1086,7 @@ void main() {
     });
 
     testOnWindowsAndLinux('Ctrl+P does nothing on a multisig this app cannot propose from', (tester) async {
-      await pumpShell(tester, overrides: _withColdTeamActive());
+      await pumpShell(tester, overrides: _withStrayTeamActive());
 
       await press(tester, LogicalKeyboardKey.keyP);
 
@@ -1236,15 +1236,15 @@ void main() {
           'frame, opens nothing', (tester) async {
         final settings = SlowSettingsService(
           activeAccount: const RegularAccount(mainAccount),
-          multisigs: [_coldTeam],
+          multisigs: [_strayTeam],
           openWallets: const {0, 1},
         );
         await pumpShell(tester, overrides: withVault(settings));
 
-        await pressWithinOneFrame(tester, [_digitOf(tester, 'Cold Team'), LogicalKeyboardKey.keyP]);
+        await pressWithinOneFrame(tester, [_digitOf(tester, 'Stray Team'), LogicalKeyboardKey.keyP]);
         await settings.finishWrites(tester);
 
-        expect(_selected(tester), 'Cold Team');
+        expect(_selected(tester), 'Stray Team');
         expect(find.byType(ShellSheetView), findsNothing);
       });
 
@@ -1289,23 +1289,26 @@ void main() {
       ) async {
         final settings = SlowSettingsService(
           activeAccount: const RegularAccount(mainAccount),
-          multisigs: [_coldTeam],
+          multisigs: [_strayTeam],
           openWallets: const {0, 1},
         );
         await pumpShell(tester, overrides: withVault(settings));
 
-        await press(tester, _digitOf(tester, 'Cold Team'));
+        await press(tester, _digitOf(tester, 'Stray Team'));
         await press(tester, LogicalKeyboardKey.keyP);
         await settings.finishWrites(tester);
 
-        expect(_selected(tester), 'Cold Team');
+        expect(_selected(tester), 'Stray Team');
         expect(find.byType(ShellSheetView), findsNothing);
       });
 
       testOnWindowsAndLinux('the toolbar keeps showing what the active account offers while a switch waits', (
         tester,
       ) async {
-        final settings = SlowSettingsService(activeAccount: MultisigDisplayAccount(_coldTeam), multisigs: [_coldTeam]);
+        final settings = SlowSettingsService(
+          activeAccount: MultisigDisplayAccount(_strayTeam),
+          multisigs: [_strayTeam],
+        );
         await pumpShell(tester, overrides: withVault(settings));
 
         await press(tester, LogicalKeyboardKey.digit1);

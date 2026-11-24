@@ -106,7 +106,8 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// send, which the account it leaves pays.
   late final Account? _signer;
 
-  /// The send is signed on a cold wallet, not approved on this computer.
+  /// The send is signed on a cold wallet, not approved on this computer: the
+  /// account it leaves signs there, or, for a proposal, the member who does.
   late final bool _signsOnColdWallet;
 
   /// The cold wallet's signing of the send, on the signing step.
@@ -202,8 +203,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     _account = active.account;
     _strategy = strategy;
     _signer = sendSigner(strategy, accounts);
-    _signsOnColdWallet = switch (active) {
-      RegularAccount(:final account) => account.signsWithHardware,
+    _signsOnColdWallet = switch ((_signer, active)) {
+      (final Account signer, _) => signer.signsWithHardware,
+      (null, RegularAccount(:final account)) => account.signsWithHardware,
       _ => false,
     };
     _address.addListener(_onAddressChanged);
@@ -518,7 +520,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     if (signing == null) throw StateError('A cold wallet signed a send that was not being signed.');
     setState(() {
       _submitted = signing.terminalForHash(hash);
-      _confirmation = null;
+      _confirmation = signing.confirmationForHash?.call(hash);
       _signing = null;
       _step = _Step.receipt;
     });
@@ -561,7 +563,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
                 _Step.signing => [
                   KeystoneSigningView(
                     session: (_signing ?? (throw StateError('The signing step has no signing.'))).session,
-                    account: _account,
+                    // The cold wallet to pick up is the one of the account
+                    // that signs: a proposal's member, or the account sent from.
+                    account: _signer ?? _account,
                     parentTitle: title,
                     onLeave: _backFromSigning,
                     onSubmitting: _onColdWalletSubmitting,

@@ -11,7 +11,7 @@ import 'package:wallet_core/utils/account_utils.dart';
 /// one: a private send from the Encrypted account, a transfer from a
 /// transparent account whose key signs in the app or on a cold wallet, and a
 /// multisig's proposal when the member of it in this wallet, one of
-/// [accounts], signs in the app.
+/// [accounts], signs in the app or on a cold wallet.
 SendStrategy? sendStrategyFor(DisplayAccount? active, {required List<Account> accounts}) => switch (active) {
   RegularAccount(:final account) when isEncryptedAccount(account) => EncryptedSendStrategy(account: account),
   RegularAccount(:final account) when account.signsLocally || account.signsWithHardware => RegularSendStrategy(
@@ -24,9 +24,13 @@ SendStrategy? sendStrategyFor(DisplayAccount? active, {required List<Account> ac
 };
 
 /// The account among [accounts] that proposes for [multisig], when its key
-/// signs in the app.
-Account? _memberOf(MultisigAccount multisig, List<Account> accounts) =>
-    accounts.where((account) => account.accountId == multisig.myMemberAccountId && account.signsLocally).firstOrNull;
+/// signs in the app or on a cold wallet.
+Account? _memberOf(MultisigAccount multisig, List<Account> accounts) => accounts
+    .where(
+      (account) =>
+          account.accountId == multisig.myMemberAccountId && (account.signsLocally || account.signsWithHardware),
+    )
+    .firstOrNull;
 
 /// The account that signs [strategy]'s send and pays what it costs, where
 /// that is not the account the funds leave: the member who proposes for a
