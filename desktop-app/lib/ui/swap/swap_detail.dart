@@ -30,7 +30,7 @@ import 'package:wallet_core/swap/swap_progress.dart';
 import 'package:wallet_core/utils/account_actions.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
 
-/// The swap being followed, in the panel at the window's right: where to
+/// The followed swap [swapId], in the panel at the window's right: where to
 /// send the deposit while one made from outside the app is awaited; then its
 /// steps and its terms; and at the end what arrived, or how it ended without
 /// paying out.
@@ -39,7 +39,9 @@ import 'package:wallet_core/utils/explorer_url.dart';
 /// Cancel Swap before its deposit is sent, or by Stop tracking, which asks
 /// first: the swap carries on at 1Click.
 class SwapDetail extends ConsumerStatefulWidget {
-  const SwapDetail({super.key});
+  const SwapDetail({super.key, required this.swapId});
+
+  final String swapId;
 
   /// The button that confirms Stop tracking.
   static const confirmStopKey = Key('swap-confirm-stop');
@@ -82,8 +84,8 @@ class _SwapDetailState extends ConsumerState<SwapDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final swap = ref.watch(followedSwapProvider);
-    if (swap == null) throw StateError("The swap's panel was drawn with no swap followed.");
+    final swap = ref.watch(activeSwapProvider(widget.swapId));
+    if (swap == null) throw StateError("A swap's panel was drawn for a swap that is not followed.");
     // Drawn again each second while the swap runs: its clock, and the moment
     // an awaited deposit's window closes.
     final now = ref.watch(swapClockProvider).value ?? clock.now();

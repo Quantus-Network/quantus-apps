@@ -259,8 +259,9 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
     }
     // A swap being followed lives in the window, not in a sheet: Swap opens
     // it in the panel at the right, from whichever account.
-    if (sheet == ShellSheet.swap && ref.read(followedSwapProvider) != null) {
-      ref.read(openedActivityProvider.notifier).open(const OpenedSwap());
+    final followed = ref.read(followedSwapProvider);
+    if (sheet == ShellSheet.swap && followed != null) {
+      ref.read(openedActivityProvider.notifier).open(OpenedSwap(followed.id));
       return;
     }
     if (sheet == ShellSheet.send || sheet == ShellSheet.propose) _beginSend();

@@ -12,11 +12,12 @@ import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/swap/swap_progress.dart';
 
-/// The swap being followed, as a row of its account's In progress: open when
-/// it is what the panel at the right shows, and a click opens it there.
+/// A followed [swap], as a row of its account's In progress: open when it is
+/// what the panel at the right shows, and a click opens it there.
 class SwapEntry extends ConsumerWidget {
-  const SwapEntry({super.key, required this.form, this.hasFocus = true});
+  const SwapEntry({super.key, required this.swap, required this.form, this.hasFocus = true});
 
+  final ActiveSwap swap;
   final ActivityRowForm form;
 
   /// Whether the keys are in the panel the row is in.
@@ -24,14 +25,13 @@ class SwapEntry extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final swap = ref.watch(followedSwapProvider);
-    if (swap == null) throw StateError("A swap's row was drawn with no swap followed.");
+    final opened = OpenedSwap(swap.id);
     return SwapRowView(
       swap: swap,
       form: form,
-      isSelected: ref.watch(openedActivityViewProvider) is OpenedSwap,
+      isSelected: ref.watch(openedActivityViewProvider) == opened,
       hasFocus: hasFocus,
-      onTap: () => ref.read(openedActivityProvider.notifier).open(const OpenedSwap()),
+      onTap: () => ref.read(openedActivityProvider.notifier).open(opened),
     );
   }
 }

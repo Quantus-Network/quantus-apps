@@ -47,17 +47,19 @@ Finder _text(String text) => find.text(text, findRichText: true);
 TerminalLine _line(WidgetTester tester, String step) =>
     tester.widget<TerminalLine>(_inPanel(find.byWidgetPredicate((w) => w is TerminalLine && w.name == step)));
 
-/// Opens Main's wallet following [swap], on [active], Main unless said. What
-/// would open outside the app is kept in [opened] instead.
+/// Opens Main's wallet following [swap], or [followed] in the order they
+/// started, on [active], Main unless said. What would open outside the app
+/// is kept in [opened] instead.
 Future<FakeSettingsService> _open(
   WidgetTester tester, {
   ActiveSwap? swap,
+  List<ActiveSwap> followed = const [],
   DisplayAccount active = const RegularAccount(mainAccount),
   FakeSwapService? swaps,
   FakeSendChain? chain,
   List<Uri>? opened,
 }) async {
-  final settings = FakeSettingsService(activeAccount: active)..activeSwap = swap;
+  final settings = FakeSettingsService(activeAccount: active)..activeSwaps = [?swap, ...followed];
   await pumpShell(
     tester,
     overrides: [
@@ -87,6 +89,26 @@ Future<void> _openSwap(WidgetTester tester) async {
   await tester.tap(find.byType(SwapRowView));
   await tester.pumpAndSettle();
 }
+
+/// Deposit addresses for swaps followed beside the usual one.
+const _secondAddress = '0x1111111111111111111111111111111111111111';
+const _thirdAddress = '0x2222222222222222222222222222222222222222';
+
+/// The row of [swap], among the rows of several.
+Finder _rowOf(ActiveSwap swap) => find.byWidgetPredicate((w) => w is SwapRowView && w.swap.id == swap.id);
+
+Future<void> _openRow(WidgetTester tester, ActiveSwap swap) async {
+  await tester.tap(_rowOf(swap));
+  await tester.pumpAndSettle();
+}
+
+/// The ids of the swaps listed, from the top.
+List<String> _rowIds(WidgetTester tester) => [
+  for (final row in tester.widgetList<SwapRowView>(find.byType(SwapRowView))) row.swap.id,
+];
+
+/// The swap the panel at the right shows.
+String _panelSwapId(WidgetTester tester) => tester.widget<SwapDetail>(find.byType(SwapDetail)).swapId;
 
 TransferEvent _received(String id) => TransferEvent(
   id: id,
@@ -219,7 +241,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
       expect(find.byType(SwapDetail), findsOne);
-      expect(_container(tester).read(openedActivityViewProvider), const OpenedSwap());
+      expect(_container(tester).read(openedActivityViewProvider), const OpenedSwap(swapDepositAddress));
     });
 
     testOnMac('the sidebar counts the swap on its account while it is under way', (tester) async {
@@ -529,6 +551,180 @@ void main() {
       expect(find.byType(SwapDetail), findsNothing);
       expect(find.byType(SwapRowView), findsOne);
       expect(settings.activeSwap, isNotNull);
+    });
+  });
+
+  group('several swaps at once', () {
+    testOnMac('each swap of the account has its row, the newest first, over what else is in progress', (tester) async {
+      final sending = FakeSendChain()
+        ..scheduledTransfers = [
+          ReversibleTransferEvent(
+            id: 'scheduled',
+            from: 'qzMain',
+            to: 'qzBob',
+            amount: oneToken,
+            timestamp: DateTime.now(),
+            txId: '0xtxid',
+            status: ReversibleTransferStatus.SCHEDULED,
+            scheduledAt: DateTime.now().add(const Duration(hours: 23)),
+            blockNumber: 1,
+            blockHash: '0xblock',
+          ),
+        ];
+      final first = fakeActiveSwap();
+      final second = fakeActiveSwap(swapOut: false, depositSent: true, depositAddress: _secondAddress);
+      await _open(tester, followed: [first, second], chain: sending);
+
+      expect(find.descendant(of: find.byType(InProgressPanel), matching: find.byType(SwapRowView)), findsNWidgets(2));
+      expect(_rowIds(tester), [second.id, first.id]);
+      expect(tester.getTopLeft(_rowOf(first)).dy, lessThan(tester.getTopLeft(find.byType(ActivityRowView).first).dy));
+      expect(find.descendant(of: _rowOf(first), matching: find.text('-250 QTC')), findsOne);
+      expect(find.descendant(of: _rowOf(second), matching: find.text('+236.9 QTC')), findsOne);
+    });
+
+    testOnMac('an account lists its own swaps, and not those of another', (tester) async {
+      final ofMain = fakeActiveSwap();
+      final ofSavings = fakeActiveSwap(account: savingsAccount, depositAddress: _secondAddress);
+
+      await _open(tester, followed: [ofMain, ofSavings]);
+      expect(_rowIds(tester), [ofMain.id]);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await _open(tester, followed: [ofMain, ofSavings], active: const RegularAccount(savingsAccount));
+      expect(_rowIds(tester), [ofSavings.id]);
+    });
+
+    testOnMac('swaps kept from the last run are all listed, one still awaiting its deposit with them', (tester) async {
+      final running = fakeActiveSwap();
+      final awaited = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, depositAddress: _secondAddress);
+      final settings = await _open(tester, followed: [running, awaited]);
+      await tester.pump();
+
+      expect(_rowIds(tester), [awaited.id, running.id]);
+      expect(settings.activeSwaps.map((s) => s.id), [running.id, awaited.id], reason: 'none is dropped at launch');
+    });
+
+    testOnMac('a click opens that swap at the right, and marks its row alone', (tester) async {
+      final first = fakeActiveSwap();
+      final second = fakeActiveSwap(swapOut: false, depositSent: true, depositAddress: _secondAddress);
+      await _open(tester, followed: [first, second]);
+
+      await _openRow(tester, first);
+      expect(_panelSwapId(tester), first.id);
+      expect(_inPanel(find.text('250 QTC')), findsOne);
+      expect(tester.widget<SwapRowView>(_rowOf(first)).isSelected, isTrue);
+      expect(tester.widget<SwapRowView>(_rowOf(second)).isSelected, isFalse);
+
+      await _openRow(tester, second);
+      expect(_panelSwapId(tester), second.id);
+      expect(_inPanel(find.text('100 USDC')), findsOne);
+      expect(tester.widget<SwapRowView>(_rowOf(first)).isSelected, isFalse);
+      expect(tester.widget<SwapRowView>(_rowOf(second)).isSelected, isTrue);
+    });
+
+    testOnMac('↑ and ↓ walk from swap to swap, then to the other rows', (tester) async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [_received('settled')],
+        ];
+      final first = fakeActiveSwap();
+      final second = fakeActiveSwap(depositAddress: _secondAddress);
+      await _open(tester, followed: [first, second], chain: chain);
+
+      await _openRow(tester, second);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_container(tester).read(openedActivityViewProvider), OpenedSwap(first.id));
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(_container(tester).read(openedActivityViewProvider), isA<OpenedTransaction>());
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(_container(tester).read(openedActivityViewProvider), OpenedSwap(second.id));
+    });
+
+    testOnMac('Done puts away the swap it is pressed on, and leaves the other followed', (tester) async {
+      final done = fakeActiveSwap(status: SwapStatus.success);
+      final running = fakeActiveSwap(depositAddress: _secondAddress);
+      final settings = await _open(tester, followed: [done, running]);
+
+      await _openRow(tester, done);
+      await _press(tester, _inPanel(find.text(_l10n.commonDone)));
+
+      expect(settings.activeSwaps.map((s) => s.id), [running.id]);
+      expect(_rowIds(tester), [running.id]);
+      expect(find.byType(SwapDetail), findsNothing);
+    });
+
+    testOnMac('Stop tracking, confirmed, puts away its own swap alone', (tester) async {
+      final first = fakeActiveSwap();
+      final second = fakeActiveSwap(depositAddress: _secondAddress);
+      final settings = await _open(tester, followed: [first, second]);
+
+      await _openRow(tester, second);
+      await _press(tester, _inPanel(find.widgetWithText(ToolbarAction, _l10n.swapStopTracking)));
+      await _press(tester, _inPanel(find.byKey(SwapDetail.confirmStopKey)));
+
+      expect(settings.activeSwaps.map((s) => s.id), [first.id]);
+      expect(_rowIds(tester), [first.id]);
+      expect(find.byType(SwapDetail), findsNothing);
+    });
+
+    testOnMac('Stop tracking asked of one swap is not asked of the next one opened', (tester) async {
+      final first = fakeActiveSwap();
+      final second = fakeActiveSwap(depositAddress: _secondAddress);
+      final settings = await _open(tester, followed: [first, second]);
+
+      await _openRow(tester, first);
+      await _press(tester, _inPanel(find.widgetWithText(ToolbarAction, _l10n.swapStopTracking)));
+      expect(_inPanel(find.byKey(SwapDetail.confirmStopKey)), findsOne);
+
+      await _openRow(tester, second);
+      expect(_panelSwapId(tester), second.id);
+      expect(_inPanel(find.byKey(SwapDetail.confirmStopKey)), findsNothing);
+      expect(_inPanel(find.widgetWithText(ToolbarAction, _l10n.swapStopTracking)), findsOne);
+      expect(settings.activeSwaps, hasLength(2));
+    });
+
+    testOnMac("of two swaps awaiting a deposit, I've Sent It and Cancel Swap each act on their own", (tester) async {
+      final first = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit);
+      final second = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, depositAddress: _secondAddress);
+      final third = fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, depositAddress: _thirdAddress);
+      final settings = await _open(tester, followed: [first, second, third]);
+      ActiveSwap kept(ActiveSwap swap) => settings.activeSwaps.singleWhere((s) => s.id == swap.id);
+
+      await _openRow(tester, second);
+      expect(_inPanel(find.text(_secondAddress)), findsOne);
+      await _press(tester, _inPanel(find.text(_l10n.swapDepositSent)));
+
+      expect(kept(second).depositSent, isTrue);
+      expect(kept(first).depositSent, isFalse);
+      expect(kept(third).depositSent, isFalse);
+
+      await _openRow(tester, third);
+      await _press(tester, _inPanel(find.text(_l10n.desktopSwapCancel)));
+
+      expect(settings.activeSwaps.map((s) => s.id), [first.id, second.id]);
+      expect(_rowIds(tester), [second.id, first.id]);
+      expect(find.byType(SwapDetail), findsNothing);
+    });
+
+    testOnMac('the swap in the panel put away from elsewhere closes the panel; the rest stay', (tester) async {
+      final first = fakeActiveSwap();
+      final second = fakeActiveSwap(depositAddress: _secondAddress);
+      await _open(tester, followed: [first, second]);
+      await _openRow(tester, first);
+
+      await _container(tester).read(activeSwapsProvider.notifier).remove(first.id);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(SwapDetail), findsNothing);
+      expect(_rowIds(tester), [second.id]);
+      expect(_container(tester).read(openedActivityProvider), isNull);
     });
   });
 
