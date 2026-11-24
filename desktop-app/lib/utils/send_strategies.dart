@@ -9,11 +9,14 @@ import 'package:wallet_core/utils/account_utils.dart';
 
 /// The send this app can make from [active], or null where it cannot make
 /// one: a private send from the Encrypted account, a transfer from a
-/// transparent account whose key signs in the app, and a multisig's proposal
-/// when the member of it in this wallet, one of [accounts], signs in the app.
+/// transparent account whose key signs in the app or on a cold wallet, and a
+/// multisig's proposal when the member of it in this wallet, one of
+/// [accounts], signs in the app.
 SendStrategy? sendStrategyFor(DisplayAccount? active, {required List<Account> accounts}) => switch (active) {
   RegularAccount(:final account) when isEncryptedAccount(account) => EncryptedSendStrategy(account: account),
-  RegularAccount(:final account) when account.signsLocally => RegularSendStrategy(account: account),
+  RegularAccount(:final account) when account.signsLocally || account.signsWithHardware => RegularSendStrategy(
+    account: account,
+  ),
   MultisigDisplayAccount(:final account) when _memberOf(account, accounts) != null => MultisigProposeStrategy(
     msig: account,
   ),
