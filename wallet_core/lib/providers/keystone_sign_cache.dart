@@ -41,9 +41,31 @@ Duration keystoneSignCacheMaxAge(QuantusSigningPayload payload) {
   return Duration(seconds: usableBlocks * AppConstants.avgBlockTimeSeconds);
 }
 
+/// Whether [payload], built at [storedAt], has used up its era reserve by
+/// [now]: what is left of its lifetime no longer covers a full round trip
+/// through the device, so it must be built again before it is shown.
+bool isKeystonePayloadStale(QuantusSigningPayload payload, {required DateTime storedAt, required DateTime now}) =>
+    now.difference(storedAt) >= keystoneSignCacheMaxAge(payload);
+
 /// Returns true when [entry] is older than the mortal era validity window.
-bool isKeystoneSignCacheEntryExpired(KeystoneSignCacheEntry entry, DateTime now) {
-  return now.difference(entry.storedAt) >= keystoneSignCacheMaxAge(entry.unsignedData.payloadToSign);
+bool isKeystoneSignCacheEntryExpired(KeystoneSignCacheEntry entry, DateTime now) =>
+    isKeystonePayloadStale(entry.unsignedData.payloadToSign, storedAt: entry.storedAt, now: now);
+
+/// Refuses a signed [payload] whose mortal era is over, or within
+/// [keystoneSignSubmitEraMarginBlocks] of it, by throwing
+/// [KeystoneEraExpiredException]: the chain would reject it, or worse, accept
+/// it right at the edge. [currentBlock] is asked only for a payload that can
+/// expire.
+Future<void> ensureKeystoneEraNotExpired(
+  QuantusSigningPayload payload, {
+  required Future<int> Function() currentBlock,
+}) async {
+  if (payload.eraPeriod == 0) return;
+  final block = await currentBlock();
+  final expiryBlock = payload.blockNumber + payload.eraPeriod;
+  if (block >= expiryBlock - keystoneSignSubmitEraMarginBlocks) {
+    throw KeystoneEraExpiredException(currentBlock: block, expiryBlock: expiryBlock);
+  }
 }
 
 /// Identifies a Keystone signing payload by the parameters that define the
