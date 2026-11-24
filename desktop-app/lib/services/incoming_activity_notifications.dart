@@ -201,9 +201,14 @@ class IncomingActivityNotifications {
   }
 
   /// Notifies that the account [accountId] received [event], unless it is the
-  /// person's own send: one from another of the wallet's own accounts, on
-  /// this computer or another, or what an Encrypted send from this computer
-  /// paid. A multisig is not the person's alone, so what it pays is notified.
+  /// person's own send: one from another of the wallet's own accounts or
+  /// multisigs, on this computer or another, or what an Encrypted send from
+  /// this computer paid.
+  ///
+  /// A multisig's payment is skipped though its other signers may have made
+  /// it: the push service skips a payment from an address the same Mac
+  /// watches, and cannot tell a multisig from an account, so the running app
+  /// says no more than a closed one is told.
   void _notify(String accountId, TransactionEvent event) {
     final accounts = _ref.read(accountsProvider).value ?? const <Account>[];
     final multisigs = _ref.read(multisigAccountsProvider).value ?? const <MultisigAccount>[];
@@ -215,6 +220,7 @@ class IncomingActivityNotifications {
       return;
     }
     if (accounts.any((own) => own.accountId == event.from)) return;
+    if (multisigs.any((own) => own.accountId == event.from)) return;
     final hash = event.extrinsicHash;
     if (hash != null && _ref.read(ownActivityNotificationsProvider).isEncryptedSendFromHere(hash)) return;
 
