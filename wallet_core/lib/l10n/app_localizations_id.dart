@@ -3558,4 +3558,8 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get desktopKeystoneRejectStep3Body =>
       'Kunci tidak pernah meninggalkan perangkat. Pindah ke komputer tepercaya sebelum mengirim lagi.';
+
+  @override
+  String get desktopKeystoneRejectStep2Body =>
+      'Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.';
 }

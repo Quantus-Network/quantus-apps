@@ -6379,6 +6379,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keys never left the device. Move to a trusted computer before sending again.'**
   String get desktopKeystoneRejectStep3Body;
+
+  /// Desktop guide after the cold wallet showed different details: second step's body (the computer may be compromised)
+  ///
+  /// In en, this message translates to:
+  /// **'If it\'s compromised, retrying gives the attacker another chance.'**
+  String get desktopKeystoneRejectStep2Body;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
