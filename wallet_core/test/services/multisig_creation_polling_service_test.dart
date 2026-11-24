@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_platform_interface.dart';
 import 'package:wallet_core/models/pending_multisig_creation_record.dart';
 import 'package:wallet_core/providers/global_toast_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
@@ -100,6 +101,24 @@ Future<List<String>> _storedPending() async =>
     (await SharedPreferences.getInstance()).getStringList('pending_multisig_creations') ?? [];
 
 const _expired = Duration(hours: 1);
+
+/// Preferences whose stored multisigs cannot be saved, the two ways a backend
+/// reports it.
+class _FailingStore extends InMemorySharedPreferencesStore {
+  _FailingStore() : super.empty();
+
+  static const multisigsKey = 'flutter.multisig_accounts_v1';
+
+  bool refuse = false;
+  bool throwing = false;
+
+  @override
+  Future<bool> setValue(String valueType, String key, Object value) async {
+    if (key == multisigsKey && throwing) throw StateError('the disk is gone');
+    if (key == multisigsKey && refuse) return false;
+    return super.setValue(valueType, key, value);
+  }
+}
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
@@ -209,6 +228,38 @@ void main() {
         expect(await _storedPending(), isEmpty);
         expect(next.read(globalToastProvider)?.type, ToastType.success);
         next.dispose();
+      });
+    }
+
+    final storeFailures = <String, void Function(_FailingStore)>{
+      'refused': (store) => store.refuse = true,
+      'throwing': (store) => store.throwing = true,
+    };
+    for (final MapEntry(key: how, value: failSaves) in storeFailures.entries) {
+      testWidgets('in the real storage ($how) keeps its pending record and says so, also after a restart', (
+        tester,
+      ) async {
+        final store = _FailingStore();
+        failSaves(store);
+        SharedPreferencesStorePlatform.instance = store;
+        SharedPreferences.resetStatic();
+        final settings = SettingsService();
+        await settings.initialize();
+        final bed = WalletTestBed(storage: settings);
+        final container = await _start(tester, bed, _Chain());
+
+        await _submitted(tester, container);
+
+        expect(_listed(container), isEmpty);
+        expect(_pending(container), [_multisig.accountId]);
+        expect(container.read(globalToastProvider)?.message, container.read(l10nProvider).multisigCreateNotSavedToast);
+        expect(bed.telemetry.errors, ['multisig_creation_save_failed']);
+        container.dispose();
+
+        SharedPreferences.resetStatic();
+        await settings.initialize();
+        expect(await settings.getMultisigAccounts(), isEmpty);
+        expect(await _storedPending(), hasLength(1));
       });
     }
 
