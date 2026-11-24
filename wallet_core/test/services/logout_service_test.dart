@@ -221,7 +221,6 @@ void main() {
 
   testWidgets('with a setting changed, a reminder scheduled before a reset does not fire after it', (tester) async {
     final container = ProviderContainer(overrides: WalletTestBed().overrides);
-    // Only a config that differs from the defaults rebuilds the notifier.
     await container
         .read(notificationConfigProvider.notifier)
         .updateConfig(container.read(notificationConfigProvider).copyWith(sound: false));
@@ -438,9 +437,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 2));
 
-      await container
-          .read(notificationConfigProvider.notifier)
-          .updateConfig(container.read(notificationConfigProvider).copyWith(sound: false));
+      container.invalidate(notificationProvider);
       container.read(notificationProvider);
       await tester.pump();
       wipe.complete();

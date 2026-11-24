@@ -4,6 +4,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/notification_status.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notification_click_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
@@ -50,7 +51,16 @@ class _EncryptedSend {
 /// What happens elsewhere (funds received, what other signers do) is for
 /// remote notifications.
 class OwnActivityNotifications {
+  /// How long a notification handed over still needs the app: macOS's
+  /// notification plugin answers before macOS has taken it.
+  static const settleDelay = Duration(seconds: 2);
+
   OwnActivityNotifications(this._ref) {
+    _ref.onDispose(() {
+      for (final timer in _settling) {
+        timer.cancel();
+      }
+    });
     _ref.listen(pendingTransactionsProvider, (_, sends) => _onSends(sends));
     _ref.listen(pendingMultisigProposalsProvider, (_, proposals) => _onProposals(proposals));
     _ref.listen(
@@ -91,6 +101,21 @@ class OwnActivityNotifications {
   /// leaves the pending proposals before that.
   final _proposals = <String, PendingMultisigProposalEvent>{};
 
+  /// One for each notification handed over less than [settleDelay] ago.
+  final _settling = <Timer>{};
+
+  /// Whether a notification was handed over so recently that quitting now
+  /// could still lose it.
+  bool get isSettling => _settling.isNotEmpty;
+
+  /// Counts [delivering], which reports its own failures, as work under way
+  /// until it is done.
+  void _holdWhile(Future<void> delivering) {
+    final holds = _ref.read(workHoldsProvider.notifier);
+    holds.hold(delivering);
+    unawaited(delivering.whenComplete(() => holds.release(delivering)));
+  }
+
   void _onSends(List<PendingTransactionEvent> sends) {
     final now = clock.now();
     for (final send in sends) {
@@ -100,7 +125,7 @@ class OwnActivityNotifications {
           _sends[send.id] = (send: send, broadcastAt: now);
         case TransactionState.inHistory when watched != null:
           _sends.remove(send.id);
-          unawaited(_notifySent(send));
+          _holdWhile(_notifySent(send));
         case TransactionState.failed when watched != null:
           _sends.remove(send.id);
           // The amount it was recorded with: what it set out to send.
@@ -173,6 +198,8 @@ class OwnActivityNotifications {
         }
         final watched = _EncryptedSend(account: account, amount: amount, hashes: send.txHashes);
         _encryptedSends[watched.lastHash] = watched;
+        // Work under way until its notification is on its way.
+        _ref.read(workHoldsProvider.notifier).hold(watched);
         _encryptedSendWatch.startPolling(null, watched);
       case EncryptedSendPhase.failed:
         // Some of its batches may have paid before it failed; only the
@@ -221,17 +248,25 @@ class OwnActivityNotifications {
       return false;
     }
     if (_encryptedSends.remove(send.lastHash) == null || !_ref.mounted) return true;
-    await _reloadEncryptedState(send.account.walletIndex);
-    if (!_ref.mounted) return true;
-    _notifyFrom(
-      send.account.accountId,
-      id: send.lastHash,
-      extrinsicHash: send.lastHash,
-      amount: send.amount,
-      title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
-      body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
-    );
+    try {
+      await _reloadEncryptedState(send.account.walletIndex);
+      if (!_ref.mounted) return true;
+      _notifyFrom(
+        send.account.accountId,
+        id: send.lastHash,
+        extrinsicHash: send.lastHash,
+        amount: send.amount,
+        title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
+        body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
+      );
+    } finally {
+      _releaseEncryptedSend(send);
+    }
     return true;
+  }
+
+  void _releaseEncryptedSend(_EncryptedSend send) {
+    if (_ref.mounted) _ref.read(workHoldsProvider.notifier).release(send);
   }
 
   /// Reads the account's state again, for a click on the notification to find
@@ -252,18 +287,23 @@ class OwnActivityNotifications {
   void _giveUpOnEncryptedSend(String id) {
     final send = _encryptedSends.remove(id);
     if (send == null) return;
-    _notifyFrom(
-      send.account.accountId,
-      id: send.lastHash,
-      extrinsicHash: send.lastHash,
-      amount: send.amount,
-      title: (l10n, _) => l10n.desktopNotificationSendNotConfirmedTitle,
-      body: (l10n, amount, account) => l10n.desktopNotificationSendNotConfirmedBody(amount, account),
-    );
+    try {
+      _notifyFrom(
+        send.account.accountId,
+        id: send.lastHash,
+        extrinsicHash: send.lastHash,
+        amount: send.amount,
+        title: (l10n, _) => l10n.desktopNotificationSendNotConfirmedTitle,
+        body: (l10n, amount, account) => l10n.desktopNotificationSendNotConfirmedBody(amount, account),
+      );
+    } finally {
+      _releaseEncryptedSend(send);
+    }
   }
 
   void _stopWatchingEncryptedSends() {
     _encryptedSendWatch.stopAll();
+    _encryptedSends.values.forEach(_releaseEncryptedSend);
     _encryptedSends.clear();
   }
 
@@ -392,12 +432,16 @@ class OwnActivityNotifications {
       metadata: extrinsicHash == null ? null : {notificationHashKey: extrinsicHash},
       persistent: false,
     );
-    unawaited(_showNow(notification));
+    _holdWhile(_showNow(notification));
   }
 
   Future<void> _showNow(NotificationData notification) async {
     try {
       await _ref.read(desktopLocalNotificationsProvider.notifier).showOrScheduleNotification(notification);
+      if (!_ref.mounted) return;
+      late final Timer settled;
+      settled = Timer(settleDelay, () => _settling.remove(settled));
+      _settling.add(settled);
     } catch (e) {
       quantusPrint('Showing a notification failed: $e');
       _ref.read(telemetryProvider).sendError('desktop_notification_show_failed', error: e);
