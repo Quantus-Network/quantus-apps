@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:desktop_qr_camera/desktop_qr_camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
+import 'package:quantus_desktop_wallet/ui/components/qr_camera_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
@@ -27,6 +29,9 @@ import '../../fakes.dart';
 /// A camera that reads what the test shows it.
 class _FakeScanSource implements QrScanSource {
   final _reads = StreamController<String>.broadcast(sync: true);
+
+  /// What the next start fails with.
+  Object? startError;
   bool isOn = false;
   bool isDisposed = false;
   int starts = 0;
@@ -37,6 +42,10 @@ class _FakeScanSource implements QrScanSource {
   @override
   Future<void> start() async {
     starts++;
+    if (startError case final error?) {
+      startError = null;
+      throw error;
+    }
     isOn = true;
   }
 
@@ -53,6 +62,12 @@ class _FakeScanSource implements QrScanSource {
   }
 
   void read(String code) => _reads.add(code);
+
+  /// The camera fails while it runs.
+  void fail(QrCameraFailure failure) {
+    isOn = false;
+    _reads.addError(QrCameraException(failure));
+  }
 }
 
 /// [tokens] in the chain's smallest unit.
@@ -460,6 +475,46 @@ void main() {
       await _readSignature(tester, harness.camera);
 
       expect(harness.container(tester).read(keystoneSignCacheProvider), isNull);
+    });
+
+    testOnMac('the camera\'s picture is Connect Cold Wallet\'s camera box', (tester) async {
+      await _openSend(tester);
+
+      await _toScan(tester);
+
+      final box = _inSheet(find.byType(QrCameraBox));
+      expect(box, findsOneWidget);
+      expect(find.descendant(of: box, matching: find.byKey(const Key('camera-preview'))), findsOneWidget);
+    });
+
+    testOnMac('a camera this app may not use says so in its place, with System Settings and Try Again', (tester) async {
+      final harness = await _openSend(tester);
+      harness.camera.startError = const QrCameraException(QrCameraFailure.permissionDenied);
+
+      await _toScan(tester);
+
+      expect(_inSheet(find.text('Camera access is off')), findsOneWidget);
+      await tester.tap(_inSheet(find.text('Open System Settings')));
+      await tester.pumpAndSettle();
+      expect(harness.opened, [Uri.parse('x-apple.systempreferences:com.apple.preference.security?Privacy_Camera')]);
+
+      await tester.tap(_inSheet(find.text('Try Again')));
+      await tester.pumpAndSettle();
+
+      expect(harness.camera.starts, 2);
+      expect(harness.camera.isOn, isTrue);
+      expect(_inSheet(find.text('Camera access is off')), findsNothing);
+    });
+
+    testOnMac('a camera that stops while reading says so in its place', (tester) async {
+      final harness = await _openSend(tester);
+      await _toScan(tester);
+
+      harness.camera.fail(QrCameraFailure.stopped);
+      await tester.pumpAndSettle();
+
+      expect(_inSheet(find.text('The camera stopped')), findsOneWidget);
+      expect(_inSheet(find.text('Try Again')), findsOneWidget);
     });
 
     testOnMac('Back returns to the same code, and the camera stops', (tester) async {

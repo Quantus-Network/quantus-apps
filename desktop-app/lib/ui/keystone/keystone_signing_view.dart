@@ -12,6 +12,7 @@ import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/notice_box.dart';
+import 'package:quantus_desktop_wallet/ui/components/qr_camera_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -236,6 +237,7 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
   // ------------------------------------------------------------- the camera
 
   Future<void> _startCamera() async {
+    if (mounted) setState(() => _cameraFailure = null);
     try {
       await _camera.start();
     } on QrCameraException catch (error) {
@@ -255,8 +257,7 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
   void _onCameraError(Object error) {
     quantusPrint('The camera stopped: $error');
     if (!mounted) return;
-    if (error is! QrCameraException) throw StateError('The camera failed with $error');
-    setState(() => _cameraFailure = error.failure);
+    setState(() => _cameraFailure = error is QrCameraException ? error.failure : QrCameraFailure.failed);
   }
 
   void _onRead(String code) {
@@ -480,7 +481,12 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _cameraBox(context),
+                QrCameraBox(
+                  preview: _preview,
+                  width: _cameraWidth,
+                  failure: _cameraFailure,
+                  onTryAgain: () => unawaited(_startCamera()),
+                ),
                 const SizedBox(height: 14),
                 ConstrainedBox(constraints: const BoxConstraints(minHeight: 20), child: _scanStatus(context, l10n)),
               ],
@@ -519,40 +525,9 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
     ];
   }
 
-  Widget _cameraBox(BuildContext context) {
-    final colors = context.colorsV3;
-    return ClipRRect(
-      borderRadius: context.radiusV3.mdBorder,
-      child: Container(
-        width: _cameraWidth,
-        height: _cameraWidth * 0.72,
-        decoration: BoxDecoration(
-          color: colors.bgVoid,
-          border: Border.all(color: colors.borderHairline),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _preview,
-            Center(
-              child: SizedBox.square(
-                dimension: _cameraWidth * 0.6,
-                child: CustomPaint(
-                  painter: ScanFramePainter(
-                    accent: colors.accentFlare,
-                    scrim: colors.bgVoid.useOpacity(0.35),
-                    radius: context.radiusV3.md,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _scanStatus(BuildContext context, AppLocalizations l10n) {
+    // The camera's box says why it shows nothing.
+    if (_cameraFailure != null && !_isSubmitting && _scanError == null) return const SizedBox.shrink();
     if (_isSubmitting) return TerminalBusyLine(label: l10n.keystoneScanSubmitting);
     final error = _scanError;
     if (error != null) {
@@ -576,7 +551,7 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
     final text = context.themeTextV3;
     final steps = [
       (l10n.keystoneRejectStep1Title, l10n.keystoneRejectStep1Body),
-      (l10n.desktopKeystoneRejectStep2Title, l10n.keystoneRejectStep2Body),
+      (l10n.desktopKeystoneRejectStep2Title, l10n.desktopKeystoneRejectStep2Body),
       (l10n.keystoneRejectStep3Title, l10n.desktopKeystoneRejectStep3Body),
     ];
     return [
