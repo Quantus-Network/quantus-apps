@@ -97,6 +97,21 @@ void main() {
     Future<String> submitHardware(KeystoneSigningSession session, WidgetRef ref) =>
         session.submitSigned(ref, unsignedData: makeUnsignedTransactionData(), signatureWithPublicKey: Uint8List(0));
 
+    testWidgets('a cold wallet\'s transfer is said from its broadcast on: its hand-off waits for nothing', (
+      tester,
+    ) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+      final outcome = await RegularSendStrategy(account: makeAccount(3, accountType: AccountType.keystone)).submit(
+        ref,
+        recipientAddress: recipient.accountId,
+        amount: amount,
+        fee: RegularFee(networkFee: networkFee, amount: amount),
+        isPayMode: false,
+      );
+
+      expect((outcome as SendNeedsHardwareSignature).confirmationForHash, isNull);
+    });
+
     testWidgets('during the approval prompt submits nothing and says the send failed', (tester) async {
       final ref = await pumpRef(tester, overrides: overrides());
       bed.userApproval.answer = () async {

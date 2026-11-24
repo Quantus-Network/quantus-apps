@@ -4,6 +4,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/multisig_propose_strategy.dart';
 import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 
 import '../fakes.dart';
 
@@ -46,7 +47,7 @@ void main() {
     expect(outcome, isA<SendNeedsHardwareSignature>());
     final hardware = outcome as SendNeedsHardwareSignature;
     expect(hardware.session.account.accountId, keystone.accountId);
-    expect(hardware.terminalForHash('0xabc').explorerUrl, isNull);
+    expect(hardware.terminalForHash('0xabc').explorerUrl, multisigProposalExplorerUrl('0xabc'));
   });
 
   testWidgets('fails before signing when the member account is not in the wallet', (tester) async {

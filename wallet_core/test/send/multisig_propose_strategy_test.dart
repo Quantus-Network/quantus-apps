@@ -20,6 +20,7 @@ import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
 
 import '../fakes.dart';
@@ -189,6 +190,17 @@ void main() {
 
     Future<String> submitHardware(KeystoneSigningSession session, WidgetRef ref) =>
         session.submitSigned(ref, unsignedData: makeUnsignedTransactionData(), signatureWithPublicKey: Uint8List(0));
+
+    testWidgets('a Keystone member\'s hand-off links its receipt to the created proposal and waits for it', (
+      tester,
+    ) async {
+      final ref = await pumpRef(tester, overrides: keystoneOverrides());
+
+      final hardware = (await submit(ref)) as SendNeedsHardwareSignature;
+
+      expect(hardware.terminalForHash('0xabc').explorerUrl, multisigProposalExplorerUrl('0xabc'));
+      expect(hardware.confirmationForHash!('0xabc'), multisigProposalConfirmationProvider('0xabc'));
+    });
 
     testWidgets('during the approval prompt proposes nothing and says the proposal failed', (tester) async {
       final ref = await pumpRef(tester, overrides: overrides());
