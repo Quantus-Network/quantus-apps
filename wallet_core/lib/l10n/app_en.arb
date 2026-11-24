@@ -751,6 +751,18 @@
     "@multisigApproveUnavailableNote": {
       "description": "Note when approve is unavailable (expired or closed)"
     },
+    "multisigProposalExpiredNote": "This proposal has expired.",
+    "@multisigProposalExpiredNote": {
+      "description": "Note under a proposal's actions when it is past its expiry block, so it can no longer be approved, executed or cancelled"
+    },
+    "multisigNoSignerHereNote": "None of this multisig's signers is in this wallet.",
+    "@multisigNoSignerHereNote": {
+      "description": "Note under a proposal's actions when no signer of its multisig is an account in this wallet"
+    },
+    "multisigCancelWaitsNote": "Cancel waits until the approval sent from this device is confirmed.",
+    "@multisigCancelWaitsNote": {
+      "description": "Note under a proposal's actions when Cancel is unavailable because an approval from this device is still on its way to the chain"
+    },
     "activityTxApproving": "Approving…",
     "@activityTxApproving": {
       "description": "Trailing label on proposal row while approval is pending"
