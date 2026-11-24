@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile.dart';
 import 'package:resonance_network_wallet/v2/components/multisig_threshold_slider.dart';
@@ -21,9 +23,19 @@ import '../fakes.dart';
 const _notAnAddress = 'not-an-address';
 
 class _Substrate extends FakeSubstrateService {
+  /// What the chain says the payer holds.
+  BigInt balance = BigInt.zero;
+
   @override
   bool isValidSS58Address(String address) => address != _notAnAddress;
+
+  @override
+  Future<BigInt> queryBalance(String address) async => balance;
 }
+
+/// Thrown by [_FakeMultisigService.submitCreateMultisigExtrinsic], so a
+/// creation that got that far stops there.
+class _SubmitStopped implements Exception {}
 
 /// One request for the address a multisig would have, answered by the test
 /// when [_FakeMultisigService.hold] is set.
@@ -63,6 +75,35 @@ class _FakeMultisigService extends Fake implements MultisigService {
     }
     return MultisigCreationParams(nonce: BigInt.from(nonce), address: addressFor(signers.length, nonce));
   }
+
+  /// The creations submitted, by their signers.
+  final submitted = <List<String>>[];
+
+  @override
+  Future<String> predictMultisigAddress({required List<String> signers, required int threshold, BigInt? nonce}) async =>
+      addressFor(signers.length, (nonce ?? BigInt.zero).toInt());
+
+  @override
+  Future<bool> isMultisigIndexed(String address) async => false;
+
+  @override
+  Multisig buildCreateMultisigCall({required List<String> signers, required int threshold, required BigInt nonce}) =>
+      const multisig_pallet.Txs().createMultisig(
+        signers: [for (final _ in signers) List<int>.filled(32, 0)],
+        threshold: threshold,
+        nonce: nonce,
+      );
+
+  @override
+  Future<Uint8List> submitCreateMultisigExtrinsic({
+    required Account creator,
+    required List<String> signers,
+    required int threshold,
+    BigInt? nonce,
+  }) async {
+    submitted.add(signers);
+    throw _SubmitStopped();
+  }
 }
 
 /// Pins the phone's Create Multisig form before its rules move to wallet_core.
@@ -85,6 +126,7 @@ void main() {
   );
 
   late _FakeMultisigService service;
+  late _Substrate substrate;
 
   setUpAll(() => CheckphraseText.resolveOverride = (_) async => 'Stand-Envelope-Topic-Term-Help');
   tearDownAll(() => CheckphraseText.resolveOverride = null);
@@ -93,6 +135,7 @@ void main() {
     SharedPreferences.setMockInitialValues({'selected_app_locale': 'en'});
     await SettingsService().initialize();
     service = _FakeMultisigService();
+    substrate = _Substrate();
   });
 
   Future<void> seed({DisplayAccount? active, List<MultisigAccount> saved = const []}) async {
@@ -127,7 +170,7 @@ void main() {
         },
       ),
       overrides: [
-        substrateServiceProvider.overrideWithValue(_Substrate()),
+        substrateServiceProvider.overrideWithValue(substrate),
         multisigServiceProvider.overrideWithValue(service),
       ],
     );
@@ -352,6 +395,68 @@ void main() {
 
       expect(shownAddresses(tester), contains(newer));
       expect(shownAddresses(tester), isNot(contains(older)));
+    });
+  });
+
+  group('pressing Create', () {
+    /// What the creation costs the payer: the pallet's fee and the network
+    /// fee [FakeSubstrateService] quotes.
+    final cost = MultisigCreationEvent.palletConstants.multisigFee + BigInt.one;
+
+    /// The error toasts shown, read from the app's one toast host.
+    final toasts = <String>[];
+    void record() {
+      if (ToastController.instance.value?.message case final message?) toasts.add(message);
+    }
+
+    setUp(() {
+      toasts.clear();
+      ToastController.instance
+        ..registerHost()
+        ..addListener(record);
+    });
+
+    tearDown(() {
+      ToastController.instance
+        ..removeListener(record)
+        ..unregisterHost();
+    });
+
+    Future<void> pressCreate(WidgetTester tester) async {
+      final create = find.widgetWithText(QuantusButton, l10n.multisigCreateButton);
+      await tester.ensureVisible(create);
+      await tester.pumpAndSettle();
+      await tester.tap(create);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('with a balance that covers the cost, the creation is submitted', (tester) async {
+      substrate.balance = cost;
+      await seed();
+      await openForm(tester);
+      await addSigner(tester, signerA);
+
+      await pressCreate(tester);
+
+      expect(service.submitted, [
+        [second.accountId, signerA],
+      ]);
+      expect(toasts, isNot(contains(l10n.multisigCreateInsufficientBalance)));
+      // The toast's timer must not outlive the test.
+      ToastController.instance.dismiss();
+    });
+
+    testWidgets('with a balance short of the cost, it says so and submits nothing', (tester) async {
+      substrate.balance = cost - BigInt.one;
+      await seed();
+      await openForm(tester);
+      await addSigner(tester, signerA);
+
+      await pressCreate(tester);
+
+      expect(toasts, [l10n.multisigCreateInsufficientBalance]);
+      expect(service.submitted, isEmpty);
+      ToastController.instance.dismiss();
     });
   });
 }
