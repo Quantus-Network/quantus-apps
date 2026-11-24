@@ -79,6 +79,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   /// to be shown once the sheet has closed.
   Account? _imported;
 
+  /// The account the Connect Cold Wallet sheet just saved, to be shown once
+  /// the sheet has closed.
+  Account? _connectedColdWallet;
+
   /// Imports a wallet into the next free slot, on the shell's ref: the
   /// wallet's encrypted account is restored after the sheet has gone.
   Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) async {
@@ -104,7 +108,11 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       pageBuilder: (_, animation, _) => _SheetPlacement(
         animation: animation,
         top: top,
-        child: ShellSheetView(sheet: sheet, importWallet: _importWallet),
+        child: ShellSheetView(
+          sheet: sheet,
+          importWallet: _importWallet,
+          onColdWalletConnected: (account) => _connectedColdWallet = account,
+        ),
       ),
       // The sheet slides itself; the barrier fades on its own.
       transitionBuilder: (_, _, _, child) => child,
@@ -114,6 +122,9 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       final imported = _imported;
       _imported = null;
       if (imported != null) unawaited(ref.read(accountManagerProvider).finishImport(imported));
+      final connected = _connectedColdWallet;
+      _connectedColdWallet = null;
+      if (connected != null) unawaited(ref.read(accountManagerProvider).finishConnectColdWallet(connected));
     });
   }
 
@@ -297,6 +308,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           : null,
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
       onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
+      offersColdWallets: read(remoteConfigProvider).enableKeystoneHardwareWallet,
       offersMultisigs: read(remoteConfigProvider).enableMultisig,
       canCreateMultisig: hasWallet && read(multisigCreatorProvider) != null,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],

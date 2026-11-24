@@ -310,6 +310,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   /// on an account always is.
   bool _isOffered(ShellSheet sheet) {
     if (sheet == ShellSheet.createMultisig) return ref.read(multisigCreatorProvider) != null;
+    if (sheet == ShellSheet.connectColdWallet) return ref.read(remoteConfigProvider).enableKeystoneHardwareWallet;
     final kind = switch (sheet) {
       ShellSheet.receive => AccountActionKind.receive,
       ShellSheet.send => AccountActionKind.send,
@@ -318,6 +319,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       ShellSheet.settings ||
       ShellSheet.accountInfo ||
       ShellSheet.importWallet ||
+      ShellSheet.connectColdWallet ||
       ShellSheet.createMultisig ||
       ShellSheet.manageMultisigs => null,
     };

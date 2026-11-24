@@ -15,6 +15,7 @@ import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/utils/managed_multisigs.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// What can be copied from an account's menu.
@@ -191,8 +192,16 @@ final walletLabelProvider = Provider.family<String?, int>((ref, walletIndex) {
 /// carries them out on the device's storage and refreshes what shows it.
 final accountManagerProvider = Provider<AccountManager>(AccountManager.new);
 
+/// The address being connected is already an account or multisig in this app.
+class ColdWalletAlreadyInApp implements Exception {
+  const ColdWalletAlreadyInApp();
+}
+
 class AccountManager {
   AccountManager(this._ref);
+
+  /// What a connected cold wallet's account is called, as on the phone.
+  static const coldWalletName = 'Cold Wallet';
 
   final Ref _ref;
 
@@ -308,6 +317,55 @@ class AccountManager {
   /// Opens the Import Wallet sheet. Like any sheet, it does not open over
   /// another.
   Future<void> openImportWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.importWallet);
+
+  /// Opens the Connect Cold Wallet sheet. Like any sheet, it does not open
+  /// over another, and it opens only while cold wallets are offered.
+  Future<void> openConnectColdWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.connectColdWallet);
+
+  /// Saves [address] as the account of a new cold wallet, after the
+  /// navigation asked for before, one at a time so two never take the same
+  /// wallet index. Throws [ColdWalletAlreadyInApp] when the address is already
+  /// here, checked against storage, and whatever a failed write throws.
+  Future<Account> connectColdWallet(String address) async {
+    Account? saved;
+    await _ref.read(shellNavigationProvider.notifier).run(() async {
+      if (!_ref.mounted) return;
+      final service = _ref.read(accountsServiceProvider);
+      final settings = _ref.read(settingsServiceProvider);
+      final accounts = await service.getAccounts();
+      final multisigs = await settings.getMultisigAccounts();
+      if (!_ref.mounted) return;
+      if (accounts.any((account) => account.accountId == address) ||
+          multisigs.any((multisig) => multisig.accountId == address) ||
+          _ref.read(creatingMultisigsProvider).any((multisig) => multisig.accountId == address)) {
+        throw const ColdWalletAlreadyInApp();
+      }
+      final walletIndex = nextWalletIndex(accounts);
+      final account = Account(
+        walletIndex: walletIndex,
+        index: await settings.getNextFreeAccountIndex(walletIndex),
+        name: coldWalletName,
+        accountId: address,
+        accountType: AccountType.keystone,
+      );
+      await service.addAccount(account);
+      saved = account;
+    });
+    return saved ?? (throw StateError('The cold wallet $address was not saved.'));
+  }
+
+  /// Shows [account], just connected, once its sheet has closed: it becomes
+  /// the active account with its wallet open. A switch that fails says so,
+  /// and the account is there all the same.
+  Future<void> finishConnectColdWallet(Account account) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    _ref.read(keptOpenWalletsProvider.notifier).keepOpen(account.walletIndex);
+    // Before the list reloads: the switch reads which wallet is being left.
+    await _ref.read(sidebarSelectionProvider.notifier).showInStep(RegularAccount(account));
+    if (!_ref.mounted) return;
+    _ref.invalidate(accountsProvider);
+    unawaited(registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId));
+  });
 
   /// Opens the Create Multisig sheet. Like any sheet, it does not open over
   /// another, and it opens only on an account that can create one.

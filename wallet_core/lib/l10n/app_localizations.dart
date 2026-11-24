@@ -5912,6 +5912,168 @@ abstract class AppLocalizations {
   /// **'Multisig not confirmed'**
   String get desktopCreateMultisigTimedOut;
 
+  /// Desktop: the item that opens the Connect Cold Wallet sheet, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Cold Wallet…'**
+  String get desktopMenuConnectColdWallet;
+
+  /// Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device
+  ///
+  /// In en, this message translates to:
+  /// **'Hold it up to this camera'**
+  String get desktopColdWalletStepHold;
+
+  /// Desktop Connect Cold Wallet sheet: a line with a spinner while the camera is on
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for a QR code'**
+  String get desktopColdWalletLooking;
+
+  /// Desktop Connect Cold Wallet sheet: the camera read a QR code that is not an address
+  ///
+  /// In en, this message translates to:
+  /// **'That QR code isn\'t an account address.'**
+  String get desktopColdWalletNotAddress;
+
+  /// Desktop Connect Cold Wallet sheet: the address read is already an account or multisig here
+  ///
+  /// In en, this message translates to:
+  /// **'That account is already in this app.'**
+  String get desktopColdWalletAlreadyAdded;
+
+  /// Desktop Connect Cold Wallet sheet: the step showing the address read, before it is added
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Address'**
+  String get desktopColdWalletConfirmTitle;
+
+  /// Desktop Connect Cold Wallet sheet: above the address read
+  ///
+  /// In en, this message translates to:
+  /// **'Check that this matches the address on your cold wallet.'**
+  String get desktopColdWalletConfirmBody;
+
+  /// Desktop Connect Cold Wallet sheet: forgets the address read and turns the camera back on
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Again'**
+  String get desktopColdWalletScanAgain;
+
+  /// Desktop Connect Cold Wallet sheet: adds the address read as a cold wallet account
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get desktopColdWalletConnect;
+
+  /// Desktop Connect Cold Wallet sheet: saving the account failed; the address stays to try again
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect this cold wallet'**
+  String get desktopColdWalletSaveFailed;
+
+  /// Desktop camera: this computer has no camera
+  ///
+  /// In en, this message translates to:
+  /// **'No camera found'**
+  String get desktopCameraNoneTitle;
+
+  /// Desktop camera: what to do when there is no camera
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a camera to this computer, then try again.'**
+  String get desktopCameraNoneBody;
+
+  /// Desktop camera: the system refused this app the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off'**
+  String get desktopCameraPermissionTitle;
+
+  /// Desktop camera, macOS: where to allow the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Quantus Wallet under Privacy & Security, Camera.'**
+  String get desktopCameraPermissionMac;
+
+  /// Desktop camera, Windows: where to allow the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera access under Privacy & security, Camera.'**
+  String get desktopCameraPermissionWindows;
+
+  /// Desktop camera, Linux: what to check when the camera is refused
+  ///
+  /// In en, this message translates to:
+  /// **'Check that your user is allowed to use the camera.'**
+  String get desktopCameraPermissionLinux;
+
+  /// Desktop camera: opens the system's camera privacy settings
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get desktopCameraOpenSettings;
+
+  /// Desktop camera: another app holds the camera
+  ///
+  /// In en, this message translates to:
+  /// **'The camera is in use'**
+  String get desktopCameraBusyTitle;
+
+  /// Desktop camera: what to do when another app holds the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Close the other app using it, then try again.'**
+  String get desktopCameraBusyBody;
+
+  /// Desktop camera: the camera offers no picture format the app reads
+  ///
+  /// In en, this message translates to:
+  /// **'This camera can\'t be used'**
+  String get desktopCameraUnsupportedTitle;
+
+  /// Desktop camera: why the camera cannot be used
+  ///
+  /// In en, this message translates to:
+  /// **'It offers no picture format this app can read.'**
+  String get desktopCameraUnsupportedBody;
+
+  /// Desktop camera, Windows N: the system lacks its media components
+  ///
+  /// In en, this message translates to:
+  /// **'Camera support is missing'**
+  String get desktopCameraMediaTitle;
+
+  /// Desktop camera, Windows N: what to install
+  ///
+  /// In en, this message translates to:
+  /// **'Install the Media Feature Pack for Windows, then try again.'**
+  String get desktopCameraMediaBody;
+
+  /// Desktop camera: it was working and stopped, as when unplugged
+  ///
+  /// In en, this message translates to:
+  /// **'The camera stopped'**
+  String get desktopCameraStoppedTitle;
+
+  /// Desktop camera: what to do after it stopped
+  ///
+  /// In en, this message translates to:
+  /// **'Check that it\'s connected, then try again.'**
+  String get desktopCameraStoppedBody;
+
+  /// Desktop camera: any other failure
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t use the camera'**
+  String get desktopCameraFailedTitle;
+
+  /// Desktop camera: any other failure, what to do
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong with the camera. Try again.'**
+  String get desktopCameraFailedBody;
+
   /// Discord support row title
   ///
   /// In en, this message translates to:
