@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:clock/clock.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/active_swaps_provider.dart';
+import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
 import '../fakes.dart';
@@ -48,7 +53,154 @@ ActiveSwap _swapIn(String depositAddress, {required bool sent}) => ActiveSwap(
   depositSent: sent,
 );
 
+/// A swap out of QTC the app sent the deposit of to [depositAddress], with
+/// 1Click: still within its time, or [overdue], ten minutes and more past
+/// its deadline with nothing settled.
+ActiveSwap _swapOut(String depositAddress, {required bool overdue}) {
+  final deadline = overdue
+      ? clock.now().subtract(ActiveSwap.finishGrace + const Duration(minutes: 1))
+      : clock.now().add(const Duration(minutes: 20));
+  return ActiveSwap(
+    order: SwapOrder(
+      quote: SwapQuote(
+        fromToken: _qtc,
+        toToken: _usdc,
+        amountIn: BigInt.from(250),
+        minAmountIn: BigInt.from(250),
+        amountOut: BigInt.from(25000000),
+        minAmountOut: BigInt.from(24700000),
+        amountInUsd: 25,
+        amountOutUsd: 24.8,
+        slippageBps: 100,
+        refundAddress: 'qzaccount',
+        recipient: '0xrecipient',
+        deadline: deadline,
+        timeEstimate: const Duration(minutes: 1),
+        correlationId: 'c',
+        signature: 's',
+        depositAddress: depositAddress,
+      ),
+      status: SwapStatus.processing,
+    ),
+    accountId: 'qzaccount',
+    accountName: 'Main',
+    startedAt: deadline.subtract(const Duration(minutes: 20)),
+    depositByHand: false,
+    depositTxHash: '0xhash',
+  );
+}
+
+/// 1Click, answering each status asked for with the order as it is, and
+/// keeping the deposit addresses asked about, in order.
+class _OneClick extends Fake implements SwapService {
+  final polled = <String>[];
+
+  /// While set, the status of the swap at this deposit address waits for
+  /// [release].
+  String? held;
+  final release = Completer<void>();
+
+  @override
+  Future<SwapOrder> getSwapStatus(SwapOrder order) async {
+    polled.add(order.depositAddress);
+    if (order.depositAddress == held) await release.future;
+    return order;
+  }
+}
+
 void main() {
+  group('polling, with an overdue swap followed beside a running one', () {
+    late _OneClick oneClick;
+    late ProviderContainer container;
+
+    /// Launches following an overdue swap at 0xold and a running one at
+    /// 0xnow, and lets the launch's poll end.
+    Future<void> launch(WidgetTester tester) async {
+      oneClick = _OneClick();
+      container = ProviderContainer(
+        overrides: [
+          settingsServiceProvider.overrideWithValue(
+            FakeSettingsService()
+              ..activeSwaps.addAll([_swapOut('0xold', overdue: true), _swapOut('0xnow', overdue: false)]),
+          ),
+          swapServiceProvider.overrideWithValue(oneClick),
+        ],
+      );
+      container.read(activeSwapsProvider);
+      await tester.pump(Duration.zero);
+    }
+
+    /// Ends the container inside the test, so no timer of its is still
+    /// waiting when the test ends.
+    Future<void> close(WidgetTester tester) async {
+      container.dispose();
+      await tester.pump(const Duration(minutes: 1));
+    }
+
+    Future<void> interval(WidgetTester tester) => tester.pump(SwapService.statusPollInterval);
+
+    testWidgets('the overdue swap is polled at launch, and then left out of every interval', (tester) async {
+      await launch(tester);
+      expect(oneClick.polled, ['0xold', '0xnow']);
+
+      await interval(tester);
+      await interval(tester);
+      await interval(tester);
+
+      expect(oneClick.polled, ['0xold', '0xnow', '0xnow', '0xnow', '0xnow']);
+      await close(tester);
+    });
+
+    testWidgets('a return to the foreground polls the overdue swap once more', (tester) async {
+      await launch(tester);
+      await interval(tester);
+      oneClick.polled.clear();
+
+      container.read(appLifecycleStateProvider.notifier).state = AppLifecycleState.paused;
+      container.read(appLifecycleStateProvider.notifier).state = AppLifecycleState.resumed;
+      await tester.pump();
+      expect(oneClick.polled, ['0xold', '0xnow']);
+
+      await interval(tester);
+      expect(oneClick.polled, ['0xold', '0xnow', '0xnow']);
+      await close(tester);
+    });
+
+    testWidgets('a refresh asked for polls the overdue swap too', (tester) async {
+      await launch(tester);
+      await interval(tester);
+      oneClick.polled.clear();
+
+      await container.read(activeSwapsProvider.notifier).refresh();
+
+      expect(oneClick.polled, ['0xold', '0xnow']);
+      await close(tester);
+    });
+
+    testWidgets("a refresh asked for while an interval's poll is out polls the overdue swap once that poll ends", (
+      tester,
+    ) async {
+      await launch(tester);
+      oneClick.polled.clear();
+      oneClick.held = '0xnow';
+      await interval(tester);
+      expect(oneClick.polled, ['0xnow'], reason: "the interval's poll is out");
+
+      final refreshed = container.read(activeSwapsProvider.notifier).refresh();
+      final again = container.read(activeSwapsProvider.notifier).refresh();
+      await tester.pump();
+      expect(oneClick.polled, ['0xnow'], reason: 'nothing more goes out while it is');
+
+      oneClick.held = null;
+      oneClick.release.complete();
+      await refreshed;
+      await again;
+
+      expect(oneClick.polled, ['0xnow', '0xold'], reason: 'asked for twice, the overdue swap is polled once');
+      await close(tester);
+    });
+  });
+
   late FakeSettingsService settings;
 
   setUp(() {
