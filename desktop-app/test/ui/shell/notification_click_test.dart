@@ -392,6 +392,46 @@ void main() {
       expect(_opened(container), OpenedProposal(proposal));
     });
 
+    testOnMac('a proposal created since the open multisig\'s lists were read: they are read again', (tester) async {
+      final proposal = _proposal();
+      final notifications = FakeNotificationPlugin();
+      final chain = FakeSendChain();
+      final container = await _openWallet(tester, notifications, chain: chain, multisigs: [teamMultisig]);
+      notifications.click(_about(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+      expect(_activeAccountId(container), teamMultisig.accountId);
+      expect(container.read(openProposalsViewProvider)?.value?.open, isEmpty);
+      chain
+        ..openProposals = [proposal]
+        ..indexedProposals[_hash] = _created(proposal);
+
+      notifications.click(_aboutTransaction(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+
+      expect(_opened(container), OpenedProposal(proposal));
+    });
+
+    testOnMac('a proposal executed since the open multisig\'s lists were read opens as it is now', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final chain = FakeSendChain()
+        ..openProposals = [_proposal()]
+        ..indexedProposals[_hash] = _created(_proposal());
+      final container = await _openWallet(tester, notifications, chain: chain, multisigs: [teamMultisig]);
+      notifications.click(_about(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+      expect(container.read(openProposalsViewProvider)?.value?.open, hasLength(1));
+      chain
+        ..openProposals = const []
+        ..pastProposals = [_proposal(status: MultisigProposalStatus.executed)];
+
+      notifications.click(_aboutTransaction(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+
+      final opened = _opened(container);
+      expect(opened, isA<OpenedProposal>());
+      expect((opened! as OpenedProposal).proposal.status, MultisigProposalStatus.executed);
+    });
+
     for (final status in [MultisigProposalStatus.executed, MultisigProposalStatus.cancelled]) {
       testOnMac('a proposal since ${status.name}, from past activity', (tester) async {
         final proposal = _proposal(status: status);
@@ -574,6 +614,45 @@ void main() {
       expect(_activeAccountId(container), savingsAccount.accountId);
       expect(container.read(openedActivityProvider), isNull);
       expect(tester.takeException(), isNull);
+    });
+
+    testOnMac('proposal lists that cannot be read again, which is reported', (tester) async {
+      recordWindowRequests(tester);
+      final telemetry = _RecordingTelemetry();
+      final chain = FakeSendChain()
+        ..openProposals = [_proposal()]
+        ..indexedProposals[_hash] = _created(_proposal());
+      final notifications = FakeNotificationPlugin();
+      // Without the window: the app binds its own telemetry.
+      final container = ProviderContainer(
+        overrides: [
+          ...shellOverrides(
+            accounts: const [mainAccount, savingsAccount],
+            chain: chain,
+            settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: [teamMultisig]),
+          ),
+          ...liveDataOverrides(),
+          notificationPluginProvider.overrideWithValue(notifications),
+          telemetryProvider.overrideWithValue(telemetry),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(desktopLocalNotificationsProvider.notifier).start();
+      // Watched, as the window's panels watch them: the lists stay read.
+      container.listen(activityViewProvider, (_, _) {});
+      container.listen(openProposalsViewProvider, (_, _) {});
+      notifications.click(_about(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+      expect(_activeAccountId(container), teamMultisig.accountId);
+      expect(container.read(openProposalsViewProvider)?.value?.open, hasLength(1));
+      chain.pastProposalsError = StateError('the indexer is down');
+
+      notifications.click(_aboutTransaction(teamMultisig.accountId));
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), teamMultisig.accountId);
+      expect(container.read(openedActivityProvider), isNull, reason: 'not the proposal as it was before');
+      expect(telemetry.errors, ['desktop_notification_proposals_unread']);
     });
 
     testOnMac('a proposal lookup that fails, which is reported', (tester) async {

@@ -124,6 +124,12 @@ class NotificationClick {
     }
 
     if (!await _untilListsLoaded(click, accountId)) return;
+    if (proposalId != null) {
+      // What happened to the proposal is newer than the lists read before
+      // it, and showing the multisig already in front reads nothing: without
+      // this it would open as it was, or not at all.
+      if (!await _readProposalsAgain() || !await _untilListsLoaded(click, accountId)) return;
+    }
     var activity = _listedActivity(hash: hash, proposalId: proposalId);
     if (activity == null) {
       // What the notification is about can be newer than the rows last
@@ -133,6 +139,19 @@ class NotificationClick {
       activity = _listedActivity(hash: hash, proposalId: proposalId);
     }
     if (activity != null) _ref.read(openedActivityProvider.notifier).open(activity);
+  }
+
+  /// Reads the proposals of the multisig in front again. False when they
+  /// cannot be read: the proposal is then not opened as it was before.
+  Future<bool> _readProposalsAgain() async {
+    try {
+      await refreshActiveMultisigProposals(_ref);
+      return true;
+    } catch (e) {
+      quantusPrint('The proposals of a clicked notification could not be read again: $e');
+      if (_ref.mounted) _ref.read(telemetryProvider).sendError('desktop_notification_proposals_unread', error: e);
+      return false;
+    }
   }
 
   /// Waits for the lists of the account in front. False when they cannot be
