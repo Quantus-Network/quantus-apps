@@ -1,0 +1,9 @@
+/* What macOS shows for a notification pushed while the app is closed. The
+   push service sends these keys, never text, and the value that fills each.
+   Keep the keys and the words as wallet_core's app_en.arb has them:
+   test/mac_push_strings_test.dart checks it. */
+
+"desktopNotificationReceivedTitle" = "Received %@";
+"desktopNotificationReceivedBody" = "In %@";
+"desktopNotificationIncomingTitle" = "Incoming %@";
+"desktopNotificationIncomingBody" = "Scheduled to arrive in %@";
