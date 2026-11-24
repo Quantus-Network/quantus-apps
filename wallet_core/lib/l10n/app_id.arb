@@ -893,5 +893,11 @@
   "desktopNotificationNotAllowed": "Tidak diizinkan di Pengaturan Sistem",
   "desktopNotificationOpenSystemSettings": "Buka Pengaturan Sistem",
   "desktopNotificationOpenSystemSettingsFailed": "Tidak dapat membuka Pengaturan Sistem",
-  "desktopNotificationUnavailable": "Tidak tersedia: {reason}"
+  "desktopNotificationUnavailable": "Tidak tersedia: {reason}",
+  "desktopStatusItemOpen": "Buka {appName}",
+  "desktopStatusItemQuit": "Keluar dari {appName}",
+  "desktopQuitPendingTitle": "Transaksi Masih Berjalan",
+  "desktopQuitPendingBody": "Keluar sekarang dapat membuat transaksi tidak selesai. Dompet dapat menyelesaikannya dulu, lalu keluar dengan sendirinya.",
+  "desktopQuitFinishFirst": "Selesaikan, Lalu Keluar",
+  "desktopQuitNow": "Keluar Sekarang"
 }

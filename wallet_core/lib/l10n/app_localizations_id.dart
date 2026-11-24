@@ -3318,4 +3318,27 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopNotificationUnavailable(String reason) {
     return 'Tidak tersedia: $reason';
   }
+
+  @override
+  String desktopStatusItemOpen(String appName) {
+    return 'Buka $appName';
+  }
+
+  @override
+  String desktopStatusItemQuit(String appName) {
+    return 'Keluar dari $appName';
+  }
+
+  @override
+  String get desktopQuitPendingTitle => 'Transaksi Masih Berjalan';
+
+  @override
+  String get desktopQuitPendingBody =>
+      'Keluar sekarang dapat membuat transaksi tidak selesai. Dompet dapat menyelesaikannya dulu, lalu keluar dengan sendirinya.';
+
+  @override
+  String get desktopQuitFinishFirst => 'Selesaikan, Lalu Keluar';
+
+  @override
+  String get desktopQuitNow => 'Keluar Sekarang';
 }

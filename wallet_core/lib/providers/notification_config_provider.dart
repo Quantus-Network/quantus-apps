@@ -26,8 +26,11 @@ class NotificationConfigNotifier extends StateNotifier<NotificationConfig> {
           reversibleTransactionsEnabled: true,
         ),
       ) {
-    _loadConfig();
+    loaded = _loadConfig();
   }
+
+  /// Completes once the saved config, if any, has replaced the defaults.
+  late final Future<void> loaded;
 
   Future<void> _loadConfig() async {
     try {
