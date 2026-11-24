@@ -111,8 +111,16 @@ class SettingsService {
     return [];
   }
 
+  /// Stores [accounts] as the account list. Throws when it cannot be
+  /// stored, and the list is then what it was before.
   Future<void> saveAccounts(List<Account> accounts) async {
-    await _writeAccounts(accounts);
+    final previous = _prefs.getString(_accountsKey);
+    try {
+      if (!await _writeAccounts(accounts)) throw Exception('Could not save $_accountsKey');
+    } catch (_) {
+      await _putBack(_accountsKey, previous);
+      rethrow;
+    }
   }
 
   Future<bool> _writeAccounts(List<Account> accounts) {
@@ -134,13 +142,7 @@ class SettingsService {
           a.accountId == account.accountId,
     )) {
       accounts.add(account);
-      final previous = _prefs.getString(_accountsKey);
-      try {
-        if (!await _writeAccounts(accounts)) throw Exception('Could not save $_accountsKey');
-      } catch (_) {
-        await _putBack(_accountsKey, previous);
-        rethrow;
-      }
+      await saveAccounts(accounts);
       if (accounts.length == 1) {
         // make sure that active account is always a valid account
         try {
@@ -154,13 +156,21 @@ class SettingsService {
     }
   }
 
+  /// Stores [account] in place of the stored account with its id. Throws
+  /// when it cannot be stored, and the accounts are then what they were.
   Future<void> updateAccount(Account account) async {
     final accounts = await getAccounts();
     final index = accounts.indexWhere((a) => a.accountId == account.accountId);
     if (index != -1) {
+      final previous = _prefs.getString(_accountsKey);
       accounts[index] = account;
       await saveAccounts(accounts);
-      await _syncActiveDisplayAccount(RegularAccount(account));
+      try {
+        await _syncActiveDisplayAccount(RegularAccount(account));
+      } catch (_) {
+        await _putBack(_accountsKey, previous);
+        rethrow;
+      }
     }
   }
 
@@ -175,17 +185,25 @@ class SettingsService {
     }
   }
 
+  /// Removes [account], making another active if it was. Throws when the
+  /// change cannot be stored, and the accounts are then what they were.
   Future<void> removeAccount(Account account) async {
     final accounts = await getAccounts();
     if (accounts.length == 1) {
       throw Exception('Cant remove last account!');
     }
+    final previousActive = _prefs.getString(_activeDisplayAccountKey);
     if (account.accountId == await _getActiveAccountId()) {
       final replacement = _preferNonEncrypted(accounts.where((a) => a.accountId != account.accountId));
       await setActiveAccount(RegularAccount(replacement));
     }
     accounts.removeWhere((a) => a.accountId == account.accountId);
-    await saveAccounts(accounts);
+    try {
+      await saveAccounts(accounts);
+    } catch (_) {
+      await _putBack(_activeDisplayAccountKey, previousActive);
+      rethrow;
+    }
   }
 
   /// Picks a replacement active account, avoiding encrypted (wormhole)
@@ -196,6 +214,10 @@ class SettingsService {
   /// Removes an entire wallet: drops all of its accounts and deletes its
   /// mnemonic from secure storage. The primary wallet (index 0) cannot be
   /// removed.
+  ///
+  /// Throws when its accounts cannot be dropped or its mnemonic cannot be
+  /// deleted, and the wallet is then kept whole: its accounts, mnemonic and
+  /// settings, and the active account, are what they were.
   Future<void> removeWallet(int walletIndex) async {
     if (walletIndex == 0) {
       throw Exception('Cant remove the primary wallet!');
@@ -208,14 +230,27 @@ class SettingsService {
     if (remaining.isEmpty) {
       throw Exception('Cant remove last wallet!');
     }
-    await _prefs.remove(_pendingAccountScanKey(walletIndex));
+    final previousAccounts = _prefs.getString(_accountsKey);
+    final previousActive = _prefs.getString(_activeDisplayAccountKey);
     final activeId = await _getActiveAccountId();
     final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
     if (activeRemoved) {
       await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
     }
-    await saveAccounts(remaining);
-    await deleteMnemonic(walletIndex);
+    try {
+      await saveAccounts(remaining);
+    } catch (_) {
+      await _putBack(_activeDisplayAccountKey, previousActive);
+      rethrow;
+    }
+    try {
+      await deleteMnemonic(walletIndex);
+    } catch (_) {
+      await _putBack(_accountsKey, previousAccounts);
+      await _putBack(_activeDisplayAccountKey, previousActive);
+      rethrow;
+    }
+    await _prefs.remove(_pendingAccountScanKey(walletIndex));
     await _prefs.remove(_walletOriginKey(walletIndex));
     await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
     await _prefs.remove(_walletNameKey(walletIndex));
@@ -246,11 +281,13 @@ class SettingsService {
   }
 
   /// Makes [key] hold [value] again, or nothing when it held nothing, after
-  /// a write to it failed. SharedPreferences answers from memory, and its
-  /// memory keeps a value the system did not store. Whether this write is
-  /// stored is not checked, nor whether it fails as the first one did:
-  /// memory holds [value] after it either way, what failed before was never
-  /// stored, and the failure to report is the first one's.
+  /// a write to it failed, or a later step of the same change did.
+  /// SharedPreferences answers from memory, and its memory keeps a value the
+  /// system did not store. Whether this write is stored is not checked, nor
+  /// whether it fails as the first one did: memory holds [value] after it
+  /// either way, and the failure to report is the first one's. After a
+  /// failed write, what failed was never stored; after a later step failed,
+  /// a put-back that is not stored leaves the earlier write on the disk.
   Future<void> _putBack(String key, Object? value) async {
     final Future<bool> Function() write = switch (value) {
       null => () => _prefs.remove(key),
