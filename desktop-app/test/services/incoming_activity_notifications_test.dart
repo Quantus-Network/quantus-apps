@@ -286,6 +286,18 @@ void main() {
       expect(wallet.notifications.shown, isEmpty);
     });
 
+    _test('paid by a batch of an Encrypted send still proving its next notifies nothing', (tester, wallet) async {
+      wallet.container.read(ownActivityNotificationsProvider).onEncryptedSendSubmitted(const ['0xfirst']);
+      wallet.chain.receive(
+        'qzSavings',
+        WormholeTransferEvent.receipt(_transfer(to: 'qzSavings', from: 'qzExit', hash: '0xfirst')),
+      );
+
+      await _advance(tester);
+
+      expect(wallet.notifications.shown, isEmpty);
+    });
+
     _test('paid by an Encrypted send from elsewhere is notified', (tester, wallet) async {
       wallet.chain.receive(
         'qzSavings',
