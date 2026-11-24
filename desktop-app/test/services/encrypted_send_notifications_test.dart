@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
@@ -14,6 +16,7 @@ import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 import '../fakes.dart';
 import 'fake_notification_plugin.dart';
@@ -192,6 +195,86 @@ void main() {
 
       expect(wallet.notifications.shown, isEmpty);
       expect(wallet.chain.transferLookups, hasLength(readsAtTheWipe));
+    });
+
+    group('at a wallet reset', () {
+      Set<Object> holds(_Wallet wallet) => wallet.container.read(workHoldsProvider);
+
+      /// Ends a wipe that went through, as `wipeWallet` does around the real one.
+      Future<void> wiped(WidgetTester tester, _Wallet wallet, WalletSession session) async {
+        session.finishReset();
+        await wallet.container.read(walletPresenceProvider.notifier).wipeWallet();
+        await _advance(tester);
+      }
+
+      /// A send on the chain, its search answering once the wipe has started.
+      Future<WalletSession> answeredDuringTheWipe(WidgetTester tester, _Wallet wallet) async {
+        final search = wallet.chain.holdHashSearch = Completer<void>();
+        _handedOver(wallet, ['0xonly']);
+        await tester.pump();
+        final session = wallet.container.read(walletSessionProvider)..beginReset();
+        _lands(wallet, '0xonly');
+        search.complete();
+        await tester.pump();
+        await tester.pump();
+        return session;
+      }
+
+      /// A send past its watch, its final check answering during the wipe.
+      Future<WalletSession> gaveUpDuringTheWipe(WidgetTester tester, _Wallet wallet) async {
+        _handedOver(wallet, ['0xonly']);
+        await tester.pump(const Duration(minutes: 5, seconds: 2));
+        final search = wallet.chain.holdHashSearch = Completer<void>();
+        await tester.pump(const Duration(seconds: 5));
+        final session = wallet.container.read(walletSessionProvider)..beginReset();
+        search.complete();
+        await tester.pump();
+        await tester.pump();
+        return session;
+      }
+
+      _test('found during a wipe that goes through notifies nothing and lets the app go', (tester, wallet) async {
+        final session = await answeredDuringTheWipe(tester, wallet);
+        expect(wallet.notifications.shown, isEmpty);
+
+        await wiped(tester, wallet, session);
+
+        expect(wallet.notifications.shown, isEmpty);
+        expect(holds(wallet), isEmpty);
+      });
+
+      _test('found during a wipe that fails notifies after it', (tester, wallet) async {
+        final session = await answeredDuringTheWipe(tester, wallet);
+        expect(wallet.notifications.shown, isEmpty);
+        expect(holds(wallet), isNotEmpty);
+
+        session.cancelReset();
+        await _advance(tester);
+
+        expect(_shown(wallet), [_sent]);
+        expect(holds(wallet), isEmpty);
+      });
+
+      _test('timing out during a wipe that goes through says nothing', (tester, wallet) async {
+        final session = await gaveUpDuringTheWipe(tester, wallet);
+        expect(wallet.notifications.shown, isEmpty);
+
+        await wiped(tester, wallet, session);
+
+        expect(wallet.notifications.shown, isEmpty);
+        expect(holds(wallet), isEmpty);
+      });
+
+      _test('timing out during a wipe that fails says so after it', (tester, wallet) async {
+        final session = await gaveUpDuringTheWipe(tester, wallet);
+        expect(wallet.notifications.shown, isEmpty);
+
+        session.cancelReset();
+        await _advance(tester);
+
+        expect(_shown(wallet), [_notConfirmed]);
+        expect(holds(wallet), isEmpty);
+      });
     });
 
     _test('with notifications turned off in Settings shows nothing', (tester, wallet) async {

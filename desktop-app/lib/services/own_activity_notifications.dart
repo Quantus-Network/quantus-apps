@@ -24,6 +24,7 @@ import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/extrinsic_indexer_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 /// An Encrypted send handed to the node: one transaction for each batch of
 /// its inputs.
@@ -232,6 +233,8 @@ class OwnActivityNotifications {
   /// Whether the chain holds all of [send] by now, in which case it is
   /// notified. Answers true too for a send no longer watched.
   Future<bool> _confirmEncryptedSend(_EncryptedSend send) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     final history = _ref.read(chainHistoryServiceProvider);
     try {
       for (final hash in send.unseen.toList()) {
@@ -247,6 +250,7 @@ class OwnActivityNotifications {
       }
       return false;
     }
+    if (!await session.survivesReset(ticket, dropping: 'the Encrypted send ${send.lastHash}')) return true;
     if (_encryptedSends.remove(send.lastHash) == null || !_ref.mounted) return true;
     try {
       await _reloadEncryptedState(send.account.walletIndex);
