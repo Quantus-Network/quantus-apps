@@ -167,6 +167,9 @@ Future<void> _open(
   _FakeSubmission submission,
   void Function(BuildContext context) show,
 ) async {
+  tester.view.physicalSize = const Size(800, 1600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -174,15 +177,12 @@ Future<void> _open(
         transactionSubmissionServiceProvider.overrideWithValue(submission),
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: [_one, _two])),
       ],
-      child: MediaQuery(
-        data: const MediaQueryData(size: Size(800, 1600)),
-        child: Builder(
-          builder: (context) => MaterialApp(
-            theme: AppTheme.darkTheme(context),
-            home: Scaffold(
-              body: Builder(
-                builder: (context) => ElevatedButton(onPressed: () => show(context), child: const Text('open')),
-              ),
+      child: Builder(
+        builder: (context) => MaterialApp(
+          theme: AppTheme.darkTheme(context),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(onPressed: () => show(context), child: const Text('open')),
             ),
           ),
         ),

@@ -128,6 +128,9 @@ Future<void> _open(
   List<Account>? accounts,
   void Function(ProviderContainer container)? pending,
 }) async {
+  tester.view.physicalSize = const Size(800, 1600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -136,17 +139,14 @@ Future<void> _open(
           (ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts ?? [_one]),
         ),
       ],
-      child: MediaQuery(
-        data: const MediaQueryData(size: Size(800, 1600)),
-        child: Builder(
-          builder: (context) => MaterialApp(
-            theme: AppTheme.darkTheme(context),
-            home: Scaffold(
-              body: Builder(
-                builder: (context) => ElevatedButton(
-                  onPressed: () => showMultisigProposalDetailSheet(context, msig: _msig, proposal: proposal),
-                  child: const Text('open'),
-                ),
+      child: Builder(
+        builder: (context) => MaterialApp(
+          theme: AppTheme.darkTheme(context),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () => showMultisigProposalDetailSheet(context, msig: _msig, proposal: proposal),
+                child: const Text('open'),
               ),
             ),
           ),
