@@ -279,6 +279,31 @@ void main() {
       expect('${shown.title} ${shown.body}', isNot(contains('qz')), reason: 'no address');
     });
 
+    _test('is shown under the id the push server gives the same transfer, for the app\'s to replace a pushed one', (
+      tester,
+      wallet,
+    ) async {
+      wallet.chain.receive(
+        'qzMain',
+        TransferEvent(
+          id: '0001146057-3ef3e-000006',
+          from: 'qzAlice',
+          to: 'qzMain',
+          amount: _amount,
+          timestamp: DateTime(2026, 11, 24, 12),
+          fee: BigInt.zero,
+          extrinsicHash: '0xpushed',
+          blockNumber: 1146057,
+          blockHash: '0x3ef3e',
+        ),
+      );
+
+      await _advance(tester);
+
+      // Of the name `received_0001146057-3ef3e-000006`.
+      expect(wallet.notifications.shown.single.id, 149514113);
+    });
+
     _test('is notified once, however often the indexer is read', (tester, wallet) async {
       wallet.chain.receive('qzMain', _transfer(to: 'qzMain'));
 
