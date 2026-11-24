@@ -122,7 +122,13 @@ void main() {
         ))
           row.label,
       ];
-      expect(labels, ['New Account', 'Import Wallet…', 'Create Multisig…', 'Manage Multisigs…']);
+      expect(labels, [
+        'New Account',
+        'Import Wallet…',
+        'Connect Cold Wallet…',
+        'Create Multisig…',
+        'Manage Multisigs…',
+      ]);
       expect(find.descendant(of: _menu, matching: find.byType(MenuPanelSeparator)), findsNWidgets(2));
     });
 

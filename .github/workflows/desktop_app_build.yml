@@ -9,6 +9,7 @@ on:
     paths:
       - 'desktop-app/**'
       - 'desktop_qr_camera/**'
+      - 'third_party/mobile_scanner/**'
       - '.github/workflows/desktop_app_build.yml'
 
 permissions:

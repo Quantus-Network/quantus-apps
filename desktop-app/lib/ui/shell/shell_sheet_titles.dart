@@ -19,6 +19,7 @@ String sheetTitle(AppLocalizations l10n, ShellSheet sheet) => switch (sheet) {
   ShellSheet.settings => l10n.settingsTitle,
   ShellSheet.accountInfo => l10n.desktopAccountInfoTitle,
   ShellSheet.importWallet => l10n.importWalletAppBarTitle,
+  ShellSheet.connectColdWallet => l10n.addKeystoneConnectTitle,
   ShellSheet.createMultisig => l10n.multisigAddTitle,
   ShellSheet.manageMultisigs => l10n.desktopManageMultisigsTitle,
 };

@@ -18,8 +18,8 @@ const _mobileAppPackage = 'resonance_network_wallet';
 /// on the missing platforms, so the list must stay as short as it can be.
 const _knownUnsupportedPlugins = {
   'mobile_scanner':
-      'Comes with quantus_sdk (QuantusScanner). It has no Windows or Linux implementation, so the desktop app '
-      'must not open the camera scanner there until scanning sits behind an interface.',
+      'The camera on macOS. It has no Windows or Linux implementation, so only MacQrScanSource calls it, and '
+      'qrScanSourceFactoryProvider makes that source on macOS alone.',
   'desktop_qr_camera':
       'Our own camera for Windows and Linux, the two platforms mobile_scanner lacks. macOS scans with mobile_scanner '
       'and never calls it.',
