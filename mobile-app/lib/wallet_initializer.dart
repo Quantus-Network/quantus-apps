@@ -74,7 +74,8 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
   Future<void> _askAboutLostPhrase() async {
     final l10n = ref.read(l10nProvider);
 
-    while (mounted) {
+    while (true) {
+      if (!mounted) return;
       final choice = await BottomSheetContainer.show<_LostPhraseChoice>(
         context,
         builder: (ctx) => BottomSheetContainer(

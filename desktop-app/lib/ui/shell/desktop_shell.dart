@@ -176,7 +176,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   Future<void> _reportMissingPhrase() async {
     final l10n = ref.read(l10nProvider);
     final presence = ref.read(walletPresenceProvider.notifier);
-    while (mounted) {
+    while (true) {
+      if (!mounted) return;
       switch (await showMissingPhraseDialog(context, l10n)) {
         case MissingPhraseChoice.tryAgain:
           // Anything else is shown by what the check found.
