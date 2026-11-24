@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
@@ -17,6 +18,10 @@ import 'package:wallet_core/services/telemetry.dart';
 /// hidden: what the wallet watches for, such as a send that never lands, is
 /// noticed and notified then too. What only matters on screen still pauses
 /// with a window no one can see ([appLifecycleStateProvider]).
+///
+/// With the window closed ([windowClosedProvider]) it does not poll at all: a
+/// poll reloads an Encrypted account, which reads its recovery phrase, and
+/// the work the app stayed for is watched by its own timers.
 class LiveDataScope extends ConsumerStatefulWidget {
   const LiveDataScope({super.key, required this.child});
 
@@ -31,6 +36,7 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
   late final AppLifecycleListener _window;
   bool _isOnScreen = _onScreen(WidgetsBinding.instance.lifecycleState);
   bool _isOnline = true;
+  bool _isWindowClosed = false;
   bool _isPaused = false;
 
   /// Whether a window in [state] can be seen. Before the system has said, it
@@ -47,6 +53,10 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
     _window = AppLifecycleListener(onStateChange: _onWindowChanged);
     ref.listenManual<bool>(isOnlineProvider, (_, isOnline) {
       _isOnline = isOnline;
+      _update();
+    }, fireImmediately: true);
+    ref.listenManual<bool>(windowClosedProvider, (_, isClosed) {
+      _isWindowClosed = isClosed;
       _update();
     }, fireImmediately: true);
     // A window that opens hidden says so once the first frame is built: no
@@ -78,11 +88,12 @@ class _LiveDataScopeState extends ConsumerState<LiveDataScope> {
     ref.read(appLifecycleStateProvider.notifier).state = _isOnScreen ? AppLifecycleState.resumed : state;
   }
 
-  /// Pauses the polling when there is no network to poll, and resumes it,
-  /// caught up, once there is.
+  /// Pauses the polling when there is no network to poll or the window is
+  /// closed, and resumes it, caught up, once neither is so.
   void _update() {
-    if (_isOnline == !_isPaused) return;
-    _isPaused = !_isOnline;
+    final shouldPoll = _isOnline && !_isWindowClosed;
+    if (shouldPoll == !_isPaused) return;
+    _isPaused = !shouldPoll;
     if (_isPaused) {
       _polling.pausePolling();
       return;

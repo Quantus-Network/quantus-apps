@@ -32,6 +32,9 @@ class FakeNotificationPlugin implements NotificationPlugin {
   final initializations = <InitializationSettings>[];
   var permissionRequests = 0;
   final shown = <ShownNotification>[];
+
+  /// Keeps a notification from being handed over until completed.
+  Completer<void>? heldShow;
   void Function(String? payload)? _onClick;
 
   @override
@@ -67,6 +70,7 @@ class FakeNotificationPlugin implements NotificationPlugin {
   @override
   Future<void> show({required int id, required String title, required String body, required String payload}) async {
     shown.add((id: id, title: title, body: body, payload: payload));
+    await heldShow?.future;
   }
 
   var cancelAllCalls = 0;
