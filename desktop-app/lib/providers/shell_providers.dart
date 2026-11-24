@@ -12,11 +12,13 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_flow.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/account_actions.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// Whether the sidebar is shown. The View menu hides and shows it.
@@ -244,6 +246,28 @@ final sidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
   return accountsInSidebarOrder(groupWallets(accounts: accounts, multisigs: multisigs));
 });
 
+/// The account that would create a new multisig, sign for it and pay: the
+/// active account, where its key signs in this app. Null on an Encrypted,
+/// Keystone or multisig account, and until the saved multisigs are known,
+/// which a new one must not collide with.
+final multisigCreatorProvider = Provider<Account?>((ref) {
+  if (!ref.watch(multisigAccountsProvider).hasValue) return null;
+  return switch (ref.watch(activeAccountProvider).value) {
+    RegularAccount(:final account) when account.signsLocally => account,
+    _ => null,
+  };
+});
+
+/// The multisigs being created, as they will be once the chain has them.
+final creatingMultisigsProvider = Provider<List<MultisigAccount>>((ref) {
+  final creating = ref.watch(pendingMultisigCreationsProvider);
+  final records = ref.read(pendingMultisigCreationsProvider.notifier);
+  return [
+    for (final event in creating)
+      if (records.recordFor(event.multisigAddress) case final record?) record.draft,
+  ];
+});
+
 /// The sheet over the window, or null when there is none.
 final shellSheetProvider = NotifierProvider<ShellSheetNotifier, ShellSheet?>(ShellSheetNotifier.new);
 
@@ -285,12 +309,17 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   /// Whether the active account offers [sheet]; a sheet that does not act
   /// on an account always is.
   bool _isOffered(ShellSheet sheet) {
+    if (sheet == ShellSheet.createMultisig) return ref.read(multisigCreatorProvider) != null;
     final kind = switch (sheet) {
       ShellSheet.receive => AccountActionKind.receive,
       ShellSheet.send => AccountActionKind.send,
       ShellSheet.propose => AccountActionKind.propose,
       ShellSheet.swap => AccountActionKind.swap,
-      ShellSheet.settings || ShellSheet.accountInfo => null,
+      ShellSheet.settings ||
+      ShellSheet.accountInfo ||
+      ShellSheet.importWallet ||
+      ShellSheet.createMultisig ||
+      ShellSheet.manageMultisigs => null,
     };
     if (kind == null) return true;
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);

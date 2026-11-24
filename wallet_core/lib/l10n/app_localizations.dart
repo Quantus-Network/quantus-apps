@@ -2954,12 +2954,6 @@ abstract class AppLocalizations {
   /// **'Help & Support'**
   String get settingsHelpScreenTitle;
 
-  /// Discord support row title
-  ///
-  /// In en, this message translates to:
-  /// **'Discord'**
-  String get settingsHelpDiscord;
-
   /// Telegram row title
   ///
   /// In en, this message translates to:
@@ -3229,12 +3223,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save for future swaps'**
   String get swapSaveAddress;
-
-  /// Error toast when the entered swap address could not be saved for future swaps
-  ///
-  /// In en, this message translates to:
-  /// **'Could not save the address.'**
-  String get swapSaveAddressFailed;
 
   /// Button that quotes the swap with the entered address
   ///
@@ -3865,12 +3853,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Contact Support'**
   String get commonContactSupport;
-
-  /// Warning against impostors, shown wherever the app sends someone to the support Discord
-  ///
-  /// In en, this message translates to:
-  /// **'Support will never DM you first or ask for your recovery phrase.'**
-  String get commonSupportScamWarning;
 
   /// Retry action on various screens
   ///
@@ -5756,12 +5738,6 @@ abstract class AppLocalizations {
   /// **'{amount} from {account} was not sent.'**
   String desktopNotificationSendFailedBody(String amount, String account);
 
-  /// Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol
-  ///
-  /// In en, this message translates to:
-  /// **'{amount} from {account} didn’t finish sending. Part of it may have gone through.'**
-  String desktopNotificationEncryptedSendFailedBody(String amount, String account);
-
   /// Desktop notification title: a multisig proposal made on this computer was created on the chain
   ///
   /// In en, this message translates to:
@@ -5791,6 +5767,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 account} other{{count} accounts}}'**
   String desktopWalletAccountCount(int count);
+
+  /// Import: the recovery phrase typed is that of a wallet already in the app; nothing was stored
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet is already in the app'**
+  String get importWalletAlreadyAdded;
+
+  /// Desktop: the item that opens the Import Wallet sheet, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Import Wallet…'**
+  String get desktopMenuImportWallet;
+
+  /// Desktop Import Wallet sheet: a line with a spinner while the wallet is saved and its accounts are found on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Finding this wallet\'s accounts'**
+  String get desktopImportFinding;
+
+  /// Desktop Import Wallet sheet: under the phrase when saving the wallet failed; the phrase stays to try again
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t import the wallet'**
+  String get desktopImportFailed;
+
+  /// Desktop: a short note by the account name in the top bar after importing a wallet with the sidebar hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet imported'**
+  String get desktopImportDone;
+
+  /// Desktop: menu item in Add Account and the Account menu; opens the list that adds and removes multisigs
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs…'**
+  String get desktopMenuManageMultisigs;
+
+  /// Desktop Manage Multisigs sheet: its title
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs'**
+  String get desktopManageMultisigsTitle;
+
+  /// Desktop Manage Multisigs sheet: the sentence under the title
+  ///
+  /// In en, this message translates to:
+  /// **'Multisigs on chain where one of your accounts is a signer. Switching one off removes it from this app only.'**
+  String get desktopManageMultisigsLead;
+
+  /// Desktop Manage Multisigs sheet: a moving line while the chain is read
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your multisigs on chain'**
+  String get desktopManageMultisigsFinding;
+
+  /// Desktop Manage Multisigs sheet: a row's detail line, e.g. '2 of 3 · you sign as Savings'
+  ///
+  /// In en, this message translates to:
+  /// **'{approvals} · you sign as {name}'**
+  String desktopManageMultisigsSignsAs(String approvals, String name);
+
+  /// Desktop: menu item in Add Account and the Account menu; opens the form that creates a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Create Multisig…'**
+  String get desktopMenuCreateMultisig;
+
+  /// Desktop Create Multisig sheet: label of the list of signers
+  ///
+  /// In en, this message translates to:
+  /// **'Signers'**
+  String get desktopCreateMultisigSigners;
+
+  /// Desktop Create Multisig form: label of the choice of how many signers must approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals needed'**
+  String get desktopCreateMultisigApprovalsNeeded;
+
+  /// Desktop Create Multisig review: label of how many signers must approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get desktopCreateMultisigApprovals;
+
+  /// Desktop Create Multisig review: how many signers must approve, e.g. '2 of 3 signers'
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} signers'**
+  String desktopCreateMultisigApprovalsValue(int count, int total);
+
+  /// Desktop Create Multisig review: label of the address the new multisig will have
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get desktopCreateMultisigAddress;
+
+  /// Desktop Create Multisig review: label of the account that signs and pays for the creation
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by'**
+  String get desktopCreateMultisigPaidBy;
+
+  /// Desktop Create Multisig review: label of the chain's fixed fee for creating a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Creation fee'**
+  String get desktopCreateMultisigCreationFee;
+
+  /// Desktop Create Multisig form: what a screen reader and the tooltip call the cross on a signer's row
+  ///
+  /// In en, this message translates to:
+  /// **'Remove signer'**
+  String get desktopCreateMultisigRemoveSigner;
+
+  /// Desktop Create Multisig form: the new multisig's address could not be worked out
+  ///
+  /// In en, this message translates to:
+  /// **'Could not work out the new address: {error}'**
+  String desktopCreateMultisigPreviewFailed(String error);
+
+  /// Desktop Create Multisig: the account that pays does not hold enough for the fees
+  ///
+  /// In en, this message translates to:
+  /// **'{name} can’t cover what this costs'**
+  String desktopCreateMultisigCantAfford(String name);
+
+  /// Desktop Create Multisig review: the system's approval was declined, so nothing was submitted
+  ///
+  /// In en, this message translates to:
+  /// **'Creating this multisig needs your approval'**
+  String get desktopCreateMultisigDeclined;
+
+  /// Desktop Create Multisig: the check or the submission failed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create this multisig: {error}'**
+  String desktopCreateMultisigFailed(String error);
+
+  /// Desktop: short note on the active account's sidebar row when a multisig being created was not confirmed in time
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig not confirmed'**
+  String get desktopCreateMultisigTimedOut;
+
+  /// Discord support row title
+  ///
+  /// In en, this message translates to:
+  /// **'Discord'**
+  String get settingsHelpDiscord;
+
+  /// Error toast when the entered swap address could not be saved for future swaps
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the address.'**
+  String get swapSaveAddressFailed;
+
+  /// Warning against impostors, shown wherever the app sends someone to the support Discord
+  ///
+  /// In en, this message translates to:
+  /// **'Support will never DM you first or ask for your recovery phrase.'**
+  String get commonSupportScamWarning;
+
+  /// Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} from {account} didn’t finish sending. Part of it may have gone through.'**
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account);
 
   /// Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet
   ///

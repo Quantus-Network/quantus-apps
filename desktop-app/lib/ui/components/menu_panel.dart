@@ -60,7 +60,7 @@ class MenuPanel extends StatelessWidget {
 /// One row of a [MenuPanel]: a check mark's place, the label, and a chevron
 /// when it opens a submenu. The
 /// highlighted row is filled with the accent; a destructive item's label is
-/// ember.
+/// ember; a disabled item's is dimmed.
 class MenuPanelRow extends StatelessWidget {
   const MenuPanelRow({
     super.key,
@@ -68,6 +68,7 @@ class MenuPanelRow extends StatelessWidget {
     this.isHighlighted = false,
     this.isChecked = false,
     this.isDestructive = false,
+    this.isDisabled = false,
     this.hasSubmenu = false,
   });
 
@@ -75,6 +76,7 @@ class MenuPanelRow extends StatelessWidget {
   final bool isHighlighted;
   final bool isChecked;
   final bool isDestructive;
+  final bool isDisabled;
 
   /// Shows the chevron of an item that opens a submenu.
   final bool hasSubmenu;
@@ -96,42 +98,48 @@ class MenuPanelRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
-    final color = isHighlighted
+    final color = isDisabled
+        ? colors.textMuted2
+        : isHighlighted
         ? colors.textVoid
         : isDestructive
         ? colors.semanticEmber
         : colors.textContent;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: MenuPanel.rowInset),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: isHighlighted ? colors.accentFlare : null,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: SizedBox(
-          height: height,
-          child: Padding(
-            padding: const EdgeInsets.only(left: contentPadding, right: 14),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: checkmarkWidth,
-                  child: isChecked
-                      ? Align(
-                          alignment: Alignment.centerLeft,
-                          child: Icon(CupertinoIcons.checkmark_alt, key: checkmarkKey, size: 13, color: color),
-                        )
-                      : null,
-                ),
-                Expanded(
-                  child: Text(label, style: text.body.copyWith(height: 1, color: color)),
-                ),
-                if (hasSubmenu) ...[
-                  const SizedBox(width: 20),
-                  Icon(CupertinoIcons.chevron_right, size: 11, color: color),
+    return Semantics(
+      container: isDisabled,
+      enabled: isDisabled ? false : null,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: MenuPanel.rowInset),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: isHighlighted ? colors.accentFlare : null,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: SizedBox(
+            height: height,
+            child: Padding(
+              padding: const EdgeInsets.only(left: contentPadding, right: 14),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: checkmarkWidth,
+                    child: isChecked
+                        ? Align(
+                            alignment: Alignment.centerLeft,
+                            child: Icon(CupertinoIcons.checkmark_alt, key: checkmarkKey, size: 13, color: color),
+                          )
+                        : null,
+                  ),
+                  Expanded(
+                    child: Text(label, style: text.body.copyWith(height: 1, color: color)),
+                  ),
+                  if (hasSubmenu) ...[
+                    const SizedBox(width: 20),
+                    Icon(CupertinoIcons.chevron_right, size: 11, color: color),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

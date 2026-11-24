@@ -29,6 +29,7 @@ import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
@@ -49,6 +50,7 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -532,6 +534,103 @@ void main() {
     await tester.pump();
   });
 
+  _scene('add_account_menu', (tester) async {
+    await _openAccounts(tester);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_opened', (tester) async {
+    await _openAccounts(tester);
+    await ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(accountManagerProvider).openImportWallet();
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_phrase', (tester) async {
+    await _openImport(tester, phrase: _newPhrase);
+  });
+
+  _scene('import_wallet_finding', (tester) async {
+    await _openImport(tester, phrase: _newPhrase, scan: () => Completer<List<Account>>().future);
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+    await tester.tap(_importButton);
+    await tester.pump();
+    await tester.pump();
+    // Into the spinner's second face.
+    await tester.pump(TerminalLine.busyTurn * 1.5);
+  });
+
+  _scene('import_wallet_already_added', (tester) async {
+    await _openImport(tester, phrase: _phrase);
+    await tester.tap(_importButton);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_name_it', (tester) async {
+    await _openImport(tester, phrase: _newPhrase);
+    await tester.tap(_importButton);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('manage_multisigs', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => [_foundMultisig(0), _foundMultisig(1)]);
+  });
+
+  _scene('manage_multisigs_failed', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => throw StateError('the indexer is unreachable'));
+  });
+
+  _scene('manage_multisigs_many_smallest_window', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => [for (var i = 0; i < 9; i++) _foundMultisig(i)]);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+  });
+
+  _scene('create_multisig_signer_error', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(1));
+    await _typeMultisigSigner(tester, _root.accountId);
+    await tester.tap(find.byKey(CreateMultisigSheet.addSignerKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_many_smallest_window', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_review', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+    await tester.tap(find.byKey(CreateMultisigSheet.reviewKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_creating', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+    await tester.tap(find.byKey(CreateMultisigSheet.reviewKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(CreateMultisigSheet.createKey));
+    await tester.pumpAndSettle();
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+    await tester.pump();
+    await tester.pump(TerminalLine.busyTurn);
+  });
+
+  _scene('create_multisig_unavailable_menu', (tester) async {
+    await _openAccounts(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    await container.read(activeAccountProvider.notifier).switchActiveAccount(const RegularAccount(_encrypted));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add Account'));
+    await tester.pumpAndSettle();
+  });
+
   _scene('account_disconnect', (tester) async {
     await _openInfo(tester, _savings);
     await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
@@ -831,13 +930,92 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallet
   await tester.pumpAndSettle();
 }
 
+/// A phrase no wallet in the scenes holds.
+final _newPhrase = ['zebra', ...List.filled(22, 'abandon'), 'art'].join(' ');
+
+Finder get _importField => find.descendant(of: find.byType(ShellSheetView), matching: find.byType(EditableText));
+
+Finder get _importButton =>
+    find.descendant(of: find.byType(ShellSheetView), matching: find.widgetWithText(QuantusButton, 'Import Wallet'));
+
+/// Opens the Import Wallet sheet with [phrase] typed in it.
+Future<void> _openImport(WidgetTester tester, {required String phrase, Future<List<Account>> Function()? scan}) async {
+  await _openAccounts(tester, scan: scan);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openImportWallet();
+  await tester.pumpAndSettle();
+  await tester.enterText(_importField, phrase);
+  await tester.pump();
+}
+
+/// A multisig the chain reports for one of the wallet's accounts.
+MultisigAccount _foundMultisig(int index) => MultisigAccount(
+  name: 'Multisig ${index + 1}',
+  accountId: 'qzL9sRd4YpV2nKx8TcW5mHq7JbGa3ZeUo6FiBt1NwE8kP$index',
+  signers: [index.isEven ? _root.accountId : _trading.accountId, 'qzOtherSigner$index', 'qzThirdSigner$index'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: index.isEven ? _root.accountId : _trading.accountId,
+);
+
+Future<void> _openManageMultisigs(
+  WidgetTester tester, {
+  required Future<List<MultisigAccount>> Function() discover,
+}) async {
+  await _openAccounts(tester, discoverMultisigs: discover);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openManageMultisigs();
+  await tester.pumpAndSettle();
+}
+
+/// Signers of a real address's length, for Create Multisig.
+const _multisigSigners = [
+  'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+  'qzH3tYc6MpW9kLn2XsVb8QrJd5FaZe7UoGi1Tn4BwK6mRe',
+  'qzF5kVn2QxT9mLc7WbR3yHs6JdPa8ZeUo1GiNt4EwK2rXv',
+  'qzL9sRd4YpV2nKx8TcW5mHq7JbGa3ZeUo6FiBt1NwE8kPy',
+  'qzM4bKw7ZtR2nHc9VxQ5sLd8JfGa3YeUo6TiPn1EwB7kSu',
+];
+
+Future<void> _typeMultisigSigner(WidgetTester tester, String address) async {
+  await tester.enterText(
+    find.descendant(of: find.byKey(CreateMultisigSheet.signerFieldKey), matching: find.byType(EditableText)),
+    address,
+  );
+  await tester.pump();
+}
+
+/// Opens Create Multisig on the first account, with [signers] added.
+Future<void> _openCreateMultisig(WidgetTester tester, {required Iterable<String> signers}) async {
+  await _openAccounts(tester);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openCreateMultisig();
+  await tester.pumpAndSettle();
+  for (final signer in signers) {
+    await _typeMultisigSigner(tester, signer);
+    await tester.tap(find.byKey(CreateMultisigSheet.addSignerKey));
+    await tester.pumpAndSettle();
+  }
+}
+
 /// Opens the window of a wallet with every kind of account. Its clipboard
 /// takes whatever is copied.
-Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0, bool walletsLeftOpen = true}) async {
+Future<void> _openAccounts(
+  WidgetTester tester, {
+  int moreWallets = 0,
+  bool walletsLeftOpen = true,
+  Future<List<Account>> Function()? scan,
+  Future<List<MultisigAccount>> Function()? discoverMultisigs,
+}) async {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
+  if (scan != null) device.scan = scan;
+  if (discoverMultisigs != null) device.chain.discoverMultisigs = discoverMultisigs;
   device.storage.accounts.addAll([
     _cold,
     _trading,

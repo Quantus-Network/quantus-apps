@@ -12,6 +12,7 @@ import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/utils/managed_multisigs.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
@@ -303,6 +304,82 @@ class AccountManager {
       _ref.read(shellSheetProvider.notifier).openInStep(ShellSheet.accountInfo);
     }
   }
+
+  /// Opens the Import Wallet sheet. Like any sheet, it does not open over
+  /// another.
+  Future<void> openImportWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.importWallet);
+
+  /// Opens the Create Multisig sheet. Like any sheet, it does not open over
+  /// another, and it opens only on an account that can create one.
+  Future<void> openCreateMultisig() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.createMultisig);
+
+  /// Opens the Manage Multisigs sheet. Like any sheet, it does not open over
+  /// another.
+  Future<void> openManageMultisigs() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.manageMultisigs);
+
+  /// Adds [multisig] under the lowest unused default name, after the
+  /// navigation asked for before, one at a time so two never take the same
+  /// name. A write that fails is thrown.
+  Future<void> addMultisig(MultisigAccount multisig) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final saved = await _ref.read(settingsServiceProvider).getMultisigAccounts();
+    if (!_ref.mounted) return;
+    final name = nextDefaultMultisigName(_ref.read(l10nProvider), saved);
+    await _ref.read(multisigAccountsProvider.notifier).add(multisig.copyWith(name: name));
+  });
+
+  /// Removes [multisig] from this app, after the navigation asked for
+  /// before. A write that fails is thrown.
+  Future<void> removeMultisig(MultisigAccount multisig) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (_ref.mounted) await disconnect(multisig);
+  });
+
+  /// Shows the wallet of [root], just imported, once its sheet has closed:
+  /// a field taking the focus under a sheet would lose it as the sheet left.
+  /// Its first account becomes active, unless the chain scan chose another
+  /// of its accounts because the first has no history. Its heading is then
+  /// ready to be named; with the sidebar hidden there is none, so a note by
+  /// the account's name says the wallet is in.
+  Future<void> finishImport(Account root) => _ref.read(shellNavigationProvider.notifier).run(() async {
+    if (!_ref.mounted) return;
+    final walletIndex = root.walletIndex;
+    final RegularAccount target;
+    try {
+      final active = await _ref.read(settingsServiceProvider).getActiveAccount();
+      final chosenId = active is RegularAccount && active.account.walletIndex == walletIndex
+          ? active.account.accountId
+          : root.accountId;
+      // From storage: the scan made its choice active under the name it was
+      // found with, before the account was given its own.
+      final accounts = await _ref.read(accountsServiceProvider).getAccounts();
+      target = RegularAccount(accounts.firstWhere((account) => account.accountId == chosenId));
+    } catch (e) {
+      quantusPrint('Showing the imported wallet failed: $e');
+      if (_ref.mounted) _ref.read(accountSwitchFailureProvider.notifier).report(RegularAccount(root), e);
+      return;
+    }
+    if (!_ref.mounted) return;
+
+    _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
+    await _ref.read(sidebarSelectionProvider.notifier).showInStep(target);
+    if (!_ref.mounted) return;
+
+    // A switch that failed has said so, and the wallet is there all the same.
+    if (_ref.read(activeAccountProvider).value?.account.accountId != target.account.accountId) return;
+    if (_ref.read(sidebarVisibleProvider)) {
+      startRenameWallet(walletIndex);
+    } else {
+      _ref
+          .read(accountNoteProvider.notifier)
+          .show(
+            AccountNote(
+              accountId: target.account.accountId,
+              message: _ref.read(l10nProvider).desktopImportDone,
+              isError: false,
+            ),
+          );
+    }
+  });
 
   void _noteNotAdded(Object error) {
     quantusPrint('Adding an account failed: $error');

@@ -34,9 +34,11 @@ import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/provider_reader.dart';
 
 /// The window's frame: the menus, and under them onboarding until the device
@@ -73,6 +75,23 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     return bar.localToGlobal(Offset(0, bar.size.height), ancestor: overlay).dy;
   }
 
+  /// The first account of a wallet the Import Wallet sheet just imported,
+  /// to be shown once the sheet has closed.
+  Account? _imported;
+
+  /// Imports a wallet into the next free slot, on the shell's ref: the
+  /// wallet's encrypted account is restored after the sheet has gone.
+  Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) async {
+    final accounts = await ref.read(settingsServiceProvider).getAccounts();
+    if (!mounted) return;
+    _imported = await importSoftwareWallet(
+      ref,
+      mnemonic: mnemonic,
+      walletIndex: nextWalletIndex(accounts),
+      onScanFailed: onScanFailed,
+    );
+  }
+
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
     final top = _sheetTop();
@@ -85,12 +104,16 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       pageBuilder: (_, animation, _) => _SheetPlacement(
         animation: animation,
         top: top,
-        child: ShellSheetView(sheet: sheet),
+        child: ShellSheetView(sheet: sheet, importWallet: _importWallet),
       ),
       // The sheet slides itself; the barrier fades on its own.
       transitionBuilder: (_, _, _, child) => child,
     ).whenComplete(() {
-      if (mounted) ref.read(shellSheetProvider.notifier).closed();
+      if (!mounted) return;
+      ref.read(shellSheetProvider.notifier).closed();
+      final imported = _imported;
+      _imported = null;
+      if (imported != null) unawaited(ref.read(accountManagerProvider).finishImport(imported));
     });
   }
 
@@ -274,6 +297,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           : null,
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
       onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
+      offersMultisigs: read(remoteConfigProvider).enableMultisig,
+      canCreateMultisig: hasWallet && read(multisigCreatorProvider) != null,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),

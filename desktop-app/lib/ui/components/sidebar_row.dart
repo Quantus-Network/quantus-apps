@@ -5,7 +5,8 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 /// it and optional widgets before and after.
 ///
 /// An account's row has its title in full strength. A row that is not an
-/// account ([isSecondary]) is quieter until it is selected.
+/// account ([isSecondary]) is quieter until it is selected. With no [onTap]
+/// it is only shown: no click, hover or keyboard focus reaches it.
 class SidebarRow extends StatelessWidget {
   const SidebarRow({
     super.key,
@@ -20,7 +21,7 @@ class SidebarRow extends StatelessWidget {
   });
 
   final String title;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isSelected;
   final bool isSecondary;
   final Widget? subtitle;
@@ -61,7 +62,7 @@ class SidebarRow extends StatelessWidget {
         : text.bodyEmphasis.copyWith(color: colors.textContent);
 
     return Semantics(
-      button: true,
+      button: onTap != null,
       selected: isSelected,
       child: Material(
         color: isSelected ? colors.bgSurface2 : Colors.transparent,

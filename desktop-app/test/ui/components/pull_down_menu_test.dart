@@ -15,6 +15,7 @@ Future<void> _pump(
   required List<String> chosen,
   Alignment alignment = Alignment.center,
   int walletCount = 3,
+  bool hasDisabledItem = false,
 }) async {
   tester.view.physicalSize = const Size(800, 600);
   tester.view.devicePixelRatio = 1;
@@ -36,6 +37,7 @@ Future<void> _pump(
                       anchor: box.localToGlobal(Offset.zero) & box.size,
                       items: [
                         ContextMenuItem('Plain', onSelected: () => chosen.add('Plain')),
+                        if (hasDisabledItem) const ContextMenuItem.disabled('Unavailable'),
                         null,
                         ContextMenuItem.submenu(
                           'Wallets',
@@ -85,6 +87,76 @@ bool _isLit(WidgetTester tester, String label) =>
     tester.widget<MenuPanelRow>(find.widgetWithText(MenuPanelRow, label)).isHighlighted;
 
 void main() {
+  group('a disabled item', () {
+    testWidgets('is dimmed, and a screen reader hears it as disabled', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pump(tester, chosen: [], hasDisabledItem: true);
+      await _open(tester);
+
+      final row = tester.widget<MenuPanelRow>(find.widgetWithText(MenuPanelRow, 'Unavailable'));
+      expect(row.isDisabled, isTrue);
+      final label = tester.widget<Text>(find.descendant(of: _menu, matching: find.text('Unavailable')));
+      final enabled = tester.widget<Text>(find.descendant(of: _menu, matching: find.text('Plain')));
+      expect(label.style!.color, isNot(enabled.style!.color));
+      expect(
+        tester.getSemantics(find.descendant(of: _menu, matching: find.text('Unavailable'))),
+        isSemantics(label: 'Unavailable', hasEnabledState: true, isEnabled: false),
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('does not light up under the pointer', (tester) async {
+      await _pump(tester, chosen: [], hasDisabledItem: true);
+      await _open(tester);
+
+      await _hover(tester, find.text('Unavailable'));
+
+      expect(_isLit(tester, 'Unavailable'), isFalse);
+    });
+
+    testWidgets('a click chooses nothing and leaves the menu open', (tester) async {
+      final chosen = <String>[];
+      await _pump(tester, chosen: chosen, hasDisabledItem: true);
+      await _open(tester);
+
+      await tester.tap(find.text('Unavailable'));
+      await tester.pumpAndSettle();
+
+      expect(chosen, isEmpty);
+      expect(_menu, findsOneWidget);
+    });
+
+    testWidgets('the arrows pass over it', (tester) async {
+      await _pump(tester, chosen: [], hasDisabledItem: true);
+      await _open(tester);
+
+      await _press(tester, LogicalKeyboardKey.arrowDown);
+      expect(_isLit(tester, 'Plain'), isTrue);
+
+      await _press(tester, LogicalKeyboardKey.arrowDown);
+      expect(_isLit(tester, 'Unavailable'), isFalse);
+      expect(_isLit(tester, 'Wallets'), isTrue);
+
+      await _press(tester, LogicalKeyboardKey.arrowUp);
+      expect(_isLit(tester, 'Unavailable'), isFalse);
+      expect(_isLit(tester, 'Plain'), isTrue);
+    });
+
+    testWidgets('resting on it closes another item\'s submenu', (tester) async {
+      await _pump(tester, chosen: [], hasDisabledItem: true);
+      await _open(tester);
+      final gesture = await _hover(tester, find.text('Wallets'));
+      expect(_submenu, findsOneWidget);
+
+      await gesture.moveTo(tester.getCenter(find.text('Unavailable')));
+      await tester.pump(ContextMenuRegion.submenuPause);
+      await tester.pumpAndSettle();
+
+      expect(_submenu, findsNothing);
+      expect(_isLit(tester, 'Unavailable'), isFalse);
+    });
+  });
+
   testWidgets('it opens under its control when there is room', (tester) async {
     await _pump(tester, chosen: [], alignment: Alignment.topCenter);
     await _open(tester);
@@ -119,8 +191,42 @@ void main() {
     expect(tester.getTopLeft(_submenu).dx, greaterThan(tester.getCenter(_menu).dx));
 
     await mouse.moveTo(tester.getCenter(find.text('Plain')));
+    await tester.pump(ContextMenuRegion.submenuPause);
     await tester.pumpAndSettle();
     expect(_submenu, findsNothing);
+  });
+
+  testWidgets('crossing another item on the way to the submenu keeps it open', (tester) async {
+    await _pump(tester, chosen: []);
+    await _open(tester);
+    final mouse = await _hover(tester, find.text('Wallets'));
+
+    await mouse.moveTo(tester.getCenter(find.text('Plain')));
+    await tester.pump(ContextMenuRegion.submenuPause ~/ 2);
+    expect(_submenu, findsOneWidget);
+
+    await mouse.moveTo(tester.getCenter(find.text('Wallet 2')));
+    await tester.pump(ContextMenuRegion.submenuPause * 2);
+
+    expect(_submenu, findsOneWidget);
+    expect(_isLit(tester, 'Wallet 2'), isTrue);
+    expect(_isLit(tester, 'Wallets'), isTrue);
+    expect(_isLit(tester, 'Plain'), isFalse);
+  });
+
+  testWidgets('resting on another item switches to it after a short pause', (tester) async {
+    await _pump(tester, chosen: []);
+    await _open(tester);
+    final mouse = await _hover(tester, find.text('Wallets'));
+
+    await mouse.moveTo(tester.getCenter(find.text('Plain')));
+    await tester.pump();
+    expect(_submenu, findsOneWidget);
+
+    await tester.pump(ContextMenuRegion.submenuPause);
+
+    expect(_submenu, findsNothing);
+    expect(_isLit(tester, 'Plain'), isTrue);
   });
 
   testWidgets('the pointer can travel from the item into its submenu', (tester) async {
