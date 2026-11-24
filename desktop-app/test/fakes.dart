@@ -263,8 +263,21 @@ class FakeWalletStorage extends FakeSettingsService {
     return accounts.isNotEmpty;
   }
 
+  /// When set, adding an account fails with this, and nothing is added.
+  Object? addAccountError;
+
+  /// When set, storing the active account fails with this.
+  Object? activeWriteError;
+
+  @override
+  Future<void> setActiveAccount(DisplayAccount account) async {
+    if (activeWriteError case final error?) throw error;
+    activeAccount = account;
+  }
+
   @override
   Future<void> addAccount(Account account) async {
+    if (addAccountError case final error?) throw error;
     if (accounts.any((a) => a.accountId == account.accountId)) throw Exception('Account already exists');
     accounts.add(account);
     if (accounts.length == 1) activeAccount = RegularAccount(account);
@@ -415,6 +428,29 @@ class _StoredAccountsService extends Fake implements AccountsService {
 
   @override
   Future<void> addAccount(Account newAccount) => storage.addAccount(newAccount);
+
+  /// The wallet's next free account, as the real service derives it from the
+  /// wallet's phrase.
+  @override
+  Future<Account> createNewAccount({required int walletIndex}) async {
+    if (await storage.getMnemonic(walletIndex) == null) {
+      throw Exception('Mnemonic not found. Cannot create new account.');
+    }
+    final used = {
+      for (final account in storage.accounts)
+        if (account.walletIndex == walletIndex && account.accountType != AccountType.encrypted) account.index,
+    };
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return Account(
+      walletIndex: walletIndex,
+      index: index,
+      name: 'Account ${storage.accounts.length + 1}',
+      accountId: 'qzNew$walletIndex-$index',
+    );
+  }
 
   @override
   Future<void> removeAccount(Account account) => storage.removeAccount(account);

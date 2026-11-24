@@ -182,6 +182,11 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
   Future<void> showAccount(DisplayAccount account) =>
       ref.read(shellNavigationProvider.notifier).run(() => _show(account));
 
+  /// Makes [account] the active account and selects it, from a navigation
+  /// step already running: [showAccount] would wait behind the steps asked
+  /// for after it. A failure is reported as [showAccount]'s is.
+  Future<void> showInStep(DisplayAccount account) => _show(account);
+
   /// Selects the row [rows] down from the one selected when the navigation
   /// asked for before has finished ([shellNavigationProvider]), going round
   /// at the ends. The rows are the accounts showing, then Mining Rewards.
@@ -285,7 +290,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       ShellSheet.send => AccountActionKind.send,
       ShellSheet.propose => AccountActionKind.propose,
       ShellSheet.swap => AccountActionKind.swap,
-      ShellSheet.addAccount || ShellSheet.settings || ShellSheet.accountInfo => null,
+      ShellSheet.settings || ShellSheet.accountInfo => null,
     };
     if (kind == null) return true;
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);

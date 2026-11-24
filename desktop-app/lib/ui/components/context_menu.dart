@@ -10,13 +10,46 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 /// One item of a context menu.
 class ContextMenuItem {
-  const ContextMenuItem(this.label, {required this.onSelected, this.isDestructive = false});
+  const ContextMenuItem(this.label, {required VoidCallback this.onSelected, this.isDestructive = false})
+    : submenu = null;
+
+  /// An item that opens [items] beside it, and does nothing itself.
+  const ContextMenuItem.submenu(this.label, {required List<ContextMenuItem> items})
+    : submenu = items,
+      onSelected = null,
+      isDestructive = false;
 
   final String label;
-  final VoidCallback onSelected;
+
+  /// What choosing the item does; null on an item with a [submenu].
+  final VoidCallback? onSelected;
+
+  /// What the item opens beside it, if it does.
+  final List<ContextMenuItem>? submenu;
 
   /// Drawn in ember: the item removes or ends something.
   final bool isDestructive;
+}
+
+/// Pulls down a menu of [items] from the control at [anchor], in global
+/// coordinates: under it, or above it when there is no room below, as at the
+/// foot of the window. A null item is a separator.
+Future<void> showPullDownMenu(
+  BuildContext context, {
+  required Rect anchor,
+  required List<ContextMenuItem?> items,
+}) async {
+  final navigator = Navigator.of(context);
+  final overlay = navigator.overlay!.context.findRenderObject()! as RenderBox;
+  final chosen = await navigator.push<ContextMenuItem>(
+    _ContextMenuRoute(
+      entries: items,
+      layout: _PullDownLayout(overlay.globalToLocal(anchor.topLeft) & anchor.size),
+      theme: Theme.of(context),
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    ),
+  );
+  chosen?.onSelected?.call();
 }
 
 /// Opens a context menu of [items] where [child] is right-clicked, or, on
@@ -36,6 +69,7 @@ class ContextMenuRegion extends StatefulWidget {
   final Widget child;
 
   static const menuKey = Key('context-menu');
+  static const submenuKey = Key('context-submenu');
   static const ringKey = Key('context-menu-ring');
 
   /// The closest the menu comes to the window's edges.
@@ -78,13 +112,13 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
     final chosen = await navigator.push<ContextMenuItem>(
       _ContextMenuRoute(
         entries: entries,
-        position: overlay.globalToLocal(position),
+        layout: _ContextMenuLayout(overlay.globalToLocal(position)),
         theme: Theme.of(context),
         barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
       ),
     );
     if (mounted) setState(() => _isOpen = false);
-    chosen?.onSelected();
+    chosen?.onSelected?.call();
   }
 
   @override
@@ -119,10 +153,12 @@ class _ContextMenuRegionState extends State<ContextMenuRegion> {
 
 /// The open menu, over everything, closed by a click outside or Escape.
 class _ContextMenuRoute extends PopupRoute<ContextMenuItem> {
-  _ContextMenuRoute({required this.entries, required this.position, required this.theme, required this.barrierLabel});
+  _ContextMenuRoute({required this.entries, required this.layout, required this.theme, required this.barrierLabel});
 
   final List<ContextMenuItem?> entries;
-  final Offset position;
+
+  /// Where the menu sits in the window.
+  final SingleChildLayoutDelegate layout;
   final ThemeData theme;
 
   @override
@@ -148,10 +184,7 @@ class _ContextMenuRoute extends PopupRoute<ContextMenuItem> {
       // A route of its own has no text style above it; the menu sets one.
       child: DefaultTextStyle(
         style: theme.textTheme.bodyMedium ?? const TextStyle(),
-        child: CustomSingleChildLayout(
-          delegate: _ContextMenuLayout(position),
-          child: _ContextMenu(entries: entries),
-        ),
+        child: _ContextMenu(entries: entries, layout: layout),
       ),
     );
   }
@@ -188,10 +221,71 @@ class _ContextMenuLayout extends SingleChildLayoutDelegate {
   bool shouldRelayout(_ContextMenuLayout oldDelegate) => position != oldDelegate.position;
 }
 
+/// Places a pull-down menu under its control, or above it when it would not
+/// fit below, inside the window.
+class _PullDownLayout extends SingleChildLayoutDelegate {
+  _PullDownLayout(this.anchor);
+
+  final Rect anchor;
+
+  static const _margin = ContextMenuRegion.windowMargin;
+
+  /// The space between the control and the menu.
+  static const double _gap = 4;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.loose(constraints.biggest).deflate(const EdgeInsets.all(_margin));
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final below = anchor.bottom + _gap;
+    final top = below + childSize.height <= size.height - _margin ? below : anchor.top - _gap - childSize.height;
+    return Offset(
+      anchor.left.clamp(_margin, math.max(_margin, size.width - childSize.width - _margin)),
+      top.clamp(_margin, math.max(_margin, size.height - childSize.height - _margin)),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_PullDownLayout oldDelegate) => anchor != oldDelegate.anchor;
+}
+
+/// Places a submenu beside the row it hangs from: on its right, or on its
+/// left when it would leave the window, its first row level with that row.
+class _SubmenuLayout extends SingleChildLayoutDelegate {
+  _SubmenuLayout(this.anchor);
+
+  final Rect anchor;
+
+  static const _margin = ContextMenuRegion.windowMargin;
+
+  /// How far a submenu lies over the menu it comes from, as macOS draws it.
+  static const double _overlap = 2;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.loose(constraints.biggest).deflate(const EdgeInsets.all(_margin));
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final onRight = anchor.right - _overlap;
+    final left = onRight + childSize.width <= size.width - _margin ? onRight : anchor.left + _overlap - childSize.width;
+    return Offset(
+      left.clamp(_margin, math.max(_margin, size.width - childSize.width - _margin)),
+      (anchor.top - MenuPanel.padding).clamp(_margin, math.max(_margin, size.height - childSize.height - _margin)),
+    );
+  }
+
+  @override
+  bool shouldRelayout(_SubmenuLayout oldDelegate) => anchor != oldDelegate.anchor;
+}
+
 class _ContextMenu extends StatefulWidget {
-  const _ContextMenu({required this.entries});
+  const _ContextMenu({required this.entries, required this.layout});
 
   final List<ContextMenuItem?> entries;
+  final SingleChildLayoutDelegate layout;
 
   @override
   State<_ContextMenu> createState() => _ContextMenuState();
@@ -204,24 +298,112 @@ class _ContextMenuState extends State<_ContextMenu> {
   /// The item the pointer or the arrow keys are on, if any.
   int? _highlighted;
 
-  void _choose(int index) => Navigator.of(context).pop(_items[index]);
+  /// The item whose submenu is open, and where that item is.
+  int? _submenuOf;
+  Rect? _submenuAnchor;
+
+  /// The submenu's item the pointer or the arrow keys are on, if any.
+  int? _submenuHighlighted;
+
+  /// Whether the arrow keys are walking the submenu rather than the menu.
+  bool _keysInSubmenu = false;
+
+  final _rowKeys = <int, GlobalKey>{};
+  final _submenuRowKeys = <int, GlobalKey>{};
+
+  List<ContextMenuItem>? get _submenu => switch (_submenuOf) {
+    final index? => _items[index].submenu,
+    null => null,
+  };
+
+  void _choose(ContextMenuItem item) => Navigator.of(context).pop(item);
+
+  void _openSubmenu(int index, {bool withKeys = false}) {
+    final page = context.findRenderObject()! as RenderBox;
+    final row = _rowKeys[index]!.currentContext!.findRenderObject()! as RenderBox;
+    setState(() {
+      if (_submenuOf != index) _submenuRowKeys.clear();
+      _highlighted = index;
+      _submenuOf = index;
+      _submenuAnchor = row.localToGlobal(Offset.zero, ancestor: page) & row.size;
+      _keysInSubmenu = withKeys;
+      _submenuHighlighted = withKeys ? 0 : null;
+    });
+  }
+
+  /// To be called inside [setState].
+  void _closeSubmenu() {
+    _submenuOf = null;
+    _submenuAnchor = null;
+    _submenuHighlighted = null;
+    _keysInSubmenu = false;
+    _submenuRowKeys.clear();
+  }
+
+  /// Keeps the submenu's item the keys reached in view, in a long submenu.
+  void _reveal(int index, ScrollPositionAlignmentPolicy policy) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final row = _submenuRowKeys[index]?.currentContext;
+      if (row != null) unawaited(Scrollable.ensureVisible(row, alignmentPolicy: policy));
+    });
+  }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
-    final last = _items.length - 1;
     final key = event.logicalKey;
+    final isChoose =
+        key == LogicalKeyboardKey.enter || key == LogicalKeyboardKey.numpadEnter || key == LogicalKeyboardKey.space;
+    final submenu = _submenu;
+    if (_keysInSubmenu && submenu != null) return _onSubmenuKey(key, isChoose, submenu);
+
+    final last = _items.length - 1;
     if (key == LogicalKeyboardKey.arrowDown) {
-      setState(() => _highlighted = math.min((_highlighted ?? -1) + 1, last));
+      setState(() {
+        _highlighted = math.min((_highlighted ?? -1) + 1, last);
+        _closeSubmenu();
+      });
     } else if (key == LogicalKeyboardKey.arrowUp) {
-      setState(() => _highlighted = math.max((_highlighted ?? last + 1) - 1, 0));
-    } else if (key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.numpadEnter ||
-        key == LogicalKeyboardKey.space) {
+      setState(() {
+        _highlighted = math.max((_highlighted ?? last + 1) - 1, 0);
+        _closeSubmenu();
+      });
+    } else if (isChoose || key == LogicalKeyboardKey.arrowRight) {
       final highlighted = _highlighted;
-      if (highlighted != null) _choose(highlighted);
+      if (highlighted != null && _items[highlighted].submenu != null) {
+        _openSubmenu(highlighted, withKeys: true);
+      } else if (!isChoose) {
+        return KeyEventResult.ignored;
+      } else if (highlighted != null) {
+        _choose(_items[highlighted]);
+      }
     } else if (key == LogicalKeyboardKey.escape) {
-      Navigator.of(context).pop();
+      if (_submenuOf != null) {
+        setState(_closeSubmenu);
+      } else {
+        Navigator.of(context).pop();
+      }
     } else {
+      return KeyEventResult.ignored;
+    }
+    return KeyEventResult.handled;
+  }
+
+  KeyEventResult _onSubmenuKey(LogicalKeyboardKey key, bool isChoose, List<ContextMenuItem> submenu) {
+    final last = submenu.length - 1;
+    if (key == LogicalKeyboardKey.arrowDown) {
+      final next = math.min((_submenuHighlighted ?? -1) + 1, last);
+      setState(() => _submenuHighlighted = next);
+      _reveal(next, ScrollPositionAlignmentPolicy.keepVisibleAtEnd);
+    } else if (key == LogicalKeyboardKey.arrowUp) {
+      final next = math.max((_submenuHighlighted ?? last + 1) - 1, 0);
+      setState(() => _submenuHighlighted = next);
+      _reveal(next, ScrollPositionAlignmentPolicy.keepVisibleAtStart);
+    } else if (isChoose) {
+      final highlighted = _submenuHighlighted;
+      if (highlighted != null) _choose(submenu[highlighted]);
+    } else if (key == LogicalKeyboardKey.arrowLeft || key == LogicalKeyboardKey.escape) {
+      setState(_closeSubmenu);
+    } else if (key != LogicalKeyboardKey.arrowRight) {
       return KeyEventResult.ignored;
     }
     return KeyEventResult.handled;
@@ -230,27 +412,84 @@ class _ContextMenuState extends State<_ContextMenu> {
   @override
   Widget build(BuildContext context) {
     var index = -1;
+    final submenu = _submenu;
+    final anchor = _submenuAnchor;
     return Focus(
       autofocus: true,
       onKeyEvent: _onKey,
-      child: MenuPanel(
-        key: ContextMenuRegion.menuKey,
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          for (final entry in widget.entries)
-            if (entry == null) const MenuPanelSeparator() else _row(entry, ++index),
+          CustomSingleChildLayout(
+            delegate: widget.layout,
+            child: MenuPanel(
+              key: ContextMenuRegion.menuKey,
+              children: [
+                for (final entry in widget.entries)
+                  if (entry == null) const MenuPanelSeparator() else _row(entry, ++index),
+              ],
+            ),
+          ),
+          if (submenu != null && anchor != null)
+            CustomSingleChildLayout(
+              delegate: _SubmenuLayout(anchor),
+              child: MenuPanel(
+                key: ContextMenuRegion.submenuKey,
+                scrolls: true,
+                children: [for (final (row, item) in submenu.indexed) _submenuRow(item, row)],
+              ),
+            ),
         ],
       ),
     );
   }
 
   Widget _row(ContextMenuItem item, int index) {
+    final opensSubmenu = item.submenu != null;
     return MouseRegion(
-      onEnter: (_) => setState(() => _highlighted = index),
-      onExit: (_) => setState(() => _highlighted = _highlighted == index ? null : _highlighted),
+      key: opensSubmenu ? _rowKeys.putIfAbsent(index, GlobalKey.new) : null,
+      onEnter: (_) {
+        if (opensSubmenu) {
+          _openSubmenu(index);
+        } else {
+          setState(() {
+            _highlighted = index;
+            _closeSubmenu();
+          });
+        }
+      },
+      // The item stays lit while its submenu is open: the pointer is on its
+      // way there.
+      onExit: (_) => setState(() {
+        if (_highlighted == index && _submenuOf != index) _highlighted = null;
+      }),
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTap: () => _choose(index),
-        child: MenuPanelRow(label: item.label, isDestructive: item.isDestructive, isHighlighted: index == _highlighted),
+        onTap: () => opensSubmenu ? _openSubmenu(index) : _choose(item),
+        child: MenuPanelRow(
+          label: item.label,
+          isDestructive: item.isDestructive,
+          isHighlighted: index == _highlighted,
+          hasSubmenu: opensSubmenu,
+        ),
+      ),
+    );
+  }
+
+  Widget _submenuRow(ContextMenuItem item, int index) {
+    return MouseRegion(
+      key: _submenuRowKeys.putIfAbsent(index, GlobalKey.new),
+      onEnter: (_) => setState(() {
+        _keysInSubmenu = true;
+        _submenuHighlighted = index;
+      }),
+      onExit: (_) => setState(() {
+        if (_submenuHighlighted == index) _submenuHighlighted = null;
+      }),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => _choose(item),
+        child: MenuPanelRow(label: item.label, isHighlighted: index == _submenuHighlighted),
       ),
     );
   }

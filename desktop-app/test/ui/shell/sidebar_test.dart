@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart' show Rect, Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
+import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
@@ -292,7 +293,7 @@ void main() {
     expect(_isSelected(tester, 'Mining Rewards'), isFalse);
   });
 
-  testOnMac('Add Account sits at the bottom and opens the Add Account sheet', (tester) async {
+  testOnMac('Add Account sits at the bottom and opens its menu', (tester) async {
     await pumpShell(
       tester,
       overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
@@ -303,7 +304,8 @@ void main() {
     await tester.tap(_inSidebar(find.text('Add Account')));
     await tester.pumpAndSettle();
 
-    expect(find.descendant(of: find.byType(ShellSheetView), matching: find.text('Add Account')), findsOneWidget);
+    expect(find.byKey(ContextMenuRegion.menuKey), findsOneWidget);
+    expect(find.byType(ShellSheetView), findsNothing);
   });
 
   testOnMac('Settings sits in the foot right above Add Account, on its edge, and opens the Settings sheet', (

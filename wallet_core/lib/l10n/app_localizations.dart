@@ -4538,11 +4538,11 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get desktopMenuAccount;
 
-  /// Desktop Account menu item that opens the add account sheet
+  /// Desktop: the item that adds a Transparent account to a wallet, at once, with its name ready to be typed over; in the Account menu and the sidebar's Add Account menu
   ///
   /// In en, this message translates to:
-  /// **'Add Account…'**
-  String get desktopMenuAddAccount;
+  /// **'New Account'**
+  String get desktopMenuNewAccount;
 
   /// Desktop menu bar: View menu title
   ///

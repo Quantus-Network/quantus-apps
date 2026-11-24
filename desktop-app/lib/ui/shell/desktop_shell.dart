@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/providers/account_management_providers.da
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
@@ -215,8 +216,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     return Scaffold(
       body: AppMenuBar(
         useNativeMenuBar: useNativeMenuBar,
-        menus: _menus(ref.watch, useNativeMenuBar: useNativeMenuBar),
-        resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar),
+        menus: _menus(ref.watch, useNativeMenuBar: useNativeMenuBar, answersKeys: false),
+        resolveMenus: () => _menus(ref.read, useNativeMenuBar: useNativeMenuBar, answersKeys: true),
         child: switch (presence) {
           AsyncError(:final error) => _StartFailure(error: error),
           AsyncValue(value: WalletPresence.present) => LiveDataScope(child: _wallet(isSidebarVisible)),
@@ -244,20 +245,35 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   /// The app's menus for what [read] finds: watched, as they are drawn; read
-  /// at a key press, as they are at that moment.
-  List<PlatformMenu> _menus(ProviderReader read, {required bool useNativeMenuBar}) {
+  /// at a key press, as they are at that moment. With [answersKeys], New
+  /// Account's shortcut follows a switch still being saved; an item chosen
+  /// from the drawn menus keeps the wallet it names.
+  List<PlatformMenu> _menus(ProviderReader read, {required bool useNativeMenuBar, required bool answersKeys}) {
     // The Account and View menus act on the wallet, so they wait for one.
     final hasWallet = read(walletPresenceProvider).value == WalletPresence.present;
     final hasSheet = read(shellSheetProvider) != null;
     // A sheet is for the account it opened on, so nothing moves under it.
     final canNavigate = hasWallet && !hasSheet;
     final sidebar = ref.read(sidebarSelectionProvider.notifier);
+    final manager = ref.read(accountManagerProvider);
+    final newAccountWallets = hasWallet ? read(softwareWalletsProvider) : const <SoftwareWallet>[];
+    final activeWallet = read(activeWalletIndexProvider);
 
     return buildAppMenus(
       l10n: read(l10nProvider),
       useNativeMenuBar: useNativeMenuBar,
       accountActions: read(menuAccountActionsProvider),
       accountItems: hasWallet ? _accountItems(read) : const [],
+      newAccountWallets: newAccountWallets,
+      // While a switch is being saved, ⌘N is meant for the account it ends
+      // on, which may be in a software wallet even if the active one is not.
+      newAccountShortcutWallet: newAccountWallets.any((wallet) => wallet.walletIndex == activeWallet)
+          ? activeWallet
+          : read(shellNavigationProvider)
+          ? newAccountWallets.firstOrNull?.walletIndex
+          : null,
+      onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
+      onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),

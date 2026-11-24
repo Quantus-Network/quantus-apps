@@ -33,17 +33,12 @@ class ShellSheetView extends ConsumerWidget {
 
   bool get _actsOnAccount => switch (sheet) {
     ShellSheet.receive || ShellSheet.send || ShellSheet.propose || ShellSheet.swap => true,
-    ShellSheet.addAccount || ShellSheet.settings || ShellSheet.accountInfo => false,
+    ShellSheet.settings || ShellSheet.accountInfo => false,
   };
 
   Widget? get _content => switch (sheet) {
     ShellSheet.receive => const ReceiveSheet(),
-    ShellSheet.send ||
-    ShellSheet.propose ||
-    ShellSheet.swap ||
-    ShellSheet.addAccount ||
-    ShellSheet.settings ||
-    ShellSheet.accountInfo => null,
+    ShellSheet.send || ShellSheet.propose || ShellSheet.swap || ShellSheet.settings || ShellSheet.accountInfo => null,
   };
 
   @override

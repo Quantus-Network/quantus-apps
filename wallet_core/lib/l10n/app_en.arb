@@ -3588,9 +3588,9 @@
     "@desktopMenuAccount": {
       "description": "Desktop menu bar: title of the menu holding the active account's actions"
     },
-    "desktopMenuAddAccount": "Add Account…",
-    "@desktopMenuAddAccount": {
-      "description": "Desktop Account menu item that opens the add account sheet"
+    "desktopMenuNewAccount": "New Account",
+    "@desktopMenuNewAccount": {
+      "description": "Desktop: the item that adds a Transparent account to a wallet, at once, with its name ready to be typed over; in the Account menu and the sidebar's Add Account menu"
     },
     "desktopMenuView": "View",
     "@desktopMenuView": {

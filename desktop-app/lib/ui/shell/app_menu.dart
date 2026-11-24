@@ -3,6 +3,7 @@ import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart' show SoftwareWallet;
 import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_titles.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -26,6 +27,14 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// ([accountMenuEntries]), after its actions; they are disabled with the
 /// items that open a sheet.
 ///
+/// New Account adds an account to one of [newAccountWallets]: a plain item
+/// with one, a submenu with several. A chosen item adds to the wallet it names
+/// ([onNewAccount]). Its shortcut sits on [newAccountShortcutWallet]; with
+/// none, no item has it. In the menus that answer a key press,
+/// [onNewAccountByKey] is given and that item acts on it instead, for the
+/// wallet of the account active when its turn comes. It is disabled with the
+/// items that open a sheet.
+///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
 /// the first nine have a number to be reached by ([ShortcutBindings.account]).
 List<PlatformMenu> buildAppMenus({
@@ -33,6 +42,10 @@ List<PlatformMenu> buildAppMenus({
   required bool useNativeMenuBar,
   required List<AccountAction> accountActions,
   required List<AccountMenuEntry?> accountItems,
+  required List<SoftwareWallet> newAccountWallets,
+  required int? newAccountShortcutWallet,
+  required ValueChanged<int> onNewAccount,
+  required VoidCallback? onNewAccountByKey,
   required List<DisplayAccount> accounts,
   required ShortcutBindings? shortcuts,
   required bool isSidebarVisible,
@@ -56,6 +69,15 @@ List<PlatformMenu> buildAppMenus({
     // Its sheet is not built yet.
     AccountActionKind.swap => null,
   };
+
+  PlatformMenuItem newAccountItem(String label, int walletIndex) {
+    final hasShortcut = walletIndex == newAccountShortcutWallet;
+    return PlatformMenuItem(
+      label: label,
+      shortcut: hasShortcut ? keysOf(AppCommand.addAccount) : null,
+      onSelected: !canOpenSheet ? null : (hasShortcut ? onNewAccountByKey : null) ?? () => onNewAccount(walletIndex),
+    );
+  }
 
   PlatformMenuItemGroup provided(List<PlatformProvidedMenuItemType> types) =>
       PlatformMenuItemGroup(members: [for (final type in types) PlatformProvidedMenuItem(type: type)]);
@@ -125,11 +147,15 @@ List<PlatformMenu> buildAppMenus({
           ),
         PlatformMenuItemGroup(
           members: [
-            PlatformMenuItem(
-              label: l10n.desktopMenuAddAccount,
-              shortcut: keysOf(AppCommand.addAccount),
-              onSelected: opens(ShellSheet.addAccount),
-            ),
+            switch (newAccountWallets) {
+              // Before there is a wallet to add to.
+              [] => PlatformMenuItem(label: l10n.desktopMenuNewAccount),
+              [final wallet] => newAccountItem(l10n.desktopMenuNewAccount, wallet.walletIndex),
+              _ => PlatformMenu(
+                label: l10n.desktopMenuNewAccount,
+                menus: [for (final wallet in newAccountWallets) newAccountItem(wallet.name, wallet.walletIndex)],
+              ),
+            },
           ],
         ),
         if (accounts.isNotEmpty)

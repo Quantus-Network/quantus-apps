@@ -2476,7 +2476,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopMenuAccount => 'Account';
 
   @override
-  String get desktopMenuAddAccount => 'Add Account…';
+  String get desktopMenuNewAccount => 'New Account';
 
   @override
   String get desktopMenuView => 'View';
