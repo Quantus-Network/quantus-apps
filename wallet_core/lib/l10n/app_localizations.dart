@@ -5936,6 +5936,12 @@ abstract class AppLocalizations {
   /// **'Connect Cold Wallet…'**
   String get desktopMenuConnectColdWallet;
 
+  /// Desktop Connect Cold Wallet sheet: its title when the app already has a cold wallet, which the account scanned is added to
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cold Wallet Account'**
+  String get desktopColdWalletAddAccountTitle;
+
   /// Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device
   ///
   /// In en, this message translates to:

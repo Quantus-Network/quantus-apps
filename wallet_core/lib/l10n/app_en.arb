@@ -4802,6 +4802,10 @@
     "@desktopMenuConnectColdWallet": {
       "description": "Desktop: the item that opens the Connect Cold Wallet sheet, in the Account menu and the sidebar's Add Account menu"
     },
+    "desktopColdWalletAddAccountTitle": "Add Cold Wallet Account",
+    "@desktopColdWalletAddAccountTitle": {
+      "description": "Desktop Connect Cold Wallet sheet: its title when the app already has a cold wallet, which the account scanned is added to"
+    },
     "desktopColdWalletStepHold": "Hold it up to this camera",
     "@desktopColdWalletStepHold": {
       "description": "Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device"
