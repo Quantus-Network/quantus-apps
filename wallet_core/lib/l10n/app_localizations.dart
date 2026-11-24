@@ -5792,6 +5792,36 @@ abstract class AppLocalizations {
   /// **'{count, plural, =1{1 account} other{{count} accounts}}'**
   String desktopWalletAccountCount(int count);
 
+  /// Import: the recovery phrase typed is that of a wallet already in the app; nothing was stored
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet is already in the app'**
+  String get importWalletAlreadyAdded;
+
+  /// Desktop: the item that opens the Import Wallet sheet, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Import Wallet…'**
+  String get desktopMenuImportWallet;
+
+  /// Desktop Import Wallet sheet: a line with a spinner while the wallet is saved and its accounts are found on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Finding this wallet\'s accounts'**
+  String get desktopImportFinding;
+
+  /// Desktop Import Wallet sheet: under the phrase when saving the wallet failed; the phrase stays to try again
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t import the wallet'**
+  String get desktopImportFailed;
+
+  /// Desktop: a short note by the account name in the top bar after importing a wallet with the sidebar hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet imported'**
+  String get desktopImportDone;
+
   /// Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet
   ///
   /// In en, this message translates to:

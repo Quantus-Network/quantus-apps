@@ -3221,6 +3221,21 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get importWalletAlreadyAdded => 'Dompet ini sudah ada di aplikasi';
+
+  @override
+  String get desktopMenuImportWallet => 'Impor Dompet…';
+
+  @override
+  String get desktopImportFinding => 'Mencari akun dompet ini';
+
+  @override
+  String get desktopImportFailed => 'Tidak dapat mengimpor dompet';
+
+  @override
+  String get desktopImportDone => 'Dompet diimpor';
+
+  @override
   String get desktopSwapAwaitingDeposit => 'Menunggu deposit';
 
   @override

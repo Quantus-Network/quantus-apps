@@ -6,7 +6,8 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 
 /// What the sidebar's Add Account menu offers: New Account, which with
 /// several software [wallets] opens a submenu of them, so no screen has to
-/// list every wallet just to add an account. A Cold Wallet is not among them.
+/// list every wallet just to add an account (a Cold Wallet is not among
+/// them), then Import Wallet… after a separator.
 List<ContextMenuItem?> addAccountMenuItems(
   AppLocalizations l10n,
   List<SoftwareWallet> wallets,
@@ -14,14 +15,18 @@ List<ContextMenuItem?> addAccountMenuItems(
 ) {
   void create(SoftwareWallet wallet) => unawaited(manager.createAccount(wallet.walletIndex));
 
-  return switch (wallets) {
-    [] => const [],
-    [final wallet] => [ContextMenuItem(l10n.desktopMenuNewAccount, onSelected: () => create(wallet))],
-    _ => [
-      ContextMenuItem.submenu(
-        l10n.desktopMenuNewAccount,
-        items: [for (final wallet in wallets) ContextMenuItem(wallet.name, onSelected: () => create(wallet))],
-      ),
-    ],
-  };
+  return [
+    ...switch (wallets) {
+      [] => const <ContextMenuItem>[],
+      [final wallet] => [ContextMenuItem(l10n.desktopMenuNewAccount, onSelected: () => create(wallet))],
+      _ => [
+        ContextMenuItem.submenu(
+          l10n.desktopMenuNewAccount,
+          items: [for (final wallet in wallets) ContextMenuItem(wallet.name, onSelected: () => create(wallet))],
+        ),
+      ],
+    },
+    if (wallets.isNotEmpty) null,
+    ContextMenuItem(l10n.desktopMenuImportWallet, onSelected: () => unawaited(manager.openImportWallet())),
+  ];
 }

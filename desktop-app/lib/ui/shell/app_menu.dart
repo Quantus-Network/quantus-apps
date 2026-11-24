@@ -33,7 +33,7 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// none, no item has it. In the menus that answer a key press,
 /// [onNewAccountByKey] is given and that item acts on it instead, for the
 /// wallet of the account active when its turn comes. It is disabled with the
-/// items that open a sheet.
+/// items that open a sheet, as Import Wallet…, in a group after it, is.
 ///
 /// The Account menu ends with [accounts], which are in the sidebar's order:
 /// the first nine have a number to be reached by ([ShortcutBindings.account]).
@@ -157,6 +157,9 @@ List<PlatformMenu> buildAppMenus({
               ),
             },
           ],
+        ),
+        PlatformMenuItemGroup(
+          members: [PlatformMenuItem(label: l10n.desktopMenuImportWallet, onSelected: opens(ShellSheet.importWallet))],
         ),
         if (accounts.isNotEmpty)
           PlatformMenuItemGroup(

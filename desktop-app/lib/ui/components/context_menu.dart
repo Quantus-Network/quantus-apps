@@ -75,6 +75,10 @@ class ContextMenuRegion extends StatefulWidget {
   /// The closest the menu comes to the window's edges.
   static const double windowMargin = 6;
 
+  /// How long the pointer rests on another item before an open submenu gives
+  /// way to it: a pointer heading for the submenu may cross that item.
+  static const submenuPause = Duration(milliseconds: 250);
+
   static bool _isControlClick = false;
 
   /// Whether the click being handled opened a context menu (a Control-click
@@ -311,14 +315,59 @@ class _ContextMenuState extends State<_ContextMenu> {
   final _rowKeys = <int, GlobalKey>{};
   final _submenuRowKeys = <int, GlobalKey>{};
 
+  /// Counts down [ContextMenuRegion.submenuPause] while the pointer is on
+  /// [_pausedOn], another item than the one whose submenu is open.
+  Timer? _pause;
+  int? _pausedOn;
+
   List<ContextMenuItem>? get _submenu => switch (_submenuOf) {
     final index? => _items[index].submenu,
     null => null,
   };
 
-  void _choose(ContextMenuItem item) => Navigator.of(context).pop(item);
+  @override
+  void dispose() {
+    _pause?.cancel();
+    super.dispose();
+  }
+
+  void _cancelPause() {
+    _pause?.cancel();
+    _pause = null;
+    _pausedOn = null;
+  }
+
+  void _choose(ContextMenuItem item) {
+    _cancelPause();
+    Navigator.of(context).pop(item);
+  }
+
+  /// The pointer came onto the item at [index]. With another item's submenu
+  /// open it may be on its way there, so the item waits for it to rest.
+  void _onRowEntered(int index) {
+    _cancelPause();
+    final open = _submenuOf;
+    if (open == null || open == index) return _showRow(index);
+    _pausedOn = index;
+    _pause = Timer(ContextMenuRegion.submenuPause, () {
+      _cancelPause();
+      if (mounted) _showRow(index);
+    });
+  }
+
+  void _showRow(int index) {
+    if (_items[index].submenu != null) {
+      _openSubmenu(index);
+    } else {
+      setState(() {
+        _highlighted = index;
+        _closeSubmenu();
+      });
+    }
+  }
 
   void _openSubmenu(int index, {bool withKeys = false}) {
+    _cancelPause();
     final page = context.findRenderObject()! as RenderBox;
     final row = _rowKeys[index]!.currentContext!.findRenderObject()! as RenderBox;
     setState(() {
@@ -333,6 +382,7 @@ class _ContextMenuState extends State<_ContextMenu> {
 
   /// To be called inside [setState].
   void _closeSubmenu() {
+    _cancelPause();
     _submenuOf = null;
     _submenuAnchor = null;
     _submenuHighlighted = null;
@@ -448,19 +498,11 @@ class _ContextMenuState extends State<_ContextMenu> {
     final opensSubmenu = item.submenu != null;
     return MouseRegion(
       key: opensSubmenu ? _rowKeys.putIfAbsent(index, GlobalKey.new) : null,
-      onEnter: (_) {
-        if (opensSubmenu) {
-          _openSubmenu(index);
-        } else {
-          setState(() {
-            _highlighted = index;
-            _closeSubmenu();
-          });
-        }
-      },
+      onEnter: (_) => _onRowEntered(index),
       // The item stays lit while its submenu is open: the pointer is on its
       // way there.
       onExit: (_) => setState(() {
+        if (_pausedOn == index) _cancelPause();
         if (_highlighted == index && _submenuOf != index) _highlighted = null;
       }),
       child: GestureDetector(

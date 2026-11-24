@@ -40,6 +40,9 @@ class QuantusSeedPhraseField extends StatefulWidget {
   /// toggle sits at the end of that row instead of at the top right.
   final Widget? footer;
 
+  /// Whether the field takes the focus when it first appears.
+  final bool autofocus;
+
   const QuantusSeedPhraseField({
     super.key,
     required this.controller,
@@ -49,6 +52,7 @@ class QuantusSeedPhraseField extends StatefulWidget {
     this.scrollToOnFocus,
     this.height = 202,
     this.footer,
+    this.autofocus = false,
   });
 
   @override
@@ -95,6 +99,7 @@ class _QuantusSeedPhraseFieldState extends State<QuantusSeedPhraseField> {
     return QuantusTextField(
       controller: widget.controller,
       focusNode: _focusNode,
+      autofocus: widget.autofocus,
       hint: widget.hint,
       error: widget.error,
       height: widget.height,

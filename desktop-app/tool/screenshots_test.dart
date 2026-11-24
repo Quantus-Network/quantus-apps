@@ -532,6 +532,46 @@ void main() {
     await tester.pump();
   });
 
+  _scene('add_account_menu', (tester) async {
+    await _openAccounts(tester);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_opened', (tester) async {
+    await _openAccounts(tester);
+    await ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(accountManagerProvider).openImportWallet();
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_phrase', (tester) async {
+    await _openImport(tester, phrase: _newPhrase);
+  });
+
+  _scene('import_wallet_finding', (tester) async {
+    await _openImport(tester, phrase: _newPhrase, scan: () => Completer<List<Account>>().future);
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+    await tester.tap(_importButton);
+    await tester.pump();
+    await tester.pump();
+    // Into the spinner's second face.
+    await tester.pump(TerminalLine.busyTurn * 1.5);
+  });
+
+  _scene('import_wallet_already_added', (tester) async {
+    await _openImport(tester, phrase: _phrase);
+    await tester.tap(_importButton);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_name_it', (tester) async {
+    await _openImport(tester, phrase: _newPhrase);
+    await tester.tap(_importButton);
+    await tester.pumpAndSettle();
+  });
+
   _scene('account_disconnect', (tester) async {
     await _openInfo(tester, _savings);
     await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
@@ -831,13 +871,38 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallet
   await tester.pumpAndSettle();
 }
 
+/// A phrase no wallet in the scenes holds.
+final _newPhrase = ['zebra', ...List.filled(22, 'abandon'), 'art'].join(' ');
+
+Finder get _importField => find.descendant(of: find.byType(ShellSheetView), matching: find.byType(EditableText));
+
+Finder get _importButton =>
+    find.descendant(of: find.byType(ShellSheetView), matching: find.widgetWithText(QuantusButton, 'Import Wallet'));
+
+/// Opens the Import Wallet sheet with [phrase] typed in it.
+Future<void> _openImport(WidgetTester tester, {required String phrase, Future<List<Account>> Function()? scan}) async {
+  await _openAccounts(tester, scan: scan);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openImportWallet();
+  await tester.pumpAndSettle();
+  await tester.enterText(_importField, phrase);
+  await tester.pump();
+}
+
 /// Opens the window of a wallet with every kind of account. Its clipboard
 /// takes whatever is copied.
-Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0, bool walletsLeftOpen = true}) async {
+Future<void> _openAccounts(
+  WidgetTester tester, {
+  int moreWallets = 0,
+  bool walletsLeftOpen = true,
+  Future<List<Account>> Function()? scan,
+}) async {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
+  if (scan != null) device.scan = scan;
   device.storage.accounts.addAll([
     _cold,
     _trading,

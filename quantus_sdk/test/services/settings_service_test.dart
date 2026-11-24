@@ -600,6 +600,72 @@ void main() {
     });
   });
 
+  group('addAccount, when a write fails', () {
+    const first = Account(walletIndex: 0, index: 0, name: 'First', accountId: 'id_first');
+    const second = Account(walletIndex: 0, index: 1, name: 'Second', accountId: 'id_second');
+
+    late _RejectingStore store;
+    late SettingsService settings;
+
+    /// The settings as the next app reads them, started before anything this
+    /// one held only in memory reached the disk.
+    Future<SettingsService> restarted() async {
+      store.restart();
+      SharedPreferences.resetStatic();
+      final next = SettingsService();
+      await next.initialize();
+      return next;
+    }
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      store = _RejectingStore();
+      SharedPreferencesStorePlatform.instance = store;
+      settings = SettingsService();
+      await settings.initialize();
+    });
+
+    final failures = <String, void Function(String key)>{
+      'rejected': (key) => store.rejected.add(key),
+      'failing': (key) => store.failing.add(key),
+    };
+
+    for (final MapEntry(key: how, value: fail) in failures.entries) {
+      test('a $how account list write throws and adds nothing', () async {
+        fail('accounts_v5');
+
+        await expectLater(
+          settings.addAccount(first),
+          throwsA(predicate((e) => e is! AccountNotActivatedException, 'not a stored account')),
+        );
+
+        expect(await settings.getAccounts(), isEmpty);
+        expect(await (await restarted()).getAccounts(), isEmpty);
+      });
+
+      test('a $how account list write keeps the accounts already there', () async {
+        await settings.addAccount(first);
+        fail('accounts_v5');
+
+        await expectLater(settings.addAccount(second), throwsA(anything));
+
+        expect((await settings.getAccounts()).map((a) => a.accountId), [first.accountId]);
+        expect((await (await restarted()).getAccounts()).map((a) => a.accountId), [first.accountId]);
+      });
+
+      test('a $how activation of the first account says the account was stored', () async {
+        fail('active_display_account');
+
+        await expectLater(settings.addAccount(first), throwsA(isA<AccountNotActivatedException>()));
+
+        expect((await settings.getAccounts()).map((a) => a.accountId), [first.accountId]);
+        final next = await restarted();
+        expect((await next.getAccounts()).map((a) => a.accountId), [first.accountId]);
+        expect((await next.getActiveAccount())?.account.accountId, first.accountId);
+      });
+    }
+  });
+
   group('setString, when the system rejects the write', () {
     late _RejectingStore store;
     late SettingsService settings;

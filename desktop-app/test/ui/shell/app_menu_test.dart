@@ -179,18 +179,18 @@ void main() {
       (
         'a local account',
         const RegularAccount(mainAccount),
-        [('Receive', true), ('Send', true), ('Swap', true), ('New Account', true)],
+        [('Receive', true), ('Send', true), ('Swap', true), ('New Account', true), ('Import Wallet…', true)],
       ),
       (
         // Its key signs on the hardware wallet, which this app cannot ask yet.
         'a Keystone account',
         const RegularAccount(vaultAccount),
-        [('Receive', true), ('Send', false), ('Swap', false), ('New Account', true)],
+        [('Receive', true), ('Send', false), ('Swap', false), ('New Account', true), ('Import Wallet…', true)],
       ),
       (
         'a multisig',
         MultisigDisplayAccount(teamMultisig),
-        [('Receive', true), ('Propose', true), ('New Account', true)],
+        [('Receive', true), ('Propose', true), ('New Account', true), ('Import Wallet…', true)],
       ),
     ]) {
       testOnMac('the Account menu offers what the toolbar offers for $description', (tester) async {
@@ -199,13 +199,14 @@ void main() {
         final items = _accountMenuActions(tester);
         expect([for (final item in items) (item.label, item.onSelected != null)], expected);
 
-        for (final (label, enabled) in expected.where((entry) => entry.$1 != 'New Account')) {
+        final onToolbar = expected.where((entry) => entry.$1 != 'New Account' && entry.$1 != 'Import Wallet…');
+        for (final (label, enabled) in onToolbar) {
           expect(_toolbarButton(label), findsOneWidget, reason: label);
           expect(tester.widget<ToolbarAction>(_toolbarButton(label)).onPressed != null, enabled, reason: label);
         }
         expect(
           find.descendant(of: find.byType(AccountToolbar), matching: find.byType(ToolbarAction)),
-          findsNWidgets(expected.length - 1),
+          findsNWidgets(onToolbar.length),
         );
       });
     }
@@ -219,7 +220,7 @@ void main() {
       expect(_sheetTitled('Send'), findsOneWidget);
     });
 
-    testOnMac('with no active account the Account menu offers no actions: New Account and the accounts', (
+    testOnMac('with no active account the Account menu offers no actions: adding one, and the accounts', (
       tester,
     ) async {
       await pumpShell(
@@ -227,7 +228,11 @@ void main() {
         overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
       );
 
-      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), ['New Account', 'Main']);
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), [
+        'New Account',
+        'Import Wallet…',
+        'Main',
+      ]);
     });
 
     testOnMac('Receive, Send and New Account answer to ⌘R, ⌘S and ⌘N; Swap has no shortcut yet', (tester) async {
@@ -691,6 +696,7 @@ void main() {
           ('Rename…', true),
           ('Disconnect Hardware Account…', true),
           ('New Account', true),
+          ('Import Wallet…', true),
           ('Main', true),
           ('Team', true),
           ('Vault', true),

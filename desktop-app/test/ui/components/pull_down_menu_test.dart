@@ -119,8 +119,42 @@ void main() {
     expect(tester.getTopLeft(_submenu).dx, greaterThan(tester.getCenter(_menu).dx));
 
     await mouse.moveTo(tester.getCenter(find.text('Plain')));
+    await tester.pump(ContextMenuRegion.submenuPause);
     await tester.pumpAndSettle();
     expect(_submenu, findsNothing);
+  });
+
+  testWidgets('crossing another item on the way to the submenu keeps it open', (tester) async {
+    await _pump(tester, chosen: []);
+    await _open(tester);
+    final mouse = await _hover(tester, find.text('Wallets'));
+
+    await mouse.moveTo(tester.getCenter(find.text('Plain')));
+    await tester.pump(ContextMenuRegion.submenuPause ~/ 2);
+    expect(_submenu, findsOneWidget);
+
+    await mouse.moveTo(tester.getCenter(find.text('Wallet 2')));
+    await tester.pump(ContextMenuRegion.submenuPause * 2);
+
+    expect(_submenu, findsOneWidget);
+    expect(_isLit(tester, 'Wallet 2'), isTrue);
+    expect(_isLit(tester, 'Wallets'), isTrue);
+    expect(_isLit(tester, 'Plain'), isFalse);
+  });
+
+  testWidgets('resting on another item switches to it after a short pause', (tester) async {
+    await _pump(tester, chosen: []);
+    await _open(tester);
+    final mouse = await _hover(tester, find.text('Wallets'));
+
+    await mouse.moveTo(tester.getCenter(find.text('Plain')));
+    await tester.pump();
+    expect(_submenu, findsOneWidget);
+
+    await tester.pump(ContextMenuRegion.submenuPause);
+
+    expect(_submenu, findsNothing);
+    expect(_isLit(tester, 'Plain'), isTrue);
   });
 
   testWidgets('the pointer can travel from the item into its submenu', (tester) async {

@@ -3215,6 +3215,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get importWalletAlreadyAdded => 'This wallet is already in the app';
+
+  @override
+  String get desktopMenuImportWallet => 'Import Wallet…';
+
+  @override
+  String get desktopImportFinding => 'Finding this wallet\'s accounts';
+
+  @override
+  String get desktopImportFailed => 'Couldn\'t import the wallet';
+
+  @override
+  String get desktopImportDone => 'Wallet imported';
+
+  @override
   String get desktopSwapAwaitingDeposit => 'Awaiting deposit';
 
   @override

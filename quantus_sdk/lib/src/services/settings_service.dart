@@ -11,6 +11,17 @@ import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// An account was stored, but making it the active account failed.
+class AccountNotActivatedException implements Exception {
+  const AccountNotActivatedException(this.cause);
+
+  /// Why storing the active account failed.
+  final Object cause;
+
+  @override
+  String toString() => 'AccountNotActivatedException: $cause';
+}
+
 class SettingsService {
   static final SettingsService _instance = SettingsService._internal();
   factory SettingsService() => _instance;
@@ -101,10 +112,19 @@ class SettingsService {
   }
 
   Future<void> saveAccounts(List<Account> accounts) async {
-    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
-    await _prefs.setString(_accountsKey, jsonEncode(jsonData));
+    await _writeAccounts(accounts);
   }
 
+  Future<bool> _writeAccounts(List<Account> accounts) {
+    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
+    return _prefs.setString(_accountsKey, jsonEncode(jsonData));
+  }
+
+  /// Stores [account], and makes it active when it is the first one.
+  ///
+  /// Throws when the account cannot be stored, and the list is then what it
+  /// was before. Throws [AccountNotActivatedException] when it was stored but
+  /// could not be made active.
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
     // Check for duplicates by derivation slot or accountId before adding
@@ -114,10 +134,20 @@ class SettingsService {
           a.accountId == account.accountId,
     )) {
       accounts.add(account);
-      await saveAccounts(accounts);
+      final previous = _prefs.getString(_accountsKey);
+      try {
+        if (!await _writeAccounts(accounts)) throw Exception('Could not save $_accountsKey');
+      } catch (_) {
+        await _putBack(_accountsKey, previous);
+        rethrow;
+      }
       if (accounts.length == 1) {
         // make sure that active account is always a valid account
-        await setActiveAccount(RegularAccount(account));
+        try {
+          await setActiveAccount(RegularAccount(account));
+        } catch (e) {
+          throw AccountNotActivatedException(e);
+        }
       }
     } else {
       throw Exception('Account already exists');
