@@ -1,7 +1,6 @@
-// Pins the proposal sheet's action rules as the phone has them today: which
-// of Approve, Execute and Cancel it offers, in which state, and the note under
-// them. They move to wallet_core next, unchanged, so the desktop app can
-// share them; these tests must stay green through that move.
+// Pins the proposal sheet's action rules: which of Approve, Execute and Cancel
+// it offers, in which state, and the note under them. The rules live in
+// wallet_core, shared with the desktop app.
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -348,10 +347,11 @@ void main() {
   });
 
   group('execute', () {
-    MultisigProposal ready({int expiryBlock = 1000}) => _proposal(
+    MultisigProposal ready({int expiryBlock = 1000, String? proposer}) => _proposal(
       status: MultisigProposalStatus.approved,
       approvals: [_two.accountId, _three.accountId],
       expiryBlock: expiryBlock,
+      proposer: proposer,
     );
 
     testWidgets('approved: Execute opens its confirmation, signed by this device\'s member', (tester) async {
@@ -378,7 +378,8 @@ void main() {
     testWidgets('a cancellation from this device under way: Execute unavailable, with the cancelling note', (
       tester,
     ) async {
-      await _open(tester, ready(), pending: _addCancellation);
+      // Only its proposer cancels it.
+      await _open(tester, ready(proposer: _one.accountId), pending: _addCancellation);
 
       expect(_isOffered(tester, _l10n.multisigExecuteButton), isFalse);
       expect(_note(), _l10n.multisigProposalCancellingNote);
@@ -425,8 +426,24 @@ void main() {
       expect(find.text(_l10n.multisigCancelConfirmTitle), findsOneWidget);
     });
 
-    testWidgets('the proposer is another signer, even one in this wallet: no Cancel', (tester) async {
+    testWidgets('the proposer is another signer in this wallet: Cancel offered, and its confirmation signs as that '
+        'signer', (tester) async {
       await _open(tester, _proposal(proposer: _two.accountId), accounts: [_one, _two]);
+
+      expect(_isOffered(tester, _l10n.multisigCancelProposalButton), isTrue);
+
+      await tester.tap(find.text(_l10n.multisigCancelProposalButton));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_l10n.multisigCancelConfirmTitle), findsOneWidget);
+      expect(
+        tester.widget<MultisigActionConfirmSheet>(find.byType(MultisigActionConfirmSheet)).signer?.accountId,
+        _two.accountId,
+      );
+    });
+
+    testWidgets('the proposer is a signer not in this wallet: no Cancel', (tester) async {
+      await _open(tester, _proposal(proposer: _two.accountId));
 
       expect(find.text(_l10n.multisigCancelProposalButton), findsNothing);
     });

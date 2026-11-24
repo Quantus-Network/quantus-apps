@@ -61,10 +61,11 @@ MultisigProposal _proposal({
 );
 
 /// Approved by the two signers this wallet does not hold as `_one`.
-MultisigProposal _ready({int expiryBlock = 1000}) => _proposal(
+MultisigProposal _ready({int expiryBlock = 1000, String? proposer}) => _proposal(
   status: MultisigProposalStatus.approved,
   approvals: [_two.accountId, _three.accountId],
   expiryBlock: expiryBlock,
+  proposer: proposer,
 );
 
 PendingMultisigApprovalEvent _approving(Account approver) => PendingMultisigApprovalEvent.create(
@@ -214,7 +215,8 @@ void main() {
     });
 
     test('a cancellation from this device under way: Execute unavailable, with the cancelling note', () {
-      final actions = _open(_actions(_ready(), cancellations: [_cancelling]));
+      // Only its proposer cancels it.
+      final actions = _open(_actions(_ready(proposer: _one.accountId), cancellations: [_cancelling]));
 
       expect(actions.primaryState, ProposalActionState.unavailable);
       expect(actions.note, ProposalActionNote.cancelling);
@@ -244,12 +246,46 @@ void main() {
   });
 
   group('cancel', () {
-    test('the proposer is this device\'s member: Cancel offered', () {
-      expect(_open(_actions(_proposal(proposer: _one.accountId))).cancel, ProposalActionState.offered);
+    test('the proposer is this device\'s member: Cancel offered, by the member', () {
+      final actions = _open(_actions(_proposal(proposer: _one.accountId)));
+
+      expect(actions.cancel, ProposalActionState.offered);
+      expect(actions.canceller?.accountId, _one.accountId);
     });
 
-    test('the proposer is another signer, even one in this wallet: no Cancel', () {
-      expect(_open(_actions(_proposal(proposer: _two.accountId), accounts: [_one, _two])).cancel, isNull);
+    test('the proposer is another signer in this wallet: Cancel offered, by that signer', () {
+      final actions = _open(_actions(_proposal(proposer: _two.accountId), accounts: [_one, _two]));
+
+      expect(actions.cancel, ProposalActionState.offered);
+      expect(actions.canceller?.accountId, _two.accountId);
+    });
+
+    test('the proposer is a signer not in this wallet: no Cancel', () {
+      final actions = _open(_actions(_proposal(proposer: _two.accountId), accounts: [_one]));
+
+      expect(actions.cancel, isNull);
+      expect(actions.canceller, isNull);
+    });
+
+    test('a cancellation under way from a proposer that is not the member: Cancel in flight, with its note', () {
+      final actions = _open(
+        _actions(
+          _proposal(proposer: _two.accountId),
+          accounts: [_one, _two],
+          cancellations: [
+            PendingMultisigCancellationEvent.create(
+              multisigAddress: _msig.accountId,
+              proposalId: 1,
+              proposerId: _two.accountId,
+              recipient: 'qzbob${'x' * 40}',
+              amount: BigInt.one,
+            ),
+          ],
+        ),
+      );
+
+      expect(actions.cancel, ProposalActionState.inFlight);
+      expect(actions.note, ProposalActionNote.cancelling);
     });
 
     test('its cancellation under way: Cancel in flight', () {

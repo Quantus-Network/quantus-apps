@@ -57,8 +57,12 @@ final class ProposalOpen extends ProposalActions {
   final List<Account> eligibleApprovers;
 
   /// Null when Cancel is not this wallet's to offer: only the proposal's
-  /// proposer cancels, and only as the multisig's own member account.
+  /// proposer cancels, so it is offered when that is a signer this wallet holds.
   final ProposalActionState? cancel;
+
+  /// The signer that cancels, the proposer, when this wallet holds it; null
+  /// exactly when [cancel] is.
+  final Account? canceller;
 
   @override
   final ProposalActionNote? note;
@@ -68,6 +72,7 @@ final class ProposalOpen extends ProposalActions {
     required this.primaryState,
     required this.eligibleApprovers,
     required this.cancel,
+    required this.canceller,
     required this.note,
   });
 }
@@ -106,11 +111,13 @@ ProposalActions proposalActionsOf({
     proposal.id,
     msig.myMemberAccountId,
   );
+  // Only the proposer cancels: one under way from this device is its.
+  final canceller = localSigners.where((a) => a.accountId == proposal.proposer).firstOrNull;
   final pendingCancellation = findPendingCancellationForProposal(
     pendingCancellations,
     msig.accountId,
     proposal.id,
-    msig.myMemberAccountId,
+    proposal.proposer,
   );
   // Another local member may still need to sign even if myMemberAccountId
   // already has.
@@ -154,13 +161,8 @@ ProposalActions proposalActionsOf({
   }
 
   ProposalActionState? cancel;
-  if (proposal.proposer == msig.myMemberAccountId) {
-    final canCancel =
-        isActionable &&
-        pendingCancellation == null &&
-        !hasPendingApproval &&
-        pendingExecution == null &&
-        hasLocalSigner;
+  if (canceller != null) {
+    final canCancel = isActionable && pendingCancellation == null && !hasPendingApproval && pendingExecution == null;
     cancel = pendingCancellation != null
         ? ProposalActionState.inFlight
         : (canCancel ? ProposalActionState.offered : ProposalActionState.unavailable);
@@ -171,6 +173,7 @@ ProposalActions proposalActionsOf({
     primaryState: primaryState,
     eligibleApprovers: eligibleApprovers,
     cancel: cancel,
+    canceller: canceller,
     note: note,
   );
 }
