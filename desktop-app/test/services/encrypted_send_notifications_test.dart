@@ -46,19 +46,33 @@ typedef _Wallet = ({
   FakeNotificationPlugin notifications,
   _RecordingTelemetry telemetry,
   FakeSendChain chain,
+  _Reloads reloads,
 });
+
+/// When [held] is set, reading the Encrypted account again waits for it.
+class _Reloads {
+  Completer<void>? held;
+
+  /// How many times the Encrypted account was read.
+  int reads = 0;
+}
 
 Future<_Wallet> _open(WidgetTester tester) async {
   SharedPreferences.setMockInitialValues({});
   final chain = FakeSendChain();
   final notifications = FakeNotificationPlugin();
   final telemetry = _RecordingTelemetry();
+  final reloads = _Reloads();
   final container = ProviderContainer(
     overrides: [
       ...shellOverrides(
         accounts: const [mainAccount, encryptedAccount],
         settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
         chain: chain,
+        holdEncryptedState: () {
+          reloads.reads++;
+          return reloads.held;
+        },
       ),
       notificationPluginProvider.overrideWithValue(notifications),
       telemetryProvider.overrideWithValue(telemetry),
@@ -70,7 +84,7 @@ Future<_Wallet> _open(WidgetTester tester) async {
   for (var i = 0; i < 20 && !container.read(accountsProvider).hasValue; i++) {
     await tester.pump();
   }
-  return (container: container, notifications: notifications, telemetry: telemetry, chain: chain);
+  return (container: container, notifications: notifications, telemetry: telemetry, chain: chain, reloads: reloads);
 }
 
 /// A test on an open wallet. The wallet is closed at its end: a watch left
@@ -220,6 +234,21 @@ void main() {
         return session;
       }
 
+      /// A send on the chain, the account read again after it once the wipe
+      /// has started.
+      Future<WalletSession> reloadedDuringTheWipe(WidgetTester tester, _Wallet wallet) async {
+        final reload = wallet.reloads.held = Completer<void>();
+        _handedOver(wallet, ['0xonly']);
+        _lands(wallet, '0xonly');
+        await tester.pump();
+        await tester.pump();
+        final session = wallet.container.read(walletSessionProvider)..beginReset();
+        reload.complete();
+        await tester.pump();
+        await tester.pump();
+        return session;
+      }
+
       /// A send past its watch, its final check answering during the wipe.
       Future<WalletSession> gaveUpDuringTheWipe(WidgetTester tester, _Wallet wallet) async {
         _handedOver(wallet, ['0xonly']);
@@ -234,8 +263,10 @@ void main() {
       }
 
       _test('found during a wipe that goes through notifies nothing and lets the app go', (tester, wallet) async {
+        final readsBefore = wallet.reloads.reads;
         final session = await answeredDuringTheWipe(tester, wallet);
         expect(wallet.notifications.shown, isEmpty);
+        expect(wallet.reloads.reads, readsBefore, reason: 'the Encrypted account is not read during the wipe');
 
         await wiped(tester, wallet, session);
 
@@ -245,6 +276,28 @@ void main() {
 
       _test('found during a wipe that fails notifies after it', (tester, wallet) async {
         final session = await answeredDuringTheWipe(tester, wallet);
+        expect(wallet.notifications.shown, isEmpty);
+        expect(holds(wallet), isNotEmpty);
+
+        session.cancelReset();
+        await _advance(tester);
+
+        expect(_shown(wallet), [_sent]);
+        expect(holds(wallet), isEmpty);
+      });
+
+      _test('read again during a wipe that goes through notifies nothing and lets the app go', (tester, wallet) async {
+        final session = await reloadedDuringTheWipe(tester, wallet);
+        expect(wallet.notifications.shown, isEmpty);
+
+        await wiped(tester, wallet, session);
+
+        expect(wallet.notifications.shown, isEmpty);
+        expect(holds(wallet), isEmpty);
+      });
+
+      _test('read again during a wipe that fails notifies after it', (tester, wallet) async {
+        final session = await reloadedDuringTheWipe(tester, wallet);
         expect(wallet.notifications.shown, isEmpty);
         expect(holds(wallet), isNotEmpty);
 

@@ -159,6 +159,8 @@ class OwnActivityNotifications {
   /// is recorded with an estimate, as the chain sizes it at inclusion, and
   /// its record is not corrected when it is found.
   Future<void> _notifySent(PendingTransactionEvent send) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     final TransactionEvent? indexed;
     try {
       final hash = send.extrinsicHash;
@@ -173,6 +175,7 @@ class OwnActivityNotifications {
       _ref.read(telemetryProvider).sendError('desktop_notification_sent_amount_unread', error: e);
       return;
     }
+    if (!await session.survivesReset(ticket, dropping: 'notifying the send ${send.id}')) return;
     _notifySend(
       send,
       amount: indexed.amount,
@@ -254,6 +257,7 @@ class OwnActivityNotifications {
     if (_encryptedSends.remove(send.lastHash) == null || !_ref.mounted) return true;
     try {
       await _reloadEncryptedState(send.account.walletIndex);
+      if (!await session.survivesReset(ticket, dropping: 'notifying the Encrypted send ${send.lastHash}')) return true;
       if (!_ref.mounted) return true;
       _notifyFrom(
         send.account.accountId,
