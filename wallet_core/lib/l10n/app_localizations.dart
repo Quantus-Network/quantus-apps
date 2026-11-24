@@ -5234,6 +5234,24 @@ abstract class AppLocalizations {
   /// **'Waiting for the network to create the proposal.'**
   String get desktopProposeWaiting;
 
+  /// Desktop proposal panel: where an open proposal stands once it has all the approvals it needs and waits to be executed; drawn in small capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get desktopProposalApproved;
+
+  /// Desktop proposal panel: where an open proposal stands once it is past its expiry block, drawn in small capitals; also the label of the row that says when it expired, in place of "Expires"
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get desktopProposalExpired;
+
+  /// Desktop proposal panel: the sentence under "Invalid proposal" for a proposal whose call this wallet cannot decode
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.'**
+  String get desktopProposalUnreadable;
+
   /// Desktop footer: the network the wallet is on, beside a dot that is green while online
   ///
   /// In en, this message translates to:

@@ -2870,6 +2870,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopProposeWaiting => 'Waiting for the network to create the proposal.';
 
   @override
+  String get desktopProposalApproved => 'Approved';
+
+  @override
+  String get desktopProposalExpired => 'Expired';
+
+  @override
+  String get desktopProposalUnreadable =>
+      'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.';
+
+  @override
   String get desktopFooterMainnet => 'Mainnet';
 
   @override
