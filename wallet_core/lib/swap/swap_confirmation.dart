@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
@@ -18,16 +18,23 @@ sealed class SwapConfirmOutcome {
   const SwapConfirmOutcome();
 }
 
-/// The swap is followed: its progress is there to show.
+/// [swap] is followed: its progress is there to show.
 final class SwapConfirmed extends SwapConfirmOutcome {
-  const SwapConfirmed();
+  const SwapConfirmed(this.swap);
+
+  final ActiveSwap swap;
 }
 
 /// There is nothing to say: the review went away before anything was sent,
-/// or the deposit landed after the wallet logged out or moved on to another
-/// swap, and is not followed.
+/// or the deposit landed after the wallet logged out, and is not followed.
 final class SwapConfirmDropped extends SwapConfirmOutcome {
   const SwapConfirmDropped();
+}
+
+/// As many swaps as can be followed are running already, confirmations
+/// under way counted: nothing was asked of 1Click.
+final class SwapTooManyFollowed extends SwapConfirmOutcome {
+  const SwapTooManyFollowed();
 }
 
 /// The live quote guarantees less or asks more than the one reviewed:
@@ -73,7 +80,8 @@ final class SwapDepositFailed extends SwapConfirmOutcome {
 /// than the one reviewed, its terms are handed back to be confirmed again. A
 /// swap out of QTC then sends the deposit from [account], once the device's
 /// owner approves; in preflight, and for a swap into QTC, the deposit is made
-/// by hand. The swap is then followed.
+/// by hand. The swap is then followed, beside any others: a confirmation is
+/// refused while as many swaps as can be followed are running.
 class SwapConfirmation {
   SwapConfirmation({required this.account});
 
@@ -102,27 +110,30 @@ class SwapConfirmation {
   /// started, but a deposit already going out is seen through and its swap
   /// followed.
   Future<SwapConfirmOutcome> confirm(WidgetRef ref, SwapQuote quote, {required bool Function() isActive}) async {
-    final l10n = ref.read(l10nProvider);
-    final generation = _generation;
-    final (order, stopped) = await _liveOrder(ref, quote, l10n, generation, isActive);
-    if (order == null) return stopped!;
-    if (!isActive()) return const SwapConfirmDropped();
+    final swaps = ref.read(activeSwapsProvider.notifier);
+    if (swaps.full) return const SwapTooManyFollowed();
+    // The ticket holds one of the slots while this runs, and goes back if no
+    // swap starts on it.
+    final ticket = swaps.ticket();
+    try {
+      final l10n = ref.read(l10nProvider);
+      final generation = _generation;
+      final (order, stopped) = await _liveOrder(ref, quote, l10n, generation, isActive);
+      if (order == null) return stopped!;
+      if (!isActive()) return const SwapConfirmDropped();
 
-    final fee = _sendsDeposit(quote, ref.read(swapPreflightProvider))
-        ? ref.read(swapDepositFeeProvider((account, quote.amountIn))).requireValue
-        : null;
-    final swaps = ref.read(activeSwapProvider.notifier);
-    final ticket = swaps.ticket;
-    String? txHash;
-    if (fee != null) {
-      final (hash, failed) = await _sendDeposit(ref, order, fee, generation, isActive);
-      if (hash == null) return failed!;
-      txHash = hash;
-    }
-    // The deposit is out, so the swap is followed even if the review is gone,
-    // unless the wallet logged out or moved on meanwhile.
-    final followed = swaps.start(
-      ActiveSwap(
+      final fee = _sendsDeposit(quote, ref.read(swapPreflightProvider))
+          ? ref.read(swapDepositFeeProvider((account, quote.amountIn))).requireValue
+          : null;
+      String? txHash;
+      if (fee != null) {
+        final (hash, failed) = await _sendDeposit(ref, order, fee, generation, isActive);
+        if (hash == null) return failed!;
+        txHash = hash;
+      }
+      // The deposit is out, so the swap is followed even if the review is
+      // gone, unless the wallet logged out meanwhile.
+      final swap = ActiveSwap(
         order: order,
         accountId: account.accountId,
         accountName: account.name,
@@ -130,10 +141,11 @@ class SwapConfirmation {
         depositByHand: fee == null,
         depositTxHash: txHash,
         depositFee: fee,
-      ),
-      ticket: ticket,
-    );
-    return followed ? const SwapConfirmed() : const SwapConfirmDropped();
+      );
+      return swaps.start(swap, ticket: ticket) ? SwapConfirmed(swap) : const SwapConfirmDropped();
+    } finally {
+      swaps.release(ticket);
+    }
   }
 
   /// A live order at least as good as [quote], or why there is none. A live

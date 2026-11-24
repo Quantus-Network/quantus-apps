@@ -68,7 +68,8 @@ class ActivityInspector extends ConsumerWidget {
           switch (opened) {
             OpenedTransaction(:final tx) => _TransactionDetail(tx: tx),
             OpenedProposal(:final proposal) => _ProposalDetail(proposal: proposal),
-            OpenedSwap() => const SwapDetail(),
+            // Its own state for each swap: a question asked of one is not asked of the next.
+            OpenedSwap(:final swapId) => SwapDetail(key: ValueKey(swapId), swapId: swapId),
           },
         ],
       ),
