@@ -380,6 +380,8 @@ class FakeWalletStorage extends FakeSettingsService {
     accounts
       ..clear()
       ..addAll(remaining);
+    // A wallet goes with its last account, as a hardware wallet's can.
+    if (!remaining.any((a) => a.walletIndex == account.walletIndex)) names.remove(account.walletIndex);
   }
 
   @override
