@@ -1312,6 +1312,7 @@ List<Override> shellOverrides({
   FakeSwapService? swaps,
   FakeSwapService Function(Ref ref)? swapsOf,
   FakeRemoteConfigService? remoteConfig,
+  Completer<void>? Function()? holdEncryptedState,
 }) {
   return [
     if (swapsOf != null)
@@ -1340,8 +1341,13 @@ List<Override> shellOverrides({
         return state;
       })
     else
-      // Read for the Encrypted account's activity: it has none.
-      encryptedStateProvider.overrideWith((ref, walletIndex) => emptyEncryptedState(walletIndex)),
+      // Read for the Encrypted account's activity: it has none. A read waits
+      // for what [holdEncryptedState] answers at the time, when it is set.
+      encryptedStateProvider.overrideWith((ref, walletIndex) {
+        final held = holdEncryptedState?.call();
+        if (held == null) return emptyEncryptedState(walletIndex);
+        return held.future.then((_) => emptyEncryptedState(walletIndex));
+      }),
     settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService()),
     accountsServiceProvider.overrideWithValue(FakeAccountsService(loadAccounts ?? () async => accounts)),
     remoteConfigProvider.overrideWith(
