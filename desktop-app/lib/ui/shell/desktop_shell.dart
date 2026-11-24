@@ -34,6 +34,7 @@ import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/wallet_creation_service.dart';
@@ -296,6 +297,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           : null,
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
       onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
+      offersMultisigs: read(remoteConfigProvider).enableMultisig,
       accounts: hasWallet ? read(sidebarAccountsProvider) : const [],
       shortcuts: read(isRecordingShortcutProvider) ? null : read(shortcutBindingsProvider).bindings,
       isSidebarVisible: read(sidebarVisibleProvider),

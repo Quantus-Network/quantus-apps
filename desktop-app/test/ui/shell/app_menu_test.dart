@@ -179,18 +179,38 @@ void main() {
       (
         'a local account',
         const RegularAccount(mainAccount),
-        [('Receive', true), ('Send', true), ('Swap', true), ('New Account', true), ('Import Wallet…', true)],
+        [
+          ('Receive', true),
+          ('Send', true),
+          ('Swap', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Manage Multisigs…', true),
+        ],
       ),
       (
         // Its key signs on the hardware wallet, which this app cannot ask yet.
         'a Keystone account',
         const RegularAccount(vaultAccount),
-        [('Receive', true), ('Send', false), ('Swap', false), ('New Account', true), ('Import Wallet…', true)],
+        [
+          ('Receive', true),
+          ('Send', false),
+          ('Swap', false),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Manage Multisigs…', true),
+        ],
       ),
       (
         'a multisig',
         MultisigDisplayAccount(teamMultisig),
-        [('Receive', true), ('Propose', true), ('New Account', true), ('Import Wallet…', true)],
+        [
+          ('Receive', true),
+          ('Propose', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Manage Multisigs…', true),
+        ],
       ),
     ]) {
       testOnMac('the Account menu offers what the toolbar offers for $description', (tester) async {
@@ -199,7 +219,9 @@ void main() {
         final items = _accountMenuActions(tester);
         expect([for (final item in items) (item.label, item.onSelected != null)], expected);
 
-        final onToolbar = expected.where((entry) => entry.$1 != 'New Account' && entry.$1 != 'Import Wallet…');
+        final onToolbar = expected.where(
+          (entry) => !const {'New Account', 'Import Wallet…', 'Manage Multisigs…'}.contains(entry.$1),
+        );
         for (final (label, enabled) in onToolbar) {
           expect(_toolbarButton(label), findsOneWidget, reason: label);
           expect(tester.widget<ToolbarAction>(_toolbarButton(label)).onPressed != null, enabled, reason: label);
@@ -231,6 +253,7 @@ void main() {
       expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), [
         'New Account',
         'Import Wallet…',
+        'Manage Multisigs…',
         'Main',
       ]);
     });
@@ -697,6 +720,7 @@ void main() {
           ('Disconnect Hardware Account…', true),
           ('New Account', true),
           ('Import Wallet…', true),
+          ('Manage Multisigs…', true),
           ('Main', true),
           ('Team', true),
           ('Vault', true),

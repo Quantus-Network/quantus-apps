@@ -138,10 +138,10 @@ void main() {
         ))
           row.label,
       ];
-      expect(labels, ['New Account', 'Import Wallet…']);
-      expect(find.descendant(of: _menu, matching: find.byType(MenuPanelSeparator)), findsOneWidget);
+      expect(labels, ['New Account', 'Import Wallet…', 'Manage Multisigs…']);
+      expect(find.descendant(of: _menu, matching: find.byType(MenuPanelSeparator)), findsNWidgets(2));
       expect(
-        tester.getTopLeft(find.descendant(of: _menu, matching: find.byType(MenuPanelSeparator))).dy,
+        tester.getTopLeft(find.descendant(of: _menu, matching: find.byType(MenuPanelSeparator)).first).dy,
         lessThan(tester.getTopLeft(find.descendant(of: _menu, matching: find.text('Import Wallet…'))).dy),
       );
     });

@@ -98,7 +98,7 @@ class _ImportWalletSheetState extends ConsumerState<ImportWalletSheet> {
               child: Text(error, style: text.caption.copyWith(color: colors.semanticEmber)),
             ),
           ],
-          if (_isImporting) ...[const SizedBox(height: 14), _FindingLine(label: l10n.desktopImportFinding)],
+          if (_isImporting) ...[const SizedBox(height: 14), TerminalBusyLine(label: l10n.desktopImportFinding)],
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -117,32 +117,6 @@ class _ImportWalletSheetState extends ConsumerState<ImportWalletSheet> {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// What is happening while the wallet goes in, with the terminal's spinner
-/// unless the system asks for less motion.
-class _FindingLine extends StatelessWidget {
-  const _FindingLine({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final style = context.themeTextV3.dataAddress.copyWith(color: context.colorsV3.textMuted);
-
-    return Semantics(
-      liveRegion: true,
-      label: label,
-      excludeSemantics: true,
-      child: Row(
-        spacing: 8,
-        children: [
-          if (!MediaQuery.disableAnimationsOf(context)) TerminalSpinner(style: style),
-          Flexible(child: Text(label, style: style)),
         ],
       ),
     );

@@ -3236,6 +3236,24 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopImportDone => 'Dompet diimpor';
 
   @override
+  String get desktopMenuManageMultisigs => 'Kelola Multisig…';
+
+  @override
+  String get desktopManageMultisigsTitle => 'Kelola Multisig';
+
+  @override
+  String get desktopManageMultisigsLead =>
+      'Multisig di chain dengan salah satu akun Anda sebagai penanda tangan. Mematikannya hanya menghapusnya dari aplikasi ini.';
+
+  @override
+  String get desktopManageMultisigsFinding => 'Mencari multisig Anda di chain';
+
+  @override
+  String desktopManageMultisigsSignsAs(String approvals, String name) {
+    return '$approvals · Anda menandatangani sebagai $name';
+  }
+
+  @override
   String get desktopSwapAwaitingDeposit => 'Menunggu deposit';
 
   @override

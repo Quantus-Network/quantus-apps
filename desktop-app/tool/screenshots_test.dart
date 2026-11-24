@@ -572,6 +572,20 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  _scene('manage_multisigs', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => [_foundMultisig(0), _foundMultisig(1)]);
+  });
+
+  _scene('manage_multisigs_failed', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => throw StateError('the indexer is unreachable'));
+  });
+
+  _scene('manage_multisigs_many_smallest_window', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => [for (var i = 0; i < 9; i++) _foundMultisig(i)]);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
   _scene('account_disconnect', (tester) async {
     await _openInfo(tester, _savings);
     await tester.tap(find.byKey(AccountInfoSheet.disconnectRowKey));
@@ -890,6 +904,27 @@ Future<void> _openImport(WidgetTester tester, {required String phrase, Future<Li
   await tester.pump();
 }
 
+/// A multisig the chain reports for one of the wallet's accounts.
+MultisigAccount _foundMultisig(int index) => MultisigAccount(
+  name: 'Multisig ${index + 1}',
+  accountId: 'qzL9sRd4YpV2nKx8TcW5mHq7JbGa3ZeUo6FiBt1NwE8kP$index',
+  signers: [index.isEven ? _root.accountId : _trading.accountId, 'qzOtherSigner$index', 'qzThirdSigner$index'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: index.isEven ? _root.accountId : _trading.accountId,
+);
+
+Future<void> _openManageMultisigs(
+  WidgetTester tester, {
+  required Future<List<MultisigAccount>> Function() discover,
+}) async {
+  await _openAccounts(tester, discoverMultisigs: discover);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openManageMultisigs();
+  await tester.pumpAndSettle();
+}
+
 /// Opens the window of a wallet with every kind of account. Its clipboard
 /// takes whatever is copied.
 Future<void> _openAccounts(
@@ -897,12 +932,14 @@ Future<void> _openAccounts(
   int moreWallets = 0,
   bool walletsLeftOpen = true,
   Future<List<Account>> Function()? scan,
+  Future<List<MultisigAccount>> Function()? discoverMultisigs,
 }) async {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
   if (scan != null) device.scan = scan;
+  if (discoverMultisigs != null) device.chain.discoverMultisigs = discoverMultisigs;
   device.storage.accounts.addAll([
     _cold,
     _trading,

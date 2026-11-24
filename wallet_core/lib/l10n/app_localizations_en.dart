@@ -3230,6 +3230,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopImportDone => 'Wallet imported';
 
   @override
+  String get desktopMenuManageMultisigs => 'Manage Multisigs…';
+
+  @override
+  String get desktopManageMultisigsTitle => 'Manage Multisigs';
+
+  @override
+  String get desktopManageMultisigsLead =>
+      'Multisigs on chain where one of your accounts is a signer. Switching one off removes it from this app only.';
+
+  @override
+  String get desktopManageMultisigsFinding => 'Finding your multisigs on chain';
+
+  @override
+  String desktopManageMultisigsSignsAs(String approvals, String name) {
+    return '$approvals · you sign as $name';
+  }
+
+  @override
   String get desktopSwapAwaitingDeposit => 'Awaiting deposit';
 
   @override

@@ -4748,6 +4748,34 @@
     "@desktopImportDone": {
       "description": "Desktop: a short note by the account name in the top bar after importing a wallet with the sidebar hidden"
     },
+    "desktopMenuManageMultisigs": "Manage Multisigs…",
+    "@desktopMenuManageMultisigs": {
+      "description": "Desktop: menu item in Add Account and the Account menu; opens the list that adds and removes multisigs"
+    },
+    "desktopManageMultisigsTitle": "Manage Multisigs",
+    "@desktopManageMultisigsTitle": {
+      "description": "Desktop Manage Multisigs sheet: its title"
+    },
+    "desktopManageMultisigsLead": "Multisigs on chain where one of your accounts is a signer. Switching one off removes it from this app only.",
+    "@desktopManageMultisigsLead": {
+      "description": "Desktop Manage Multisigs sheet: the sentence under the title"
+    },
+    "desktopManageMultisigsFinding": "Finding your multisigs on chain",
+    "@desktopManageMultisigsFinding": {
+      "description": "Desktop Manage Multisigs sheet: a moving line while the chain is read"
+    },
+    "desktopManageMultisigsSignsAs": "{approvals} · you sign as {name}",
+    "@desktopManageMultisigsSignsAs": {
+      "description": "Desktop Manage Multisigs sheet: a row's detail line, e.g. '2 of 3 · you sign as Savings'",
+      "placeholders": {
+        "approvals": {
+          "type": "String"
+        },
+        "name": {
+          "type": "String"
+        }
+      }
+    },
     "desktopSwapAwaitingDeposit": "Awaiting deposit",
     "@desktopSwapAwaitingDeposit": {
       "description": "Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet"
