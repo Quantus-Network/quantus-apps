@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/language_pop_up.dart';
@@ -85,6 +86,10 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // A window that comes back must not show the phrase without asking again.
+    ref.listen<bool>(windowClosedProvider, (_, isClosed) {
+      if (isClosed && (_step == _Step.phraseCaution || _step == _Step.phraseWords)) _go(_Step.list);
+    });
     final l10n = ref.watch(l10nProvider);
     final words = _words;
 
