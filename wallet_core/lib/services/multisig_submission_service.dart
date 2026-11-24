@@ -4,11 +4,15 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/services/multisig_creation_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 /// Everything a creation needs once on-chain checks have passed: the draft
 /// account (with the resolved nonce) and the network fee it was checked with.
@@ -96,6 +100,42 @@ class MultisigSubmissionService {
             threshold: draft.threshold,
             nonce: draft.nonce,
           ),
+    );
+  }
+
+  /// The signing of [preflight]'s creation on [creator]'s cold wallet: what
+  /// the cold wallet must show, the call it signs, and the submission of its
+  /// signature, tracked as [startMultisigCreation]'s is. A signature that
+  /// comes back after a wallet reset is refused.
+  KeystoneSigningSession creationSigningSession({
+    required MultisigCreationPreflight preflight,
+    required Account creator,
+  }) {
+    final l10n = _ref.read(l10nProvider);
+    final draft = preflight.draft;
+    // Taken now: the signature can come back long after, past a wallet reset.
+    final walletSession = _ref.read(walletSessionProvider);
+    final ticket = walletSession.ticket;
+    return KeystoneSigningSession(
+      account: creator,
+      buildCall: () => buildCreateCall(draft),
+      primaryLabel: l10n.keystoneSignActionLabel,
+      primaryDetail: l10n.multisigCreateKeystoneAction(draft.threshold, draft.signers.length),
+      secondaryLabel: l10n.multisigCreatePredictedAddressLabel,
+      secondaryDetail: draft.accountId,
+      secondaryIsAddress: true,
+      cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: creator.accountId, identity: 'create|${draft.accountId}'),
+      telemetryPrefix: 'multisig_create_hardware',
+      submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+        if (!walletSession.isCurrent(ticket)) {
+          throw StateError('The wallet was reset before this multisig\'s creation was signed');
+        }
+        return submitExternallySignedMultisigCreation(
+          preflight: preflight,
+          unsignedData: unsignedData,
+          signatureWithPublicKey: signatureWithPublicKey,
+        );
+      },
     );
   }
 
