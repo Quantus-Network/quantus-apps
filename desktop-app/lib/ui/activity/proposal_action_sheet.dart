@@ -201,6 +201,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
         const SizedBox(height: 10),
         inspectorAccount(own[recipient], recipient),
       ],
+      if (call != null) ...[const SizedBox(height: 16), ProposalTransferDetails(call: call)],
     ];
   }
 
