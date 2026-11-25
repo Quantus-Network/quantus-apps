@@ -154,7 +154,8 @@ class _FakeSubmission extends Fake implements TransactionSubmissionService {
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
-  }) => _submit('approve', signer, null, callBytes);
+    BigInt? fee,
+  }) => _submit('approve', signer, fee, callBytes);
 
   @override
   Future<String> executeProposal({
@@ -301,13 +302,15 @@ void main() {
     expect(_isOffered(tester, _l10n.multisigApproveConfirmYes), isTrue);
   });
 
-  testWidgets('confirming approves as the chosen signer with the chain\'s bytes, then closes', (tester) async {
+  testWidgets('confirming approves as the chosen signer with the chain\'s bytes and the fee, then closes', (
+    tester,
+  ) async {
     await _open(tester, chain, submission, (context) => _approve(context, signer: _two));
 
     await tester.tap(find.text(_l10n.multisigApproveConfirmYes));
     await tester.pumpAndSettle();
 
-    expect(submission.submitted, [('approve', _two.accountId, null, _callBytes)]);
+    expect(submission.submitted, [('approve', _two.accountId, _fee, _callBytes)]);
     expect(find.byType(MultisigActionConfirmSheet), findsNothing);
   });
 
@@ -337,7 +340,7 @@ void main() {
     await tester.tap(find.text(_l10n.multisigApproveConfirmYes));
     await tester.pumpAndSettle();
 
-    expect(submission.submitted, [('approve', _two.accountId, null, _callBytes)]);
+    expect(submission.submitted, [('approve', _two.accountId, _fee, _callBytes)]);
     expect(find.byType(MultisigActionConfirmSheet), findsNothing);
   });
 
