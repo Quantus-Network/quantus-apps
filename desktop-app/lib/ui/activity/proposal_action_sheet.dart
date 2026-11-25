@@ -71,6 +71,10 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
 
   late Account _signer = _signers.first;
 
+  /// The fee the signer chosen before would have paid: shown until the one
+  /// chosen now is priced, so that the review stands still.
+  BigInt? _feeBefore;
+
   /// The hash of the transaction it went out in, once it has.
   String? _hash;
 
@@ -249,7 +253,10 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
               key: ProposalActionSheet.signerKey(signer.accountId),
               onTap: ref.watch(multisigActionConfirmProvider(_request)).submitting
                   ? null
-                  : () => setState(() => _signer = signer),
+                  : () => setState(() {
+                      _feeBefore = ref.read(multisigActionConfirmProvider(_request)).fee ?? _feeBefore;
+                      _signer = signer;
+                    }),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 5),
                 child: Row(
@@ -272,20 +279,23 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
     );
   }
 
-  /// The fee its signer pays, under a line of its own, as Propose says it.
-  Widget _total(AppLocalizations l10n, BigInt? fee, {required bool paid}) => fee == null
-      ? const SizedBox.shrink()
-      : SendTotal(
-          rows: [SendReviewText(l10n.swapReviewNetworkFee, _money(fee), kind: SendReviewRowKind.total)],
-          label: paid ? l10n.desktopProposePaid : l10n.desktopProposePays,
-          signer: _signer,
-        );
+  /// The fee its signer pays, under a line of its own, as Propose says it;
+  /// its line turns while it is estimated.
+  Widget _total(AppLocalizations l10n, BigInt? fee, {required bool paid, bool loading = false}) {
+    final label = paid ? l10n.desktopProposePaid : l10n.desktopProposePays;
+    if (fee == null) return loading ? SendTotal.loading(label: label, signer: _signer) : const SizedBox.shrink();
+    return SendTotal(
+      rows: [SendReviewText(l10n.swapReviewNetworkFee, _money(fee), kind: SendReviewRowKind.total)],
+      label: label,
+      signer: _signer,
+    );
+  }
 
   List<Widget> _review(AppLocalizations l10n, MultisigActionConfirmState confirm) {
     final colors = context.colorsV3;
     final call = _call(confirm);
     final isCancel = _kind == MultisigActionKind.cancel;
-    final fee = confirm.fee;
+    final fee = confirm.fee ?? (confirm.loadingFee ? _feeBefore : null);
     final approvalNote = switch (ref.watch(approvalAvailabilityProvider)) {
       AsyncData(:final value) => approvalUnavailableNote(l10n, value),
       AsyncError(:final error) => l10n.desktopApprovalFailed('$error'),
@@ -320,10 +330,6 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ..._subject(call),
-              if (confirm.loadingCall) ...[
-                const SizedBox(height: 14),
-                Text(l10n.multisigProposalCallLoading, style: context.sendBody()),
-              ],
               if (confirm.callUnavailable) ...[
                 const SizedBox(height: 14),
                 Text(l10n.multisigProposalCallUnavailable, style: context.sendBody(color: colors.semanticEmber)),
@@ -355,7 +361,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
               if (fee != null)
                 FigureRow(label: l10n.swapReviewNetworkFee, value: _money(fee))
               else if (confirm.loadingFee)
-                FigureRow(label: l10n.swapReviewNetworkFee, value: '…'),
+                FigureRow.loading(label: l10n.swapReviewNetworkFee),
               if (confirm.feeUnavailable)
                 Padding(
                   padding: SummaryRow.padding,
@@ -365,7 +371,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
           ),
         ),
       ),
-      _total(l10n, fee, paid: false),
+      _total(l10n, fee, paid: false, loading: confirm.loadingFee),
       const SizedBox(height: 22),
       Row(
         children: [

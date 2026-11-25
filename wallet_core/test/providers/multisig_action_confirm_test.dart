@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
@@ -77,11 +78,15 @@ class _Chain extends Fake implements MultisigService {
   Object? feeError;
   List<int> callBytes = _transferBytes;
 
+  /// How many times the proposal's call was read.
+  int callReads = 0;
+
   /// The fee estimates asked for, in order: the action and the bytes given.
   final estimates = <(String action, String signer, List<int>? callBytes)>[];
 
   @override
   Future<List<int>> fetchProposalCallBytes({required MultisigAccount msig, required int proposalId}) async {
+    callReads++;
     await holdCall?.future;
     if (callError case final error?) throw error;
     return callBytes;
@@ -208,6 +213,47 @@ void main() {
     balanceHeld = null;
   });
 
+  List<Override> overrides() => [
+    ...bed.overrides,
+    multisigServiceProvider.overrideWithValue(chain),
+    transactionSubmissionServiceProvider.overrideWithValue(submission),
+    accountsProvider.overrideWith((ref) => AccountsNotifier(bed.accounts, initialAccounts: [_one, _two, _keystone])),
+    balanceProviderFamily.overrideWith(
+      (ref, accountId) => balanceHeld?.future ?? holds[accountId] ?? _fee * BigInt.from(1000),
+    ),
+  ];
+
+  /// Opens the confirmation of [kind] by this device's member as a review that
+  /// offers a choice of signer does: the confirmation of the signer chosen is
+  /// watched in place of the one before. [firstSeen] keeps what each signer's
+  /// confirmation showed when it opened.
+  Future<({ValueNotifier<Account> signer, Map<String, MultisigActionConfirmState> firstSeen})> openChoosing(
+    WidgetTester tester,
+    MultisigActionKind kind,
+  ) async {
+    final signer = ValueNotifier<Account>(_one);
+    addTearDown(signer.dispose);
+    final firstSeen = <String, MultisigActionConfirmState>{};
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: overrides(),
+        child: ValueListenableBuilder<Account>(
+          valueListenable: signer,
+          builder: (context, chosen, _) => Consumer(
+            builder: (context, ref, _) {
+              final request = MultisigActionRequest(kind: kind, msig: _msig, proposal: _proposal, signer: chosen);
+              firstSeen.putIfAbsent(chosen.accountId, () => ref.watch(multisigActionConfirmProvider(request)));
+              ref.watch(multisigActionConfirmProvider(request));
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    return (signer: signer, firstSeen: firstSeen);
+  }
+
   /// Opens the confirmation of [kind] by [signer], this device's member unless
   /// given, kept open by a widget watching it.
   Future<_Confirm> open(WidgetTester tester, MultisigActionKind kind, {Account? signer}) async {
@@ -217,17 +263,7 @@ void main() {
     late WidgetRef ref;
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [
-          ...bed.overrides,
-          multisigServiceProvider.overrideWithValue(chain),
-          transactionSubmissionServiceProvider.overrideWithValue(submission),
-          accountsProvider.overrideWith(
-            (ref) => AccountsNotifier(bed.accounts, initialAccounts: [_one, _two, _keystone]),
-          ),
-          balanceProviderFamily.overrideWith(
-            (ref, accountId) => balanceHeld?.future ?? holds[accountId] ?? _fee * BigInt.from(1000),
-          ),
-        ],
+        overrides: overrides(),
         child: Consumer(
           builder: (context, widgetRef, _) {
             ref = widgetRef;
@@ -286,6 +322,44 @@ void main() {
       expect(confirm.state().feeUnavailable, isTrue);
       expect(confirm.state().fee, isNull);
       expect(confirm.state().canConfirm, isTrue);
+    });
+  });
+
+  group('the call, read once for the proposal', () {
+    for (final kind in [MultisigActionKind.approve, MultisigActionKind.execute]) {
+      testWidgets('${kind.name}: another signer reuses the call read, and opens with it', (tester) async {
+        final choosing = await openChoosing(tester, kind);
+        await tester.pump();
+        expect(chain.callReads, 1);
+
+        choosing.signer.value = _two;
+        await tester.pump();
+        await tester.pump();
+
+        expect(chain.callReads, 1, reason: 'the call is the one already read');
+        final opened = choosing.firstSeen[_two.accountId]!;
+        expect(opened.loadingCall, isFalse);
+        expect(opened.callBytes, _transferBytes);
+        expect(opened.decodedCall, isNotNull);
+        expect(chain.estimates.map((estimate) => estimate.$2), [_one.accountId, _two.accountId]);
+      });
+    }
+
+    testWidgets('a call that could not be read is read again by the next signer, never kept', (tester) async {
+      chain.callError = Exception('the node is down');
+      final choosing = await openChoosing(tester, MultisigActionKind.approve);
+      await tester.pump();
+      expect(choosing.firstSeen[_one.accountId]!.loadingCall, isTrue);
+      expect(chain.callReads, 1);
+
+      chain.callError = null;
+      choosing.signer.value = _two;
+      await tester.pump();
+      await tester.pump();
+
+      expect(chain.callReads, 2);
+      expect(choosing.firstSeen[_two.accountId]!.loadingCall, isTrue);
+      expect(chain.estimates.map((estimate) => estimate.$2), [_two.accountId]);
     });
   });
 
