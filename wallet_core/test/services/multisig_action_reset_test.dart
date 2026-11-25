@@ -71,14 +71,17 @@ class _Chain extends Fake implements MultisigService {
   int balanceReads = 0;
 
   /// How many times the multisig's open proposals were read; while
-  /// [heldOpen] is set, each read waits for it.
+  /// [heldOpen] is set, each read waits for it, then fails with [openError]
+  /// if set.
   int openReads = 0;
   Completer<void>? heldOpen;
+  Object? openError;
 
   @override
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
     openReads++;
     await heldOpen?.future;
+    if (openError case final error?) throw error;
     return [?proposal].where((proposal) => !proposal.isTerminal).toList();
   }
 
@@ -783,6 +786,22 @@ void main() {
 
           expect(action.rows(wallet.container), isEmpty);
           expect(wallet.chain.pastReads, pastReads + 1, reason: 'read once');
+          await _close(tester, wallet);
+        });
+
+        // What the row stood for is then the proposal's view to keep from
+        // being offered again (the phone's detail sheet).
+        testWidgets('${action.name} $path: an open list that cannot be read again lets its row go', (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          if (path == 'the indexer shows') wallet.indexer.event = action.event();
+          wallet.chain.proposal = action.resolved();
+          wallet.chain.openError = StateError('the indexer is down');
+
+          await tester.pump(wait);
+          await _settle(tester);
+
+          expect(action.rows(wallet.container), isEmpty);
           await _close(tester, wallet);
         });
 

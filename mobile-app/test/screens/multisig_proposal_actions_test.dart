@@ -77,15 +77,19 @@ MultisigProposal _proposal({
 );
 
 /// The indexer lists [listed] among the open proposals or the past ones, as
-/// its status says; with none, it lists nothing.
+/// its status says; with none, it lists nothing. Reading the open ones fails
+/// with [openError] when set.
 class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.listed);
 
-  final MultisigProposal? listed;
+  MultisigProposal? listed;
+  Object? openError;
 
   @override
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async =>
-      [?listed].where((proposal) => !proposal.isTerminal).toList();
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
+    if (openError case final error?) throw error;
+    return [?listed].where((proposal) => !proposal.isTerminal).toList();
+  }
 
   @override
   Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async =>
@@ -130,21 +134,24 @@ ProviderContainer _container(WidgetTester tester) =>
 
 /// Opens the proposal sheet for [proposal] with [accounts] in the wallet,
 /// after [pending] has put this device's in-flight actions in place. The
-/// indexer lists [proposal] unless [listed] is false.
+/// indexer lists [proposal] unless [listed] is false, through [chain] when
+/// given. A read that fails is not tried again.
 Future<void> _open(
   WidgetTester tester,
   MultisigProposal proposal, {
   List<Account>? accounts,
   void Function(ProviderContainer container)? pending,
   bool listed = true,
+  _FakeMultisigService? chain,
 }) async {
   tester.view.physicalSize = const Size(800, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
+      retry: (_, _) => null,
       overrides: [
-        multisigServiceProvider.overrideWithValue(_FakeMultisigService(listed ? proposal : null)),
+        multisigServiceProvider.overrideWithValue(chain ?? _FakeMultisigService(listed ? proposal : null)),
         accountsProvider.overrideWith(
           (ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts ?? [_one]),
         ),
@@ -191,6 +198,7 @@ List<String> get _allNotes => [
   _l10n.multisigNoSignerHereNote,
   _l10n.multisigCancelWaitsNote,
   _l10n.multisigProposalAlreadySignedNote,
+  _l10n.multisigProposalStateUnreadNote,
 ];
 
 /// The note shown, or null when there is none.
@@ -294,6 +302,72 @@ void main() {
         expect(_note(), isNull);
       });
     }
+
+    // After an action is seen through, the open proposals are read again; a
+    // read that fails keeps what it last held (n13's review of #829).
+    group('the open proposals not read again', () {
+      final ready = _proposal(
+        status: MultisigProposalStatus.approved,
+        approvals: [_two.accountId, _three.accountId],
+        proposer: _one.accountId,
+      );
+
+      /// The sheet open on [proposal], listed; then the indexer lists [now]
+      /// in its place, and the open proposals fail to be read again.
+      Future<void> openThenFail(WidgetTester tester, MultisigProposal proposal, {MultisigProposal? now}) async {
+        final chain = _FakeMultisigService(proposal);
+        await _open(tester, proposal, chain: chain);
+        chain
+          ..listed = now
+          ..openError = StateError('the indexer is down');
+        final container = _container(tester);
+        container.invalidate(multisigOpenProposalsProvider(_msig));
+        container.invalidate(multisigPastProposalsProvider(_msig));
+        await tester.pumpAndSettle();
+      }
+
+      for (final (status, note) in [
+        (MultisigProposalStatus.executed, () => _l10n.multisigProposalAlreadyExecutedNote),
+        (MultisigProposalStatus.cancelled, () => _l10n.multisigProposalAlreadyCancelledNote),
+      ]) {
+        testWidgets('${status.name} among the past ones just read: shown ${status.name}, only Done, with its note', (
+          tester,
+        ) async {
+          await openThenFail(tester, ready, now: ready.copyWith(status: status));
+
+          expect(find.text(_l10n.multisigDone), findsOneWidget);
+          expect(find.text(_l10n.multisigExecuteButton), findsNothing);
+          expect(find.text(_l10n.multisigCancelProposalButton), findsNothing);
+          expect(_note(), note());
+        });
+      }
+
+      for (final (name, proposal) in [
+        ('still to approve', _proposal(proposer: _one.accountId)),
+        ('ready to execute', ready),
+      ]) {
+        testWidgets('$name, and not among the past ones: only Done, saying it could not be checked', (tester) async {
+          await openThenFail(tester, proposal, now: proposal);
+
+          expect(find.text(_l10n.multisigDone), findsOneWidget);
+          expect(find.text(_l10n.multisigApproveButton), findsNothing);
+          expect(find.text(_l10n.multisigExecuteButton), findsNothing);
+          expect(find.text(_l10n.multisigCancelProposalButton), findsNothing);
+          expect(_note(), _l10n.multisigProposalStateUnreadNote);
+        });
+      }
+
+      testWidgets('never read at all: only Done, saying it could not be checked', (tester) async {
+        final chain = _FakeMultisigService(_proposal(proposer: _one.accountId))
+          ..openError = StateError('the indexer is down');
+        await _open(tester, _proposal(proposer: _one.accountId), chain: chain);
+
+        expect(find.text(_l10n.multisigDone), findsOneWidget);
+        expect(find.text(_l10n.multisigApproveButton), findsNothing);
+        expect(find.text(_l10n.multisigCancelProposalButton), findsNothing);
+        expect(_note(), _l10n.multisigProposalStateUnreadNote);
+      });
+    });
 
     testWidgets('every local signer approved and it is not ready: only Done, with the already-signed note', (
       tester,
