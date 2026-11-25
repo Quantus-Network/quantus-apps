@@ -450,18 +450,6 @@
         }
       }
     },
-    "multisigCreateKeystoneAction": "Create {count} of {total} multisig",
-    "@multisigCreateKeystoneAction": {
-      "description": "What a Keystone creator is signing, shown on the Keystone sign and verify screens",
-      "placeholders": {
-        "count": {
-          "type": "int"
-        },
-        "total": {
-          "type": "int"
-        }
-      }
-    },
     "multisigCreatePredictedAddressLabel": "MULTISIG ADDRESS",
     "@multisigCreatePredictedAddressLabel": {
       "description": "Label for predicted multisig address preview"

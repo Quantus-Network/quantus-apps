@@ -617,7 +617,7 @@ void main() {
         (session.primaryLabel, session.primaryDetail, session.secondaryLabel, session.secondaryDetail),
         (
           l10n.keystoneSignActionLabel,
-          l10n.multisigCreateKeystoneAction(MultisigService.defaultThreshold(2), 2),
+          l10n.keystoneSignCreateMultisig,
           l10n.multisigCreatePredictedAddressLabel,
           address,
         ),
