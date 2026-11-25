@@ -58,6 +58,7 @@ import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
@@ -1373,6 +1374,23 @@ Future<void> _openActivityRow(WidgetTester tester, String id) async {
 void _activityScenes() {
   _scene('activity_list', (tester) async {
     await _openActivity(tester);
+  });
+
+  // An approval of a Team proposal on its way, in Account 1's In progress,
+  // opened.
+  _scene('activity_approving_open', (tester) async {
+    final container = await _openActivity(tester);
+    final approving = PendingMultisigApprovalEvent.create(
+      multisigAddress: _activityTeam,
+      proposalId: 7,
+      approverId: _root.accountId,
+      recipient: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+      amount: oneToken * BigInt.from(120),
+      fee: FakeSendChain.usualFee,
+    ).copyWith(extrinsicHash: '0x2b7e4c9a1d3f5e8b0a6c2d4f7e9b1a3c5d8f0e2a4c6b8d1f3e5a7c9b2d4f6a8e');
+    container.read(pendingMultisigApprovalsProvider.notifier).add(approving);
+    await tester.pumpAndSettle();
+    await _openActivityRow(tester, approving.id);
   });
 
   // The pointer resting on Savings, one of the wallet's own accounts, in its

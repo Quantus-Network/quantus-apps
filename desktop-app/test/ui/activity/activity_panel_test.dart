@@ -20,6 +20,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -158,6 +159,32 @@ void main() {
       find.descendant(of: find.byType(InProgressPanel), matching: find.text(_l10n.desktopActivityInProgress)),
       findsOne,
     );
+  });
+
+  testOnMac("an approval on its way is in its approver's In progress, Approving…, and not in the multisig's", (
+    tester,
+  ) async {
+    await _open(tester, multisigs: [teamMultisig]);
+    final approving = PendingMultisigApprovalEvent.create(
+      multisigAddress: teamMultisig.accountId,
+      proposalId: 1,
+      approverId: 'qzMain',
+      recipient: 'qzBob',
+      amount: oneToken,
+      fee: FakeSendChain.usualFee,
+    );
+    _container(tester).read(pendingMultisigApprovalsProvider.notifier).add(approving);
+    await tester.pumpAndSettle();
+
+    expect(_rowsIn(tester, InProgressPanel), [approving.id]);
+    expect(find.descendant(of: find.byType(InProgressPanel), matching: find.text(_l10n.activityTxApproving)), findsOne);
+
+    await _container(
+      tester,
+    ).read(activeAccountProvider.notifier).setActiveAccount(MultisigDisplayAccount(teamMultisig));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(InProgressPanel), findsNothing);
   });
 
   testOnMac('with nothing under way there is no In progress panel', (tester) async {
