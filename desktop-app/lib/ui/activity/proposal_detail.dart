@@ -113,6 +113,7 @@ class ProposalDetail extends ConsumerWidget {
             const SizedBox(height: 10),
             inspectorAccount(own[proposal.recipient], proposal.recipient),
           ],
+          if (call != null) ...[const SizedBox(height: 16), ProposalTransferDetails(call: call)],
         ],
         ProposalActionsBar(msig: account, proposal: proposal),
         const SizedBox(height: 20),
@@ -234,10 +235,16 @@ class ProposalSignerRow extends ConsumerWidget {
 /// under its label, whole, or by its badge and name when the wallet holds it;
 /// a hash, bytes or text under its label, whole; a figure at its line's end;
 /// a group or a nested call indented under its label.
+///
+/// See also [ProposalTransferDetails], for a call headed by what it moves.
 class ProposalCallFields extends ConsumerWidget {
-  const ProposalCallFields({super.key, required this.call});
+  const ProposalCallFields({super.key, required this.call, this.except = const []});
 
   final DecodedCall call;
+
+  /// Fields said already, where the call is headed by what it moves; left
+  /// out by identity, so another field of an equal value is still listed.
+  final List<CallField> except;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -246,7 +253,10 @@ class ProposalCallFields extends ConsumerWidget {
     final own = ref.watch(ownAccountsByAddressProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [for (final field in call.fields) _field(context, l10n, formatting, own, field)],
+      children: [
+        for (final field in call.fields)
+          if (!except.any((said) => identical(said, field))) _field(context, l10n, formatting, own, field),
+      ],
     );
   }
 
@@ -339,5 +349,36 @@ class ProposalCallFields extends ConsumerWidget {
         field.note,
       ),
     };
+  }
+}
+
+/// What a call headed by the amount it moves and to whom is, beyond those:
+/// its runtime name, so a reversible transfer or one that may close the
+/// sender's account is told from a plain one, and every field the headline
+/// does not say, such as how long the transfer stays reversible.
+class ProposalTransferDetails extends StatelessWidget {
+  const ProposalTransferDetails({super.key, required this.call});
+
+  final DecodedCall call;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = call.summary ?? (throw StateError('Only a call headed by what it moves has transfer details.'));
+    final said = [?summary.amountField, if (summary.recipient != null) ?summary.recipientField];
+    final rest = call.fields.where((field) => !said.any((s) => identical(s, field)));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          call.displayTitle,
+          style: context.themeTextV3.dataAddress.copyWith(
+            height: 1.3,
+            letterSpacing: 0.3,
+            color: context.colorsV3.textMuted,
+          ),
+        ),
+        if (rest.isNotEmpty) ...[const SizedBox(height: 8), ProposalCallFields(call: call, except: said)],
+      ],
+    );
   }
 }

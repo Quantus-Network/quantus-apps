@@ -181,6 +181,19 @@ void main() {
       expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
     });
 
+    testOnMac('a reversible transfer: what it is and its window, beside the amount and to whom', (tester) async {
+      final bytes = corpusCall('ReversibleTransfers.schedule_transfer_with_delay');
+      final chain = FakeSendChain()..proposalCall = (_) async => bytes;
+      await _open(tester, MultisigActionKind.approve, _proposal(callRaw: bytes), chain: chain);
+
+      final call = MultisigProposal.decodeProposalCall(bytes);
+      expect(call.summary?.reversible, isTrue, reason: 'the sample is a reversible transfer');
+      expect(_inSheet(find.text(call.displayTitle)), findsOne);
+      expect(_inSheet(find.text('Reversible for')), findsOne);
+      expect(_inSheet(find.text('Destination')), findsNothing, reason: 'the recipient is already said');
+      expect(_inSheet(find.text('Amount')), findsNothing, reason: 'the amount is already said');
+    });
+
     testOnMac('a call that cannot be read: said in ember, and Approve unavailable', (tester) async {
       final chain = FakeSendChain()..proposalCall = (_) async => throw StateError('not on chain');
       await _open(tester, MultisigActionKind.approve, _proposal(), chain: chain);
