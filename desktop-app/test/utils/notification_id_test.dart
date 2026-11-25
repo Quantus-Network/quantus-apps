@@ -11,6 +11,14 @@ void main() {
     'received_0001146057-3ef3e-000006': 149514113,
     'incoming_0001215213-e4ed9-000004': 1205035396,
     'send_tx-1': 1288537590,
+    // What happens to a proposal is named by its kind and the chain's id of
+    // the event, which the indexer keeps its record under.
+    'proposal_created_0001443735-f0fbc-000004': 1592488721,
+    'proposal_signed_0001443735-f0fbc-000004': 430427913,
+    'proposal_ready_0001443735-f0fbc-000005': 1840862533,
+    'proposal_executed_0001443735-f0fbc-000004': 1997411692,
+    'proposal_cancelled_0001443735-f0fbc-000004': 1461067774,
+    'proposal_removed_0001443735-f0fbc-000004': 1384582437,
   };
 
   test('a notification\'s name gives the id the push server works out for it too', () {
