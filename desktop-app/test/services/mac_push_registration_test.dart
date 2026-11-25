@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/providers/notification_click_provider.dar
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/services/mac_push.dart';
 import 'package:quantus_desktop_wallet/services/mac_push_registration.dart';
+import 'package:quantus_desktop_wallet/services/mac_push_store.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -110,8 +111,8 @@ Future<_Mac> _open(
   RemoteConfigModel remoteConfig = RemoteConfigModel.defaults,
   FakeMacPush? push,
   Completer<void>? holdRegistrations,
-  Map<String, bool> stored = const {},
   int senotiAnswers = 202,
+  FakeMacPushStore? store,
 }) async {
   SharedPreferences.setMockInitialValues({});
   _senotiAnswers = senotiAnswers;
@@ -125,13 +126,13 @@ Future<_Mac> _open(
     overrides: [
       ...shellOverrides(
         loadAccounts: () async => [...held],
-        settings: _Settings(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs ?? [teamMultisig])
-          ..bools.addAll(stored),
+        settings: _Settings(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs ?? [teamMultisig]),
         remoteConfig: FakeRemoteConfigService(remoteConfig),
       ),
       notificationPluginProvider.overrideWithValue(FakeNotificationPlugin(grants: grants)),
       telemetryProvider.overrideWithValue(telemetry),
       macPushProvider.overrideWithValue(mac),
+      macPushStoreProvider.overrideWithValue(store ?? FakeMacPushStore()),
       notificationClickProvider.overrideWith(_RecordingClick.new),
       pushRegistrationProvider.overrideWith((ref) => ref.watch(macPushRegistrationProvider)),
       senotiClientProvider.overrideWithValue(
@@ -169,8 +170,6 @@ Future<void> _switchNotifications(_Mac mac, {required bool on}) {
   final config = mac.container.read(notificationConfigProvider);
   return mac.container.read(notificationConfigProvider.notifier).updateConfig(config.copyWith(enabled: on));
 }
-
-const _registeredKey = MacPushRegistration.registeredKey;
 
 /// The account lists read again, as they are: the sync looks again.
 void _accountsChanged(_Mac mac) => mac.container.invalidate(accountsProvider);
@@ -412,6 +411,46 @@ void main() {
       expect(mac.senoti.map((asked) => asked.what), ['POST /api/devices', 'DELETE /api/devices', 'POST /api/devices']);
     });
 
+    _test('switched off while an account flow\'s registration waits for Apple: nothing is registered', (tester) async {
+      // The sync's own registration failed: it holds nothing yet.
+      final push = FakeMacPush()..tokenError = PlatformException(code: 'token-failed', message: 'no network');
+      final mac = await _open(tester, synced: true, push: push);
+      push
+        ..tokenError = null
+        ..holdToken = Completer<void>();
+      unawaited(mac.container.read(pushRegistrationProvider).registerDevice());
+      await _settle(tester);
+
+      await _switchNotifications(mac, on: false);
+      await _settle(tester);
+      push.holdToken!.complete();
+      await _settle(tester);
+
+      expect(mac.senoti, isEmpty);
+    });
+
+    _test('switched off while an account flow\'s registration is on its way: the Mac is removed after it', (
+      tester,
+    ) async {
+      final push = FakeMacPush()..tokenError = PlatformException(code: 'token-failed', message: 'no network');
+      final mac = await _open(tester, synced: true, push: push);
+      push.tokenError = null;
+      final hold = _holdRegistrations = Completer<void>();
+      unawaited(mac.container.read(pushRegistrationProvider).registerDevice());
+      await _settle(tester);
+      expect(_senotiReached, 1, reason: 'the registration was sent');
+
+      await _switchNotifications(mac, on: false);
+      await _settle(tester);
+      hold.complete();
+      await _settle(tester);
+
+      expect(_asked(mac), [
+        {'POST /api/devices': _registration},
+        _removal,
+      ]);
+    });
+
     _test('a removal that fails is tried again at the next change, until it goes through', (tester) async {
       final mac = await _open(tester, synced: true);
       _senotiAnswers = 500;
@@ -432,9 +471,34 @@ void main() {
     });
 
     _test('a Mac an earlier run left registered is removed when the app starts with notifications off', (tester) async {
-      final mac = await _open(tester, synced: true, grants: false, stored: {_registeredKey: true});
+      final mac = await _open(
+        tester,
+        synced: true,
+        grants: false,
+        store: FakeMacPushStore(const MacPushHold(token: 'mac-token')),
+      );
 
       expect(_asked(mac), [_removal]);
+    });
+
+    _test('a removal a reset could not make is made at the next launch, before the next wallet is registered', (
+      tester,
+    ) async {
+      final store = FakeMacPushStore();
+      final before = await _open(tester, synced: true, store: store);
+      _senotiAnswers = 500;
+      _reset(before);
+      await _settle(tester);
+      expect(before.senoti.map((asked) => asked.what), ['POST /api/devices', 'DELETE /api/devices']);
+
+      // The reset wiped the wallet's preferences; the next launch has a new
+      // wallet.
+      final after = await _open(tester, synced: true, store: store);
+
+      expect(_asked(after), [
+        _removal,
+        {'POST /api/devices': _registration},
+      ]);
     });
 
     _test('a Mac that was never registered is not removed when the app starts with notifications off', (tester) async {
@@ -503,10 +567,32 @@ void main() {
       ]);
     });
 
+    _test('a reset that leaves the account lists loading: the same accounts restored are registered again', (
+      tester,
+    ) async {
+      final mac = await _open(tester, synced: true);
+
+      // As LogoutService does: the Mac is removed, and the lists go back to
+      // loading.
+      _reset(mac);
+      mac.container.read(accountsProvider.notifier).reset();
+      mac.container.read(multisigAccountsProvider.notifier).reset();
+      await _settle(tester);
+      // An import asks before the restored lists have loaded.
+      await mac.container.read(pushRegistrationProvider).registerDevice();
+      mac.container
+        ..invalidate(accountsProvider)
+        ..invalidate(multisigAccountsProvider);
+      await _settle(tester);
+
+      expect(mac.senoti.map((asked) => asked.what), ['POST /api/devices', 'DELETE /api/devices', 'POST /api/devices']);
+    });
+
     _test('a wallet restored after a reset is registered again, though its accounts are the same', (tester) async {
       final mac = await _open(tester, synced: true, multisigs: const []);
       final restored = [...mac.accounts];
 
+      _reset(mac);
       mac.accounts.clear();
       mac.container.invalidate(accountsProvider);
       await _settle(tester);
@@ -516,8 +602,9 @@ void main() {
 
       expect(mac.senoti.map((asked) => asked.body['addresses']), [
         ['qzMain', 'qzSavings'],
+        null,
         ['qzMain', 'qzSavings'],
-      ]);
+      ], reason: 'registered, removed by the reset, registered again');
     });
 
     _test('a click on a pushed notification opens what it was about', (tester) async {
