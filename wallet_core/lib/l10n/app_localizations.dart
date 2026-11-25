@@ -5954,6 +5954,12 @@ abstract class AppLocalizations {
   /// **'In {account}'**
   String desktopNotificationReceivedBody(String account);
 
+  /// Desktop notification body: what a swap that ended or came short was about, as its row says it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} for {foreignAmount} on {network}'**
+  String desktopNotificationSwapBody(String amount, String foreignAmount, String network);
+
   /// Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol
   ///
   /// In en, this message translates to:

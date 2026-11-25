@@ -8,6 +8,7 @@ import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/swaps_in_progress_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
 import 'package:quantus_desktop_wallet/services/notification_delivery.dart';
@@ -41,16 +42,29 @@ final pendingWorkProvider = Provider<bool>(
       ref.watch(workHoldsProvider).isNotEmpty,
 );
 
-/// Keeps the app running with its window closed while work is under way
-/// ([pendingWorkProvider]), where the platform can ([supportsBackgroundMode]).
-/// Otherwise closing the window quits the app.
+/// Whether anything keeps the app running with its window closed: work under
+/// way ([pendingWorkProvider]), or a swap in progress, so that how it ends is
+/// told, or one whose end is yet to be told ([swapEndsUntoldProvider]). A swap
+/// goes on whether the app runs or not, so quitting does not wait for one, and
+/// one that runs long is not taken for work that is stuck.
+final keepsRunningProvider = Provider<bool>(
+  (ref) =>
+      ref.watch(pendingWorkProvider) ||
+      ref.watch(swapsInProgressProvider.select((swaps) => swaps.isNotEmpty)) ||
+      ref.watch(swapEndsUntoldProvider),
+);
+
+/// Keeps the app running with its window closed while something is under
+/// way ([keepsRunningProvider]), where the platform can
+/// ([supportsBackgroundMode]). Otherwise closing the window quits the app.
 class BackgroundMode {
   /// How long the app stays once its last work has settled.
   static const settleDelay = NotificationDelivery.settleDelay;
 
   /// How long the window stays closed with work that has not settled. A chain
   /// call has no timeout of its own, so one that hangs would otherwise leave
-  /// the app running out of sight for good.
+  /// the app running out of sight for good. A swap has its own end: it is
+  /// polled no more once it is overdue.
   static const hiddenLimit = Duration(minutes: 30);
 
   BackgroundMode(this._ref) : _window = _ref.read(backgroundWindowProvider), _telemetry = _ref.read(telemetryProvider) {
@@ -68,10 +82,12 @@ class BackgroundMode {
       (_, labels) => unawaited(_reported(_window.configure(labels))),
       fireImmediately: true,
     );
-    _ref.listen<bool>(pendingWorkProvider, (_, isPending) {
-      unawaited(_reported(_window.setStayAwake(isPending)));
-      if (!isPending) _quitOnceSettled();
+    _ref.listen<bool>(keepsRunningProvider, (_, isRunning) {
+      unawaited(_reported(_window.setStayAwake(isRunning)));
+      if (!isRunning) _quitOnceSettled();
     });
+    // A swap followed from the last run may be in progress from the start.
+    if (_ref.read(keepsRunningProvider)) unawaited(_reported(_window.setStayAwake(true)));
     // A menu still works with the window closed, and what it opens must show.
     _ref.listen<ShellSheet?>(shellSheetProvider, (_, sheet) {
       if (sheet != null && _ref.read(windowClosedProvider)) unawaited(_reported(_window.bringToFront()));
@@ -91,13 +107,17 @@ class BackgroundMode {
   WindowClosedNotifier get _closed => _ref.read(windowClosedProvider.notifier);
 
   /// Whether quitting now would cut work short or lose what it has to say.
-  /// Every way of closing or quitting asks this, but Quit Now.
+  /// Every way of quitting asks this, but Quit Now.
   bool get _mustStay => _ref.read(pendingWorkProvider) || _ref.read(notificationDeliveryProvider).isSettling;
+
+  /// Whether closing the window is to leave the app running: what quitting
+  /// asks about, or a swap in progress.
+  bool get _staysOnClose => _mustStay || _ref.read(keepsRunningProvider);
 
   /// File › Close Window: hides the window while work is under way, and
   /// otherwise asks the app to quit.
   Future<void> closeWindow() async {
-    if (!supportsBackgroundMode || !_mustStay) {
+    if (!supportsBackgroundMode || !_staysOnClose) {
       _ref.read(requestAppExitProvider)();
       return;
     }
@@ -138,7 +158,7 @@ class BackgroundMode {
   /// The close button: whether the window is to hide, decided now so that
   /// work started a moment ago counts. If not, it closes, which quits the app.
   Future<bool> _onCloseButton() async {
-    if (!_mustStay) return false;
+    if (!_staysOnClose) return false;
     await _getReadyToClose();
     return true;
   }
@@ -150,7 +170,7 @@ class BackgroundMode {
     _hiddenLimitTimer?.cancel();
     _hiddenLimitTimer = Timer(hiddenLimit, _onHiddenTooLong);
     // Only a notification's last moment is left: no more work will settle.
-    if (!_ref.read(pendingWorkProvider)) _quitOnceSettled();
+    if (!_ref.read(keepsRunningProvider)) _quitOnceSettled();
     final scheduler = SchedulerBinding.instance;
     if (scheduler.framesEnabled) await scheduler.endOfFrame;
   }
@@ -170,7 +190,7 @@ class BackgroundMode {
     _quitTimer?.cancel();
     if (!_ref.read(windowClosedProvider)) return;
     _quitTimer = Timer(settleDelay, () {
-      if (_ref.read(pendingWorkProvider)) return;
+      if (_ref.read(keepsRunningProvider)) return;
       if (_ref.read(notificationDeliveryProvider).isSettling) {
         _quitOnceSettled();
         return;
@@ -180,8 +200,10 @@ class BackgroundMode {
   }
 
   /// Something has not settled for so long that it may never: the window comes
-  /// back, for the person to see and decide. Nothing is stopped.
+  /// back, for the person to see and decide. Nothing is stopped. A swap still
+  /// in progress is not stuck: it ends, or turns overdue, on its own.
   void _onHiddenTooLong() {
+    if (!_mustStay) return;
     final error = StateError('Work was still under way ${hiddenLimit.inMinutes} minutes after the window closed');
     quantusPrint('$error');
     _telemetry.sendError('desktop_background_work_stuck', error: error);

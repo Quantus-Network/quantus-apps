@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' show AppExitResponse;
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -1487,6 +1488,187 @@ void main() {
 
       await fromNative('windowDidOpen');
       expect(opened, 1);
+    });
+  });
+
+  group('a swap in progress', () {
+    const quitTitle = 'A Transaction Is Still Under Way';
+
+    /// The app following [swaps], with 1Click as [device] answers for them.
+    Future<_Opened> following(
+      WidgetTester tester,
+      List<ActiveSwap> swaps, {
+      FakeWalletDevice? device,
+      bool workUnderWay = false,
+    }) {
+      final onDevice = device ?? FakeWalletDevice();
+      onDevice.storage.activeSwaps = swaps;
+      return _open(tester, onDevice: onDevice, workUnderWay: workUnderWay);
+    }
+
+    /// 1Click answering that every swap asked about succeeded.
+    void succeedAll(FakeWalletDevice device) =>
+        device.swaps.status = (order) async => SwapOrder(quote: order.quote, status: SwapStatus.success);
+
+    /// Cmd+Q or the menu bar icon's Quit, as the system passes it on.
+    Future<AppExitResponse> requestQuit(WidgetTester tester) async {
+      final response = await tester.binding.handleRequestAppExit();
+      await tester.pumpAndSettle();
+      return response;
+    }
+
+    /// The app without its shell, following [swaps] with 1Click as [oneClick]
+    /// answers, its errors kept in [telemetry]. The test disposes of it.
+    Future<({ProviderContainer container, FakeBackgroundWindow window, List<String> exits})> bare(
+      WidgetTester tester,
+      List<ActiveSwap> swaps,
+      _RecordingTelemetry telemetry,
+    ) async {
+      final window = FakeBackgroundWindow();
+      final exits = <String>[];
+      final container = ProviderContainer(
+        overrides: [
+          ...shellOverrides(accounts: const [mainAccount], settings: FakeSettingsService()..activeSwaps = swaps),
+          backgroundWindowProvider.overrideWithValue(window),
+          telemetryProvider.overrideWithValue(telemetry),
+          requestAppExitProvider.overrideWithValue(() => exits.add('exit')),
+        ],
+      );
+      container.read(backgroundModeProvider);
+      await tester.pump();
+      return (container: container, window: window, exits: exits);
+    }
+
+    testOnMac('closing the window while a swap is in progress hides it and leaves the app running', (tester) async {
+      final (:window, :container, :exits) = await following(tester, [fakeActiveSwap()]);
+
+      await _pressClose(tester, window);
+
+      expect(window.calls, ['hide']);
+      expect(exits, isEmpty);
+      expect(container.read(windowClosedProvider), isTrue);
+    });
+
+    testOnMac('closing it with only swaps that ended, await a deposit by hand, or are overdue quits', (tester) async {
+      final (:window, :container, :exits) = await following(tester, [
+        fakeActiveSwap(depositAddress: '0xswapped', status: SwapStatus.success),
+        fakeActiveSwap(depositAddress: '0xawaited', swapOut: false, status: SwapStatus.pendingDeposit),
+        fakeActiveSwap(
+          depositAddress: '0xoverdue',
+          deadline: clock.now().subtract(ActiveSwap.finishGrace + const Duration(minutes: 1)),
+        ),
+      ]);
+
+      await _closeFromMenu(tester, container);
+
+      expect(exits, ['exit']);
+      expect(window.calls, isEmpty);
+    });
+
+    testOnMac('quitting with only a swap in progress quits without asking: the swap goes on without the app', (
+      tester,
+    ) async {
+      final (:window, container: _, exits: _) = await following(tester, [fakeActiveSwap()]);
+
+      expect(await requestQuit(tester), AppExitResponse.exit);
+
+      expect(find.text(quitTitle), findsNothing);
+      expect(window.calls, isEmpty);
+    });
+
+    testOnMac('quitting with work under way beside a swap still asks', (tester) async {
+      await following(tester, [fakeActiveSwap()], workUnderWay: true);
+
+      expect(await requestQuit(tester), AppExitResponse.cancel);
+
+      expect(find.text(quitTitle), findsOneWidget);
+    });
+
+    testWidgets('a swap in progress the whole time the window is closed brings nothing back, and is not reported', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final telemetry = _RecordingTelemetry();
+      final swap = fakeActiveSwap(deadline: clock.now().add(BackgroundMode.hiddenLimit * 4));
+      final (:container, :window, :exits) = await bare(tester, [swap], telemetry);
+      await _pressClose(tester, window);
+
+      await tester.pump(BackgroundMode.hiddenLimit + const Duration(seconds: 1));
+
+      expect(window.calls, ['hide']);
+      expect(container.read(windowClosedProvider), isTrue);
+      expect(exits, isEmpty);
+      expect(telemetry.errors, isNot(contains('desktop_background_work_stuck')));
+      container.dispose();
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('work under way beside a swap at the limit still brings the window back, and is reported', (
+      tester,
+    ) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final telemetry = _RecordingTelemetry();
+      final swap = fakeActiveSwap(deadline: clock.now().add(BackgroundMode.hiddenLimit * 4));
+      final (:container, :window, :exits) = await bare(tester, [swap], telemetry);
+      container.read(workHoldsProvider.notifier).hold(_work);
+      await tester.pump();
+      await _pressClose(tester, window);
+
+      await tester.pump(BackgroundMode.hiddenLimit + const Duration(seconds: 1));
+
+      expect(window.calls, ['hide', 'bringToFront']);
+      expect(exits, isEmpty);
+      expect(telemetry.errors, contains('desktop_background_work_stuck'));
+      container.dispose();
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testOnMac('with the window closed, the app quits a moment after the last swap ends', (tester) async {
+      final device = FakeWalletDevice();
+      final (:window, container: _, :exits) = await following(tester, [fakeActiveSwap()], device: device);
+      await _pressClose(tester, window);
+      await tester.pump(SwapService.statusPollInterval * 3);
+      expect(exits, isEmpty, reason: 'the swap is still in progress');
+
+      succeedAll(device);
+      await tester.pump(SwapService.statusPollInterval);
+      expect(exits, isEmpty, reason: 'it quits a moment after, not at once');
+
+      await tester.pump(BackgroundMode.settleDelay * 3);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('with the window closed, a swap turning overdue lets the app quit, with no answer from 1Click', (
+      tester,
+    ) async {
+      final device = FakeWalletDevice()..swaps.status = (_) => Completer<SwapOrder>().future;
+      final turnsOverdue = clock.now().add(const Duration(minutes: 1));
+      final (:window, container: _, :exits) = await following(tester, [
+        fakeActiveSwap(deadline: turnsOverdue.subtract(ActiveSwap.finishGrace)),
+      ], device: device);
+      await _pressClose(tester, window);
+
+      await tester.pump(const Duration(seconds: 59));
+      expect(exits, isEmpty);
+
+      await tester.pump(const Duration(seconds: 1) + BackgroundMode.settleDelay * 3);
+      expect(exits, ['exit']);
+      expect(window.stayAwake.last, isFalse);
+    });
+
+    testOnMac('the Mac is kept awake while a swap is in progress, from launch, and let go once it ends', (
+      tester,
+    ) async {
+      final device = FakeWalletDevice();
+      final (:window, container: _, exits: _) = await following(tester, [fakeActiveSwap()], device: device);
+      expect(window.stayAwake, [true]);
+
+      succeedAll(device);
+      await tester.pump(SwapService.statusPollInterval);
+
+      expect(window.stayAwake, [true, false]);
     });
   });
 }

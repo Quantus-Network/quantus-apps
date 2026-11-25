@@ -42,7 +42,8 @@ const _hash = '0xclicked';
 final _when = DateTime(2026, 11, 21, 12);
 
 /// Opens the window on a wallet whose active account is Main, its accounts
-/// loaded by [loadAccounts] when given.
+/// loaded by [loadAccounts] when given, following [swaps], with 1Click as
+/// [oneClick] answers.
 Future<ProviderContainer> _openWallet(
   WidgetTester tester,
   FakeNotificationPlugin notifications, {
@@ -52,6 +53,8 @@ Future<ProviderContainer> _openWallet(
   List<MultisigAccount> multisigs = const [],
   List<Account> accounts = const [mainAccount, savingsAccount],
   Account active = mainAccount,
+  List<ActiveSwap> swaps = const [],
+  FakeSwapService? oneClick,
   List<Override> extra = const [],
 }) async {
   await pumpShell(
@@ -63,7 +66,8 @@ Future<ProviderContainer> _openWallet(
         accounts: accounts,
         loadAccounts: loadAccounts,
         chain: chain,
-        settings: FakeSettingsService(activeAccount: RegularAccount(active), multisigs: multisigs),
+        settings: FakeSettingsService(activeAccount: RegularAccount(active), multisigs: multisigs)..activeSwaps = swaps,
+        swaps: oneClick,
       ),
       ...extra,
     ],
@@ -1077,6 +1081,62 @@ void main() {
 
       expect(_activeAccountId(container), mainAccount.accountId);
       expect(_opened(container), OpenedTransaction(second));
+    });
+  });
+
+  group('a click on a swap\'s notification', () {
+    /// What a notification about the swap [swapId] from [accountId] carries.
+    String aboutSwap(String accountId, String swapId) => jsonEncode({'accountId': accountId, 'swapId': swapId});
+
+    testOnMac('shows the account the swap is from, and opens the swap', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final swap = fakeActiveSwap(account: savingsAccount);
+      final container = await _openWallet(tester, notifications, swaps: [swap]);
+
+      notifications.click(aboutSwap(savingsAccount.accountId, swap.id));
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), savingsAccount.accountId);
+      expect(_opened(container), OpenedSwap(swap.id));
+    });
+
+    testOnMac('shows only its account once the swap is no longer followed', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final swap = fakeActiveSwap(account: savingsAccount);
+      final container = await _openWallet(tester, notifications);
+
+      notifications.click(aboutSwap(savingsAccount.accountId, swap.id));
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), savingsAccount.accountId);
+      expect(_opened(container), isNull);
+    });
+
+    testOnMac('opens a swap whose account the wallet no longer holds under the account in front', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final swap = fakeActiveSwap(account: tradingAccount);
+      final container = await _openWallet(tester, notifications, swaps: [swap]);
+
+      notifications.click(aboutSwap(tradingAccount.accountId, swap.id));
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), mainAccount.accountId);
+      expect(_opened(container), OpenedSwap(swap.id));
+    });
+
+    testOnMac('opens the swap its own notification told the end of', (tester) async {
+      final notifications = FakeNotificationPlugin();
+      final oneClick = FakeSwapService();
+      final swap = fakeActiveSwap(account: savingsAccount);
+      final container = await _openWallet(tester, notifications, swaps: [swap], oneClick: oneClick);
+      oneClick.status = (order) async => SwapOrder(quote: order.quote, status: SwapStatus.success);
+      await tester.pump(SwapService.statusPollInterval);
+
+      notifications.click(notifications.shown.single.payload);
+      await tester.pumpAndSettle();
+
+      expect(_activeAccountId(container), savingsAccount.accountId);
+      expect(_opened(container), OpenedSwap(swap.id));
     });
   });
 }

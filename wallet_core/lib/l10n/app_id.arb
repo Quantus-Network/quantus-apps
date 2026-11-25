@@ -896,6 +896,7 @@
   "desktopNotificationSentBody": "Dari {account}",
   "desktopNotificationReceivedTitle": "{amount} diterima",
   "desktopNotificationReceivedBody": "Di {account}",
+  "desktopNotificationSwapBody": "{amount} untuk {foreignAmount} di {network}",
   "desktopNotificationIncomingTitle": "{amount} akan masuk",
   "desktopNotificationIncomingBody": "Dijadwalkan masuk ke {account}",
   "desktopNotificationSendNotConfirmedTitle": "Pengiriman belum terkonfirmasi",

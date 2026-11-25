@@ -40,3 +40,14 @@ class WorkHoldsNotifier extends Notifier<Set<Object>> {
     state = {...state}..remove(holder);
   }
 }
+
+/// Whether how a swap ended is still to be told: it was learned before the
+/// system said whether it shows notifications.
+final swapEndsUntoldProvider = NotifierProvider<SwapEndsUntoldNotifier, bool>(SwapEndsUntoldNotifier.new);
+
+class SwapEndsUntoldNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool isUntold) => state = isUntold;
+}

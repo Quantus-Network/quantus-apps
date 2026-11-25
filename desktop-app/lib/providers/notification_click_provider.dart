@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
@@ -22,16 +23,21 @@ const notificationHashKey = 'extrinsicHash';
 /// transaction can create several.
 const notificationProposalKey = 'proposalId';
 
+/// Where a notification's metadata holds the id of the followed swap it is
+/// about ([ActiveSwap.id]).
+const notificationSwapKey = 'swapId';
+
 /// What a click on [notification] needs to find what it was about.
 String notificationClickPayload(NotificationData notification) => jsonEncode({
   'accountId': notification.accountId,
   if (notification.metadata?[notificationHashKey] case final String hash) notificationHashKey: hash,
   if (notification.metadata?[notificationProposalKey] case final String proposalId) notificationProposalKey: proposalId,
+  if (notification.metadata?[notificationSwapKey] case final String swapId) notificationSwapKey: swapId,
 });
 
 /// Opens what a clicked notification was about: the window comes to the
 /// front, on the account it named, with its transaction or proposal open
-/// when the loaded activity holds it.
+/// when the loaded activity holds it, or its swap while it is followed.
 ///
 /// A click never gets in the way: nothing moves behind an open sheet, and it
 /// is dropped once the person goes elsewhere or clicks another notification.
@@ -53,11 +59,13 @@ class NotificationClick {
     final String accountId;
     final String? hash;
     final String? proposalId;
+    final String? swapId;
     try {
       final clicked = jsonDecode(payload!) as Map<String, dynamic>;
       accountId = clicked['accountId'] as String;
       hash = clicked[notificationHashKey] as String?;
       proposalId = clicked[notificationProposalKey] as String?;
+      swapId = clicked[notificationSwapKey] as String?;
     } catch (e) {
       quantusPrint('A clicked notification could not be read: $e');
       _ref.read(telemetryProvider).sendError('desktop_notification_click_unreadable', error: e);
@@ -66,7 +74,7 @@ class NotificationClick {
     _cancelWait?.call();
     final click = Object();
     _current = click;
-    unawaited(_follow(click, accountId, hash: hash, proposalId: proposalId));
+    unawaited(_follow(click, accountId, hash: hash, proposalId: proposalId, swapId: swapId));
   }
 
   /// Drops the click being followed: its wallet was wiped.
@@ -75,7 +83,13 @@ class NotificationClick {
     _cancelWait?.call();
   }
 
-  Future<void> _follow(Object click, String accountId, {required String? hash, required String? proposalId}) async {
+  Future<void> _follow(
+    Object click,
+    String accountId, {
+    required String? hash,
+    required String? proposalId,
+    required String? swapId,
+  }) async {
     // Before they have loaded, restoring the saved active account would undo
     // the switch.
     final loaded = await _until(click, [sidebarAccountsProvider, activeAccountProvider], () {
@@ -87,6 +101,7 @@ class NotificationClick {
         .read(sidebarAccountsProvider)
         .where((display) => display.account.accountId == accountId)
         .firstOrNull;
+    if (swapId != null) return _openSwap(click, account, swapId);
     if (account == null) return;
 
     await _ref.read(sidebarSelectionProvider.notifier).showAccount(account);
@@ -106,6 +121,19 @@ class NotificationClick {
         subscription.close();
       }
     }
+  }
+
+  /// Opens the followed swap [swapId] on [account], the one it is from. A
+  /// swap whose account the wallet no longer holds is listed under whichever
+  /// account is in front, so it opens there; one no longer followed leaves
+  /// only its account showing.
+  Future<void> _openSwap(Object click, DisplayAccount? account, String swapId) async {
+    final showing = account ?? _ref.read(activeAccountProvider).value;
+    if (showing == null) return;
+    await _ref.read(sidebarSelectionProvider.notifier).showAccount(showing);
+    if (!_isShowing(click, showing.account.accountId)) return;
+    if (_ref.read(activeSwapProvider(swapId)) == null) return;
+    _ref.read(openedActivityProvider.notifier).open(OpenedSwap(swapId));
   }
 
   /// Drops [click] for good once its account is no longer in front: coming
