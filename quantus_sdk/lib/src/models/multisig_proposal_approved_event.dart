@@ -35,6 +35,11 @@ class MultisigProposalApprovedEvent extends TransactionEvent {
   /// Network fee paid by the approver; zero when indexer did not record one.
   BigInt get networkFee => fee ?? BigInt.zero;
 
+  /// Stable key for swapping a pending approval row with this indexed event:
+  /// its hash. One proposal has an approval from each signer, so the proposal
+  /// alone does not name one.
+  String get activityDedupKey => extrinsicHash != null ? 'hash:$extrinsicHash' : 'event:$id';
+
   /// Whether [other] describes the same approval as this event.
   bool isSameApprovalAs(MultisigProposalApprovedEvent other) {
     if (extrinsicHash != null && other.extrinsicHash != null && extrinsicHash == other.extrinsicHash) {

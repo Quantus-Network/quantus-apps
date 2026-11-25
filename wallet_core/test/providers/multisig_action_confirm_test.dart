@@ -139,7 +139,8 @@ class _Submission extends Fake implements TransactionSubmissionService {
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
-  }) => _submit('approve', signer, null, callBytes);
+    BigInt? fee,
+  }) => _submit('approve', signer, fee, callBytes);
 
   @override
   Future<String> executeProposal({
@@ -165,7 +166,8 @@ class _Submission extends Fake implements TransactionSubmissionService {
     required MultisigProposal proposal,
     required UnsignedTransactionData unsignedData,
     required Uint8List signatureWithPublicKey,
-  }) => _submit('approve signed', signer, null, null);
+    BigInt? fee,
+  }) => _submit('approve signed', signer, fee, null);
 
   @override
   Future<String> executeProposalWithExternalSignature({
@@ -555,14 +557,16 @@ void main() {
   });
 
   group('submitting', () {
-    testWidgets('approve submits as the chosen signer with the chain\'s call, and returns the hash', (tester) async {
+    testWidgets('approve submits as the chosen signer with the chain\'s call and the fee, and returns the hash', (
+      tester,
+    ) async {
       final confirm = await open(tester, MultisigActionKind.approve, signer: _two);
       await tester.pump();
 
       final outcome = await confirm.controller.confirm();
 
       expect((outcome as MultisigActionSubmitted).hash, '0xapprove');
-      expect(submission.submitted, [('approve', _two.accountId, null, _transferBytes)]);
+      expect(submission.submitted, [('approve', _two.accountId, _fee, _transferBytes)]);
     });
 
     testWidgets('execute submits as the signer it is given with the call and the fee, and returns the hash', (
@@ -638,7 +642,7 @@ void main() {
       );
 
       expect(hash, '0xapprove signed');
-      expect(submission.submitted, [('approve signed', _keystone.accountId, null, null)]);
+      expect(submission.submitted, [('approve signed', _keystone.accountId, _fee, null)]);
     });
   });
 

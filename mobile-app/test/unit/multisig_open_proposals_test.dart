@@ -124,7 +124,13 @@ void main() {
     void approving(ProviderContainer container, String approverId) => container
         .read(pendingMultisigApprovalsProvider.notifier)
         .add(
-          PendingMultisigApprovalEvent.create(multisigAddress: msig.accountId, proposalId: 1, approverId: approverId),
+          PendingMultisigApprovalEvent.create(
+            multisigAddress: msig.accountId,
+            proposalId: 1,
+            approverId: approverId,
+            recipient: recipient,
+            amount: BigInt.from(500),
+          ),
         );
 
     void executing(ProviderContainer container) => container

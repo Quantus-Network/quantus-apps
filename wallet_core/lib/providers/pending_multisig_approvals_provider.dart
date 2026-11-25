@@ -18,6 +18,14 @@ final pendingMultisigApprovalsProvider =
       PendingMultisigApprovalsNotifier.new,
     );
 
+/// Pending approvals excluded from the multisig activity feed below.
+List<PendingMultisigApprovalEvent> pendingApprovalsExcludingMultisig(
+  List<PendingMultisigApprovalEvent> all,
+  String multisigAddress,
+) {
+  return all.where((e) => e.multisigAddress != multisigAddress).toList();
+}
+
 PendingMultisigApprovalEvent? findPendingApprovalForProposal(
   List<PendingMultisigApprovalEvent> all,
   String multisigAddress,

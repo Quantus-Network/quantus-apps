@@ -353,6 +353,7 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
         signer: signer,
         proposal: _proposal,
         callBytes: state.callBytes,
+        fee: state.fee,
       ),
       MultisigActionKind.execute => submission.executeProposal(
         msig: _msig,
@@ -424,6 +425,7 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
             proposal: _proposal,
             unsignedData: unsignedData,
             signatureWithPublicKey: signatureWithPublicKey,
+            fee: fee,
           ),
           MultisigActionKind.execute => submission.executeProposalWithExternalSignature(
             msig: _msig,

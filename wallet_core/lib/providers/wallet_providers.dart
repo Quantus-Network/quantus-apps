@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
@@ -148,6 +149,7 @@ final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, Strin
   final balanceAsync = ref.watch(balanceProviderFamily(accountId));
   final pendingTransactions = ref.watch(pendingTransactionsProvider);
   final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+  final pendingMultisigApprovals = ref.watch(pendingMultisigApprovalsProvider);
   final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
   final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
   final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
@@ -164,6 +166,7 @@ final effectiveBalanceProviderFamily = Provider.family<AsyncValue<BigInt>, Strin
   final pendingOutgoing = _calculatePendingOutgoing(
     pendingTransactions,
     pendingMultisigProposals,
+    pendingMultisigApprovals,
     pendingMultisigExecutions,
     pendingMultisigCancellations,
     pendingMultisigCreations,
@@ -197,6 +200,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
   final balanceAsync = ref.watch(balanceProviderRaw);
   final pendingTransactions = ref.watch(pendingTransactionsProvider);
   final pendingMultisigProposals = ref.watch(pendingMultisigProposalsProvider);
+  final pendingMultisigApprovals = ref.watch(pendingMultisigApprovalsProvider);
   final pendingMultisigExecutions = ref.watch(pendingMultisigExecutionsProvider);
   final pendingMultisigCancellations = ref.watch(pendingMultisigCancellationsProvider);
   final pendingMultisigCreations = ref.watch(pendingMultisigCreationsProvider);
@@ -211,6 +215,7 @@ final balanceProvider = Provider<AsyncValue<BigInt>>((ref) {
       final pendingOutgoing = _calculatePendingOutgoing(
         pendingTransactions,
         pendingMultisigProposals,
+        pendingMultisigApprovals,
         pendingMultisigExecutions,
         pendingMultisigCancellations,
         pendingMultisigCreations,
@@ -243,6 +248,7 @@ final activeBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
 BigInt _calculatePendingOutgoing(
   List<PendingTransactionEvent> pendingTransactions,
   List<PendingMultisigProposalEvent> pendingMultisigProposals,
+  List<PendingMultisigApprovalEvent> pendingMultisigApprovals,
   List<PendingMultisigExecutionEvent> pendingMultisigExecutions,
   List<PendingMultisigCancellationEvent> pendingMultisigCancellations,
   List<PendingMultisigCreationEvent> pendingMultisigCreations,
@@ -265,6 +271,12 @@ BigInt _calculatePendingOutgoing(
   for (final proposal in pendingMultisigProposals) {
     if (proposal.proposerId == accountId) {
       totalOutgoing += proposal.memberCost;
+    }
+  }
+
+  for (final approval in pendingMultisigApprovals) {
+    if (approval.approverId == accountId) {
+      totalOutgoing += approval.memberCost;
     }
   }
 

@@ -1303,6 +1303,8 @@ void main() {
               multisigAddress: 'qzTeam',
               proposalId: 1,
               approverId: mainAccount.accountId,
+              recipient: 'qzPayee',
+              amount: BigInt.one,
               submittedAt: DateTime(2026),
             ),
           );

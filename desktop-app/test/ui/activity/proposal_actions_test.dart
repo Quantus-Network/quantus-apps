@@ -137,7 +137,15 @@ String? _note(WidgetTester tester) {
 
 void _approving(ProviderContainer container, String approver) => container
     .read(pendingMultisigApprovalsProvider.notifier)
-    .add(PendingMultisigApprovalEvent.create(multisigAddress: _team.accountId, proposalId: 1, approverId: approver));
+    .add(
+      PendingMultisigApprovalEvent.create(
+        multisigAddress: _team.accountId,
+        proposalId: 1,
+        approverId: approver,
+        recipient: _bob,
+        amount: oneToken,
+      ),
+    );
 
 void _executing(ProviderContainer container) => container
     .read(pendingMultisigExecutionsProvider.notifier)

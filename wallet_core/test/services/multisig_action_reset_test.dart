@@ -719,6 +719,26 @@ void main() {
     });
   });
 
+  testWidgets("an approval on its way is listed under the approver with the proposal's recipient and amount, "
+      'and the fee it was priced at', (tester) async {
+    final wallet = await _wallet(tester);
+    final proposal = _proposal(MultisigProposalStatus.active);
+    final sent = _service(
+      wallet.container,
+    ).approveProposal(msig: _msig, signer: _member, proposal: proposal, fee: BigInt.from(7));
+    await tester.pump();
+
+    final row = wallet.container.read(pendingMultisigApprovalsProvider).single;
+    expect(
+      (row.from, row.recipient, row.amount, row.fee),
+      (_member.accountId, proposal.recipient, proposal.amount, BigInt.from(7)),
+    );
+
+    wallet.chain.accepted.complete(Uint8List.fromList([1]));
+    await sent;
+    await _close(tester, wallet);
+  });
+
   group('the open proposals are read again before the row of the action goes', () {
     for (final action in _actions) {
       for (final (path, wait) in [

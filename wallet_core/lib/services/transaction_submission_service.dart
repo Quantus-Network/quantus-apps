@@ -270,16 +270,21 @@ class TransactionSubmissionService {
   /// [callBytes] should be the bytes the confirmation sheet already read from
   /// chain storage, so the fee estimate and the submitted extrinsic cover the
   /// same call; omitting them makes the service fetch them itself.
+  ///
+  /// [fee] is the estimate the approver was shown: its row holds it back from
+  /// what the approver can spend until the approval is indexed.
   Future<String> approveProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
+    BigInt? fee,
   }) async {
     return _submitAndTrackApproval(
       msig: msig,
       proposal: proposal,
       approverId: signer.accountId,
+      fee: fee,
       telemetryEvent: 'multisig_approve',
       submit: () {
         final service = _ref.read(multisigServiceProvider);
@@ -300,11 +305,13 @@ class TransactionSubmissionService {
     required MultisigProposal proposal,
     required UnsignedTransactionData unsignedData,
     required Uint8List signatureWithPublicKey,
+    BigInt? fee,
   }) async {
     return _submitAndTrackApproval(
       msig: msig,
       proposal: proposal,
       approverId: signer.accountId,
+      fee: fee,
       telemetryEvent: 'multisig_approve_hardware',
       submit: () => _ref
           .read(substrateServiceProvider)
@@ -316,13 +323,15 @@ class TransactionSubmissionService {
     required MultisigAccount msig,
     required MultisigProposal proposal,
     required String approverId,
+    required BigInt? fee,
     required String telemetryEvent,
     required Future<Uint8List> Function() submit,
   }) async {
-    final pending = PendingMultisigApprovalEvent.create(
-      multisigAddress: msig.accountId,
-      proposalId: proposal.id,
+    final pending = PendingMultisigApprovalEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
       approverId: approverId,
+      fee: fee,
     );
 
     final session = _ref.read(walletSessionProvider);
