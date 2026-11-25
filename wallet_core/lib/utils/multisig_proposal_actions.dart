@@ -25,11 +25,19 @@ enum ProposalActionNote {
   /// An approval from this device is under way and none of its other signers
   /// can still approve.
   approving,
-  executeUnavailable,
+
+  /// Past its expiry block: nothing can be done with it any more.
+  expired,
+
+  /// None of the multisig's signers is in this wallet.
+  noSignerHere,
 
   /// Every signer this wallet holds has approved.
   alreadySigned,
-  approveUnavailable,
+
+  /// An approval from this device is under way: Cancel waits for it, while
+  /// another signer here can still approve.
+  cancelWaitsForApproval,
 }
 
 /// What this wallet can do with a proposal.
@@ -56,9 +64,17 @@ final class ProposalOpen extends ProposalActions {
   /// The signers this wallet holds that can approve it now.
   final List<Account> eligibleApprovers;
 
+  /// The signers this wallet holds that can execute it, once it is ready:
+  /// any signer may, the multisig's own member first. Empty before then.
+  final List<Account> executors;
+
   /// Null when Cancel is not this wallet's to offer: only the proposal's
-  /// proposer cancels, and only as the multisig's own member account.
+  /// proposer cancels, so it is offered when that is a signer this wallet holds.
   final ProposalActionState? cancel;
+
+  /// The signer that cancels, the proposer, when this wallet holds it; null
+  /// exactly when [cancel] is.
+  final Account? canceller;
 
   @override
   final ProposalActionNote? note;
@@ -67,7 +83,9 @@ final class ProposalOpen extends ProposalActions {
     required this.primary,
     required this.primaryState,
     required this.eligibleApprovers,
+    required this.executors,
     required this.cancel,
+    required this.canceller,
     required this.note,
   });
 }
@@ -100,17 +118,18 @@ ProposalActions proposalActionsOf({
     localSigners,
     pendingApproverIds: pendingApproverIds,
   );
-  final pendingExecution = findPendingExecutionForProposal(
-    pendingExecutions,
-    msig.accountId,
-    proposal.id,
-    msig.myMemberAccountId,
-  );
+  // Any signer here executes it, whichever this device sent it from.
+  final pendingExecution = localSigners
+      .map((a) => findPendingExecutionForProposal(pendingExecutions, msig.accountId, proposal.id, a.accountId))
+      .nonNulls
+      .firstOrNull;
+  // Only the proposer cancels: one under way from this device is its.
+  final canceller = localSigners.where((a) => a.accountId == proposal.proposer).firstOrNull;
   final pendingCancellation = findPendingCancellationForProposal(
     pendingCancellations,
     msig.accountId,
     proposal.id,
-    msig.myMemberAccountId,
+    proposal.proposer,
   );
   // Another local member may still need to sign even if myMemberAccountId
   // already has.
@@ -127,7 +146,8 @@ ProposalActions proposalActionsOf({
     isExecuting: pendingExecution != null,
     isCancelling: pendingCancellation != null,
     hasLocalSigner: hasLocalSigner,
-    isActionable: isActionable,
+    isCancellable: canceller != null,
+    currentBlock: currentBlock,
   );
 
   if (proposal.hasUndecodableCall || proposal.isTerminal || (allLocalApproved && !proposal.isReadyToExecute)) {
@@ -154,13 +174,8 @@ ProposalActions proposalActionsOf({
   }
 
   ProposalActionState? cancel;
-  if (proposal.proposer == msig.myMemberAccountId) {
-    final canCancel =
-        isActionable &&
-        pendingCancellation == null &&
-        !hasPendingApproval &&
-        pendingExecution == null &&
-        hasLocalSigner;
+  if (canceller != null) {
+    final canCancel = isActionable && pendingCancellation == null && !hasPendingApproval && pendingExecution == null;
     cancel = pendingCancellation != null
         ? ProposalActionState.inFlight
         : (canCancel ? ProposalActionState.offered : ProposalActionState.unavailable);
@@ -170,7 +185,14 @@ ProposalActions proposalActionsOf({
     primary: proposal.isReadyToExecute ? ProposalPrimaryAction.execute : ProposalPrimaryAction.approve,
     primaryState: primaryState,
     eligibleApprovers: eligibleApprovers,
+    executors: proposal.isReadyToExecute
+        ? [
+            ...localSigners.where((a) => a.accountId == msig.myMemberAccountId),
+            ...localSigners.where((a) => a.accountId != msig.myMemberAccountId),
+          ]
+        : const [],
     cancel: cancel,
+    canceller: canceller,
     note: note,
   );
 }
@@ -183,7 +205,8 @@ ProposalActionNote? _noteOf(
   required bool isExecuting,
   required bool isCancelling,
   required bool hasLocalSigner,
-  required bool isActionable,
+  required bool isCancellable,
+  required int? currentBlock,
 }) {
   if (proposal.hasUndecodableCall) return null;
   if (proposal.status == MultisigProposalStatus.cancelled) return ProposalActionNote.cancelled;
@@ -193,10 +216,12 @@ ProposalActionNote? _noteOf(
   if (isExecuting) return ProposalActionNote.executing;
   if (hasPendingApproval && !hasEligibleApprover) return ProposalActionNote.approving;
 
-  if (proposal.isReadyToExecute) {
-    return isActionable && hasLocalSigner ? null : ProposalActionNote.executeUnavailable;
-  }
+  if (currentBlock != null && proposal.expired(currentBlock)) return ProposalActionNote.expired;
+  if (!hasLocalSigner) return ProposalActionNote.noSignerHere;
+  if (proposal.isReadyToExecute) return null;
   if (allLocalApproved) return ProposalActionNote.alreadySigned;
-  if (!isActionable || !hasLocalSigner) return ProposalActionNote.approveUnavailable;
+  // While the chain's block is not known the actions wait, without a word.
+  if (currentBlock == null) return null;
+  if (hasPendingApproval && isCancellable) return ProposalActionNote.cancelWaitsForApproval;
   return null;
 }

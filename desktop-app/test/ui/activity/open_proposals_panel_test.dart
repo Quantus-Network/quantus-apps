@@ -1,14 +1,24 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/ui/activity/activity_inspector.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_panel.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_actions.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_detail.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
+import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/activity/multisig_activity.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
+import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -286,6 +296,154 @@ void main() {
       });
     }
   }
+
+  group('a row still being proposed', () {
+    const hash = '0xproposing';
+    late PendingMultisigProposalEvent pending;
+
+    Finder row(String id) => find.byWidgetPredicate((widget) => widget is OpenProposalRowView && widget.id == id);
+    Finder inInspector(Finder finder) => find.descendant(of: find.byType(ActivityInspector), matching: finder);
+    String? opened(WidgetTester tester) => _container(tester).read(openedActivityViewProvider)?.id;
+
+    /// Team with [open] proposals and Main proposing 300 to Bob, its row clicked.
+    Future<FakeSendChain> openProposing(WidgetTester tester, {List<MultisigProposal> open = const []}) async {
+      final chain = FakeSendChain()..openProposals = open;
+      await _openTeam(tester, chain);
+      pending = PendingMultisigProposalEvent.create(
+        msig: teamMultisig,
+        proposerId: 'qzMain',
+        recipient: _bob,
+        amount: oneToken * BigInt.from(300),
+        expiryBlock: 1300000,
+        fee: BigInt.one,
+        deposit: oneToken,
+        palletFee: BigInt.one,
+      ).copyWith(extrinsicHash: hash);
+      _container(tester).read(pendingMultisigProposalsProvider.notifier).add(pending);
+      await tester.pumpAndSettle();
+      await tester.tap(row(pending.id));
+      await tester.pumpAndSettle();
+      return chain;
+    }
+
+    /// The proposal the network created from it, as the indexer lists it.
+    final created = _proposal(id: 3, tokens: 300, changed: Duration.zero, approvals: const ['qzMain']);
+
+    /// What the poller does once the indexer has it: knows it by its id, drops
+    /// the pending row, reads the open proposals again.
+    void indexerHasIt(WidgetTester tester, {String? id}) {
+      final container = _container(tester);
+      if (id != null) container.read(multisigCreatedProposalsProvider.notifier).record(hash, id);
+      container.read(pendingMultisigProposalsProvider.notifier).remove(pending.id);
+      if (id != null) container.invalidate(multisigOpenProposalsProvider(teamMultisig));
+    }
+
+    testOnMac('opens in the panel at the right as its pending transaction, and shows as open', (tester) async {
+      await openProposing(tester);
+
+      expect(opened(tester), pending.id);
+      expect(inInspector(find.textContaining(_l10n.activityDetailTitleProposing)), findsOne);
+      expect(inInspector(find.textContaining('300')), findsWidgets);
+      expect(inInspector(find.byType(ProposalDetail)), findsNothing);
+      expect(tester.widget<OpenProposalRowView>(row(pending.id)).isSelected, isTrue);
+    });
+
+    testOnMac('once the network has created it, the panel shows the proposal, with its actions', (tester) async {
+      final chain = await openProposing(tester);
+
+      chain.openProposals = [created];
+      indexerHasIt(tester, id: created.entityId);
+      await tester.pumpAndSettle();
+
+      expect(opened(tester), created.entityId);
+      expect(inInspector(find.byType(ProposalDetail)), findsOne);
+      expect(inInspector(find.byType(ProposalActionsBar)), findsOne);
+      expect(tester.widget<OpenProposalRowView>(row(created.entityId)).isSelected, isTrue);
+    });
+
+    testOnMac('opened before its transaction was sent, it still shows the proposal once created', (tester) async {
+      final chain = FakeSendChain();
+      await _openTeam(tester, chain);
+      final container = _container(tester);
+      final unsent = pending = PendingMultisigProposalEvent.create(
+        msig: teamMultisig,
+        proposerId: 'qzMain',
+        recipient: _bob,
+        amount: oneToken * BigInt.from(300),
+        expiryBlock: 1300000,
+      );
+      container.read(pendingMultisigProposalsProvider.notifier).add(unsent);
+      await tester.pumpAndSettle();
+      await tester.tap(row(unsent.id));
+      await tester.pumpAndSettle();
+
+      container.read(pendingMultisigProposalsProvider.notifier).update(unsent.id, extrinsicHash: hash);
+      await tester.pumpAndSettle();
+      chain.openProposals = [created];
+      indexerHasIt(tester, id: created.entityId);
+      await tester.pumpAndSettle();
+
+      expect(opened(tester), created.entityId);
+    });
+
+    testOnMac('while the open proposals are read again, the panel stays open', (tester) async {
+      final chain = await openProposing(tester);
+      chain.holdOpenProposals = Completer<void>();
+
+      chain.openProposals = [created];
+      indexerHasIt(tester, id: created.entityId);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(ActivityInspector), findsOne);
+
+      chain.holdOpenProposals!.complete();
+      await tester.pumpAndSettle();
+      expect(opened(tester), created.entityId);
+      expect(inInspector(find.byType(ProposalDetail)), findsOne);
+    });
+
+    testOnMac('once the wallet stops watching for it, the panel closes', (tester) async {
+      await openProposing(tester);
+
+      indexerHasIt(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ActivityInspector), findsNothing);
+    });
+
+    testOnMac('when the open proposals, read again, do not have it, the panel closes', (tester) async {
+      await openProposing(tester);
+
+      indexerHasIt(tester, id: created.entityId);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ActivityInspector), findsNothing);
+    });
+
+    testOnMac('↑ and ↓ walk it and the open proposals as one list, the keys in Open proposals', (tester) async {
+      final older = _proposal(id: 1, tokens: 100, changed: const Duration(days: 2));
+      final newer = _proposal(id: 2, tokens: 200, changed: const Duration(hours: 3));
+      await openProposing(tester, open: [older, newer]);
+      bool panelHasKeys() => tester
+          .widget<Panel>(find.descendant(of: find.byType(OpenProposalsPanel), matching: find.byType(Panel)).first)
+          .isFocused;
+
+      expect(panelHasKeys(), isTrue);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(opened(tester), newer.entityId);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      expect(opened(tester), older.entityId);
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+      await tester.pumpAndSettle();
+      expect(opened(tester), pending.id);
+      expect(panelHasKeys(), isTrue);
+    });
+  });
 
   testOnMac('its Activity is its past proposals, named by how they ended, and what it received', (tester) async {
     final chain = FakeSendChain()

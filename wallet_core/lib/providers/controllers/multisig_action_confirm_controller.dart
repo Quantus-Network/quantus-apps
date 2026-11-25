@@ -3,13 +3,14 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
-import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/account_utils.dart';
 
 /// An action on a multisig proposal that this wallet confirms and sends.
@@ -24,15 +25,14 @@ List<int> requireCallBytes(List<int>? callBytes, String action) {
   return callBytes;
 }
 
-/// What is being confirmed: [kind] on [proposal] of [msig], by [signer], or by
-/// the multisig's own member account when null.
+/// What is being confirmed: [kind] on [proposal] of [msig], by [signer].
 class MultisigActionRequest {
   final MultisigActionKind kind;
   final MultisigAccount msig;
   final MultisigProposal proposal;
-  final Account? signer;
+  final Account signer;
 
-  const MultisigActionRequest({required this.kind, required this.msig, required this.proposal, this.signer});
+  const MultisigActionRequest({required this.kind, required this.msig, required this.proposal, required this.signer});
 
   @override
   bool operator ==(Object other) =>
@@ -40,10 +40,10 @@ class MultisigActionRequest {
       other.kind == kind &&
       other.msig.accountId == msig.accountId &&
       other.proposal.id == proposal.id &&
-      other.signer?.accountId == signer?.accountId;
+      other.signer.accountId == signer.accountId;
 
   @override
-  int get hashCode => Object.hash(kind, msig.accountId, proposal.id, signer?.accountId);
+  int get hashCode => Object.hash(kind, msig.accountId, proposal.id, signer.accountId);
 }
 
 /// Why a confirmation did not go out.
@@ -53,6 +53,9 @@ enum MultisigActionError {
 
   /// The chain did not take it.
   submitFailed,
+
+  /// The signer's account cannot pay the network fee.
+  feePayerInsufficient,
 }
 
 class MultisigActionConfirmState {
@@ -70,6 +73,9 @@ class MultisigActionConfirmState {
   final BigInt? fee;
   final bool feeUnavailable;
 
+  /// What the signer's account can spend, once known.
+  final BigInt? signerBalance;
+
   final bool submitting;
   final MultisigActionError? error;
 
@@ -81,12 +87,18 @@ class MultisigActionConfirmState {
     this.loadingFee = true,
     this.fee,
     this.feeUnavailable = false,
+    this.signerBalance,
     this.submitting = false,
     this.error,
   });
 
-  /// Never while the call is not known to be the one stored on chain.
-  bool get canConfirm => !submitting && !loadingCall && !callUnavailable;
+  /// The signer's account holds less than the fee. A fee or a balance not
+  /// known is no objection, as when proposing.
+  bool get cannotPayFee => _cannotPay(signerBalance, fee);
+
+  /// Never while the call is not known to be the one stored on chain, nor
+  /// while the signer cannot pay the fee.
+  bool get canConfirm => !submitting && !loadingCall && !callUnavailable && !cannotPayFee;
 
   MultisigActionConfirmState copyWith({
     bool? loadingCall,
@@ -96,6 +108,7 @@ class MultisigActionConfirmState {
     bool? loadingFee,
     BigInt? fee,
     bool? feeUnavailable,
+    BigInt? Function()? signerBalance,
     bool? submitting,
     MultisigActionError? Function()? error,
   }) => MultisigActionConfirmState(
@@ -106,9 +119,21 @@ class MultisigActionConfirmState {
     loadingFee: loadingFee ?? this.loadingFee,
     fee: fee ?? this.fee,
     feeUnavailable: feeUnavailable ?? this.feeUnavailable,
+    signerBalance: signerBalance != null ? signerBalance() : this.signerBalance,
     submitting: submitting ?? this.submitting,
     error: error != null ? error() : this.error,
   );
+}
+
+bool _cannotPay(BigInt? balance, BigInt? fee) => balance != null && fee != null && balance < fee;
+
+/// Thrown by a hardware signing session instead of broadcasting, when the
+/// signer's account can no longer pay the fee it was signed with.
+class SignerCannotPayFee implements Exception {
+  const SignerCannotPayFee();
+
+  @override
+  String toString() => 'SignerCannotPayFee: the signer\'s account cannot pay the network fee';
 }
 
 sealed class MultisigActionOutcome {
@@ -141,6 +166,35 @@ final class MultisigActionDropped extends MultisigActionOutcome {
   const MultisigActionDropped();
 }
 
+/// The proposal [proposalId] of [msig], whoever signs for it.
+class _ProposalKey {
+  final MultisigAccount msig;
+  final int proposalId;
+
+  const _ProposalKey(this.msig, this.proposalId);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _ProposalKey && other.msig.accountId == msig.accountId && other.proposalId == proposalId;
+
+  @override
+  int get hashCode => Object.hash(msig.accountId, proposalId);
+}
+
+/// A proposal's call as the chain stores it, and what it decodes to: read once
+/// for every confirmation of the proposal open at the time, whichever signer
+/// each is for. A read that failed stays failed until a confirmation reads it
+/// again.
+final _proposalCallProvider = FutureProvider.autoDispose.family<({List<int> bytes, DecodedCall decoded}), _ProposalKey>(
+  (ref, key) async {
+    final bytes = await ref
+        .read(multisigServiceProvider)
+        .fetchProposalCallBytes(msig: key.msig, proposalId: key.proposalId);
+    return (bytes: bytes, decoded: MultisigProposal.decodeProposalCall(bytes));
+  },
+  retry: (_, _) => null,
+);
+
 /// Confirms an action on a multisig proposal: reads the proposal's call from
 /// the chain, estimates the fee, asks the person at the device, and sends it.
 ///
@@ -157,29 +211,41 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   MultisigProposal get _proposal => request.proposal;
   String get _logPrefix => '[Multisig ${request.kind.name}]';
 
+  _ProposalKey get _proposalKey => _ProposalKey(_msig, _proposal.id);
+
+  bool _readFailedBefore = false;
+
   @override
   MultisigActionConfirmState build() {
+    final balance = effectiveBalanceProviderFamily(request.signer.accountId);
+    ref.listen(balance, (_, next) => state = state.copyWith(signerBalance: () => next.value));
+    // Kept while this confirmation is open, for another signer chosen in it.
+    final call = _proposalCallProvider(_proposalKey);
+    ref.listen(call, (_, _) {});
+    final read = ref.read(call);
+    // A read that failed before this confirmation opened is not its answer.
+    _readFailedBefore = read.hasError;
     unawaited(Future.microtask(_prepare));
-    return const MultisigActionConfirmState();
+    return MultisigActionConfirmState(
+      signerBalance: ref.read(balance).value,
+      loadingCall: !read.hasValue,
+      callBytes: read.value?.bytes,
+      decodedCall: read.value?.decoded,
+    );
   }
 
+  /// The signer's account cannot pay the fee, as it stands now.
+  bool _cannotPayNow() =>
+      _cannotPay(ref.read(effectiveBalanceProviderFamily(request.signer.accountId)).value, state.fee);
+
   Future<void> _prepare() async {
-    final List<int> bytes;
-    final DecodedCall decoded;
-    try {
-      bytes = await ref.read(multisigServiceProvider).fetchProposalCallBytes(msig: _msig, proposalId: _proposal.id);
-      decoded = MultisigProposal.decodeProposalCall(bytes);
-    } catch (e, st) {
-      quantusPrint('$_logPrefix proposal call unavailable: $e $st');
-      if (!ref.mounted) return;
-      state = state.copyWith(loadingCall: false, callUnavailable: true, loadingFee: false);
-      return;
-    }
-    if (!ref.mounted) return;
-    state = state.copyWith(loadingCall: false, callBytes: bytes, decodedCall: decoded);
+    // What the signer holds may have been read long ago: read it again.
+    ref.invalidate(balanceProviderFamily(request.signer.accountId));
+    final bytes = state.callBytes ?? await _readCall();
+    if (bytes == null || !ref.mounted) return;
 
     try {
-      final fee = await _estimateFee(_requireSigner(), bytes);
+      final fee = await _estimateFee(request.signer, bytes);
       if (!ref.mounted) return;
       state = state.copyWith(loadingFee: false, fee: fee);
     } catch (e, st) {
@@ -189,15 +255,22 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
     }
   }
 
-  /// The chosen signer, or the multisig's own member account in this wallet.
-  Account _requireSigner() {
-    if (request.signer case final signer?) return signer;
-    final accounts = ref.read(accountsProvider).value;
-    if (accounts == null) throw StateError('No signer account available');
-    return accounts.firstWhere(
-      (a) => a.accountId == _msig.myMemberAccountId,
-      orElse: () => throw StateError('Member account not found in local wallet'),
-    );
+  /// The proposal's call, read from the chain unless another confirmation
+  /// already is; null when it cannot be read or does not decode.
+  Future<List<int>?> _readCall() async {
+    final call = _proposalCallProvider(_proposalKey);
+    if (_readFailedBefore) ref.invalidate(call);
+    try {
+      final read = await ref.read(call.future);
+      if (!ref.mounted) return null;
+      state = state.copyWith(loadingCall: false, callBytes: read.bytes, decodedCall: read.decoded);
+      return read.bytes;
+    } catch (e, st) {
+      quantusPrint('$_logPrefix proposal call unavailable: $e $st');
+      if (!ref.mounted) return null;
+      state = state.copyWith(loadingCall: false, callUnavailable: true, loadingFee: false);
+      return null;
+    }
   }
 
   Future<BigInt> _estimateFee(Account signer, List<int> callBytes) {
@@ -228,10 +301,13 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   /// Sends the action, once the person at the device approves it; a Keystone
   /// signer is handed to the QR flow instead.
   Future<MultisigActionOutcome> confirm() async {
+    // What the signer holds can have moved since the review was drawn, and
+    // again while the approval was asked for.
+    if (_cannotPayNow()) return _fail(MultisigActionError.feePayerInsufficient);
     if (!state.canConfirm) throw StateError('$_logPrefix confirmed before it could be');
     state = state.copyWith(submitting: true, error: () => null);
 
-    final signer = _requireSigner();
+    final signer = request.signer;
     if (signer.signsWithHardware) {
       state = state.copyWith(submitting: false);
       return MultisigActionNeedsHardwareSignature(
@@ -239,9 +315,19 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       );
     }
 
-    final approval = await ref.read(userApprovalProvider).approve(reason: _authReason(ref.read(l10nProvider)));
+    final ApprovalResult approval;
+    try {
+      approval = await ref.read(userApprovalProvider).approve(reason: _authReason(ref.read(l10nProvider)));
+    } catch (e, st) {
+      // The system could not ask (a prompt that cannot be shown, a login
+      // check that failed to run): nothing went out, as when sending.
+      quantusPrint('$_logPrefix approval failed: $e $st');
+      if (!ref.mounted) return const MultisigActionDropped();
+      return _fail(MultisigActionError.submitFailed);
+    }
     if (!ref.mounted) return const MultisigActionDropped();
     if (approval != ApprovalResult.approved) return _fail(MultisigActionError.approvalRequired);
+    if (_cannotPayNow()) return _fail(MultisigActionError.feePayerInsufficient);
 
     try {
       final hash = await _submit(signer);
@@ -308,6 +394,10 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   KeystoneSigningSession _hardwareSession(Account signer, String primaryDetail, String? secondaryDetail) {
     final kind = request.kind.name;
     final fee = state.fee;
+    // Taken now: a signature that comes back after the wallet was reset is
+    // for a wallet that is gone, and is not sent.
+    final walletSession = ref.read(walletSessionProvider);
+    final ticket = walletSession.ticket;
     return KeystoneSigningSession(
       account: signer,
       buildCall: _buildCall,
@@ -319,6 +409,13 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       ),
       telemetryPrefix: 'multisig_$kind',
       submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+        if (!walletSession.isCurrent(ticket)) {
+          throw StateError('The wallet was reset before this ${request.kind.name} was signed');
+        }
+        // What the signer holds can have moved while the Keystone signed.
+        if (_cannotPay(ref.read(effectiveBalanceProviderFamily(signer.accountId)).value, fee)) {
+          throw const SignerCannotPayFee();
+        }
         final submission = ref.read(transactionSubmissionServiceProvider);
         final hash = await switch (request.kind) {
           MultisigActionKind.approve => submission.approveProposalWithExternalSignature(

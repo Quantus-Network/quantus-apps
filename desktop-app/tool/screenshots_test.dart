@@ -43,6 +43,9 @@ import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_action_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_actions.dart';
+import 'package:wallet_core/providers/multisig_action_confirmations_provider.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_desktop_wallet/ui/swap/swap_row_view.dart';
@@ -56,6 +59,7 @@ import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
 import 'package:wallet_core/send/send_strategy.dart';
@@ -1599,12 +1603,14 @@ void _activityScenes() {
     List<MultisigProposal> calls = const [],
     String openId = 'proposal-1',
     int? block,
+    String thirdSigner = 'qzOther',
+    Future<BigInt> Function()? actionFee,
   }) async {
     useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
     final team = MultisigAccount(
       name: 'Team',
       accountId: _activityTeam,
-      signers: [_root.accountId, 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr', 'qzOther'],
+      signers: [_root.accountId, 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr', thirdSigner],
       threshold: 2,
       nonce: BigInt.zero,
       myMemberAccountId: _root.accountId,
@@ -1644,6 +1650,7 @@ void _activityScenes() {
           status: MultisigProposalStatus.cancelled,
         ),
       ];
+    if (actionFee != null) chain.actionFee = actionFee;
     await _openWith(tester, [
       ...shellOverrides(
         accounts: const [_root, _second],
@@ -1702,6 +1709,126 @@ void _activityScenes() {
   // The chain past the open proposals' expiry block.
   _scene('activity_multisig_expired', (tester) => openTeamProposal(tester, block: 1300000));
   _scene('activity_multisig_smallest_window', (tester) => openTeamProposal(tester, window: const Size(960, 640)));
+
+  // Approving, executing and cancelling: the chain stores the sample
+  // transfer, so the panel and the sheet say the same amount and recipient.
+  final stored = MultisigProposal.decodeProposalCall(corpusCall('Balances.transfer_allow_death'));
+  final sent = stored.summary as TransferSummary;
+  MultisigProposal storedTransfer(int id, {required List<String> approvals, String? proposer, bool ready = false}) =>
+      MultisigProposal(
+        entityId: 'proposal-$id',
+        id: id,
+        multisigAddress: _activityTeam,
+        proposer: proposer ?? 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr',
+        createdAt: _activityNow.subtract(const Duration(minutes: 30)),
+        updatedAt: _activityNow.subtract(const Duration(minutes: 30)),
+        pallet: 'Balances',
+        call: 'transfer_allow_death',
+        recipient: sent.recipient!,
+        amount: sent.amount,
+        callRaw: corpusCall('Balances.transfer_allow_death'),
+        expiryBlock: 1284220,
+        approvals: approvals,
+        deposit: oneToken,
+        burnedPalletFee: oneToken ~/ BigInt.from(10),
+        status: ready ? MultisigProposalStatus.approved : MultisigProposalStatus.active,
+        threshold: 2,
+        signerCount: 3,
+      );
+  final toApprove = storedTransfer(7, approvals: ['qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr']);
+  final toExecute = storedTransfer(
+    8,
+    approvals: [_root.accountId, 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr'],
+    proposer: _root.accountId,
+    ready: true,
+  );
+  ProviderContainer container(WidgetTester tester) =>
+      ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+  Future<void> press(WidgetTester tester, Key key) async {
+    await tester.tap(find.byKey(key));
+    await tester.pumpAndSettle();
+  }
+
+  // Confirms the sheet: its receipt's spinner turns while it waits, so the
+  // frames are pumped, not settled.
+  Future<void> confirm(WidgetTester tester) async {
+    await tester.tap(find.byKey(ProposalActionSheet.confirmKey));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  _scene('proposal_actions_panel', (tester) => openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8'));
+  // A proposal this wallet is still sending, open as its pending transaction.
+  _scene('activity_multisig_proposing_open', (tester) async {
+    await openTeamProposal(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    final pending = PendingMultisigProposalEvent.create(
+      msig: container.read(activeAccountProvider).requireValue!.account as MultisigAccount,
+      proposerId: _root.accountId,
+      recipient: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+      amount: oneToken * BigInt.from(120),
+      expiryBlock: 1300000,
+      fee: oneToken ~/ BigInt.from(100),
+      deposit: oneToken,
+      palletFee: oneToken ~/ BigInt.from(10),
+    ).copyWith(extrinsicHash: '0x8f3a51c0d27be94f6a1d3e5c7b9082f4e6d1a3c5b7e9f0a2c4d6e8b1a3c5d7e9');
+    container.read(pendingMultisigProposalsProvider.notifier).add(pending);
+    await tester.pump();
+    await tester.tap(find.byWidgetPredicate((widget) => widget is OpenProposalRowView && widget.id == pending.id));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
+  _scene('proposal_action_approve', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7');
+    await press(tester, ProposalActionsBar.primaryKey);
+  });
+  _scene('proposal_action_choose_signer', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7', thirdSigner: _second.accountId);
+    await press(tester, ProposalActionsBar.primaryKey);
+  });
+  // The fee not priced yet: it turns where it will stand, the rest in place.
+  _scene('proposal_action_pricing', (tester) async {
+    await openTeamProposal(
+      tester,
+      calls: [toApprove],
+      openId: 'proposal-7',
+      thirdSigner: _second.accountId,
+      actionFee: () => Completer<BigInt>().future,
+    );
+    await tester.tap(find.byKey(ProposalActionsBar.primaryKey));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
+  _scene('proposal_action_cancel', (tester) async {
+    await openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8');
+    await press(tester, ProposalActionsBar.cancelKey);
+  });
+  _scene('proposal_action_confirming', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7');
+    await press(tester, ProposalActionsBar.primaryKey);
+    await confirm(tester);
+  });
+  _scene('proposal_action_approved', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7');
+    await press(tester, ProposalActionsBar.primaryKey);
+    await confirm(tester);
+    container(
+      tester,
+    ).read(multisigActionConfirmationsProvider.notifier).settle('0xaction', MultisigActionConfirmation.confirmed);
+    await tester.pump();
+  });
+  _scene('proposal_action_executed_by_another', (tester) async {
+    await openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8');
+    await press(tester, ProposalActionsBar.primaryKey);
+    await confirm(tester);
+    container(tester)
+        .read(multisigActionConfirmationsProvider.notifier)
+        .settle('0xaction', MultisigActionConfirmation.executedByAnother);
+    await tester.pump();
+  });
 }
 
 /// Opens Account 1 following [swap], the newest, after the [earlier] ones if

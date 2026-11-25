@@ -76,6 +76,9 @@ class OpenProposalsPanel extends ConsumerWidget {
                   needed: multisig.threshold,
                   form: form,
                   l10n: l10n,
+                  isSelected: opened?.id == pending.id,
+                  hasFocus: rowsHaveKeys,
+                  onTap: () => ref.read(openedActivityProvider.notifier).open(OpenedTransaction(pending)),
                 ),
               for (final proposal in value.open)
                 OpenProposalRowView(

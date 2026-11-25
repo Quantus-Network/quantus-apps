@@ -557,6 +557,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveUnavailableNote => 'Proposal ini tidak dapat disetujui lagi.';
 
   @override
+  String get multisigProposalExpiredNote => 'Proposal ini sudah kedaluwarsa.';
+
+  @override
+  String get multisigNoSignerHereNote => 'Tidak ada penanda tangan multisig ini di dompet ini.';
+
+  @override
+  String get multisigCancelWaitsNote =>
+      'Pembatalan menunggu hingga persetujuan yang dikirim dari perangkat ini terkonfirmasi.';
+
+  @override
   String get activityTxApproving => 'Menyetujui…';
 
   @override
@@ -2899,6 +2909,104 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get desktopProposalUnreadable =>
       'Dompet ini tidak dapat membaca apa yang akan dilakukan proposal ini, jadi proposal ini tidak dapat disetujui atau dijalankan di sini.';
+
+  @override
+  String get desktopProposalApproving => 'Menyetujui';
+
+  @override
+  String get desktopProposalExecuting => 'Menjalankan';
+
+  @override
+  String get desktopProposalCancelling => 'Membatalkan';
+
+  @override
+  String get desktopProposalSignsAs => 'Menandatangani sebagai';
+
+  @override
+  String get desktopProposalSignedAs => 'Ditandatangani sebagai';
+
+  @override
+  String get desktopProposalDepositRefunded => 'Deposit dikembalikan';
+
+  @override
+  String desktopProposalApprovalsChange(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String desktopProposalKeystoneApprove(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Setujui di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalKeystoneExecute(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Jalankan di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalKeystoneCancel(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Batalkan di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalApprovingTitle(String what) {
+    return 'Menyetujui $what';
+  }
+
+  @override
+  String desktopProposalApprovedTitle(String what) {
+    return '$what disetujui';
+  }
+
+  @override
+  String desktopProposalExecutingTitle(String what) {
+    return 'Menjalankan $what';
+  }
+
+  @override
+  String desktopProposalExecutedTitle(String what) {
+    return '$what dijalankan';
+  }
+
+  @override
+  String desktopProposalCancellingTitle(String what) {
+    return 'Membatalkan $what';
+  }
+
+  @override
+  String get desktopProposalCancelledTitle => 'Proposal dibatalkan';
+
+  @override
+  String get desktopProposalApprovalWaiting => 'Menunggu jaringan mencatat persetujuan Anda.';
+
+  @override
+  String get desktopProposalExecutionWaiting => 'Menunggu jaringan mencatat eksekusi Anda.';
+
+  @override
+  String get desktopProposalCancellationWaiting => 'Menunggu jaringan mencatat pembatalan Anda.';
+
+  @override
+  String get desktopProposalReadyToExecute =>
+      'Proposal ini telah mendapat semua persetujuan yang diperlukan, dan dapat dijalankan.';
+
+  @override
+  String desktopProposalApprovalsNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Perlu $count persetujuan lagi.');
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopProposalExecutedDone => 'Proposal telah dijalankan.';
+
+  @override
+  String get desktopProposalCancelledDone => 'Deposit Anda telah dikembalikan.';
+
+  @override
+  String get desktopProposalExecutedByAnother => 'Dijalankan oleh penanda tangan lain';
+
+  @override
+  String get desktopProposalExecutedByAnotherBody =>
+      'Penanda tangan lain menjalankan proposal ini lebih dulu, jadi transaksi Anda tidak berhasil. Biaya jaringannya tetap dibayar.';
 
   @override
   String get desktopFooterMainnet => 'Mainnet';
