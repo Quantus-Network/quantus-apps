@@ -116,11 +116,13 @@ class MacPushRegistration implements PushRegistration {
       if (addresses == null || addresses.isEmpty) return false;
       final registration = _keyOf(token, addresses);
       if (registration == _registeredFor) return true;
+      // Kept before it is sent: the push service may take a registration
+      // whose answer never arrives, and must then be told to remove it.
+      await _keep(MacPushHold(token: token));
       await _ref
           .read(senotiClientProvider)
           .registerDevice(addresses: addresses, deviceToken: token, platform: platform, apnsEnvironment: environment);
       _registeredFor = registration;
-      await _keep(MacPushHold(token: token));
       return true;
     });
   }
