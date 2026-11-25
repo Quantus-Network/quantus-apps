@@ -226,10 +226,11 @@ void main() {
       expect(tester.widget<ToolbarAction>(_toolbarSend()).onPressed, isNotNull);
     });
 
-    testOnMac('Send is dimmed on an account that signs on a hardware wallet', (tester) async {
+    testOnMac('Send can be used on an account that signs on a cold wallet', (tester) async {
       await pumpOn(tester, vaultAccount);
 
-      expect(sendAction(tester).isEnabled, isFalse);
+      expect(sendAction(tester).isEnabled, isTrue);
+      expect(tester.widget<ToolbarAction>(_toolbarSend()).onPressed, isNotNull);
     });
   });
 

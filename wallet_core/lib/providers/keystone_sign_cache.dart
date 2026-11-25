@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -139,7 +140,7 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
   KeystoneSignCacheEntry? lookup(KeystoneSignCacheKey key, {DateTime? now}) {
     final entry = state;
     if (entry == null || entry.key != key) return null;
-    if (isKeystoneSignCacheEntryExpired(entry, now ?? DateTime.now())) {
+    if (isKeystoneSignCacheEntryExpired(entry, now ?? clock.now())) {
       state = null;
       return null;
     }
@@ -156,7 +157,7 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
       key: key,
       unsignedData: unsignedData,
       urParts: urParts,
-      storedAt: storedAt ?? DateTime.now(),
+      storedAt: storedAt ?? clock.now(),
     );
   }
 
@@ -178,6 +179,16 @@ final keystoneSignCacheProvider = StateNotifierProvider<KeystoneSignCacheNotifie
 Uint8List signRequestBytes({required String signer, required Uint8List payload}) =>
     SigningRequest(signer: signer, payload: payload).encode();
 
+/// Frames the request [account]'s signer scans: [unsigned]'s payload in a
+/// [SigningRequest], as UR parts. The framing runs in Rust.
+final keystoneSignRequestFramesProvider =
+    Provider<List<String> Function(Account account, UnsignedTransactionData unsigned)>(
+      (ref) =>
+          (account, unsigned) => encodeUr(
+            data: signRequestBytes(signer: account.accountId, payload: unsigned.encodedPayloadRaw),
+          ),
+    );
+
 /// Builds the unsigned payload and its UR frames, serving a fresh cache entry
 /// when one exists and storing the result under [cacheKey]. The review screen
 /// prefetches through this so the QR screen usually renders instantly; the QR
@@ -196,11 +207,9 @@ Future<({UnsignedTransactionData unsignedData, List<String> urParts, DateTime st
     }
   }
   final unsigned = await ref.read(substrateServiceProvider).getUnsignedTransactionPayload(account, buildCall());
-  final parts = encodeUr(
-    data: signRequestBytes(signer: account.accountId, payload: unsigned.encodedPayloadRaw),
-  );
+  final parts = ref.read(keystoneSignRequestFramesProvider)(account, unsigned);
   if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
-  final storedAt = DateTime.now();
+  final storedAt = clock.now();
   if (cacheKey != null) cache.store(key: cacheKey, unsignedData: unsigned, urParts: parts, storedAt: storedAt);
   return (unsignedData: unsigned, urParts: parts, storedAt: storedAt);
 }

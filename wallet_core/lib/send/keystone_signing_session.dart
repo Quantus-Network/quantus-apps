@@ -28,6 +28,9 @@ class KeystoneSigningSession {
   final RuntimeCall Function() buildCall;
   final String? primaryLabel;
   final String? primaryDetail;
+
+  /// [primaryDetail] is an amount, not words such as an action's name.
+  final bool primaryIsAmount;
   final String? secondaryLabel;
   final String? secondaryDetail;
 
@@ -43,6 +46,7 @@ class KeystoneSigningSession {
     required this.submitSigned,
     this.primaryLabel,
     this.primaryDetail,
+    this.primaryIsAmount = false,
     this.secondaryLabel,
     this.secondaryDetail,
     this.secondaryIsAddress = false,

@@ -1049,6 +1049,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneSignActionLabel => 'ACTION';
 
   @override
+  String get keystoneSignEntireBalance => 'Entire transferable balance';
+
+  @override
   String get keystoneSignYouAreSigning => 'YOU ARE SIGNING';
 
   @override
@@ -3510,4 +3513,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopQuitNow => 'Quit Now';
+
+  @override
+  String get desktopKeystoneStepShow => 'Show';
+
+  @override
+  String get desktopKeystoneStepCheckAndScan => 'Check and scan back';
+
+  @override
+  String get desktopKeystoneOnColdWallet => 'On your cold wallet';
+
+  @override
+  String get desktopKeystoneShowStepScan => 'Open your cold wallet and choose Scan.';
+
+  @override
+  String get desktopKeystoneShowStepHold => 'Hold it up to this QR code until it shows the transaction.';
+
+  @override
+  String get desktopKeystoneShowStepContinue => 'Then continue here.';
+
+  @override
+  String get desktopKeystoneCheckTitle => 'Check your cold wallet\'s screen';
+
+  @override
+  String get desktopKeystoneCheckBody => 'Approve there only if it shows exactly this.';
+
+  @override
+  String get desktopKeystoneThen => 'Then';
+
+  @override
+  String get desktopKeystoneScanStepHold => 'Hold its signature QR code up to this computer\'s camera.';
+
+  @override
+  String get desktopKeystoneScanStepKeep => 'Keep it there until every part has arrived.';
+
+  @override
+  String get desktopKeystoneRejectStep2Title => 'Don\'t retry from this computer.';
+
+  @override
+  String get desktopKeystoneRejectStep3Body =>
+      'Keys never left the device. Move to a trusted computer before sending again.';
+
+  @override
+  String get desktopKeystoneRejectStep2Body => 'If it\'s compromised, retrying gives the attacker another chance.';
 }
