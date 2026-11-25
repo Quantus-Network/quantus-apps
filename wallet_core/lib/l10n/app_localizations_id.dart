@@ -3563,4 +3563,7 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get desktopKeystoneRejectStep2Body =>
       'Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.';
+
+  @override
+  String get desktopSidebarMultisigs => 'Multisig';
 }

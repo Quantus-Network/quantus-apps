@@ -49,8 +49,10 @@ class FakeSettingsService extends Fake implements SettingsService {
     this.walletNames = const {},
     Map<int, String>? mnemonics,
     Set<int> openWallets = const {},
+    bool multisigsOpen = false,
   }) : mnemonics = mnemonics ?? {0: 'a stored recovery phrase'} {
     if (openWallets.isNotEmpty) strings[KeptOpenWalletsNotifier.settingsKey] = openWallets.join(',');
+    if (multisigsOpen) bools[KeptOpenMultisigsNotifier.settingsKey] = true;
   }
 
   DisplayAccount? activeAccount;
@@ -195,7 +197,7 @@ class FakeAccountsService extends Fake implements AccountsService {
 /// Stored settings on a slow disk: each write of the active account waits
 /// until the test lets it finish with [finishWrites].
 class SlowSettingsService extends FakeSettingsService {
-  SlowSettingsService({super.activeAccount, super.multisigs, super.openWallets});
+  SlowSettingsService({super.activeAccount, super.multisigs, super.openWallets, super.multisigsOpen});
 
   final List<Completer<void>> _writes = [];
 

@@ -3554,4 +3554,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopKeystoneRejectStep2Body => 'If it\'s compromised, retrying gives the attacker another chance.';
+
+  @override
+  String get desktopSidebarMultisigs => 'Multisigs';
 }

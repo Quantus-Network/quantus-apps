@@ -44,8 +44,10 @@ class WalletPresenceNotifier extends AsyncNotifier<WalletPresence> {
     }
     // The changed keyboard shortcuts went with the settings.
     ref.invalidate(shortcutBindingsProvider);
-    // So did the wallets left open.
-    ref.invalidate(keptOpenWalletsProvider);
+    // So did the wallets and the multisigs left open.
+    ref
+      ..invalidate(keptOpenWalletsProvider)
+      ..invalidate(keptOpenMultisigsProvider);
     state = const AsyncData(WalletPresence.none);
   }
 }

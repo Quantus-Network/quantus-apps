@@ -116,18 +116,21 @@ List<AccountMenuEntry?> accountMenuEntries(
   ];
 }
 
-/// What a wallet heading's menu offers: Rename, and a software wallet's
-/// recovery phrase. A Keystone wallet's phrase is not on this computer.
+/// What a software wallet's heading menu offers: Rename, and its recovery
+/// phrase. A cold wallet's heading keeps its name, so it is always clear which
+/// group is the cold wallet, and its phrase is not on this computer: it has
+/// none of these ([WalletContextMenu]).
 List<AccountMenuEntry> walletMenuEntries(AppLocalizations l10n, WalletGroup wallet, AccountManager manager) => [
-  AccountMenuEntry(
-    l10n.desktopAccountRename,
-    action: AccountAction.rename,
-    onSelected: () => manager.startRenameWallet(wallet.walletIndex),
-  ),
-  if (wallet.kind == WalletKind.software)
+  if (wallet.kind == WalletKind.software) ...[
+    AccountMenuEntry(
+      l10n.desktopAccountRename,
+      action: AccountAction.rename,
+      onSelected: () => manager.startRenameWallet(wallet.walletIndex),
+    ),
     AccountMenuEntry(
       l10n.desktopAccountShowRecoveryPhrase,
       action: AccountAction.showRecoveryPhrase,
       onSelected: () => manager.openRecoveryPhrase(wallet.walletIndex),
     ),
+  ],
 ];

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/manage_multisigs_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
@@ -45,9 +46,11 @@ Future<FakeWalletDevice> _pump(
   List<MultisigAccount> found = const [],
   RemoteConfigModel? remoteConfig,
   DisplayAccount? active,
+  bool multisigsOpen = false,
 }) async {
   final device = FakeWalletDevice()..store([mainAccount, savingsAccount]);
   device.storage.multisigStore.addAll(saved);
+  if (multisigsOpen) device.storage.bools[KeptOpenMultisigsNotifier.settingsKey] = true;
   if (active != null) device.storage.activeAccount = active;
   device.chain.discoverMultisigs = () async => found;
   if (remoteConfig != null) device.remoteConfig = remoteConfig;
@@ -361,7 +364,7 @@ void main() {
     });
 
     testOnMac('a failed removal goes back on, says why, and stays in the sidebar', (tester) async {
-      final device = await _pump(tester, saved: [_team]);
+      final device = await _pump(tester, saved: [_team], multisigsOpen: true);
       device.storage.writeError = StateError('disk full');
       await _openSheet(tester);
 

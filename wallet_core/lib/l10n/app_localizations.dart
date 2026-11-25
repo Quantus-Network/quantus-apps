@@ -6391,6 +6391,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If it\'s compromised, retrying gives the attacker another chance.'**
   String get desktopKeystoneRejectStep2Body;
+
+  /// Desktop sidebar: the heading over every multisig, after the wallets. Drawn in capitals; screen readers read it as written
+  ///
+  /// In en, this message translates to:
+  /// **'Multisigs'**
+  String get desktopSidebarMultisigs;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

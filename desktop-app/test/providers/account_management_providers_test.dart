@@ -542,6 +542,45 @@ void main() {
         await _close(tester, container);
       });
 
+      testWidgets('with a multisig active, goes to the wallet of its member here', (tester) async {
+        final (device, container) = await _device(tester);
+        await container.read(sidebarSelectionProvider.notifier).showAccount(MultisigDisplayAccount(_team));
+        await _settle(tester, container);
+
+        await _manager(container).createInActiveWallet();
+        await _settle(tester, container);
+
+        expect(stored(device, 'qzNew0-2').walletIndex, 0);
+        await _close(tester, container);
+      });
+
+      testWidgets('with a multisig whose member is a Cold Wallet account active, opens Connect Cold Wallet', (
+        tester,
+      ) async {
+        final (device, container) = await _device(tester);
+        final coldTeam = MultisigAccount(
+          name: 'Cold Team',
+          accountId: 'qzColdTeam',
+          signers: const ['qzCold', 'qzOther'],
+          threshold: 2,
+          nonce: BigInt.zero,
+          myMemberAccountId: 'qzCold',
+        );
+        device.storage.multisigStore.add(coldTeam);
+        container.invalidate(multisigAccountsProvider);
+        await _settle(tester, container);
+        final before = device.storage.accounts.length;
+        await container.read(sidebarSelectionProvider.notifier).showAccount(MultisigDisplayAccount(coldTeam));
+        await _settle(tester, container);
+
+        await _manager(container).createInActiveWallet();
+        await _settle(tester, container);
+
+        expect(container.read(shellSheetProvider), ShellSheet.connectColdWallet);
+        expect(device.storage.accounts, hasLength(before));
+        await _close(tester, container);
+      });
+
       testWidgets('with a Cold Wallet account active and cold wallets turned off, does nothing', (tester) async {
         final (device, container) = await _device(tester, offersColdWallets: false);
         final before = device.storage.accounts.length;

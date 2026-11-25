@@ -82,7 +82,7 @@ WalletsGrouping groupWallets({
     final group = byWallet[walletIndex] ?? [];
     final regular = group.where((a) => a.accountType != AccountType.encrypted).toList()..sort(Account.compare);
     final encrypted = group.where((a) => a.accountType == AccountType.encrypted).toList()..sort(Account.compare);
-    final msigs = [...?multisigsByWallet[walletIndex]]..sort(_compareMultisigs);
+    final msigs = [...?multisigsByWallet[walletIndex]]..sort(compareMultisigs);
     return WalletGroup(
       walletIndex: walletIndex,
       kind: kind,
@@ -105,7 +105,7 @@ WalletsGrouping groupWallets({
     }
   }
 
-  return WalletsGrouping(wallets: wallets, standaloneMultisigs: [...standaloneMultisigs]..sort(_compareMultisigs));
+  return WalletsGrouping(wallets: wallets, standaloneMultisigs: [...standaloneMultisigs]..sort(compareMultisigs));
 }
 
 bool _isKeystoneWallet(List<Account> group) =>
@@ -127,7 +127,8 @@ int? softwareWalletNumber(List<Account> accounts, int walletIndex) {
   return pos == -1 ? null : pos + 1;
 }
 
-int _compareMultisigs(MultisigAccount a, MultisigAccount b) {
+/// The order multisigs are listed in: by name, ignoring case, then by address.
+int compareMultisigs(MultisigAccount a, MultisigAccount b) {
   final n = a.name.toLowerCase().compareTo(b.name.toLowerCase());
   return n != 0 ? n : a.accountId.compareTo(b.accountId);
 }

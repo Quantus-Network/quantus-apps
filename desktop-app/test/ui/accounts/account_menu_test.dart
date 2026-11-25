@@ -13,6 +13,7 @@ import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
+import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
@@ -44,7 +45,12 @@ Object? _clipboardError;
 
 /// Main (active) and Savings in the first wallet with its encrypted account,
 /// a Keystone account, Trading alone in a second wallet, and Team.
-Future<FakeWalletDevice> _pump(WidgetTester tester, {List<Account>? accounts}) async {
+Future<FakeWalletDevice> _pump(
+  WidgetTester tester, {
+  List<Account>? accounts,
+  DisplayAccount? active,
+  RemoteConfigModel? remoteConfig,
+}) async {
   _clipboard = null;
   _clipboardError = null;
   final messenger = tester.binding.defaultBinaryMessenger;
@@ -62,7 +68,10 @@ Future<FakeWalletDevice> _pump(WidgetTester tester, {List<Account>? accounts}) a
     device.storage.mnemonics[2] = 'trading words';
     device.storage.multisigStore.add(_team);
     device.storage.strings[KeptOpenWalletsNotifier.settingsKey] = '0,1,2';
+    device.storage.bools[KeptOpenMultisigsNotifier.settingsKey] = true;
   }
+  if (active != null) device.storage.activeAccount = active;
+  if (remoteConfig != null) device.remoteConfig = remoteConfig;
   await pumpShell(
     tester,
     overrides: [
@@ -234,11 +243,56 @@ void main() {
       expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…']);
     });
 
-    testOnMac('a Keystone wallet\'s heading offers only Rename: its phrase is not on this computer', (tester) async {
+    testOnMac('a cold wallet\'s heading offers only Connect Cold Wallet…, which opens it', (tester) async {
       await _pump(tester);
-      await _rightClick(tester, find.descendant(of: find.byType(Sidebar), matching: find.text('COLD WALLET')));
+      await _rightClick(tester, _inSidebar('COLD WALLET'));
 
-      expect(_menuLabels(tester), ['Rename…']);
+      expect(_menuLabels(tester), ['Connect Cold Wallet…']);
+      await _choose(tester, 'Connect Cold Wallet…');
+      expect(_container(tester).read(shellSheetProvider), ShellSheet.connectColdWallet);
+    });
+
+    testOnMac('with cold wallets turned off remotely, a cold wallet\'s heading has no menu', (tester) async {
+      await _pump(tester, remoteConfig: RemoteConfigModel.fromJson({'enableKeystoneHardwareWallet': false}));
+      await _rightClick(tester, _inSidebar('COLD WALLET'));
+
+      expect(_menu, findsNothing);
+    });
+
+    for (final (label, sheet) in [
+      ('Create Multisig…', ShellSheet.createMultisig),
+      ('Manage Multisigs…', ShellSheet.manageMultisigs),
+    ]) {
+      testOnMac('the multisigs\' heading offers Create Multisig… and Manage Multisigs…; $label opens its sheet', (
+        tester,
+      ) async {
+        await _pump(tester);
+        await _rightClick(tester, _inSidebar('MULTISIGS'));
+
+        expect(_menuLabels(tester), ['Create Multisig…', 'Manage Multisigs…']);
+        await _choose(tester, label);
+        expect(_container(tester).read(shellSheetProvider), sheet);
+      });
+    }
+
+    testOnMac('on an account that cannot create a multisig, the heading\'s Create Multisig… is unavailable', (
+      tester,
+    ) async {
+      await _pump(tester, active: MultisigDisplayAccount(_team));
+      await _rightClick(tester, _inSidebar('MULTISIGS'));
+
+      final row = find.descendant(of: _menu, matching: find.widgetWithText(MenuPanelRow, 'Create Multisig…'));
+      expect(tester.widget<MenuPanelRow>(row).isDisabled, isTrue);
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+      expect(_container(tester).read(shellSheetProvider), isNull);
+    });
+
+    testOnMac('with multisigs turned off remotely, the multisigs\' heading has no menu', (tester) async {
+      await _pump(tester, remoteConfig: RemoteConfigModel.fromJson({'enableMultisig': false}));
+      await _rightClick(tester, _inSidebar('MULTISIGS'));
+
+      expect(_menu, findsNothing);
     });
 
     testOnMac('the items act on the account right-clicked, not the active one', (tester) async {

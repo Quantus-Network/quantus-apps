@@ -5184,5 +5184,9 @@
     "desktopKeystoneRejectStep2Body": "If it's compromised, retrying gives the attacker another chance.",
     "@desktopKeystoneRejectStep2Body": {
       "description": "Desktop guide after the cold wallet showed different details: second step's body (the computer may be compromised)"
+    },
+    "desktopSidebarMultisigs": "Multisigs",
+    "@desktopSidebarMultisigs": {
+      "description": "Desktop sidebar: the heading over every multisig, after the wallets. Drawn in capitals; screen readers read it as written"
     }
 }
