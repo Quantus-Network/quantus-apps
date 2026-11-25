@@ -27,11 +27,25 @@ import '../fakes.dart';
 
 /// The chain at block 100, where any block is reached at the start of 2026.
 class _FakeMultisigService extends Fake implements MultisigService {
+  /// The account each proposal's cost was estimated for.
+  final quotedSigners = <String>[];
+
   @override
   Future<int> currentBlockNumber() async => 100;
 
   @override
   DateTime blockToTime(int targetBlock, int currentBlock) => DateTime.utc(2026);
+
+  @override
+  Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+  }) async {
+    quotedSigners.add(signer.accountId);
+    return ProposeFeeBreakdown(networkFee: BigInt.one, deposit: BigInt.one, creationFee: BigInt.one, expiryBlock: 1000);
+  }
 }
 
 void main() {
@@ -173,6 +187,115 @@ void main() {
         expect(submission.proposals, isEmpty);
       });
     }
+  });
+
+  group('the account that proposes', () {
+    final cost = BigInt.from(4) * oneToken;
+    late _FakeMultisigService chain;
+    late Map<String, BigInt> holds;
+
+    setUp(() {
+      chain = _FakeMultisigService();
+      holds = {member.accountId: cost, other.accountId: cost};
+    });
+
+    List<Override> bothHere({Account? second}) => [
+      ...bed.overrides,
+      accountsProvider.overrideWith(
+        (ref) => AccountsNotifier(bed.accounts, initialAccounts: [member, second ?? other]),
+      ),
+      multisigServiceProvider.overrideWithValue(chain),
+      transactionSubmissionServiceProvider.overrideWithValue(submission),
+      balanceProviderFamily.overrideWith((ref, accountId) => holds[accountId] ?? BigInt.zero),
+    ];
+
+    Future<SendOutcome> submitAs(WidgetRef ref, MultisigProposeStrategy strategy) => strategy.submit(
+      ref,
+      recipientAddress: recipient.accountId,
+      amount: BigInt.from(5) * oneToken,
+      fee: fee,
+      isPayMode: false,
+    );
+
+    testWidgets('with no proposer given, the member is priced, pays and signs', (tester) async {
+      final strategy = MultisigProposeStrategy(msig: msig);
+      late WidgetRef ref;
+      await pumpWatched(
+        tester,
+        overrides: bothHere(),
+        build: (watching) {
+          ref = watching;
+          return watching.watch(strategy.feeProvider(recipient: recipient.accountId, amount: oneToken));
+        },
+      );
+      await tester.pump();
+      await submitAs(ref, strategy);
+
+      expect(strategy.proposerId, member.accountId);
+      expect(chain.quotedSigners, [member.accountId]);
+      expect(strategy.feePayerBalanceProvider, effectiveBalanceProviderFamily(member.accountId));
+      expect(submission.proposalSigners, [member.accountId]);
+    });
+
+    testWidgets('another signer given as the proposer is priced, pays, is named on the review and signs, not the '
+        'member', (tester) async {
+      final strategy = MultisigProposeStrategy(msig: msig, proposerId: other.accountId);
+      late WidgetRef ref;
+      final read = await pumpWatched(
+        tester,
+        overrides: bothHere(),
+        build: (watching) {
+          ref = watching;
+          return (
+            fee: watching.watch(strategy.feeProvider(recipient: recipient.accountId, amount: oneToken)),
+            rows: strategy.reviewRows(
+              watching,
+              recipientAddress: recipient.accountId,
+              amount: BigInt.from(5) * oneToken,
+              fee: fee,
+            ),
+          );
+        },
+      );
+      await tester.pump();
+
+      expect(read().fee.fee, isNotNull);
+      expect(chain.quotedSigners, [other.accountId]);
+      expect(strategy.feePayerBalanceProvider, effectiveBalanceProviderFamily(other.accountId));
+      expect((read().rows.first as SendReviewAddress).address, other.accountId);
+      expect(await submitAs(ref, strategy), isA<SendSubmitted>());
+      expect(submission.proposalSigners, [other.accountId]);
+    });
+
+    testWidgets('what the proposer holds decides whether it can pay, not what the member holds', (tester) async {
+      holds = {member.accountId: cost, other.accountId: cost - BigInt.one};
+      final strategy = MultisigProposeStrategy(msig: msig, proposerId: other.accountId);
+      late WidgetRef ref;
+      final read = await pumpWatched(
+        tester,
+        overrides: bothHere(),
+        build: (watching) {
+          ref = watching;
+          return strategy.affordabilityError(watching, fee, watching.watch(l10nProvider));
+        },
+      );
+      await tester.pump();
+      final l10n = ref.read(l10nProvider);
+
+      expect(read(), l10n.multisigProposeFeePayerInsufficient);
+      expect(((await submitAs(ref, strategy)) as SendFailed).message, l10n.multisigProposeFeePayerInsufficient);
+      expect(submission.proposals, isEmpty);
+    });
+
+    testWidgets('a cold wallet signer given as the proposer signs on its cold wallet', (tester) async {
+      final coldOther = makeAccount(2, accountType: AccountType.keystone);
+      final ref = await pumpRef(tester, overrides: bothHere(second: coldOther));
+
+      final outcome = await submitAs(ref, MultisigProposeStrategy(msig: msig, proposerId: coldOther.accountId));
+
+      expect((outcome as SendNeedsHardwareSignature).session.account.accountId, coldOther.accountId);
+      expect(bed.userApproval.reasons, isEmpty);
+    });
   });
 
   testWidgets('a Keystone member signs the proposal with its amount, shown as an amount', (tester) async {

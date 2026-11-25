@@ -757,6 +757,7 @@
   "desktopShortcutsSaveFailed": "Pintasan tidak dapat disimpan: {error}",
   "desktopProposeCost": "Biaya pengajuan",
   "desktopProposeCostPaidBy": "{cost}, dibayar oleh",
+  "desktopProposePaidBy": "Dibayar oleh",
   "desktopProposeCostNotCovered": "{account} tidak memiliki cukup saldo untuk membayar biaya pengajuan.",
   "desktopProposeMaximum": "Ajukan jumlah maksimum",
   "desktopProposeProposing": "Mengajukan",

@@ -19,48 +19,55 @@ import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
 import 'package:wallet_core/utils/recipient_rememberer.dart';
 
-/// Proposal cost for a recipient. The network fee is still a chain estimate,
-/// so it is keyed by recipient only and sized with a representative amount —
-/// the amount moves the encoded length by a few bytes at most — rather than
-/// re-fetched on every keystroke.
-final multisigProposeFeeProvider = FutureProvider.autoDispose.family<SendFee, (MultisigAccount msig, String recipient)>(
-  (ref, key) async {
-    final (msig, recipient) = key;
-    final service = ref.read(multisigServiceProvider);
-    final signer = ref.read(accountsProvider).value?.where((a) => a.accountId == msig.myMemberAccountId).firstOrNull;
-    try {
-      if (signer != null) {
-        return ProposeFee(
-          await service.estimateProposeFeeBreakdown(
-            msig: msig,
-            signer: signer,
-            recipient: recipient,
-            amount: MultisigProposeStrategy._estimateFeeAmount,
-          ),
-        );
-      }
-      final currentBlock = await service.currentBlockNumber();
+/// What a proposal's cost is asked for: the multisig, the id of the account
+/// that proposes and pays, and the recipient.
+typedef MultisigProposeFeeKey = (MultisigAccount msig, String proposerId, String recipient);
+
+/// Proposal cost for a recipient, signed by the account that proposes. The
+/// network fee is still a chain estimate, so it is keyed by proposer and
+/// recipient only and sized with a representative amount — the amount moves
+/// the encoded length by a few bytes at most — rather than re-fetched on every
+/// keystroke.
+final multisigProposeFeeProvider = FutureProvider.autoDispose.family<SendFee, MultisigProposeFeeKey>((ref, key) async {
+  final (msig, proposerId, recipient) = key;
+  final service = ref.read(multisigServiceProvider);
+  final signer = ref.read(accountsProvider).value?.where((a) => a.accountId == proposerId).firstOrNull;
+  try {
+    if (signer != null) {
       return ProposeFee(
-        ProposeFeeBreakdown(
-          networkFee: BigInt.zero,
-          deposit: service.proposalDeposit,
-          creationFee: service.proposalCreationFee(msig.signers.length),
-          expiryBlock: currentBlock + service.blocksForDuration(MultisigService.defaultProposalExpiry),
+        await service.estimateProposeFeeBreakdown(
+          msig: msig,
+          signer: signer,
+          recipient: recipient,
+          amount: MultisigProposeStrategy._estimateFeeAmount,
         ),
       );
-    } catch (e, st) {
-      quantusPrint('Propose fee estimate failed: $e\n$st');
-      rethrow;
     }
-  },
-);
+    final currentBlock = await service.currentBlockNumber();
+    return ProposeFee(
+      ProposeFeeBreakdown(
+        networkFee: BigInt.zero,
+        deposit: service.proposalDeposit,
+        creationFee: service.proposalCreationFee(msig.signers.length),
+        expiryBlock: currentBlock + service.blocksForDuration(MultisigService.defaultProposalExpiry),
+      ),
+    );
+  } catch (e, st) {
+    quantusPrint('Propose fee estimate failed: $e\n$st');
+    rethrow;
+  }
+});
 
 /// Proposes a transfer from a multisig account. The multisig is a view-only
 /// account, so funds leave from [msig] while the proposing member pays the fee.
 class MultisigProposeStrategy extends SendStrategy {
   final MultisigAccount msig;
 
-  const MultisigProposeStrategy({required this.msig});
+  /// The signer of [msig] in this wallet that proposes, signs and pays:
+  /// the multisig's own member unless another is given.
+  final String proposerId;
+
+  MultisigProposeStrategy({required this.msig, String? proposerId}) : proposerId = proposerId ?? msig.myMemberAccountId;
 
   static final BigInt _estimateFeeAmount = BigInt.from(1000) * NumberFormattingService.scaleFactorBigInt;
 
@@ -83,31 +90,29 @@ class MultisigProposeStrategy extends SendStrategy {
   ProviderListenable<AsyncValue<BigInt>> get spendableBalanceProvider => balanceProviderFamily(msig.accountId);
 
   @override
-  bool extraBalancesLoading(WidgetRef ref) =>
-      !ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).hasValue;
+  bool extraBalancesLoading(WidgetRef ref) => !ref.watch(effectiveBalanceProviderFamily(proposerId)).hasValue;
 
   // The proposal fee is paid by the member, not from the multisig balance.
   @override
   BigInt feeChargedToBalance(SendFee? fee) => BigInt.zero;
 
   @override
-  ProviderListenable<AsyncValue<BigInt>>? get feePayerBalanceProvider =>
-      effectiveBalanceProviderFamily(msig.myMemberAccountId);
+  ProviderListenable<AsyncValue<BigInt>>? get feePayerBalanceProvider => effectiveBalanceProviderFamily(proposerId);
 
   @override
   String? feePayerBalanceLabel(AppLocalizations l10n) => l10n.multisigProposeFeePayerBalanceLabel;
 
   @override
   ProviderListenable<SendFeeState> feeProvider({required String recipient, required BigInt amount}) =>
-      multisigProposeFeeProvider((msig, recipient.trim())).select(SendFeeState.fromAsync);
+      multisigProposeFeeProvider((msig, proposerId, recipient.trim())).select(SendFeeState.fromAsync);
 
   @override
   void retryFee(WidgetRef ref, {required String recipient, required BigInt amount}) =>
-      ref.invalidate(multisigProposeFeeProvider((msig, recipient.trim())));
+      ref.invalidate(multisigProposeFeeProvider((msig, proposerId, recipient.trim())));
 
   @override
   String? affordabilityError(WidgetRef ref, SendFee fee, AppLocalizations l10n) =>
-      _coversCost(ref.watch(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value, fee)
+      _coversCost(ref.watch(effectiveBalanceProviderFamily(proposerId)).value, fee)
       ? null
       : l10n.multisigProposeFeePayerInsufficient;
 
@@ -119,7 +124,7 @@ class MultisigProposeStrategy extends SendStrategy {
   /// As [_coversCost], of what the member's account holds now, from where
   /// nothing is watched.
   bool _memberCoversCost(WidgetRef ref, SendFee fee) =>
-      _coversCost(ref.read(effectiveBalanceProviderFamily(msig.myMemberAccountId)).value, fee);
+      _coversCost(ref.read(effectiveBalanceProviderFamily(proposerId)).value, fee);
 
   @override
   List<SendReviewRow> reviewRows(
@@ -140,7 +145,7 @@ class MultisigProposeStrategy extends SendStrategy {
         l10n.commonAmountBalance(fmt.formatBalance(v, smartDecimals: AppConstants.decimals), AppConstants.tokenSymbol);
 
     return [
-      SendReviewAddress(l10n.multisigProposeProposerLabel, msig.myMemberAccountId, kind: SendReviewRowKind.signer),
+      SendReviewAddress(l10n.multisigProposeProposerLabel, proposerId, kind: SendReviewRowKind.signer),
       SendReviewText(l10n.sendReviewAmount, amt(amount), kind: SendReviewRowKind.amount),
       SendReviewThreshold(l10n.multisigProposeThresholdLabel, threshold: msig.threshold, signers: msig.signers.length),
       SendReviewExpiry(
@@ -164,8 +169,8 @@ class MultisigProposeStrategy extends SendStrategy {
         .read(accountsProvider)
         .value
         ?.firstWhere(
-          (a) => a.accountId == msig.myMemberAccountId,
-          orElse: () => throw Exception('Member account not found in local wallet'),
+          (a) => a.accountId == proposerId,
+          orElse: () => throw Exception('Proposer account not found in local wallet'),
         );
     if (signer == null) throw Exception('No signer account available');
     return signer;

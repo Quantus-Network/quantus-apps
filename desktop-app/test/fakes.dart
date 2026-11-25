@@ -759,6 +759,9 @@ class FakeSendChain {
   /// Every recipient a proposal's cost was asked for, in order.
   final proposalQuotes = <String>[];
 
+  /// The account each proposal's cost was asked for, in [proposalQuotes]' order.
+  final proposalQuoteSigners = <String>[];
+
   /// Every proposal handed over: the multisig it is for, the member who
   /// signed it, and what it proposes.
   final proposals = <({String multisig, String signer, String recipient, BigInt amount, int expiryBlock})>[];
@@ -952,6 +955,7 @@ class _FakeMultisigService extends Fake implements MultisigService {
     required BigInt amount,
   }) {
     chain.proposalQuotes.add(recipient);
+    chain.proposalQuoteSigners.add(signer.accountId);
     return chain.proposalCost();
   }
 

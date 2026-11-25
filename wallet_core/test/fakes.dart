@@ -511,6 +511,9 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
   /// Each multisig proposal's recipient, amount and expiry block.
   final proposals = <(String, BigInt, int)>[];
 
+  /// The account that signed each multisig proposal, in [proposals]' order.
+  final proposalSigners = <String>[];
+
   /// When set, a transfer waits for it before going out.
   Completer<void>? holdTransfer;
 
@@ -553,6 +556,7 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
   }) async {
     await holdTransfer?.future;
     proposals.add((recipient, amount, expiryBlock));
+    proposalSigners.add(signer.accountId);
     return '0xproposal';
   }
 
@@ -569,6 +573,7 @@ class FakeTransactionSubmissionService extends Fake implements TransactionSubmis
   }) async {
     await holdTransfer?.future;
     proposals.add((recipient, amount, expiryBlock));
+    proposalSigners.add(signer.accountId);
     return '0xproposal';
   }
 }

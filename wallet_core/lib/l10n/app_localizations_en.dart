@@ -2809,6 +2809,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get desktopProposePaidBy => 'Paid by';
+
+  @override
   String desktopProposeCostNotCovered(String account) {
     return '$account does not hold enough to pay the proposal cost.';
   }

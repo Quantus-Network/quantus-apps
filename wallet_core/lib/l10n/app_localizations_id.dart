@@ -2814,6 +2814,9 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get desktopProposePaidBy => 'Dibayar oleh';
+
+  @override
   String desktopProposeCostNotCovered(String account) {
     return '$account tidak memiliki cukup saldo untuk membayar biaya pengajuan.';
   }
