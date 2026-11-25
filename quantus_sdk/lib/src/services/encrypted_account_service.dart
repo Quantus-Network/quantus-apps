@@ -464,6 +464,10 @@ class EncryptedAccountService {
   /// the seed and reserves a change index before it starts one. A caller that
   /// may cancel earlier passes [isCancelled]: when it answers true before the
   /// operation starts, the send throws [ClaimCancelled] and starts nothing.
+  ///
+  /// [onTransactionSubmitted] is told the hash of each of the send's
+  /// transactions as soon as the node has accepted it: a send of several
+  /// batches pays with the first while it still proves the next.
   Future<ClaimResult> send({
     required WormholeSpendPlan plan,
     required String recipientAddress,
@@ -471,6 +475,7 @@ class EncryptedAccountService {
     required ClaimProgressCallback onProgress,
     String? rpcUrl,
     IsCancelledCallback? isCancelled,
+    void Function(String txHash)? onTransactionSubmitted,
   }) async {
     _checkNotDisposed();
     if (isCancelled?.call() ?? false) throw const ClaimCancelled();
@@ -523,6 +528,7 @@ class EncryptedAccountService {
         circuitBinsDir: circuitBinsDir,
         onProgress: onProgress,
         rpcUrl: rpcUrl,
+        onTransactionSubmitted: onTransactionSubmitted,
         onBatchSubmitted: (batchIndex, nullifiers) async {
           final changeScaled = plan.batches[batchIndex].fold<int>(0, (sum, a) => sum + a.changeScaled);
           final hasChange = changeScaled > 0;
