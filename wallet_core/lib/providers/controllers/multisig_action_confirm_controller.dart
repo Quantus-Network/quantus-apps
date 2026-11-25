@@ -194,6 +194,8 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       _cannotPay(ref.read(effectiveBalanceProviderFamily(request.signer.accountId)).value, state.fee);
 
   Future<void> _prepare() async {
+    // What the signer holds may have been read long ago: read it again.
+    ref.invalidate(balanceProviderFamily(request.signer.accountId));
     final List<int> bytes;
     final DecodedCall decoded;
     try {
