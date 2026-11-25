@@ -120,6 +120,38 @@ void main() {
     expect(history.cursors.last, (other: null, scheduled: null), reason: 'a full refresh restarts from the top');
   });
 
+  for (final (name, refresh) in <(String, Future<void> Function(UnifiedPaginationController))>[
+    ('a silent refresh', (c) => c.silentRefresh()),
+    ('a loading refresh', (c) => c.loadingRefresh()),
+  ]) {
+    test('$name asked while a later page loads waits for it, then reads the first page', () async {
+      history.page = const SortedTransactionsList(
+        scheduledReversibleTransfers: [],
+        otherTransfers: [],
+        nextOtherCursor: AccountEventCursor(timestamp: '2026-06-02T05:15:08.147+00:00', id: 'ae-transfer-1-acc'),
+        nextScheduledCursor: null,
+        hasMore: true,
+      );
+      final c = controller();
+      await settle();
+      history.gate = Completer<void>();
+      final more = c.fetchMore();
+      await settle();
+      expect(history.calls, 2, reason: 'the next page is being read');
+
+      final refreshed = refresh(c);
+      await settle();
+      expect(history.calls, 2, reason: 'the first page waits for the page being read');
+
+      history.gate!.complete();
+      await more;
+      await refreshed;
+
+      expect(history.calls, 3, reason: 'joining the later page would leave the first page unread');
+      expect(history.cursors.last, (other: null, scheduled: null), reason: 'the first page is read again');
+    });
+  }
+
   test('an account switch mid-flight still loads the new scope', () async {
     final oldAccount = makeAccount(1);
     final newAccount = makeAccount(2);

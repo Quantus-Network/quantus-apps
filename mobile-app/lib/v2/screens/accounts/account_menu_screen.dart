@@ -6,6 +6,7 @@ import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_settings_providers.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:resonance_network_wallet/v2/components/menu_row.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/account_details_screen.dart';
@@ -170,6 +171,9 @@ class AccountMenuScreen extends ConsumerWidget {
     try {
       await AccountsService().removeAccount(account);
       invalidateAccountProviders(ref);
+      // Read again: a hardware wallet goes with its last account, and the
+      // next wallet added takes its index.
+      walletSettingsProviders(account.walletIndex).forEach(ref.invalidate);
       if (context.mounted) returnToAccountsScreen(context, ref);
     } catch (e, st) {
       quantusPrint('[AccountMenu] disconnect account error: $e\n$st');
@@ -182,6 +186,7 @@ class AccountMenuScreen extends ConsumerWidget {
     try {
       await AccountsService().removeWallet(walletIndex);
       invalidateAccountProviders(ref);
+      walletSettingsProviders(walletIndex).forEach(ref.invalidate);
       if (context.mounted) returnToAccountsScreen(context, ref);
     } catch (e, st) {
       quantusPrint('[AccountMenu] disconnect wallet error: $e\n$st');

@@ -169,11 +169,16 @@ class WormholeSendService {
   /// [onBatchSubmitted] is awaited after each batch's extrinsic is accepted,
   /// with the spent nullifier hexes — callers persist these to keep local
   /// pending-spend state exact even if a later batch fails.
+  /// [onTransactionSubmitted] is told each batch's transaction hash the
+  /// moment the node has accepted it, while the next batches are still to be
+  /// proved: the result lists the hashes only once the whole operation ends,
+  /// and not at all when a later batch fails.
   Future<ClaimResult> sendSpends({
     required List<List<WormholeLeafSpend>> batches,
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
+    void Function(String txHash)? onTransactionSubmitted,
     String? rpcUrl,
   }) {
     return _runOperation(rpcUrl, (op) async {
@@ -190,6 +195,7 @@ class WormholeSendService {
         circuitBinsDir: circuitBinsDir,
         onProgress: onProgress,
         onBatchSubmitted: onBatchSubmitted,
+        onTransactionSubmitted: onTransactionSubmitted,
       );
     });
   }
@@ -308,6 +314,7 @@ class WormholeSendService {
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
+    void Function(String txHash)? onTransactionSubmitted,
   }) async {
     final numTransfers = batches.fold<int>(0, (sum, b) => sum + b.length);
     final totalBatches = batches.length;
@@ -390,6 +397,7 @@ class WormholeSendService {
         final txHash = await _submitExtrinsic(op, aggregated);
         txHashes.add(txHash);
         _log('Batch $batchNum accepted by pool: $txHash');
+        onTransactionSubmitted?.call(txHash);
         await onBatchSubmitted?.call(batchIndex, nullifierHexes.cast<String>());
         _reportProgress(onProgress, 6, batchNum, total: totalBatches);
       }

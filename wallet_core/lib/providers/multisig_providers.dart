@@ -16,11 +16,15 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     _load();
   }
 
+  /// A list replaced while it loads answers no one: the one that replaced it
+  /// loads for itself.
   Future<void> _load() async {
     try {
       final accounts = await _settingsService.getMultisigAccounts();
+      if (!mounted) return;
       state = AsyncValue.data(accounts);
     } catch (e, st) {
+      if (!mounted) return;
       quantusPrint('multisig accounts load error: $e $st');
       state = AsyncValue.error(e, st);
     }

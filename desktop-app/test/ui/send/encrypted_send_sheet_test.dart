@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
+import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
@@ -221,6 +222,32 @@ void main() {
       await _report(tester, proving, _partWay(EncryptedSendPhase.failed, errorMessage: 'It refused it again'));
 
       expect(notifications.shown.single.title, 'Send failed');
+    });
+
+    testOnMac('knows each transaction of a send as its own from the moment it is handed over', (tester) async {
+      final proving = await _startSend(tester, notifications: FakeNotificationPlugin());
+      final own = ProviderScope.containerOf(
+        tester.element(find.byType(DesktopShell)),
+      ).read(ownActivityNotificationsProvider);
+
+      await _report(tester, proving, _partWay(EncryptedSendPhase.running, txHashes: const ['0xfirst']));
+      expect(own.isEncryptedSendFromHere('0xfirst'), isTrue, reason: 'while the next batch is still being proved');
+      expect(own.isEncryptedSendFromHere('0xsecond'), isFalse);
+
+      await _report(
+        tester,
+        proving,
+        _partWay(
+          EncryptedSendPhase.failed,
+          errorMessage: 'The network refused it',
+          txHashes: const ['0xfirst', '0xsecond'],
+        ),
+      );
+      expect(
+        own.isEncryptedSendFromHere('0xsecond'),
+        isTrue,
+        reason: 'a send that failed paid what it had handed over',
+      );
     });
 
     testOnMac('never keeps a proving alive: closing the sheet still ends it', (tester) async {

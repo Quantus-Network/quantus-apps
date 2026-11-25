@@ -37,15 +37,26 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     final hasWallet = await _settingsService.getHasWallet();
 
     if (hasWallet) {
-      final mnemonic = await _settingsService.getMnemonic(0);
-      if (mnemonic == null) {
-        TelemetryService().sendEvent('user_lost_mnemonic');
-        if (mounted) await _showMnemonicLostDialog();
+      final String? mnemonic;
+      try {
+        mnemonic = await _settingsService.getMnemonic(0);
+      } catch (e) {
+        _reportPhraseReadFailure('Reading the recovery phrase failed', e);
+        if (mounted) await _askAboutLostPhrase();
         return;
       }
-      unawaited(_resumePendingAccountScans());
+      if (mnemonic == null) {
+        TelemetryService().sendEvent('user_lost_mnemonic');
+        if (mounted) await _askAboutLostPhrase();
+        return;
+      }
     }
+    _open(hasWallet: hasWallet);
+  }
 
+  /// Shows the wallet, or Welcome when there is none.
+  void _open({required bool hasWallet}) {
+    if (hasWallet) unawaited(_resumePendingAccountScans());
     setState(() {
       _walletExists = hasWallet;
       _migrationPending = hasWallet && ref.read(mainnetMigrationPendingProvider);
@@ -62,28 +73,78 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     }
   }
 
-  Future<void> _showMnemonicLostDialog() async {
+  /// Logs and reports a read of the first wallet's recovery phrase that threw,
+  /// as a locked keychain does. The phrase is then treated as unreadable.
+  void _reportPhraseReadFailure(String failure, Object error) {
+    quantusPrint('$failure: $error');
+    TelemetryService().sendError(failure, error: error);
+  }
+
+  /// Says the first wallet's recovery phrase cannot be read, and asks until
+  /// the person chooses: Try Again reads it again (a read that fails asks
+  /// again too), and the wallet is wiped
+  /// only when its removal is confirmed. The phrase may still be on the
+  /// device, hidden from the app for now. A sheet dismissed without a choice
+  /// is shown again.
+  Future<void> _askAboutLostPhrase() async {
     final l10n = ref.read(l10nProvider);
 
-    await BottomSheetContainer.show(
-      context,
-      builder: (ctx) => BottomSheetContainer(
-        title: l10n.walletInitErrorTitle,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(l10n.walletInitErrorMessage, style: ctx.themeTextV3.body),
-            const SizedBox(height: 32),
-            QuantusButton.simple(
-              label: l10n.walletInitErrorButtonLabel,
-              onTap: () => Navigator.pop(ctx),
-              variant: ButtonVariant.staged,
-            ),
-          ],
+    while (true) {
+      if (!mounted) return;
+      final choice = await BottomSheetContainer.show<_LostPhraseChoice>(
+        context,
+        builder: (ctx) => BottomSheetContainer(
+          title: l10n.walletInitErrorTitle,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.walletInitErrorMessage, style: ctx.themeTextV3.body),
+              const SizedBox(height: 32),
+              QuantusButton.simple(
+                label: l10n.commonTryAgain,
+                onTap: () => Navigator.pop(ctx, _LostPhraseChoice.tryAgain),
+              ),
+              const SizedBox(height: 12),
+              QuantusButton.simple(
+                label: l10n.walletInitErrorRemoveWallet,
+                variant: ButtonVariant.danger,
+                onTap: () => Navigator.pop(ctx, _LostPhraseChoice.removeWallet),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-    if (mounted) logoutAndReturnToWelcome(context, ref);
+      );
+      if (!mounted) return;
+      switch (choice) {
+        case _LostPhraseChoice.tryAgain:
+          final String? mnemonic;
+          try {
+            mnemonic = await _settingsService.getMnemonic(0);
+          } catch (e) {
+            // Still unreadable: asked again, as when it reads as missing.
+            _reportPhraseReadFailure('Reading the recovery phrase again failed', e);
+            continue;
+          }
+          if (mnemonic != null) {
+            if (mounted) _open(hasWallet: true);
+            return;
+          }
+        case _LostPhraseChoice.removeWallet:
+          final confirmed = await showQuantusDialog(
+            context,
+            title: l10n.walletInitErrorRemoveTitle,
+            body: l10n.walletInitErrorRemoveBody,
+            actionLabel: l10n.walletInitErrorRemoveConfirm,
+            cancelLabel: l10n.commonCancel,
+            isDestructive: true,
+          );
+          if (confirmed && mounted) {
+            await logoutAndReturnToWelcome(context, ref);
+            return;
+          }
+        case null:
+      }
+    }
   }
 
   @override
@@ -99,3 +160,6 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     return const HomeScreen();
   }
 }
+
+/// What the person chose on the sheet saying the recovery phrase cannot be read.
+enum _LostPhraseChoice { tryAgain, removeWallet }

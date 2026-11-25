@@ -457,6 +457,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         // The proving lives as long as something listens to it: from here
         // on the sheet does, and moves on once every proof is handed over.
         ref.listenManual(encryptedSendControllerProvider, (previous, next) {
+          if (!listEquals(previous?.txHashes, next.txHashes)) {
+            ref.read(ownActivityNotificationsProvider).onEncryptedSendSubmitted(next.txHashes);
+          }
           if (previous?.phase != next.phase) {
             ref
                 .read(ownActivityNotificationsProvider)
