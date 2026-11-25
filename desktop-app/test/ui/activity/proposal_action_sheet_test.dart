@@ -181,6 +181,19 @@ void main() {
       expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
     });
 
+    testOnMac('a reversible transfer: what it is and its window, beside the amount and to whom', (tester) async {
+      final bytes = corpusCall('ReversibleTransfers.schedule_transfer_with_delay');
+      final chain = FakeSendChain()..proposalCall = (_) async => bytes;
+      await _open(tester, MultisigActionKind.approve, _proposal(callRaw: bytes), chain: chain);
+
+      final call = MultisigProposal.decodeProposalCall(bytes);
+      expect(call.summary?.reversible, isTrue, reason: 'the sample is a reversible transfer');
+      expect(_inSheet(find.text(call.displayTitle)), findsOne);
+      expect(_inSheet(find.text('Reversible for')), findsOne);
+      expect(_inSheet(find.text('Destination')), findsNothing, reason: 'the recipient is already said');
+      expect(_inSheet(find.text('Amount')), findsNothing, reason: 'the amount is already said');
+    });
+
     testOnMac('a call that cannot be read: said in ember, and Approve unavailable', (tester) async {
       final chain = FakeSendChain()..proposalCall = (_) async => throw StateError('not on chain');
       await _open(tester, MultisigActionKind.approve, _proposal(), chain: chain);
@@ -275,6 +288,22 @@ void main() {
 
       expect(_offered(tester, ProposalActionSheet.confirmKey), isFalse);
       expect(_inSheet(find.text(approvalNotSetUpNote(_l10n))), findsOne);
+    });
+
+    testOnMac('an approval prompt that fails: said beside the buttons, nothing sent, and the sheet can be closed', (
+      tester,
+    ) async {
+      final approval = FakeUserApproval()..answer = () async => throw StateError('the prompt could not be shown');
+      final sheet = await _open(tester, MultisigActionKind.approve, _proposal(), approval: approval);
+
+      await _confirm(tester);
+
+      expect(_inSheet(find.text(_l10n.multisigApproveFailed)), findsOne);
+      expect(sheet.chain.actions, isEmpty);
+      expect(_offered(tester, ProposalActionSheet.dismissKey), isTrue);
+      await tester.tap(_inSheet(find.byKey(ProposalActionSheet.dismissKey)));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProposalActionSheet), findsNothing);
     });
 
     testOnMac('a failed submission: said beside the buttons, and trying again sends it', (tester) async {
