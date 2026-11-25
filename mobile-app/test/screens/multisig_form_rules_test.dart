@@ -612,12 +612,12 @@ void main() {
     ) async {
       final session = await pressCreate(tester);
 
-      expect(session.account, cold);
+      expect(session.account.accountId, cold.accountId);
       expect(
         (session.primaryLabel, session.primaryDetail, session.secondaryLabel, session.secondaryDetail),
         (
           l10n.keystoneSignActionLabel,
-          l10n.multisigCreateKeystoneAction(threshold(tester), 2),
+          l10n.multisigCreateKeystoneAction(MultisigService.defaultThreshold(2), 2),
           l10n.multisigCreatePredictedAddressLabel,
           address,
         ),

@@ -4,6 +4,7 @@ import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pa
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/keystone_signing_session.dart';
@@ -25,7 +26,10 @@ class _Substrate extends FakeSubstrateService {
 void main() {
   late _Substrate substrate;
 
-  setUp(() {
+  setUp(() async {
+    // The screen speaks the app's chosen language, kept in the settings.
+    SharedPreferences.setMockInitialValues({'selected_app_locale': 'en'});
+    await SettingsService().initialize();
     substrate = _Substrate();
     recordTelemetry();
   });
