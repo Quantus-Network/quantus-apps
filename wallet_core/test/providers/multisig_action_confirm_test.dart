@@ -174,8 +174,10 @@ void main() {
     submission = _Submission();
   });
 
-  /// Opens the confirmation of [kind], kept open by a widget watching it.
+  /// Opens the confirmation of [kind] by [signer], this device's member unless
+  /// given, kept open by a widget watching it.
   Future<_Confirm> open(WidgetTester tester, MultisigActionKind kind, {Account? signer}) async {
+    signer ??= _one;
     final request = MultisigActionRequest(kind: kind, msig: _msig, proposal: _proposal, signer: signer);
     final provider = multisigActionConfirmProvider(request);
     late WidgetRef ref;
@@ -310,16 +312,7 @@ void main() {
       expect(submission.submitted, [('approve', _two.accountId, null, _transferBytes)]);
     });
 
-    testWidgets('approve with no signer chosen submits as this device\'s member', (tester) async {
-      final confirm = await open(tester, MultisigActionKind.approve);
-      await tester.pump();
-
-      await confirm.controller.confirm();
-
-      expect(submission.submitted, [('approve', _one.accountId, null, _transferBytes)]);
-    });
-
-    testWidgets('execute submits as this device\'s member with the call and the fee, and returns the hash', (
+    testWidgets('execute submits as the signer it is given with the call and the fee, and returns the hash', (
       tester,
     ) async {
       final confirm = await open(tester, MultisigActionKind.execute);
@@ -332,7 +325,17 @@ void main() {
       expect(submission.submitted, [('execute', _one.accountId, _fee, _transferBytes)]);
     });
 
-    testWidgets('cancel submits as this device\'s member with the fee, and returns the hash', (tester) async {
+    testWidgets('execute is priced and submitted as the chosen signer, not the member', (tester) async {
+      final confirm = await open(tester, MultisigActionKind.execute, signer: _two);
+      await tester.pump();
+
+      await confirm.controller.confirm();
+
+      expect(chain.estimates, [('execute', _two.accountId, _transferBytes)]);
+      expect(submission.submitted, [('execute', _two.accountId, _fee, _transferBytes)]);
+    });
+
+    testWidgets('cancel submits as the signer it is given with the fee, and returns the hash', (tester) async {
       final confirm = await open(tester, MultisigActionKind.cancel);
       await tester.pump();
 

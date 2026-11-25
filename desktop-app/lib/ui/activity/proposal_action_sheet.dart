@@ -64,9 +64,9 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
   /// Read once: the sheet stays on the account it opened on.
   late final BaseAccount? _account = ref.read(activeAccountProvider).value?.account;
 
-  /// The accounts that could sign it, as the sheet opened: for an approval,
-  /// those still to approve whose key is here; for a cancellation, its
-  /// proposer; for an execution, the member.
+  /// The accounts that could sign it, as the sheet opened, whose key is here:
+  /// for an approval, those still to approve; for an execution, any signer,
+  /// the member first; for a cancellation, its proposer.
   late final List<Account> _signers = _signersAtOpen();
 
   late Account _signer = _signers.first;
@@ -77,22 +77,11 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
   MultisigActionKind get _kind => _target.kind;
   MultisigProposal get _proposal => _target.proposal;
 
-  MultisigActionRequest get _request => MultisigActionRequest(
-    kind: _kind,
-    msig: _target.msig,
-    proposal: _proposal,
-    // An approval or a cancellation names who signs; an execution is the
-    // member's, as the confirmation finds it.
-    signer: _kind == MultisigActionKind.execute ? null : _signer,
-  );
+  MultisigActionRequest get _request =>
+      MultisigActionRequest(kind: _kind, msig: _target.msig, proposal: _proposal, signer: _signer);
 
   List<Account> _signersAtOpen() {
     final accounts = ref.read(accountsProvider).value ?? const <Account>[];
-    if (_kind == MultisigActionKind.execute) {
-      final member = accounts.where((a) => a.accountId == _target.msig.myMemberAccountId).firstOrNull;
-      if (member == null) throw StateError('The execute sheet opened with the member not in this wallet.');
-      return [member];
-    }
     final actions = proposalActionsOf(
       msig: _target.msig,
       proposal: _proposal,
@@ -104,6 +93,8 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
     );
     final signers = switch (actions) {
       ProposalOpen(:final canceller) when _kind == MultisigActionKind.cancel => [?canceller],
+      ProposalOpen(:final executors) when _kind == MultisigActionKind.execute =>
+        executors.where((a) => !a.signsWithHardware).toList(),
       ProposalOpen(:final eligibleApprovers) => eligibleApprovers.where((a) => !a.signsWithHardware).toList(),
       ProposalOver() => const <Account>[],
     };

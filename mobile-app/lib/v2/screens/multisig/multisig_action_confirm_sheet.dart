@@ -32,9 +32,8 @@ class MultisigConfirmSheetLabels {
 /// Shared confirmation sheet for multisig proposal actions (approve, execute,
 /// cancel): a view of the wallet_core confirmation of [kind].
 ///
-/// When multiple local accounts are members of the multisig, pass [signer]
-/// explicitly (e.g. after a picker). Otherwise the multisig's own member
-/// account acts.
+/// [signer] is the local account that acts, chosen by the caller (after a
+/// picker when more than one can).
 ///
 /// Keystone (hardware) signers skip the approval and open the shared QR sign /
 /// scan flow.
@@ -45,8 +44,8 @@ class MultisigActionConfirmSheet extends ConsumerWidget {
   final MultisigConfirmSheetLabels labels;
   final ButtonVariant confirmVariant;
 
-  /// Explicit signer when the caller already resolved which local account acts.
-  final Account? signer;
+  /// The local account that acts.
+  final Account signer;
 
   const MultisigActionConfirmSheet({
     super.key,
@@ -54,7 +53,7 @@ class MultisigActionConfirmSheet extends ConsumerWidget {
     required this.proposal,
     required this.kind,
     required this.labels,
-    this.signer,
+    required this.signer,
     this.confirmVariant = ButtonVariant.primary,
   });
 

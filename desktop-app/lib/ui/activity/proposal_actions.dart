@@ -60,7 +60,6 @@ class ProposalActionsBar extends ConsumerWidget {
       return note == null ? const SizedBox.shrink() : _bar(context, buttons: const [], note: note);
     }
 
-    final member = accounts.where((a) => a.accountId == msig.myMemberAccountId).firstOrNull;
     final approvalNotSetUp = ref.watch(approvalAvailabilityProvider).value == ApprovalAvailability.notSetUp;
     String? keystoneNote;
 
@@ -73,11 +72,9 @@ class ProposalActionsBar extends ConsumerWidget {
             keystoneNote = l10n.desktopProposalKeystoneApprove(open.eligibleApprovers.first.name);
           }
         case ProposalPrimaryAction.execute:
-          if (member == null) {
+          if (!open.executors.any((a) => !a.signsWithHardware)) {
             primaryState = ProposalActionState.unavailable;
-          } else if (member.signsWithHardware) {
-            primaryState = ProposalActionState.unavailable;
-            keystoneNote = l10n.desktopProposalKeystoneExecute(member.name);
+            keystoneNote = l10n.desktopProposalKeystoneExecute(open.executors.first.name);
           }
       }
     }

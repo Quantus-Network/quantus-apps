@@ -56,6 +56,10 @@ final class ProposalOpen extends ProposalActions {
   /// The signers this wallet holds that can approve it now.
   final List<Account> eligibleApprovers;
 
+  /// The signers this wallet holds that can execute it, once it is ready:
+  /// any signer may, the multisig's own member first. Empty before then.
+  final List<Account> executors;
+
   /// Null when Cancel is not this wallet's to offer: only the proposal's
   /// proposer cancels, so it is offered when that is a signer this wallet holds.
   final ProposalActionState? cancel;
@@ -71,6 +75,7 @@ final class ProposalOpen extends ProposalActions {
     required this.primary,
     required this.primaryState,
     required this.eligibleApprovers,
+    required this.executors,
     required this.cancel,
     required this.canceller,
     required this.note,
@@ -105,12 +110,11 @@ ProposalActions proposalActionsOf({
     localSigners,
     pendingApproverIds: pendingApproverIds,
   );
-  final pendingExecution = findPendingExecutionForProposal(
-    pendingExecutions,
-    msig.accountId,
-    proposal.id,
-    msig.myMemberAccountId,
-  );
+  // Any signer here executes it, whichever this device sent it from.
+  final pendingExecution = localSigners
+      .map((a) => findPendingExecutionForProposal(pendingExecutions, msig.accountId, proposal.id, a.accountId))
+      .nonNulls
+      .firstOrNull;
   // Only the proposer cancels: one under way from this device is its.
   final canceller = localSigners.where((a) => a.accountId == proposal.proposer).firstOrNull;
   final pendingCancellation = findPendingCancellationForProposal(
@@ -172,6 +176,12 @@ ProposalActions proposalActionsOf({
     primary: proposal.isReadyToExecute ? ProposalPrimaryAction.execute : ProposalPrimaryAction.approve,
     primaryState: primaryState,
     eligibleApprovers: eligibleApprovers,
+    executors: proposal.isReadyToExecute
+        ? [
+            ...localSigners.where((a) => a.accountId == msig.myMemberAccountId),
+            ...localSigners.where((a) => a.accountId != msig.myMemberAccountId),
+          ]
+        : const [],
     cancel: cancel,
     canceller: canceller,
     note: note,
