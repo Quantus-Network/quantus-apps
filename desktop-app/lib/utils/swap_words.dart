@@ -45,6 +45,18 @@ enum SwapTone {
   );
 }
 
+/// The steps [swap] goes through, as its row names them, and the one it is
+/// on ([swapStage]). In [preflight] the stand-in pays out to the recipient,
+/// never to the account.
+({List<String> steps, int current}) swapStepWords(AppLocalizations l10n, ActiveSwap swap, {required bool preflight}) {
+  final quote = swap.order.quote;
+  final receiver = quote.fromToken.isQuantus || preflight ? l10n.desktopSwapTheRecipient : swap.accountName;
+  return (
+    steps: swapStepLabels(l10n, quote, receiver, byHand: swap.depositByHand),
+    current: swapStage(swap.order, depositByHand: swap.depositByHand),
+  );
+}
+
 /// Where [swap] stands in [view], as its row says it: what it is doing or how
 /// it ended, the step it is on while it is with 1Click, and its tone. In
 /// [preflight] the stand-in pays out to the recipient, never to the account.
@@ -55,16 +67,10 @@ enum SwapTone {
   SwapProgressView view, {
   required bool preflight,
 }) {
-  final quote = swap.order.quote;
   switch (view) {
     case SwapProgressView.inProgress:
-      final receiver = quote.fromToken.isQuantus || preflight ? l10n.desktopSwapTheRecipient : swap.accountName;
-      final steps = swapStepLabels(l10n, quote, receiver, byHand: swap.depositByHand);
-      return (
-        label: l10n.swapStepSwapping,
-        step: steps[swapStage(swap.order, depositByHand: swap.depositByHand)],
-        tone: SwapTone.running,
-      );
+      final (:steps, :current) = swapStepWords(l10n, swap, preflight: preflight);
+      return (label: l10n.swapStepSwapping, step: steps[current], tone: SwapTone.running);
     case SwapProgressView.deposit:
       return (label: l10n.desktopSwapAwaitingDeposit, step: l10n.desktopSwapWaitingForDeposit, tone: SwapTone.awaiting);
     case SwapProgressView.complete:
