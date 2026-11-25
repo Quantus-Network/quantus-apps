@@ -1528,6 +1528,7 @@ void _activityScenes() {
     String openId = 'proposal-1',
     int? block,
     String thirdSigner = 'qzOther',
+    Future<BigInt> Function()? actionFee,
   }) async {
     useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
     final team = MultisigAccount(
@@ -1573,6 +1574,7 @@ void _activityScenes() {
           status: MultisigProposalStatus.cancelled,
         ),
       ];
+    if (actionFee != null) chain.actionFee = actionFee;
     await _openWith(tester, [
       ...shellOverrides(
         accounts: const [_root, _second],
@@ -1709,6 +1711,20 @@ void _activityScenes() {
   _scene('proposal_action_choose_signer', (tester) async {
     await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7', thirdSigner: _second.accountId);
     await press(tester, ProposalActionsBar.primaryKey);
+  });
+  // The fee not priced yet: it turns where it will stand, the rest in place.
+  _scene('proposal_action_pricing', (tester) async {
+    await openTeamProposal(
+      tester,
+      calls: [toApprove],
+      openId: 'proposal-7',
+      thirdSigner: _second.accountId,
+      actionFee: () => Completer<BigInt>().future,
+    );
+    await tester.tap(find.byKey(ProposalActionsBar.primaryKey));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
   });
   _scene('proposal_action_cancel', (tester) async {
     await openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8');

@@ -36,10 +36,13 @@ class SummaryRow extends StatelessWidget {
 
 /// A label and its figure at the two ends of a line.
 class FigureRow extends StatelessWidget {
-  const FigureRow({super.key, required this.label, required this.value, this.isStrong = false});
+  const FigureRow({super.key, required this.label, required String this.value, this.isStrong = false});
+
+  /// The line of a figure not known yet, turning where it will stand.
+  const FigureRow.loading({super.key, required this.label, this.isStrong = false}) : value = null;
 
   final String label;
-  final String value;
+  final String? value;
   final bool isStrong;
 
   @override
@@ -51,9 +54,21 @@ class FigureRow extends StatelessWidget {
           color: isStrong ? context.colorsV3.textContent : context.colorsV3.textMuted,
         ),
       ),
-      value: FigureText(value, isStrong: isStrong),
+      value: switch (value) {
+        final value? => FigureText(value, isStrong: isStrong),
+        null => const FigureLoader(),
+      },
     );
   }
+}
+
+/// Where a figure not known yet will stand, as Send's fee says it is on its
+/// way.
+class FigureLoader extends StatelessWidget {
+  const FigureLoader({super.key});
+
+  @override
+  Widget build(BuildContext context) => const Loader(size: 12);
 }
 
 /// A figure, or other short text, at the end of its line.

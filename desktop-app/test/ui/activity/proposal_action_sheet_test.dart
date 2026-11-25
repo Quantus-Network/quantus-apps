@@ -78,7 +78,8 @@ String _money(WidgetTester tester, BigInt amount) {
 typedef _Sheet = ({FakeSendChain chain, FakeUserApproval approval, List<Uri> opened});
 
 /// Opens the sheet that does [kind] to [proposal], with [accounts] in the
-/// wallet holding [balances], a token each unless given.
+/// wallet holding [balances], a token each unless given. Unless [settle], it
+/// is left with what still moves, once it has slid in.
 Future<_Sheet> _open(
   WidgetTester tester,
   MultisigActionKind kind,
@@ -87,6 +88,7 @@ Future<_Sheet> _open(
   FakeSendChain? chain,
   FakeUserApproval? approval,
   Map<String, BigInt>? balances,
+  bool settle = true,
 }) async {
   final sheet = (chain: chain ?? FakeSendChain(), approval: approval ?? FakeUserApproval(), opened: <Uri>[]);
   sheet.chain.openProposals = [proposal];
@@ -106,9 +108,17 @@ Future<_Sheet> _open(
   await _container(
     tester,
   ).read(proposalActionTargetProvider.notifier).open(ProposalActionTarget(kind: kind, msig: _team, proposal: proposal));
-  await tester.pumpAndSettle();
+  if (settle) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
+  }
   return sheet;
 }
+
+/// Where the sheet's buttons stand.
+Rect _buttons(WidgetTester tester) => tester.getRect(_inSheet(find.byKey(ProposalActionSheet.confirmKey)));
 
 SheetButton _button(WidgetTester tester, Key key) => tester.widget<SheetButton>(_inSheet(find.byKey(key)));
 
@@ -166,21 +176,66 @@ void main() {
       expect(_inSheet(find.byType(ProposalCallFields)), findsOne);
     });
 
-    testOnMac('while the call is read from the chain: said, and Approve waits for it', (tester) async {
+    testOnMac('while the call is read from the chain: no line says so, the fee and what is paid turn, '
+        'and Approve waits for it where it will stand', (tester) async {
       final held = Completer<List<int>>();
       final chain = FakeSendChain()..proposalCall = (_) => held.future;
-      await _open(tester, MultisigActionKind.approve, _proposal(), chain: chain);
+      await _open(tester, MultisigActionKind.approve, _proposal(), chain: chain, settle: false);
 
-      expect(_inSheet(find.text(_l10n.multisigProposalCallLoading)), findsOne);
+      expect(_inSheet(find.text(_l10n.multisigProposalCallLoading)), findsNothing);
+      expect(_inSheet(find.byType(Loader)), findsNWidgets(2));
+      expect(_inSheet(find.text(_l10n.desktopProposePays)), findsOne);
       expect(_offered(tester, ProposalActionSheet.confirmKey), isFalse);
       expect(chain.actionQuotes, isEmpty, reason: 'the fee waits for the call');
+      final before = _buttons(tester);
 
       held.complete(corpusCall('Balances.transfer_allow_death'));
       await tester.pumpAndSettle();
 
-      expect(_inSheet(find.text(_l10n.multisigProposalCallLoading)), findsNothing);
+      expect(_inSheet(find.byType(Loader)), findsNothing);
+      expect(_inSheet(find.text(_money(tester, FakeSendChain.usualFee))), findsNWidgets(2));
+      expect(_buttons(tester), before, reason: 'the buttons stay where they stood');
       expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
     });
+
+    for (final (kind, proposal) in [
+      (MultisigActionKind.approve, _proposal()),
+      (
+        MultisigActionKind.execute,
+        _proposal(status: MultisigProposalStatus.approved, approvals: const ['qzOther', 'qzSavings']),
+      ),
+    ]) {
+      testOnMac('${kind.name}, choosing another signer: the call is not read again, no line says so, and the fee '
+          'and what is paid stand until the new fee is known', (tester) async {
+        var reads = 0;
+        final chain = FakeSendChain()
+          ..proposalCall = (_) async {
+            reads++;
+            return corpusCall('Balances.transfer_allow_death');
+          };
+        await _open(tester, kind, proposal, chain: chain, accounts: const [mainAccount, savingsAccount]);
+        expect(reads, 1);
+        final before = _buttons(tester);
+        final newFee = Completer<BigInt>();
+        chain.actionFee = () => newFee.future;
+
+        await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
+        await tester.pump();
+        await tester.pump();
+
+        expect(reads, 1, reason: 'the call is the one already read');
+        expect(_inSheet(find.text(_l10n.multisigProposalCallLoading)), findsNothing);
+        expect(_inSheet(find.byType(Loader)), findsNothing);
+        expect(_inSheet(find.text(_money(tester, FakeSendChain.usualFee))), findsNWidgets(2));
+        expect(_buttons(tester), before);
+
+        newFee.complete(FakeSendChain.usualFee * BigInt.two);
+        await tester.pumpAndSettle();
+
+        expect(_inSheet(find.text(_money(tester, FakeSendChain.usualFee * BigInt.two))), findsNWidgets(2));
+        expect(_buttons(tester), before);
+      });
+    }
 
     testOnMac('a reversible transfer: what it is and its window, beside the amount and to whom', (tester) async {
       final bytes = corpusCall('ReversibleTransfers.schedule_transfer_with_delay');
