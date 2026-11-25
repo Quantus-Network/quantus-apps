@@ -555,6 +555,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get multisigApproveUnavailableNote => 'This proposal can no longer be approved.';
 
   @override
+  String get multisigProposalExpiredNote => 'This proposal has expired.';
+
+  @override
+  String get multisigNoSignerHereNote => 'None of this multisig\'s signers is in this wallet.';
+
+  @override
+  String get multisigCancelWaitsNote => 'Cancel waits until the approval sent from this device is confirmed.';
+
+  @override
   String get activityTxApproving => 'Approving…';
 
   @override

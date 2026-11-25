@@ -96,11 +96,12 @@ ProposalActions _actions(
   List<PendingMultisigApprovalEvent> approvals = const [],
   List<PendingMultisigExecutionEvent> executions = const [],
   List<PendingMultisigCancellationEvent> cancellations = const [],
+  bool blockKnown = true,
 }) => proposalActionsOf(
   msig: _msig,
   proposal: proposal,
   accounts: accounts ?? [_one],
-  currentBlock: _currentBlock,
+  currentBlock: blockKnown ? _currentBlock : null,
   pendingApprovals: approvals,
   pendingExecutions: executions,
   pendingCancellations: cancellations,
@@ -133,6 +134,13 @@ void main() {
         expect(actions.note, note);
       });
     }
+
+    test('expired, every local signer approved: only Done, with the expired note', () {
+      final actions = _actions(_proposal(approvals: [_one.accountId], expiryBlock: _currentBlock));
+
+      expect(actions, isA<ProposalOver>());
+      expect(actions.note, ProposalActionNote.expired);
+    });
 
     test('every local signer approved and it is not ready: only Done, with the already-signed note', () {
       final actions = _actions(_proposal(approvals: [_one.accountId]));
@@ -182,19 +190,27 @@ void main() {
       expect(actions.note, ProposalActionNote.cancelling);
     });
 
-    test('expired: Approve unavailable, with the unavailable note', () {
+    test('expired: Approve unavailable, with the expired note', () {
       final actions = _open(_actions(_proposal(expiryBlock: _currentBlock)));
 
       expect(actions.primaryState, ProposalActionState.unavailable);
-      expect(actions.note, ProposalActionNote.approveUnavailable);
+      expect(actions.note, ProposalActionNote.expired);
     });
 
-    test('no signer of it in this wallet: Approve unavailable, with the unavailable note', () {
+    test('no signer of it in this wallet: Approve unavailable, with the no-signer note', () {
       final actions = _open(_actions(_proposal(), accounts: [makeAccount(9)]));
 
       expect(actions.primaryState, ProposalActionState.unavailable);
       expect(actions.eligibleApprovers, isEmpty);
-      expect(actions.note, ProposalActionNote.approveUnavailable);
+      expect(actions.note, ProposalActionNote.noSignerHere);
+    });
+
+    test('the chain\'s block not known yet: Approve and Cancel unavailable, and no note', () {
+      final actions = _open(_actions(_proposal(proposer: _one.accountId), blockKnown: false));
+
+      expect(actions.primaryState, ProposalActionState.unavailable);
+      expect(actions.cancel, ProposalActionState.unavailable);
+      expect(actions.note, isNull);
     });
   });
 
@@ -230,11 +246,11 @@ void main() {
       expect(actions.note, ProposalActionNote.executing);
     });
 
-    test('expired: Execute unavailable, with the execute-unavailable note', () {
+    test('expired: Execute unavailable, with the expired note', () {
       final actions = _open(_actions(_ready(expiryBlock: _currentBlock)));
 
       expect(actions.primaryState, ProposalActionState.unavailable);
-      expect(actions.note, ProposalActionNote.executeUnavailable);
+      expect(actions.note, ProposalActionNote.expired);
     });
 
     test('the member and another signer here: Execute offered, by either, the member first', () {
@@ -276,11 +292,11 @@ void main() {
       expect(_open(_actions(_proposal(), accounts: [_one, _two])).executors, isEmpty);
     });
 
-    test('no signer of it in this wallet: Execute unavailable, with the execute-unavailable note', () {
+    test('no signer of it in this wallet: Execute unavailable, with the no-signer note', () {
       final actions = _open(_actions(_ready(), accounts: [makeAccount(9)]));
 
       expect(actions.primaryState, ProposalActionState.unavailable);
-      expect(actions.note, ProposalActionNote.executeUnavailable);
+      expect(actions.note, ProposalActionNote.noSignerHere);
     });
   });
 
@@ -345,10 +361,26 @@ void main() {
       expect(actions.cancel, ProposalActionState.unavailable);
     });
 
-    test('expired: Cancel unavailable', () {
+    test('expired: Cancel unavailable, with the expired note', () {
       final actions = _open(_actions(_proposal(proposer: _one.accountId, expiryBlock: _currentBlock)));
 
       expect(actions.cancel, ProposalActionState.unavailable);
+      expect(actions.note, ProposalActionNote.expired);
+    });
+
+    test('an approval from this device under way while another here can still approve: Approve offered, Cancel '
+        'unavailable, with the note that Cancel waits for it', () {
+      final actions = _open(
+        _actions(
+          _proposal(proposer: _one.accountId),
+          accounts: [_one, _two],
+          approvals: [_approving(_two)],
+        ),
+      );
+
+      expect(actions.primaryState, ProposalActionState.offered);
+      expect(actions.cancel, ProposalActionState.unavailable);
+      expect(actions.note, ProposalActionNote.cancelWaitsForApproval);
     });
   });
 }

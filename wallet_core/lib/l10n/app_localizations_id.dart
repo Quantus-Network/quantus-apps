@@ -557,6 +557,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get multisigApproveUnavailableNote => 'Proposal ini tidak dapat disetujui lagi.';
 
   @override
+  String get multisigProposalExpiredNote => 'Proposal ini sudah kedaluwarsa.';
+
+  @override
+  String get multisigNoSignerHereNote => 'Tidak ada penanda tangan multisig ini di dompet ini.';
+
+  @override
+  String get multisigCancelWaitsNote =>
+      'Pembatalan menunggu hingga persetujuan yang dikirim dari perangkat ini terkonfirmasi.';
+
+  @override
   String get activityTxApproving => 'Menyetujui…';
 
   @override

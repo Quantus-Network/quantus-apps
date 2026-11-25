@@ -1082,6 +1082,24 @@ abstract class AppLocalizations {
   /// **'This proposal can no longer be approved.'**
   String get multisigApproveUnavailableNote;
 
+  /// Note under a proposal's actions when it is past its expiry block, so it can no longer be approved, executed or cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal has expired.'**
+  String get multisigProposalExpiredNote;
+
+  /// Note under a proposal's actions when no signer of its multisig is an account in this wallet
+  ///
+  /// In en, this message translates to:
+  /// **'None of this multisig\'s signers is in this wallet.'**
+  String get multisigNoSignerHereNote;
+
+  /// Note under a proposal's actions when Cancel is unavailable because an approval from this device is still on its way to the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel waits until the approval sent from this device is confirmed.'**
+  String get multisigCancelWaitsNote;
+
   /// Trailing label on proposal row while approval is pending
   ///
   /// In en, this message translates to:

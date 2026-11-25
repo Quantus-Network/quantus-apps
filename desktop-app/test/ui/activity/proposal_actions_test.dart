@@ -239,8 +239,8 @@ void main() {
     });
 
     for (final (what, proposal, note) in [
-      ('to approve', _proposal(expiryBlock: _expired), _l10n.multisigApproveUnavailableNote),
-      ('to execute', _ready(expiryBlock: _expired), _l10n.multisigExecuteUnavailableNote),
+      ('to approve', _proposal(expiryBlock: _expired), _l10n.multisigProposalExpiredNote),
+      ('to execute', _ready(expiryBlock: _expired), _l10n.multisigProposalExpiredNote),
     ]) {
       testOnMac('expired, $what: unavailable, with its note', (tester) async {
         await _openProposal(tester, proposal);
@@ -250,11 +250,25 @@ void main() {
       });
     }
 
-    testOnMac('no signer of it here: Approve unavailable, with the unavailable note', (tester) async {
+    testOnMac('no signer of it here: Approve unavailable, with the no-signer note', (tester) async {
       await _openProposal(tester, _proposal(), accounts: const [tradingAccount]);
 
       expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse);
-      expect(_note(tester), _l10n.multisigApproveUnavailableNote);
+      expect(_note(tester), _l10n.multisigNoSignerHereNote);
+    });
+
+    testOnMac('an approval from here under way, another account here still to approve: Cancel unavailable, with the '
+        'note that it waits', (tester) async {
+      await _openProposal(
+        tester,
+        _proposal(proposer: 'qzMain'),
+        accounts: const [mainAccount, savingsAccount],
+        pending: (c) => _approving(c, 'qzSavings'),
+      );
+
+      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
+      expect(_offered(_button(tester, ProposalActionsBar.cancelKey)), isFalse);
+      expect(_note(tester), _l10n.multisigCancelWaitsNote);
     });
 
     for (final status in [MultisigProposalStatus.executed, MultisigProposalStatus.cancelled]) {

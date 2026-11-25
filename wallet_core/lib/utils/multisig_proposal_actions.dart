@@ -25,11 +25,19 @@ enum ProposalActionNote {
   /// An approval from this device is under way and none of its other signers
   /// can still approve.
   approving,
-  executeUnavailable,
+
+  /// Past its expiry block: nothing can be done with it any more.
+  expired,
+
+  /// None of the multisig's signers is in this wallet.
+  noSignerHere,
 
   /// Every signer this wallet holds has approved.
   alreadySigned,
-  approveUnavailable,
+
+  /// An approval from this device is under way: Cancel waits for it, while
+  /// another signer here can still approve.
+  cancelWaitsForApproval,
 }
 
 /// What this wallet can do with a proposal.
@@ -138,7 +146,8 @@ ProposalActions proposalActionsOf({
     isExecuting: pendingExecution != null,
     isCancelling: pendingCancellation != null,
     hasLocalSigner: hasLocalSigner,
-    isActionable: isActionable,
+    isCancellable: canceller != null,
+    currentBlock: currentBlock,
   );
 
   if (proposal.hasUndecodableCall || proposal.isTerminal || (allLocalApproved && !proposal.isReadyToExecute)) {
@@ -196,7 +205,8 @@ ProposalActionNote? _noteOf(
   required bool isExecuting,
   required bool isCancelling,
   required bool hasLocalSigner,
-  required bool isActionable,
+  required bool isCancellable,
+  required int? currentBlock,
 }) {
   if (proposal.hasUndecodableCall) return null;
   if (proposal.status == MultisigProposalStatus.cancelled) return ProposalActionNote.cancelled;
@@ -206,10 +216,12 @@ ProposalActionNote? _noteOf(
   if (isExecuting) return ProposalActionNote.executing;
   if (hasPendingApproval && !hasEligibleApprover) return ProposalActionNote.approving;
 
-  if (proposal.isReadyToExecute) {
-    return isActionable && hasLocalSigner ? null : ProposalActionNote.executeUnavailable;
-  }
+  if (currentBlock != null && proposal.expired(currentBlock)) return ProposalActionNote.expired;
+  if (!hasLocalSigner) return ProposalActionNote.noSignerHere;
+  if (proposal.isReadyToExecute) return null;
   if (allLocalApproved) return ProposalActionNote.alreadySigned;
-  if (!isActionable || !hasLocalSigner) return ProposalActionNote.approveUnavailable;
+  // While the chain's block is not known the actions wait, without a word.
+  if (currentBlock == null) return null;
+  if (hasPendingApproval && isCancellable) return ProposalActionNote.cancelWaitsForApproval;
   return null;
 }

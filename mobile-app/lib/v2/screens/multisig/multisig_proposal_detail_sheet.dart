@@ -419,9 +419,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       ProposalActionNote.cancelling => l10n.multisigProposalCancellingNote,
       ProposalActionNote.executing => l10n.multisigProposalExecutingNote,
       ProposalActionNote.approving => l10n.multisigProposalApprovingNote,
-      ProposalActionNote.executeUnavailable => l10n.multisigExecuteUnavailableNote,
+      ProposalActionNote.expired => l10n.multisigProposalExpiredNote,
+      ProposalActionNote.noSignerHere => l10n.multisigNoSignerHereNote,
       ProposalActionNote.alreadySigned => l10n.multisigProposalAlreadySignedNote,
-      ProposalActionNote.approveUnavailable => l10n.multisigApproveUnavailableNote,
+      ProposalActionNote.cancelWaitsForApproval => l10n.multisigCancelWaitsNote,
     };
 
     return Padding(
