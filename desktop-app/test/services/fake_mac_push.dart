@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:quantus_desktop_wallet/services/mac_push.dart';
 
 /// Stands in for the Mac's side of pushed notifications: answers as
@@ -17,6 +19,9 @@ class FakeMacPush implements MacPush {
   Object? tokenError;
   var tokenRequests = 0;
 
+  /// When set, Apple answers a request for the token only once it completes.
+  Completer<void>? holdToken;
+
   /// The payload of the pushed notification whose click launched the app, if
   /// one did.
   final String? launchedBy;
@@ -28,6 +33,7 @@ class FakeMacPush implements MacPush {
   @override
   Future<String> requestToken() async {
     tokenRequests++;
+    await holdToken?.future;
     final error = tokenError;
     if (error != null) throw error;
     return token;

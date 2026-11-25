@@ -14,6 +14,7 @@ import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/services/push_registration.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 /// The push notification service the desktop registers with.
 final senotiClientProvider = Provider<SenotiAuthClient>((ref) => SenotiAuthClient(AppConstants.senotiEndpoint));
@@ -24,6 +25,10 @@ final senotiClientProvider = Provider<SenotiAuthClient>((ref) => SenotiAuthClien
 /// Only while the person wants notifications and macOS allows them, and only
 /// from a build signed to receive pushes: any other registers nothing, as
 /// Windows and Linux do. A reset removes the Mac whatever they are set to.
+///
+/// What is asked of the push service is sent one request at a time, in the
+/// order asked, whoever asks: a reset's removal goes after a registration
+/// already sent, never before it.
 class MacPushRegistration implements PushRegistration {
   MacPushRegistration(this._ref);
 
@@ -31,6 +36,16 @@ class MacPushRegistration implements PushRegistration {
   static const platform = 'macos';
 
   final Ref _ref;
+
+  /// Ends when the last request asked for is done, however it ended.
+  Future<void> _requests = Future.value();
+
+  /// Runs [request] once every request asked before it is done.
+  Future<void> _inTurn(Future<void> Function() request) {
+    final turn = _requests.then((_) => request());
+    _requests = turn.then((_) {}, onError: (_) {});
+    return turn;
+  }
 
   /// Whether the person wants notifications and macOS allows them.
   bool get isWanted =>
@@ -49,23 +64,35 @@ class MacPushRegistration implements PushRegistration {
   /// Registers the Mac for every address that may be told of. Before the
   /// accounts are known there is nothing to register: [MacPushSync] does it
   /// when they are.
+  ///
+  /// Asked for the wallet there is now: if a reset wipes it meanwhile,
+  /// nothing is registered. The addresses are read last, just before they
+  /// are sent.
   @override
-  Future<void> registerDevice() async {
-    if (!isWanted) return;
-    final addresses = notifiableAddresses;
-    if (addresses == null || addresses.isEmpty) return;
-    final push = _ref.read(macPushProvider);
-    final environment = await push.environment();
-    if (environment == null) return _notSignedForPushes();
-    await _ref
-        .read(senotiClientProvider)
-        .registerDevice(
-          addresses: addresses,
-          deviceToken: await push.requestToken(),
-          platform: platform,
-          apnsEnvironment: environment,
-        );
+  Future<void> registerDevice() {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
+    return _inTurn(() async {
+      if (!await _stillThisWallet(session, ticket)) return;
+      if (!isWanted) return;
+      if (notifiableAddresses?.isEmpty ?? true) return;
+      final push = _ref.read(macPushProvider);
+      final environment = await push.environment();
+      if (environment == null) return _notSignedForPushes();
+      final token = await push.requestToken();
+      if (!await _stillThisWallet(session, ticket)) return;
+      final addresses = notifiableAddresses;
+      if (addresses == null || addresses.isEmpty) return;
+      await _ref
+          .read(senotiClientProvider)
+          .registerDevice(addresses: addresses, deviceToken: token, platform: platform, apnsEnvironment: environment);
+    });
   }
+
+  /// Waits out a reset under way: false once it wiped the wallet [ticket]
+  /// was taken for, true if that wallet is still here.
+  Future<bool> _stillThisWallet(WalletSession session, int ticket) =>
+      session.survivesReset(ticket, dropping: "registering this Mac for a wiped wallet's addresses");
 
   /// Nothing to do here: [MacPushSync] registers the wallet's addresses
   /// whenever its accounts change, so that no account flow waits for Apple
@@ -76,7 +103,7 @@ class MacPushRegistration implements PushRegistration {
   /// A reset does not wait for this and cannot be failed by it, so a failure
   /// is reported here.
   @override
-  Future<void> unregister() async {
+  Future<void> unregister() => _inTurn(() async {
     try {
       final push = _ref.read(macPushProvider);
       if (await push.environment() == null) return _notSignedForPushes();
@@ -85,7 +112,7 @@ class MacPushRegistration implements PushRegistration {
       quantusPrint('Removing this Mac from the push service failed: $e');
       _ref.read(telemetryProvider).sendError('desktop_push_unregister_failed', error: e);
     }
-  }
+  });
 
   void _notSignedForPushes() => quantusPrint('This build was not signed to receive pushes: nothing to register');
 }
