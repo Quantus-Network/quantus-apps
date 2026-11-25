@@ -4,6 +4,7 @@ enum AppCommand {
   receive,
   send,
   propose,
+  swap,
   addAccount,
   getInfo,
   copyAddress,

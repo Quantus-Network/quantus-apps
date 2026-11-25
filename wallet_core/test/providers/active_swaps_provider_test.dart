@@ -56,7 +56,13 @@ ActiveSwap _swapIn(String depositAddress, {required bool sent}) => ActiveSwap(
 /// A swap out of QTC the app sent the deposit of to [depositAddress], with
 /// 1Click: still within its time, or [overdue], ten minutes and more past
 /// its deadline with nothing settled, or overdue once [overdueIn] has passed.
-ActiveSwap _swapOut(String depositAddress, {required bool overdue, Duration? overdueIn}) {
+/// It is under way unless its [status] says otherwise.
+ActiveSwap _swapOut(
+  String depositAddress, {
+  required bool overdue,
+  Duration? overdueIn,
+  SwapStatus status = SwapStatus.processing,
+}) {
   final deadline = overdueIn != null
       ? clock.now().subtract(ActiveSwap.finishGrace).add(overdueIn)
       : overdue
@@ -82,7 +88,7 @@ ActiveSwap _swapOut(String depositAddress, {required bool overdue, Duration? ove
         signature: 's',
         depositAddress: depositAddress,
       ),
-      status: SwapStatus.processing,
+      status: status,
     ),
     accountId: 'qzaccount',
     accountName: 'Main',
@@ -92,10 +98,12 @@ ActiveSwap _swapOut(String depositAddress, {required bool overdue, Duration? ove
   );
 }
 
-/// 1Click, answering each status asked for with the order as it is, and
-/// keeping the deposit addresses asked about, in order.
+/// 1Click, answering each status asked for with the order as it is, or as
+/// complete for a deposit address in [completed], and keeping the deposit
+/// addresses asked about, in order.
 class _OneClick extends Fake implements SwapService {
   final polled = <String>[];
+  final completed = <String>{};
 
   /// While set, the status of the swap at this deposit address waits for
   /// [release].
@@ -106,6 +114,7 @@ class _OneClick extends Fake implements SwapService {
   Future<SwapOrder> getSwapStatus(SwapOrder order) async {
     polled.add(order.depositAddress);
     if (order.depositAddress == held) await release.future;
+    if (completed.contains(order.depositAddress)) return SwapOrder(quote: order.quote, status: SwapStatus.success);
     return order;
   }
 }
@@ -226,6 +235,52 @@ void main() {
 
       expect(oneClick.polled, ['0xnow', '0xold'], reason: 'asked for twice, the overdue swap is polled once');
       await close(tester);
+    });
+  });
+
+  group('the limit on swaps followed', () {
+    /// Launches following [swaps], with the 1Click that answers for them.
+    (ProviderContainer, _OneClick) following(List<ActiveSwap> swaps) {
+      final oneClick = _OneClick();
+      final container = ProviderContainer(
+        overrides: [
+          settingsServiceProvider.overrideWithValue(FakeSettingsService()..activeSwaps.addAll(swaps)),
+          swapServiceProvider.overrideWithValue(oneClick),
+        ],
+      );
+      addTearDown(container.dispose);
+      return (container, oneClick);
+    }
+
+    List<ActiveSwap> running(int count) => [for (var i = 0; i < count; i++) _swapOut('0xrunning$i', overdue: false)];
+
+    test('is not reached while fewer swaps run than can be followed, however many have ended', () {
+      final (container, _) = following([
+        ...running(ActiveSwapsNotifier.maxFollowed - 1),
+        _swapOut('0xcomplete', overdue: false, status: SwapStatus.success),
+        _swapOut('0xrefunded', overdue: false, status: SwapStatus.refunded),
+      ]);
+
+      expect(container.read(swapsAtLimitProvider), isFalse);
+    });
+
+    test('is reached with as many running as can be followed, until one of them settles', () async {
+      final (container, oneClick) = following(running(ActiveSwapsNotifier.maxFollowed));
+      expect(container.read(swapsAtLimitProvider), isTrue);
+
+      oneClick.completed.add('0xrunning3');
+      await container.read(activeSwapsProvider.notifier).refresh();
+
+      expect(container.read(swapsAtLimitProvider), isFalse);
+    });
+
+    test('is reached no more once one of the swaps running is put away', () async {
+      final (container, _) = following(running(ActiveSwapsNotifier.maxFollowed));
+      expect(container.read(swapsAtLimitProvider), isTrue);
+
+      await container.read(activeSwapsProvider.notifier).remove('0xrunning0');
+
+      expect(container.read(swapsAtLimitProvider), isFalse);
     });
   });
 

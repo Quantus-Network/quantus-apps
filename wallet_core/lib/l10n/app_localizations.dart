@@ -98,17 +98,41 @@ abstract class AppLocalizations {
   /// **'Wallet Error'**
   String get walletInitErrorTitle;
 
-  /// Message for the error dialog when the wallet is not found
+  /// Message for the error dialog when the wallet's recovery phrase cannot be read at start
   ///
   /// In en, this message translates to:
-  /// **'Unable to find secret phrase. Please restore your wallet.'**
+  /// **'Unable to read your recovery phrase from this device.'**
   String get walletInitErrorMessage;
 
-  /// Label for the button on the error dialog when the wallet is not found
+  /// Phone: on the error sheet when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
   ///
   /// In en, this message translates to:
-  /// **'OK'**
-  String get walletInitErrorButtonLabel;
+  /// **'Remove Wallet'**
+  String get walletInitErrorRemoveWallet;
+
+  /// Desktop: on the error dialog when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Wallet…'**
+  String get desktopWalletInitErrorRemoveWallet;
+
+  /// Title of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all wallets from this device?'**
+  String get walletInitErrorRemoveTitle;
+
+  /// Body of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get walletInitErrorRemoveBody;
+
+  /// The button that removes every wallet from the device, on the confirmation asked from the error dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get walletInitErrorRemoveConfirm;
 
   /// Text for the text on the lock screen when using device biometrics to unlock
   ///
@@ -631,6 +655,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multisig creation is taking longer than expected. Check the chain or try again.'**
   String get multisigCreateTimeoutToast;
+
+  /// Toast when a multisig is confirmed on chain but storing it on this device fails; the next start adds it
+  ///
+  /// In en, this message translates to:
+  /// **'Your multisig was created, but it could not be saved on this device. Restart the app to add it.'**
+  String get multisigCreateNotSavedToast;
 
   /// Local auth prompt when submitting create multisig
   ///
@@ -6001,6 +6031,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connect Cold Wallet…'**
   String get desktopMenuConnectColdWallet;
+
+  /// Desktop Connect Cold Wallet sheet: its title when the app already has a cold wallet, which the account scanned is added to
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cold Wallet Account'**
+  String get desktopColdWalletAddAccountTitle;
 
   /// Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device
   ///
