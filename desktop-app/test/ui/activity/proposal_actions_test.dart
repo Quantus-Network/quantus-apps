@@ -186,6 +186,12 @@ void main() {
       expect(_offered(cancel), isTrue);
     });
 
+    testOnMac('proposed by another account here: Cancel Proposal too', (tester) async {
+      await _openProposal(tester, _proposal(proposer: 'qzSavings'), accounts: const [mainAccount, savingsAccount]);
+
+      expect(_offered(_button(tester, ProposalActionsBar.cancelKey)), isTrue);
+    });
+
     testOnMac('approved: Execute', (tester) async {
       await _openProposal(tester, _ready());
 
@@ -286,6 +292,14 @@ void main() {
 
       expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
       expect(_note(tester), isNull);
+    });
+
+    testOnMac('that proposed it, not the member: Cancel unavailable, with the note naming it', (tester) async {
+      await _openProposal(tester, _proposal(proposer: 'qzVault'), accounts: const [mainAccount, vaultAccount]);
+
+      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
+      expect(_offered(_button(tester, ProposalActionsBar.cancelKey)), isFalse);
+      expect(_note(tester), _l10n.desktopProposalKeystoneCancel(vaultAccount.name));
     });
 
     testOnMac('as this device\'s member, on an approved proposal: Execute unavailable, with its note', (tester) async {

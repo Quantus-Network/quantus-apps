@@ -263,6 +263,22 @@ void main() {
       expect(confirm.label, _l10n.multisigCancelProposalButton);
       expect(confirm.kind, SheetButtonKind.destructive);
     });
+
+    testOnMac('cancel, proposed by another account here: it signs, is priced, and cancels', (tester) async {
+      final sheet = await _open(
+        tester,
+        MultisigActionKind.cancel,
+        _proposal(proposer: 'qzSavings'),
+        accounts: const [mainAccount, savingsAccount],
+      );
+
+      expect(_inSheet(find.text(savingsAccount.name)), findsWidgets);
+      expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzSavings']);
+
+      await _confirm(tester);
+
+      expect(sheet.chain.actions.map((action) => (action.$1, action.$2)), [('cancel', 'qzSavings')]);
+    });
   });
 
   group('confirming', () {

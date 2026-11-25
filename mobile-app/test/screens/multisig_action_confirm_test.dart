@@ -349,7 +349,7 @@ void main() {
     ),
     (
       'cancel',
-      (BuildContext context) => showMultisigCancelConfirmSheet(context, msig: _msig, proposal: _proposal),
+      (BuildContext context) => showMultisigCancelConfirmSheet(context, msig: _msig, proposal: _proposal, signer: _one),
       () => _l10n.multisigCancelConfirmYes,
       () => _l10n.multisigCancelAuthReason,
     ),
@@ -389,7 +389,7 @@ void main() {
       tester,
       chain,
       submission,
-      (context) => showMultisigCancelConfirmSheet(context, msig: _msig, proposal: _proposal),
+      (context) => showMultisigCancelConfirmSheet(context, msig: _msig, proposal: _proposal, signer: _one),
     );
 
     expect(_button(tester, _l10n.multisigCancelConfirmYes).variant, ButtonVariant.danger);

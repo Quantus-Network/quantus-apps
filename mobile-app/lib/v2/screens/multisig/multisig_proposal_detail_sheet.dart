@@ -349,6 +349,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
     final cancel = open.cancel;
     if (cancel == null) return primary;
+    final canceller = open.canceller ?? (throw StateError('Cancel was offered with no proposer in this wallet.'));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -360,7 +361,7 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           label: l10n.multisigCancelProposalButton,
           inFlightLabel: l10n.multisigProposalCancellingLabel,
           variant: ButtonVariant.danger,
-          onTap: () => showMultisigCancelConfirmSheet(context, msig: msig, proposal: liveProposal),
+          onTap: () => showMultisigCancelConfirmSheet(context, msig: msig, proposal: liveProposal, signer: canceller),
         ),
       ],
     );

@@ -84,11 +84,10 @@ class ProposalActionsBar extends ConsumerWidget {
 
     var cancelState = open.cancel;
     if (cancelState == ProposalActionState.offered) {
-      if (member == null) {
+      final canceller = open.canceller ?? (throw StateError('Cancel was offered with no proposer in this wallet.'));
+      if (canceller.signsWithHardware) {
         cancelState = ProposalActionState.unavailable;
-      } else if (member.signsWithHardware) {
-        cancelState = ProposalActionState.unavailable;
-        keystoneNote ??= l10n.desktopProposalKeystoneCancel(member.name);
+        keystoneNote ??= l10n.desktopProposalKeystoneCancel(canceller.name);
       }
     }
 
