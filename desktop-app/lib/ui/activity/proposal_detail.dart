@@ -328,6 +328,12 @@ class ProposalCallFields extends ConsumerWidget {
               style: text.bodyEmphasis.copyWith(color: colors.textContent),
             ),
           ),
+          // Which call it is: two that read alike in words, such as the
+          // transfers that keep the sender alive and that may not, differ.
+          Text(
+            nested.displayTitle,
+            style: text.dataAddress.copyWith(height: 1.3, letterSpacing: 0.3, color: colors.textMuted),
+          ),
           for (final item in nested.fields) _field(context, l10n, formatting, own, item),
         ]),
         field.note,
