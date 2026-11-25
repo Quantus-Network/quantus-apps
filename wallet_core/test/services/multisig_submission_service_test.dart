@@ -220,7 +220,7 @@ void main() {
       expect(session.account, coldCreator);
       expect(
         (session.primaryLabel, session.primaryDetail),
-        (l10n.keystoneSignActionLabel, l10n.multisigCreateKeystoneAction(1, 2)),
+        (l10n.keystoneSignActionLabel, 'Create multisig'),
       );
       expect(
         (session.secondaryLabel, session.secondaryDetail, session.secondaryIsAddress),

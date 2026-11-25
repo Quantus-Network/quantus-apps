@@ -120,7 +120,7 @@ class MultisigSubmissionService {
       account: creator,
       buildCall: () => buildCreateCall(draft),
       primaryLabel: l10n.keystoneSignActionLabel,
-      primaryDetail: l10n.multisigCreateKeystoneAction(draft.threshold, draft.signers.length),
+      primaryDetail: l10n.keystoneSignCreateMultisig,
       secondaryLabel: l10n.multisigCreatePredictedAddressLabel,
       secondaryDetail: draft.accountId,
       secondaryIsAddress: true,
