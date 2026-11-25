@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
@@ -157,6 +158,111 @@ void main() {
     await _interval(tester);
 
     expect(_titles(notifications), unorderedEquals([_l10n.swapLiveSwapped, _l10n.swapDepositIncompleteTitle]));
+  });
+
+  testOnMac('a swap that ends before notifications have started is told once they have, and only once', (tester) async {
+    final started = Completer<void>();
+    final notifications = FakeNotificationPlugin()..heldStart = started;
+    final oneClick = FakeSwapService()..status = _answering(SwapStatus.success);
+    // Overdue, so polled as the app starts.
+    final swap = fakeActiveSwap(deadline: clock.now().subtract(ActiveSwap.finishGrace + const Duration(minutes: 1)));
+    final ended = fakeActiveSwap(
+      status: SwapStatus.success,
+      depositAddress: '0x2222222222222222222222222222222222222222',
+    );
+    final container = await _open(tester, notifications, oneClick, [swap, ended]);
+    expect(container.read(activeSwapsProvider).first.order.status, SwapStatus.success);
+    expect(notifications.shown, isEmpty);
+
+    started.complete();
+    await tester.pumpAndSettle();
+
+    expect(_titles(notifications), [_l10n.swapLiveSwapped]);
+    expect(notifications.shown.single.id, notificationSystemId('swap_end_${swap.id}'));
+    await _interval(tester);
+    await _interval(tester);
+    expect(notifications.shown, hasLength(1));
+  });
+
+  testOnMac('a deposit that comes short before notifications have started is told once they have', (tester) async {
+    final started = Completer<void>();
+    final notifications = FakeNotificationPlugin()..heldStart = started;
+    final oneClick = FakeSwapService()..status = _answering(SwapStatus.incompleteDeposit);
+    final swap = _swapIn();
+    await _open(tester, notifications, oneClick, [swap]);
+    await _interval(tester);
+    expect(notifications.shown, isEmpty);
+
+    started.complete();
+    await tester.pumpAndSettle();
+    await _interval(tester);
+
+    expect(_titles(notifications), [_l10n.swapDepositIncompleteTitle]);
+    expect(notifications.shown.single.id, notificationSystemId('swap_short_${swap.id}'));
+  });
+
+  testOnMac('a swap that ends before macOS has answered is told once it allows them', (tester) async {
+    final answer = Completer<bool>();
+    final notifications = FakeNotificationPlugin()..heldAnswer = answer;
+    final oneClick = FakeSwapService()..status = _answering(SwapStatus.success);
+    await _open(tester, notifications, oneClick, [fakeActiveSwap()]);
+    await _interval(tester);
+    expect(notifications.shown, isEmpty);
+
+    answer.complete(true);
+    await tester.pumpAndSettle();
+
+    expect(_titles(notifications), [_l10n.swapLiveSwapped]);
+  });
+
+  testOnMac('a swap that ends before notifications have started is not told once put away', (tester) async {
+    final started = Completer<void>();
+    final notifications = FakeNotificationPlugin()..heldStart = started;
+    final oneClick = FakeSwapService()..status = _answering(SwapStatus.success);
+    final swap = fakeActiveSwap();
+    final container = await _open(tester, notifications, oneClick, [swap]);
+    await _interval(tester);
+
+    await container.read(activeSwapsProvider.notifier).remove(swap.id);
+    started.complete();
+    await tester.pumpAndSettle();
+
+    expect(notifications.shown, isEmpty);
+  });
+
+  testOnMac('a swap that ends before notifications have started is not told with them off in Settings, or refused', (
+    tester,
+  ) async {
+    const off = NotificationConfig(
+      enabled: false,
+      sound: true,
+      vibration: true,
+      showBadge: true,
+      sentTokensEnabled: true,
+      receivedTokensEnabled: true,
+      recoveryTimerEndingEnabled: true,
+      reversibleTransactionsEnabled: true,
+    );
+    SharedPreferences.setMockInitialValues({notificationConfigKey: jsonEncode(off.toJson())});
+    final started = Completer<void>();
+    final offInSettings = FakeNotificationPlugin()..heldStart = started;
+    final oneClick = FakeSwapService()..status = _answering(SwapStatus.success);
+    await _open(tester, offInSettings, oneClick, [fakeActiveSwap()]);
+    await _interval(tester);
+    started.complete();
+    await tester.pumpAndSettle();
+    expect(offInSettings.shown, isEmpty, reason: 'off in Settings');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    SharedPreferences.setMockInitialValues({});
+    final answer = Completer<bool>();
+    final refused = FakeNotificationPlugin()..heldAnswer = answer;
+    final again = FakeSwapService()..status = _answering(SwapStatus.success);
+    await _open(tester, refused, again, [fakeActiveSwap()]);
+    await _interval(tester);
+    answer.complete(false);
+    await tester.pumpAndSettle();
+    expect(refused.shown, isEmpty, reason: 'refused by macOS');
   });
 
   testOnMac('a deposit by hand whose window closed with nothing sent is not told', (tester) async {

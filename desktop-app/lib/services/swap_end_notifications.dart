@@ -1,5 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/models/notification_status.dart';
+import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_delivery.dart';
 import 'package:quantus_desktop_wallet/utils/swap_words.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -17,15 +19,26 @@ import 'package:wallet_core/swap/swap_progress.dart';
 ///
 /// Only a change learned in this run is told: a swap that had ended before the
 /// app started was told then, or is in its row. One that ended while the app
-/// was not running is told at its first poll. A swap's steps on its way are
-/// not told, nor a deposit by hand that never came: the person did not send
-/// one.
+/// was not running is told at its first poll. One learned before the system
+/// has said whether it shows notifications is told once it has, if the swap
+/// is still followed. A swap's steps on its way are not told, nor a deposit
+/// by hand that never came: the person did not send one.
 class SwapEndNotifications {
   SwapEndNotifications(this._ref) {
     _ref.listen<List<ActiveSwap>>(activeSwapsProvider, _onChanged);
+    _ref.listen<NotificationStatus>(desktopLocalNotificationsProvider, (_, status) => _onStatus(status));
   }
 
   final Ref _ref;
+
+  /// What was learned before the system said whether it shows notifications,
+  /// each with the swap as it was then.
+  final _untold = <({ActiveSwap swap, String id})>[];
+
+  /// Whether the system has yet to say whether it shows notifications: they
+  /// are starting, or macOS has not had the person's answer.
+  static bool _unanswered(NotificationStatus status) =>
+      status is NotificationsStarting || status is NotificationsNotAsked;
 
   void _onChanged(List<ActiveSwap>? before, List<ActiveSwap> now) {
     if (before == null) return;
@@ -35,10 +48,30 @@ class SwapEndNotifications {
       final status = swap.order.status;
       if (was == null || was == status) continue;
       if (status.isFinal) {
-        _notify(swap, id: 'swap_end_${swap.id}');
+        _tell(swap, id: 'swap_end_${swap.id}');
       } else if (status == SwapStatus.incompleteDeposit) {
-        _notify(swap, id: 'swap_short_${swap.id}');
+        _tell(swap, id: 'swap_short_${swap.id}');
       }
+    }
+  }
+
+  void _tell(ActiveSwap swap, {required String id}) {
+    if (_unanswered(_ref.read(desktopLocalNotificationsProvider))) {
+      _untold.add((swap: swap, id: id));
+    } else {
+      _notify(swap, id: id);
+    }
+  }
+
+  /// Once the system has answered, hands over what was learned before, for
+  /// [NotificationDelivery] to show if it may.
+  void _onStatus(NotificationStatus status) {
+    if (_unanswered(status) || _untold.isEmpty) return;
+    final untold = [..._untold];
+    _untold.clear();
+    final followed = {for (final swap in _ref.read(activeSwapsProvider)) swap.id};
+    for (final (:swap, :id) in untold) {
+      if (followed.contains(swap.id)) _notify(swap, id: id);
     }
   }
 
