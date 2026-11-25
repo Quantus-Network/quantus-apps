@@ -836,6 +836,12 @@ abstract class AppLocalizations {
   /// **'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.'**
   String get multisigProposalCallUnavailable;
 
+  /// Proposal detail: the open proposals could not be read again, so its actions are held back
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check where this proposal stands now, so nothing can be done with it here. Try again when you are back online.'**
+  String get multisigProposalStateUnreadNote;
+
   /// Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval
   ///
   /// In en, this message translates to:
