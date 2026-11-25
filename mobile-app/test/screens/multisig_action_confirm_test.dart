@@ -51,6 +51,17 @@ final _callBytes = Uint8List.fromList(
       .encode(),
 );
 
+/// What the indexer cached for the proposal: a valid call, but not the one
+/// the chain stores, so the sheet is seen to build only from the chain's.
+final _cachedCallBytes = Uint8List.fromList(
+  const balances_pallet.Txs()
+      .transferAllowDeath(
+        dest: multi_address.MultiAddress.values.id(Uint8List.fromList(List.filled(32, 0xBB))),
+        value: BigInt.from(2000000000000),
+      )
+      .encode(),
+);
+
 final _fee = BigInt.from(1234);
 
 final _proposal = MultisigProposal(
@@ -64,7 +75,7 @@ final _proposal = MultisigProposal(
   call: 'transfer_allow_death',
   recipient: 'qzbob${'x' * 40}',
   amount: BigInt.from(1000000000000),
-  callRaw: _callBytes,
+  callRaw: _cachedCallBytes,
   expiryBlock: 1000,
   approvals: const [],
   deposit: BigInt.zero,
