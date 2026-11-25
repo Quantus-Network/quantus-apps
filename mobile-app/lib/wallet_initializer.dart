@@ -37,7 +37,14 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
     final hasWallet = await _settingsService.getHasWallet();
 
     if (hasWallet) {
-      final mnemonic = await _settingsService.getMnemonic(0);
+      final String? mnemonic;
+      try {
+        mnemonic = await _settingsService.getMnemonic(0);
+      } catch (e) {
+        _reportPhraseReadFailure('Reading the recovery phrase failed', e);
+        if (mounted) await _askAboutLostPhrase();
+        return;
+      }
       if (mnemonic == null) {
         TelemetryService().sendEvent('user_lost_mnemonic');
         if (mounted) await _askAboutLostPhrase();
@@ -64,6 +71,13 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
       quantusPrint('Resuming pending account scans failed: $e');
       TelemetryService().sendError('Resuming pending account scans failed', error: e);
     }
+  }
+
+  /// Logs and reports a read of the first wallet's recovery phrase that threw,
+  /// as a locked keychain does. The phrase is then treated as unreadable.
+  void _reportPhraseReadFailure(String failure, Object error) {
+    quantusPrint('$failure: $error');
+    TelemetryService().sendError(failure, error: error);
   }
 
   /// Says the first wallet's recovery phrase cannot be read, and asks until
@@ -108,8 +122,7 @@ class WalletInitializerState extends ConsumerState<WalletInitializer> {
             mnemonic = await _settingsService.getMnemonic(0);
           } catch (e) {
             // Still unreadable: asked again, as when it reads as missing.
-            quantusPrint('Reading the recovery phrase again failed: $e');
-            TelemetryService().sendError('Reading the recovery phrase again failed', error: e);
+            _reportPhraseReadFailure('Reading the recovery phrase again failed', e);
             continue;
           }
           if (mnemonic != null) {

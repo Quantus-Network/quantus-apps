@@ -181,6 +181,28 @@ void main() {
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 
+  testWidgets('a keychain failing the first read shows the sheet, reports the failure and wipes nothing', (
+    tester,
+  ) async {
+    keychain.readError = PlatformException(code: 'keychain-locked', message: 'The keychain is locked.');
+
+    await pumpStart(tester);
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(notice), findsOneWidget);
+    expect(button('Try Again'), findsOneWidget);
+    expect(button('Remove Wallet'), findsOneWidget);
+    expect(telemetry.where((call) => '${call.arguments}'.contains('Reading the recovery phrase failed')), hasLength(1));
+    expect(logout.logouts, 0);
+
+    // Once the keychain reads again, Try Again opens the wallet.
+    keychain.readError = null;
+    await SettingsService().setMnemonic('a stored recovery phrase', 0);
+    await tap(tester, button('Try Again'));
+
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
   testWidgets('Remove Wallet, once confirmed, wipes and shows Welcome', (tester) async {
     await pumpStart(tester);
 
