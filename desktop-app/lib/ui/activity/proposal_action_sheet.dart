@@ -292,6 +292,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
       _ => null,
     };
     final error = switch (confirm.error) {
+      null when confirm.cannotPayFee => l10n.multisigProposeFeePayerInsufficient,
       null => null,
       MultisigActionError.approvalRequired => l10n.multisigAuthRequired,
       MultisigActionError.submitFailed => switch (_kind) {
@@ -299,6 +300,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
         MultisigActionKind.execute => l10n.multisigExecuteFailed,
         MultisigActionKind.cancel => l10n.multisigCancelFailed,
       },
+      MultisigActionError.feePayerInsufficient => l10n.multisigProposeFeePayerInsufficient,
     };
     final problem = approvalNote ?? error;
     final canConfirm = confirm.canConfirm && approvalNote == null;

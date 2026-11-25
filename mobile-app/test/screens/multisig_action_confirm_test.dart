@@ -22,6 +22,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -191,6 +192,9 @@ class _FakeApproval implements UserApproval {
 
 late _FakeApproval _approval;
 
+/// What each account can spend; one not here holds plenty.
+late Map<String, BigInt> _holds;
+
 Future<void> _open(
   WidgetTester tester,
   _FakeMultisigService chain,
@@ -207,6 +211,7 @@ Future<void> _open(
         transactionSubmissionServiceProvider.overrideWithValue(submission),
         userApprovalProvider.overrideWithValue(_approval),
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: [_one, _two])),
+        balanceProviderFamily.overrideWith((ref, accountId) => _holds[accountId] ?? BigInt.from(10).pow(20)),
       ],
       child: Builder(
         builder: (context) => MaterialApp(
@@ -248,6 +253,16 @@ void main() {
     chain = _FakeMultisigService();
     submission = _FakeSubmission();
     _approval = _FakeApproval();
+    _holds = {};
+  });
+
+  testWidgets('a signer that cannot pay the fee: said, and Confirm unavailable', (tester) async {
+    _holds[_two.accountId] = BigInt.one;
+    await _open(tester, chain, submission, (context) => _approve(context, signer: _two));
+
+    expect(find.text(_l10n.multisigProposeFeePayerInsufficient), findsOneWidget);
+    expect(_isOffered(tester, _l10n.multisigApproveConfirmYes), isFalse);
+    expect(submission.submitted, isEmpty);
   });
 
   testWidgets('approve reads the call from the chain first, then prices it with those bytes; Confirm waits for them', (

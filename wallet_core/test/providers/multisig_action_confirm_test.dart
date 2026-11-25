@@ -9,9 +9,12 @@ import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_a
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/utils/polling_refresh_scope.dart';
+import 'package:wallet_core/providers/shown_balances_provider.dart';
 import 'package:wallet_core/providers/controllers/multisig_action_confirm_controller.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -167,11 +170,18 @@ void main() {
   late _Chain chain;
   late _Submission submission;
 
+  /// What each account holds; one not here holds plenty. While [balanceHeld]
+  /// is set, no balance is known.
+  late Map<String, BigInt> holds;
+  Completer<BigInt>? balanceHeld;
+
   setUp(() {
     SharedPreferences.setMockInitialValues({});
     bed = WalletTestBed();
     chain = _Chain();
     submission = _Submission();
+    holds = {};
+    balanceHeld = null;
   });
 
   /// Opens the confirmation of [kind] by [signer], this device's member unless
@@ -189,6 +199,9 @@ void main() {
           transactionSubmissionServiceProvider.overrideWithValue(submission),
           accountsProvider.overrideWith(
             (ref) => AccountsNotifier(bed.accounts, initialAccounts: [_one, _two, _keystone]),
+          ),
+          balanceProviderFamily.overrideWith(
+            (ref, accountId) => balanceHeld?.future ?? holds[accountId] ?? _fee * BigInt.from(1000),
           ),
         ],
         child: Consumer(
@@ -249,6 +262,148 @@ void main() {
       expect(confirm.state().feeUnavailable, isTrue);
       expect(confirm.state().fee, isNull);
       expect(confirm.state().canConfirm, isTrue);
+    });
+  });
+
+  group('what the signer holds', () {
+    testWidgets('less than the fee: said, Confirm unavailable, and a confirm asks nothing and sends nothing', (
+      tester,
+    ) async {
+      holds[_two.accountId] = _fee - BigInt.one;
+      final confirm = await open(tester, MultisigActionKind.execute, signer: _two);
+      await tester.pump();
+
+      expect(confirm.state().cannotPayFee, isTrue);
+      expect(confirm.state().canConfirm, isFalse);
+
+      final outcome = await confirm.controller.confirm();
+
+      expect((outcome as MultisigActionFailed).error, MultisigActionError.feePayerInsufficient);
+      expect(bed.userApproval.reasons, isEmpty);
+      expect(submission.submitted, isEmpty);
+    });
+
+    testWidgets('exactly the fee is enough', (tester) async {
+      holds[_one.accountId] = _fee;
+      final confirm = await open(tester, MultisigActionKind.cancel);
+      await tester.pump();
+
+      expect(confirm.state().cannotPayFee, isFalse);
+      expect(await confirm.controller.confirm(), isA<MultisigActionSubmitted>());
+    });
+
+    testWidgets('a balance not known yet is no objection', (tester) async {
+      balanceHeld = Completer<BigInt>();
+      final confirm = await open(tester, MultisigActionKind.approve);
+      await tester.pump();
+
+      expect(confirm.state().fee, _fee);
+      expect(confirm.state().cannotPayFee, isFalse);
+      expect(confirm.state().canConfirm, isTrue);
+    });
+
+    testWidgets('falling below the fee while approval is asked sends nothing, and says so', (tester) async {
+      holds[_one.accountId] = _fee;
+      final confirm = await open(tester, MultisigActionKind.approve);
+      await tester.pump();
+      bed.userApproval.answer = () async {
+        holds[_one.accountId] = _fee - BigInt.one;
+        confirm.ref.invalidate(balanceProviderFamily(_one.accountId));
+        return ApprovalResult.approved;
+      };
+
+      final outcome = await confirm.controller.confirm();
+
+      expect((outcome as MultisigActionFailed).error, MultisigActionError.feePayerInsufficient);
+      expect(bed.userApproval.reasons, hasLength(1));
+      expect(submission.submitted, isEmpty);
+    });
+
+    testWidgets('a Keystone signer that cannot pay gets no signing session', (tester) async {
+      holds[_keystone.accountId] = BigInt.zero;
+      final confirm = await open(tester, MultisigActionKind.approve, signer: _keystone);
+      await tester.pump();
+
+      final outcome = await confirm.controller.confirm();
+
+      expect((outcome as MultisigActionFailed).error, MultisigActionError.feePayerInsufficient);
+    });
+
+    testWidgets('falling below the fee while the Keystone signs sends nothing, and says why', (tester) async {
+      holds[_keystone.accountId] = _fee;
+      final confirm = await open(tester, MultisigActionKind.approve, signer: _keystone);
+      await tester.pump();
+      final session = ((await confirm.controller.confirm()) as MultisigActionNeedsHardwareSignature).session(
+        primaryDetail: 'Send 1 QTC',
+      );
+
+      holds[_keystone.accountId] = _fee - BigInt.one;
+      confirm.ref.invalidate(balanceProviderFamily(_keystone.accountId));
+
+      await expectLater(
+        session.submitSigned(confirm.ref, unsignedData: _Unsigned(), signatureWithPublicKey: Uint8List(1)),
+        throwsA(isA<SignerCannotPayFee>()),
+      );
+      expect(submission.submitted, isEmpty);
+    });
+  });
+
+  group('a signer funded after its balance was read', () {
+    final refProvider = Provider<Ref>((ref) => ref);
+
+    /// The wallet with the multisig selected, the signer's balance already
+    /// read once, at nothing.
+    Future<ProviderContainer> walletWithStaleSigner(WidgetTester tester) async {
+      bed.settings.activeAccount = MultisigDisplayAccount(_msig);
+      final container = ProviderContainer(
+        overrides: [
+          ...bed.overrides,
+          multisigServiceProvider.overrideWithValue(chain),
+          transactionSubmissionServiceProvider.overrideWithValue(submission),
+          accountsProvider.overrideWith(
+            (ref) => AccountsNotifier(bed.accounts, initialAccounts: [_one, _two, _keystone]),
+          ),
+          balanceProviderFamily.overrideWith((ref, accountId) => holds[accountId] ?? _fee * BigInt.from(1000)),
+        ],
+      );
+      holds[_two.accountId] = BigInt.zero;
+      await container.read(balanceProviderFamily(_two.accountId).future);
+      holds[_two.accountId] = _fee * BigInt.from(1000);
+      return container;
+    }
+
+    MultisigActionRequest by(Account signer) =>
+        MultisigActionRequest(kind: MultisigActionKind.approve, msig: _msig, proposal: _proposal, signer: signer);
+
+    testWidgets('opening the confirmation reads it again: it can confirm', (tester) async {
+      final container = await walletWithStaleSigner(tester);
+
+      container.listen(multisigActionConfirmProvider(by(_two)), (_, _) {});
+      await tester.pump();
+      await tester.pump();
+
+      expect(container.read(multisigActionConfirmProvider(by(_two))).cannotPayFee, isFalse);
+      expect(container.read(multisigActionConfirmProvider(by(_two))).canConfirm, isTrue);
+      container.dispose();
+      await tester.pump(const Duration(minutes: 1));
+    });
+
+    testWidgets('with the multisig selected, its signers here are among the balances a refresh reads again', (
+      tester,
+    ) async {
+      final container = await walletWithStaleSigner(tester);
+      container.listen(activeAccountProvider, (_, _) {});
+      await tester.pump();
+      expect(container.read(activeAccountProvider).value?.account.accountId, _msig.accountId);
+
+      expect(container.read(shownBalanceAccountIdsProvider), containsAll([_one.accountId, _two.accountId]));
+      container.listen(balanceProviderFamily(_two.accountId), (_, _) {});
+      invalidateShownAccountBalances(container.read(refProvider));
+      await tester.pump();
+
+      expect(container.read(balanceProviderFamily(_two.accountId)).value, _fee * BigInt.from(1000));
+      container.dispose();
+      await tester.pump(const Duration(minutes: 1));
     });
   });
 

@@ -18,6 +18,7 @@ import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 
 import '../fakes.dart';
 
@@ -137,6 +138,7 @@ Future<void> _open(
         accountsProvider.overrideWith(
           (ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts ?? [_one]),
         ),
+        balanceProviderFamily.overrideWith((ref, accountId) => BigInt.from(10).pow(20)),
       ],
       child: Builder(
         builder: (context) => MaterialApp(
