@@ -1476,6 +1476,10 @@
     "@keystoneSignActionLabel": {
       "description": "Label for a non-transfer action on the Keystone sign and verify screens"
     },
+    "keystoneSignEntireBalance": "Entire transferable balance",
+    "@keystoneSignEntireBalance": {
+      "description": "In place of the amount on the cold wallet signing screens for a maximum send: the cold wallet shows these words, since the transfer carries no amount"
+    },
     "keystoneSignYouAreSigning": "YOU ARE SIGNING",
     "@keystoneSignYouAreSigning": {
       "description": "Section label above the transaction details on the Keystone sign screen"

@@ -1052,6 +1052,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get keystoneSignActionLabel => 'TINDAKAN';
 
   @override
+  String get keystoneSignEntireBalance => 'Seluruh saldo yang dapat ditransfer';
+
+  @override
   String get keystoneSignYouAreSigning => 'ANDA MENANDATANGANI';
 
   @override

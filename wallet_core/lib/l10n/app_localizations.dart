@@ -2000,6 +2000,12 @@ abstract class AppLocalizations {
   /// **'ACTION'**
   String get keystoneSignActionLabel;
 
+  /// In place of the amount on the cold wallet signing screens for a maximum send: the cold wallet shows these words, since the transfer carries no amount
+  ///
+  /// In en, this message translates to:
+  /// **'Entire transferable balance'**
+  String get keystoneSignEntireBalance;
+
   /// Section label above the transaction details on the Keystone sign screen
   ///
   /// In en, this message translates to:
