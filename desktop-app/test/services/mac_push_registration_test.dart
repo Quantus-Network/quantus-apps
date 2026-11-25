@@ -412,6 +412,46 @@ void main() {
       expect(mac.senoti.map((asked) => asked.what), ['POST /api/devices', 'DELETE /api/devices', 'POST /api/devices']);
     });
 
+    _test('switched off while an account flow\'s registration waits for Apple: nothing is registered', (tester) async {
+      // The sync's own registration failed: it holds nothing yet.
+      final push = FakeMacPush()..tokenError = PlatformException(code: 'token-failed', message: 'no network');
+      final mac = await _open(tester, synced: true, push: push);
+      push
+        ..tokenError = null
+        ..holdToken = Completer<void>();
+      unawaited(mac.container.read(pushRegistrationProvider).registerDevice());
+      await _settle(tester);
+
+      await _switchNotifications(mac, on: false);
+      await _settle(tester);
+      push.holdToken!.complete();
+      await _settle(tester);
+
+      expect(mac.senoti, isEmpty);
+    });
+
+    _test('switched off while an account flow\'s registration is on its way: the Mac is removed after it', (
+      tester,
+    ) async {
+      final push = FakeMacPush()..tokenError = PlatformException(code: 'token-failed', message: 'no network');
+      final mac = await _open(tester, synced: true, push: push);
+      push.tokenError = null;
+      final hold = _holdRegistrations = Completer<void>();
+      unawaited(mac.container.read(pushRegistrationProvider).registerDevice());
+      await _settle(tester);
+      expect(_senotiReached, 1, reason: 'the registration was sent');
+
+      await _switchNotifications(mac, on: false);
+      await _settle(tester);
+      hold.complete();
+      await _settle(tester);
+
+      expect(_asked(mac), [
+        {'POST /api/devices': _registration},
+        _removal,
+      ]);
+    });
+
     _test('a removal that fails is tried again at the next change, until it goes through', (tester) async {
       final mac = await _open(tester, synced: true);
       _senotiAnswers = 500;

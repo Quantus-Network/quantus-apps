@@ -59,10 +59,12 @@ class MacPushRegistration implements PushRegistration {
   Future<void> _keepRegistered(bool registered) =>
       _ref.read(settingsServiceProvider).setBool(registeredKey, registered);
 
-  /// Whether the person wants notifications and macOS allows them.
+  /// Whether the person wants notifications, macOS allows them, and remote
+  /// notifications are on for everyone.
   bool get isWanted =>
       _ref.read(notificationConfigProvider).enabled &&
-      _ref.read(desktopLocalNotificationsProvider) is NotificationsAllowed;
+      _ref.read(desktopLocalNotificationsProvider) is NotificationsAllowed &&
+      _ref.read(remoteConfigProvider).enableRemoteNotifications;
 
   /// The addresses the push service may be told of, once the wallet's
   /// accounts are known: never an Encrypted account's.
@@ -99,7 +101,9 @@ class MacPushRegistration implements PushRegistration {
         return false;
       }
       final token = await push.requestToken();
-      if (!await _stillThisWallet(session, ticket)) return false;
+      // Asked again after waiting for Apple: the person may have switched
+      // notifications off meanwhile.
+      if (!await _stillThisWallet(session, ticket) || !isWanted) return false;
       final addresses = notifiableAddresses;
       if (addresses == null || addresses.isEmpty) return false;
       await _ref
@@ -128,7 +132,15 @@ class MacPushRegistration implements PushRegistration {
 
   /// As [unregister]: true once the push service holds this Mac no more,
   /// false when the removal failed, which is reported.
-  Future<bool> remove() => _inTurn(() async {
+  Future<bool> remove() => _inTurn(_remove);
+
+  /// Removes the Mac if the push service may hold it, as it stands once every
+  /// request asked before is done: a registration still on its way when the
+  /// person switched notifications off is removed after it. True once the
+  /// push service holds it no more.
+  Future<bool> removeIfHeld() => _inTurn(() async => !mayBeRegistered || await _remove());
+
+  Future<bool> _remove() async {
     try {
       final push = _ref.read(macPushProvider);
       if (await push.environment() == null) {
@@ -144,7 +156,7 @@ class MacPushRegistration implements PushRegistration {
       _ref.read(telemetryProvider).sendError('desktop_push_unregister_failed', error: e);
       return false;
     }
-  });
+  }
 
   void _notSignedForPushes() => quantusPrint('This build was not signed to receive pushes: nothing to register');
 }
@@ -200,10 +212,8 @@ class MacPushSync {
   Future<void> _reconcile() async {
     if (!_ref.mounted) return;
     final registration = _ref.read(macPushRegistrationProvider);
-    final isWanted = registration.isWanted && _ref.read(remoteConfigProvider).enableRemoteNotifications;
-    if (!isWanted) {
-      if (_registeredFor == null && !registration.mayBeRegistered) return;
-      if (await registration.remove()) _registeredFor = null;
+    if (!registration.isWanted) {
+      if (await registration.removeIfHeld()) _registeredFor = null;
       return;
     }
     final addresses = registration.notifiableAddresses;
