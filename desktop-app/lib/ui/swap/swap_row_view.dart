@@ -89,7 +89,7 @@ class _SwapRowViewState extends ConsumerState<SwapRowView> {
     final words = _wordsOf(context, l10n, fmt, swap, view, now, preflight: preflight);
 
     // The account's side of it: what it pays, or what it receives.
-    final (:amount, :what) = swapAmountWords(l10n, fmt, swap);
+    final (:amount, :what, foreignAmount: _, network: _) = swapAmountWords(l10n, fmt, swap);
 
     final ended = view == SwapProgressView.failed || view == SwapProgressView.expired;
     final muted = text.caption.copyWith(color: colors.textMuted, fontFeatures: const [FontFeature.tabularFigures()]);

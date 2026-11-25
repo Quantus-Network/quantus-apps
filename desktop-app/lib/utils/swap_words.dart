@@ -23,19 +23,26 @@ enum SwapTone {
 }
 
 /// What [swap] is about, as its row says it: the account's side, what it pays
-/// or receives, and what for on the other chain.
-({String amount, String what}) swapAmountWords(AppLocalizations l10n, NumberFormattingService fmt, ActiveSwap swap) {
+/// or receives, and what for on the other chain ([what]), which is the
+/// [foreignAmount] on [network].
+({String amount, String foreignAmount, String network, String what}) swapAmountWords(
+  AppLocalizations l10n,
+  NumberFormattingService fmt,
+  ActiveSwap swap,
+) {
   final quote = swap.order.quote;
   final swapOut = quote.fromToken.isQuantus;
   final amount = swapOut
       ? '-${formatSwapAmount(l10n, fmt, quote.amountIn, quote.fromToken)}'
       : '+${formatSwapAmount(l10n, fmt, swap.order.amountOut ?? quote.amountOut, quote.toToken)}';
   final foreign = swapOut ? quote.toToken : quote.fromToken;
-  final what = l10n.desktopSwapAmountOnNetwork(
-    formatSwapAmount(l10n, fmt, swapOut ? quote.amountOut : quote.amountIn, foreign),
-    foreign.networkName,
+  final foreignAmount = formatSwapAmount(l10n, fmt, swapOut ? quote.amountOut : quote.amountIn, foreign);
+  return (
+    amount: amount,
+    foreignAmount: foreignAmount,
+    network: foreign.networkName,
+    what: l10n.desktopSwapAmountOnNetwork(foreignAmount, foreign.networkName),
   );
-  return (amount: amount, what: what);
 }
 
 /// Where [swap] stands in [view], as its row says it: what it is doing or how

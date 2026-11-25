@@ -43,6 +43,9 @@ List<Override> desktopWalletCoreOverrides() => [
   // A swap awaiting its deposit has a row and a panel here like any other,
   // so it is still followed after a restart.
   keepsUnpaidSwapsProvider.overrideWithValue(true),
+  // The app stays running out of sight to tell how a swap ended
+  // (SwapEndNotifications), so its swaps are polled there too.
+  swapsPollInBackgroundProvider.overrideWithValue(true),
   // The sidebar shows every account's balance, so each refresh of the active
   // account's reads theirs too. The encrypted accounts' come from their own
   // scan, which is too costly to run for an account no one has selected.

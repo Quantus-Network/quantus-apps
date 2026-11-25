@@ -3214,6 +3214,11 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationSwapBody(String amount, String foreignAmount, String network) {
+    return '$amount untuk $foreignAmount di $network';
+  }
+
+  @override
   String desktopNotificationIncomingTitle(String amount) {
     return '$amount akan masuk';
   }

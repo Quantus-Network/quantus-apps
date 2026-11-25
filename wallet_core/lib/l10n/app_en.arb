@@ -4644,6 +4644,21 @@
         }
       }
     },
+    "desktopNotificationSwapBody": "{amount} for {foreignAmount} on {network}",
+    "@desktopNotificationSwapBody": {
+      "description": "Desktop notification body: what a swap that ended or came short was about, as its row says it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "foreignAmount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
     "desktopNotificationIncomingTitle": "Incoming {amount}",
     "@desktopNotificationIncomingTitle": {
       "description": "Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol",
