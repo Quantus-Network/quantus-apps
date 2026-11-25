@@ -253,6 +253,7 @@ Future<BigInt> pendingOutgoingOf(Ref ref, String accountId) async {
   return _calculatePendingOutgoing(
     ref.read(pendingTransactionsProvider),
     ref.read(pendingMultisigProposalsProvider),
+    ref.read(pendingMultisigApprovalsProvider),
     ref.read(pendingMultisigExecutionsProvider),
     ref.read(pendingMultisigCancellationsProvider),
     ref.read(pendingMultisigCreationsProvider),
