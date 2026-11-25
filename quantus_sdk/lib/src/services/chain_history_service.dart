@@ -319,10 +319,6 @@ query SettledScheduledTransfers($variables) {
   /// on by the next read.
   static const _incomingSincePage = 100;
 
-  /// Where an account with no incoming history is read on from: every row is
-  /// strictly after it.
-  static const _beforeAnyEvent = AccountEventCursor(timestamp: '1970-01-01T00:00:00+00:00', id: '');
-
   /// Builds the query for what accounts received since each was last read:
   /// one selection per account (`$account0..N-1`), aliased `events0..N-1`.
   ///
@@ -409,7 +405,7 @@ ${[for (final (i, hasCursor) in withCursor.indexed) selection(i, hasCursor)].joi
       if (cursor == null) {
         read[account] = IncomingSince(
           received: const [],
-          cursor: rows.isEmpty ? _beforeAnyEvent : _cursorOf(rows.single),
+          cursor: rows.isEmpty ? AccountEventCursor.beforeAnyEvent : _cursorOf(rows.single),
         );
         continue;
       }

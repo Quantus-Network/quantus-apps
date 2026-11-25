@@ -3238,6 +3238,34 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get desktopNotificationProposalNewTitle => 'Proposal baru';
+
+  @override
+  String desktopNotificationProposalSignedTitle(int count, int threshold) {
+    return 'Proposal ditandatangani: $count dari $threshold';
+  }
+
+  @override
+  String get desktopNotificationProposalReadyTitle => 'Proposal siap dieksekusi';
+
+  @override
+  String get desktopNotificationProposalExecutedTitle => 'Proposal dieksekusi';
+
+  @override
+  String get desktopNotificationProposalFailedTitle => 'Eksekusi proposal gagal';
+
+  @override
+  String get desktopNotificationProposalCancelledTitle => 'Proposal dibatalkan';
+
+  @override
+  String get desktopNotificationProposalRemovedTitle => 'Proposal dihapus';
+
+  @override
+  String desktopNotificationProposalOtherBody(String multisig) {
+    return 'Di $multisig';
+  }
+
+  @override
   String get desktopNotificationProposalNotConfirmedTitle => 'Proposal belum terkonfirmasi';
 
   @override
