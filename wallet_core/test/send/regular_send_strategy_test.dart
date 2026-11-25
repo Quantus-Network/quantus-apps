@@ -82,6 +82,38 @@ void main() {
     });
   });
 
+  group('a cold wallet\'s signing', () {
+    Future<KeystoneSigningSession> session(WidgetRef ref, {required bool sendAll}) async {
+      final outcome = await RegularSendStrategy(account: makeAccount(3, accountType: AccountType.keystone)).submit(
+        ref,
+        recipientAddress: recipient.accountId,
+        amount: amount,
+        fee: RegularFee(networkFee: networkFee, amount: sendAll ? null : amount, sendAll: sendAll),
+        isPayMode: false,
+        sendAll: sendAll,
+      );
+      return (outcome as SendNeedsHardwareSignature).session;
+    }
+
+    testWidgets('of a maximum send says what the cold wallet shows of it: the entire transferable balance', (
+      tester,
+    ) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      final signing = await session(ref, sendAll: true);
+
+      expect((signing.primaryDetail, signing.secondaryDetail), ('Entire transferable balance', recipient.accountId));
+    });
+
+    testWidgets('of a send of an amount says that amount', (tester) async {
+      final ref = await pumpRef(tester, overrides: overrides());
+
+      final signing = await session(ref, sendAll: false);
+
+      expect(signing.primaryDetail, endsWith(' QTC'));
+    });
+  });
+
   group('a wallet reset', () {
     Future<KeystoneSigningSession> hardwareSession(WidgetRef ref) async {
       final outcome = await RegularSendStrategy(account: makeAccount(3, accountType: AccountType.keystone)).submit(

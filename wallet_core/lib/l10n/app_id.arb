@@ -968,6 +968,7 @@
   "keystoneSignStep": "LANGKAH {current}/{total}",
   "keystoneSignInstruction": "Buka cold wallet Anda dan pindai kode QR ini untuk memuat transaksi.",
   "keystoneSignActionLabel": "TINDAKAN",
+  "keystoneSignEntireBalance": "Seluruh saldo yang dapat ditransfer",
   "keystoneSignYouAreSigning": "ANDA MENANDATANGANI",
   "keystoneSignNext": "Lanjut ke Tanda Tangan",
   "keystoneSignCancel": "Batalkan Transaksi",

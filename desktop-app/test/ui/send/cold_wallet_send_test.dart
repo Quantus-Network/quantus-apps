@@ -333,6 +333,28 @@ void main() {
       expect(harness.camera.isOn, isTrue);
     });
 
+    testOnMac('a maximum send asks the cold wallet to show the entire transferable balance, and no amount', (
+      tester,
+    ) async {
+      final harness = await _openSend(tester);
+      await tester.enterText(_editable(SendSheet.addressFieldKey), 'qzPayee');
+      await tester.pump();
+      await tester.tap(find.descendant(of: find.byKey(SendSheet.maxKey), matching: find.byType(Checkbox)));
+      await tester.pump();
+      await tester.pump(SendFeeNotifier.debounce);
+      await tester.pumpAndSettle();
+      await _tap(tester, SendSheet.reviewKey);
+      await _tap(tester, SendSheet.sendKey);
+
+      await _tap(tester, KeystoneSigningView.continueKey);
+
+      expect(harness.chain.signRequests, [(recipient: 'qzPayee', amount: null)]);
+      final signing = find.byType(KeystoneSigningView);
+      expect(find.descendant(of: signing, matching: find.text('Entire transferable balance')), findsOneWidget);
+      expect(find.descendant(of: signing, matching: find.textContaining('QTC')), findsNothing);
+      _expectAddressOverCheckphrase(tester, 'qzPayee');
+    });
+
     testOnMac('each new frame read counts towards the signature', (tester) async {
       final harness = await _openSend(tester);
       await _toScan(tester);
