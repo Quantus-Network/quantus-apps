@@ -12,6 +12,7 @@ import 'package:quantus_sdk/src/models/json_dynamic_parse.dart';
 import 'package:quantus_sdk/src/models/multisig_account.dart';
 import 'package:quantus_sdk/src/models/multisig_create_submission.dart';
 import 'package:quantus_sdk/src/models/multisig_proposal.dart';
+import 'package:quantus_sdk/src/models/multisig_proposal_activity.dart';
 import 'package:quantus_sdk/src/models/propose_fee_breakdown.dart';
 import 'package:quantus_sdk/src/rust/api/multisig.dart' as multisig_rust;
 import 'package:quantus_sdk/src/services/balances_service.dart';
@@ -243,6 +244,34 @@ class MultisigService {
       msig,
       query: MultisigProposalGraphql.pastProposalsQuery,
       variables: MultisigProposalGraphql.buildPastProposalsVariables(msig.accountId),
+    );
+  }
+
+  /// How many rows of one kind one read takes of a multisig: a multisig with
+  /// more is read on by the next read.
+  static const _activitySincePage = 50;
+
+  /// What happened to the proposals of each of [multisigs] since its cursor
+  /// in [cursors], oldest first, whoever did it, and the cursor to ask with
+  /// next. A multisig with no cursor there is only given one, where each kind
+  /// of activity ends for it: what happened before is not answered.
+  Future<Map<String, MultisigProposalActivitySince>> fetchProposalActivitySince(
+    List<MultisigAccount> multisigs,
+    Map<String, MultisigProposalActivityCursor> cursors,
+  ) async {
+    final after = {for (final msig in multisigs) msig.accountId: cursors[msig.accountId]};
+    final data = await _graphQlEndpointService.query(
+      document: MultisigProposalActivityGraphql.buildSinceQuery(
+        withCursor: [for (final cursor in after.values) cursor != null],
+      ),
+      variables: MultisigProposalActivityGraphql.sinceVariables(after, limit: _activitySincePage),
+    );
+    return MultisigProposalActivityGraphql.sinceOf(
+      data,
+      multisigs,
+      after,
+      onUnreadable: (kind, id, error) =>
+          debugPrint('MultisigService: passing over a ${kind.name} record that cannot be read ($id): $error'),
     );
   }
 

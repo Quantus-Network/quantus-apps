@@ -1,3 +1,7 @@
+import 'package:quantus_sdk/src/models/account_event_cursor.dart';
+import 'package:quantus_sdk/src/models/multisig_account.dart';
+import 'package:quantus_sdk/src/models/multisig_proposal_activity.dart';
+
 /// Shared GraphQL field selections for multisig indexer queries.
 class MultisigGraphql {
   MultisigGraphql._();
@@ -291,5 +295,196 @@ class MultisigProposalGraphql {
 
   static Map<String, dynamic> buildProposalVariables(String multisigAddress, int proposalId) {
     return {'multisigId': multisigAddress, 'proposalId': proposalId};
+  }
+}
+
+/// The read of what happened to multisigs' proposals since each multisig was
+/// last read: who proposed, signed, executed, cancelled or removed, whoever
+/// they are.
+///
+/// An account's history (`account_event`) files each of these under the
+/// account that did it, so a multisig's other signers are not in the history
+/// of the wallet's own accounts. The indexer's own table of each kind holds
+/// them all.
+class MultisigProposalActivityGraphql {
+  MultisigProposalActivityGraphql._();
+
+  static const _kinds = MultisigProposalActivityKind.values;
+
+  /// What a row of [kind] is read with besides its proposal, as
+  /// [MultisigProposalActivity.fromIndexerJson] parses it.
+  static String _ownFields(MultisigProposalActivityKind kind) => switch (kind) {
+    MultisigProposalActivityKind.created => '',
+    MultisigProposalActivityKind.signed =>
+      '''
+    approvals_count
+    approver {
+      id
+    }
+''',
+    MultisigProposalActivityKind.ready =>
+      '''
+    approvals_count
+    extrinsic {
+      signer {
+        id
+      }
+    }
+''',
+    MultisigProposalActivityKind.executed =>
+      '''
+    result
+    extrinsic {
+      signer {
+        id
+      }
+    }
+''',
+    MultisigProposalActivityKind.cancelled =>
+      '''
+    cancelledBy {
+      id
+    }
+''',
+    MultisigProposalActivityKind.removed =>
+      '''
+    removedBy {
+      id
+    }
+''',
+  };
+
+  static String _alias(int multisig, MultisigProposalActivityKind kind) => 'm${multisig}_${kind.name}';
+
+  /// Builds the query for [withCursor].length multisigs (`$multisig0..N-1`):
+  /// one selection per multisig and kind, aliased `m<N>_<kind>`.
+  ///
+  /// A multisig read before ([withCursor]) is read on from its cursor of each
+  /// kind (`$ts<N>_<kind>`, `$id<N>_<kind>`), oldest first, `$limit` rows at
+  /// a time. One never read is asked only for the newest row of each kind,
+  /// which is where it is read on from.
+  static String buildSinceQuery({required List<bool> withCursor}) {
+    if (withCursor.isEmpty) {
+      throw ArgumentError.value(withCursor, 'withCursor', 'Must query at least one multisig');
+    }
+    final variables = [
+      for (final (i, hasCursor) in withCursor.indexed) ...[
+        '\$multisig$i: String!',
+        if (hasCursor)
+          for (final kind in _kinds) ...['\$ts${i}_${kind.name}: timestamptz!', '\$id${i}_${kind.name}: String!'],
+      ],
+      if (withCursor.contains(true)) '\$limit: Int!',
+    ].join(', ');
+
+    String selection(int i, bool hasCursor, MultisigProposalActivityKind kind) {
+      final ofMultisig = '{proposal: {multisig_id: {_eq: \$multisig$i}}}';
+      if (!hasCursor) {
+        return '''
+  ${_alias(i, kind)}: ${kind.table}(limit: 1, where: $ofMultisig, order_by: [{timestamp: desc}, {id: desc}]) {
+    id
+    timestamp
+  }''';
+      }
+      final ts = '\$ts${i}_${kind.name}';
+      final id = '\$id${i}_${kind.name}';
+      return '''
+  ${_alias(i, kind)}: ${kind.table}(limit: \$limit, where: {_and: [$ofMultisig, {timestamp: {_gte: $ts}}, {_not: {timestamp: {_eq: $ts}, id: {_lte: $id}}}]}, order_by: [{timestamp: asc}, {id: asc}]) {
+    id
+    timestamp
+${_ownFields(kind)}    proposal {
+${MultisigProposalGraphql.fields}
+    }
+  }''';
+    }
+
+    final selections = [
+      for (final (i, hasCursor) in withCursor.indexed)
+        for (final kind in _kinds) selection(i, hasCursor, kind),
+    ].join('\n');
+    return '''
+query MultisigProposalActivitySince($variables) {
+$selections
+}
+''';
+  }
+
+  /// Variables for [buildSinceQuery], for the multisigs of [after] in its
+  /// order: exactly those the query declares.
+  static Map<String, dynamic> sinceVariables(Map<String, MultisigProposalActivityCursor?> after, {required int limit}) {
+    if (after.isEmpty) {
+      throw ArgumentError.value(after, 'after', 'Must not be empty');
+    }
+    return {
+      for (final (i, MapEntry(key: multisig, value: cursor)) in after.entries.indexed) ...{
+        'multisig$i': multisig,
+        if (cursor != null)
+          for (final kind in _kinds) ...{
+            'ts${i}_${kind.name}': _cursorOf(cursor, kind).timestamp,
+            'id${i}_${kind.name}': _cursorOf(cursor, kind).id,
+          },
+      },
+      if (after.values.any((cursor) => cursor != null)) 'limit': limit,
+    };
+  }
+
+  static AccountEventCursor _cursorOf(MultisigProposalActivityCursor cursor, MultisigProposalActivityKind kind) =>
+      cursor[kind] ?? (throw ArgumentError.value(cursor, 'cursor', 'Has no cursor for ${kind.name}'));
+
+  /// Reads the answer to [buildSinceQuery] for the multisigs of [after], in
+  /// its order; [multisigs] holds each of them, for its proposals to be read
+  /// as that multisig's.
+  ///
+  /// A row that cannot be read is passed over with [onUnreadable] told: the
+  /// cursor moves past it, as one bad record must not stop every later one
+  /// from being read.
+  static Map<String, MultisigProposalActivitySince> sinceOf(
+    Map<String, dynamic> data,
+    List<MultisigAccount> multisigs,
+    Map<String, MultisigProposalActivityCursor?> after, {
+    void Function(MultisigProposalActivityKind kind, Object? id, Object error)? onUnreadable,
+  }) {
+    final read = <String, MultisigProposalActivitySince>{};
+    for (final (i, MapEntry(key: multisigId, value: asked)) in after.entries.indexed) {
+      final msig = multisigs.where((msig) => msig.accountId == multisigId).firstOrNull;
+      if (msig == null) throw ArgumentError.value(multisigs, 'multisigs', 'Does not hold $multisigId');
+      final activity = <MultisigProposalActivity>[];
+      final cursor = <MultisigProposalActivityKind, AccountEventCursor>{};
+      for (final kind in _kinds) {
+        final rows = data[_alias(i, kind)];
+        if (rows is! List) {
+          throw StateError('The answer is missing ${_alias(i, kind)}: ${data.keys}');
+        }
+        if (asked == null) {
+          cursor[kind] = rows.isEmpty ? AccountEventCursor.beforeAnyEvent : _rowCursor(rows.single);
+          continue;
+        }
+        cursor[kind] = rows.isEmpty ? _cursorOf(asked, kind) : _rowCursor(rows.last);
+        for (final row in rows.cast<Map<String, dynamic>>()) {
+          try {
+            activity.add(MultisigProposalActivity.fromIndexerJson(kind, row, msig: msig));
+          } catch (e) {
+            onUnreadable?.call(kind, row['id'], e);
+          }
+        }
+      }
+      activity.sort((a, b) {
+        final byTime = a.timestamp.compareTo(b.timestamp);
+        if (byTime != 0) return byTime;
+        final byKind = a.kind.index.compareTo(b.kind.index);
+        return byKind != 0 ? byKind : a.id.compareTo(b.id);
+      });
+      read[multisigId] = MultisigProposalActivitySince(activity: activity, cursor: cursor);
+    }
+    return read;
+  }
+
+  static AccountEventCursor _rowCursor(dynamic row) {
+    final map = row as Map<String, dynamic>;
+    final timestamp = map['timestamp'];
+    final id = map['id'];
+    if (timestamp is! String || id is! String) {
+      throw StateError('A proposal activity row is missing the timestamp/id of its cursor: $map');
+    }
+    return AccountEventCursor(timestamp: timestamp, id: id);
   }
 }

@@ -23,7 +23,8 @@ class MultisigSubmissionService {
   ///
   /// Throws [MultisigAlreadyExistsException] if the predicted address already
   /// exists, or [MultisigInsufficientBalanceException] if the creator cannot
-  /// afford pallet fee + network fee.
+  /// afford pallet fee + network fee from what it can spend: the chain's
+  /// balance less what it has pending ([pendingOutgoingOf]).
   Future<MultisigCreationPreflight> preflightMultisigCreation({
     required String name,
     required List<String> signers,
@@ -60,9 +61,13 @@ class MultisigSubmissionService {
         .then((data) => data.fee);
 
     final totalCost = MultisigCreationDraftFields.fromDraft(draft, networkFee: networkFee).totalCost;
-    final balance = await _ref.read(substrateServiceProvider).queryBalance(creator.accountId);
-    if (balance < totalCost) {
-      throw MultisigInsufficientBalanceException(balance: balance, required: totalCost);
+    final onChain = await _ref.read(substrateServiceProvider).queryBalance(creator.accountId);
+    final spendable = onChain - await pendingOutgoingOf(_ref, creator.accountId);
+    if (spendable < totalCost) {
+      throw MultisigInsufficientBalanceException(
+        balance: spendable < BigInt.zero ? BigInt.zero : spendable,
+        required: totalCost,
+      );
     }
 
     return (draft: draft, networkFee: networkFee);

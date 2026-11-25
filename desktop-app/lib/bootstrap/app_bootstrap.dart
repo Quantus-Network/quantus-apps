@@ -7,6 +7,7 @@ import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/desktop_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/desktop_telemetry.dart';
+import 'package:quantus_desktop_wallet/services/mac_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
@@ -32,7 +33,10 @@ Future<void> bootstrap() async {
 List<Override> desktopWalletCoreOverrides() => [
   ...walletCoreOverrides(
     telemetry: (_) => const DesktopTelemetry(),
-    pushRegistration: (_) => const DesktopPushRegistration(),
+    // Only a Mac can be pushed to while the app is closed.
+    pushRegistration: (ref) => defaultTargetPlatform == TargetPlatform.macOS
+        ? ref.watch(macPushRegistrationProvider)
+        : const DesktopPushRegistration(),
     localNotifications: (ref) => ref.watch(desktopLocalNotificationsProvider.notifier),
     userApproval: (ref) => ref.watch(systemApprovalProvider),
   ),

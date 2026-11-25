@@ -13,6 +13,7 @@ import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
+import 'package:quantus_desktop_wallet/utils/cold_wallet_target.dart';
 import 'package:quantus_desktop_wallet/utils/scanned_address_reads.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -27,6 +28,8 @@ enum _ScanNote { notAnAddress, alreadyInApp }
 /// Adds a cold wallet by reading its account's QR code: the instructions
 /// beside the camera, then the address read, to compare with the device
 /// before anything is saved. The camera is on only during the first step.
+/// With a cold wallet in the app already, the account is added to it
+/// ([coldWalletTarget]), and the sheet says so.
 class ConnectColdWalletSheet extends ConsumerStatefulWidget {
   const ConnectColdWalletSheet({super.key, required this.onConnected});
 
@@ -227,6 +230,11 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
     final address = _address;
+    final target = coldWalletTarget(
+      ref.watch(accountsProvider).value ?? const <Account>[],
+      activeAccountId: ref.watch(activeAccountProvider).value?.account.accountId,
+    );
+    final title = target.isNewWallet ? l10n.addKeystoneConnectTitle : l10n.desktopColdWalletAddAccountTitle;
 
     return PopScope(
       canPop: !_isSaving,
@@ -241,20 +249,20 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
           children: [
             // Kept in the tree on the confirm step: the macOS camera stays
             // attached to its preview between scans.
-            Offstage(offstage: address != null, child: _scanStep(context, l10n)),
-            if (address != null) _confirmStep(context, l10n, address),
+            Offstage(offstage: address != null, child: _scanStep(context, l10n, title)),
+            if (address != null) _confirmStep(context, l10n, title, address, target.name),
           ],
         ),
       ),
     );
   }
 
-  Widget _scanStep(BuildContext context, AppLocalizations l10n) {
+  Widget _scanStep(BuildContext context, AppLocalizations l10n, String title) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ShellSheetHeader(title: l10n.addKeystoneConnectTitle),
+        ShellSheetHeader(title: title),
         const SizedBox(height: 18),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -362,7 +370,7 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
     );
   }
 
-  Widget _confirmStep(BuildContext context, AppLocalizations l10n, String address) {
+  Widget _confirmStep(BuildContext context, AppLocalizations l10n, String title, String address, String name) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final error = _saveError;
@@ -371,10 +379,7 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ShellSheetHeader(
-          title: l10n.desktopColdWalletConfirmTitle,
-          parent: (title: l10n.addKeystoneConnectTitle, onBack: _scanAgain),
-        ),
+        ShellSheetHeader(title: l10n.desktopColdWalletConfirmTitle, parent: (title: title, onBack: _scanAgain)),
         const SizedBox(height: 12),
         Text(l10n.desktopColdWalletConfirmBody, style: text.body.copyWith(color: colors.textMuted)),
         const SizedBox(height: 14),
@@ -389,7 +394,7 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
           label: l10n.desktopAccountInfoName,
           child: Padding(
             padding: const EdgeInsets.only(top: 6),
-            child: Text(AccountManager.coldWalletName, style: text.bodyEmphasis.copyWith(color: colors.textContent)),
+            child: Text(name, style: text.bodyEmphasis.copyWith(color: colors.textContent)),
           ),
         ),
         if (error != null) ...[
