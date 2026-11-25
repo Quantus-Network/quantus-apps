@@ -268,6 +268,20 @@ void main() {
       });
     }
 
+    testWidgets('an approval prompt that fails: nothing is submitted, it says the action failed, and Confirm is '
+        'offered again', (tester) async {
+      bed.userApproval.answer = () async => throw StateError('the prompt could not be shown');
+      final confirm = await open(tester, MultisigActionKind.approve);
+      await tester.pump();
+
+      final outcome = await confirm.controller.confirm();
+
+      expect((outcome as MultisigActionFailed).error, MultisigActionError.submitFailed);
+      expect(confirm.state().submitting, isFalse);
+      expect(confirm.state().canConfirm, isTrue);
+      expect(submission.submitted, isEmpty);
+    });
+
     for (final answer in [ApprovalResult.declined, ApprovalResult.notSetUp]) {
       testWidgets('${answer.name}: nothing is submitted, approval is required, and Confirm is offered again', (
         tester,
