@@ -112,18 +112,38 @@ class _MultisigProposalDetailSheetById extends ConsumerWidget {
   }
 }
 
+/// Whether the proposal shown may be acted on, as its lists stand.
+enum _LiveState {
+  /// As the lists show it: its actions are as its state allows.
+  live,
+
+  /// Gone from the open proposals just read, and not among the past ones
+  /// yet: nothing is offered.
+  over,
+
+  /// The open proposals could not be read: nothing is offered, and the
+  /// sheet says so.
+  unread,
+}
+
 class _MultisigProposalDetailSheet extends ConsumerWidget {
   final MultisigAccount msig;
   final MultisigProposal proposal;
 
   const _MultisigProposalDetailSheet({required this.msig, required this.proposal});
 
-  /// The proposal as the lists now show it. It is [over] when the open
-  /// proposals, just read, no longer have it and the past ones do not yet,
-  /// or could not be read: it is shown as it was, and nothing is offered.
-  ({MultisigProposal proposal, bool over}) _resolveLiveProposal(WidgetRef ref) {
-    MultisigProposal? findMatch(Iterable<MultisigProposal> proposals) {
-      for (final p in proposals) {
+  /// The proposal as the lists now show it, and whether anything may be
+  /// done with it.
+  ///
+  /// Among the past proposals it is over, whatever the open ones last held.
+  /// Otherwise the open ones decide: when they could not be read, what they
+  /// last held may be an action already seen through, so nothing is offered
+  /// and the sheet says why; when they were just read without it and the
+  /// past ones do not have it yet, or could not be read, it is shown as it
+  /// was, and nothing is offered either.
+  ({MultisigProposal proposal, _LiveState state}) _resolveLiveProposal(WidgetRef ref) {
+    MultisigProposal? findMatch(Iterable<MultisigProposal>? proposals) {
+      for (final p in proposals ?? const <MultisigProposal>[]) {
         if (p.id == proposal.id && p.multisigAddress == proposal.multisigAddress) {
           return p;
         }
@@ -131,21 +151,16 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       return null;
     }
 
+    final past = findMatch(ref.watch(multisigPastProposalsProvider(msig)).value);
+    if (past != null) return (proposal: past, state: _LiveState.live);
+
     final openAsync = ref.watch(multisigOpenProposalsProvider(msig));
-    final open = openAsync.value;
-    if (open != null) {
-      final match = findMatch(open);
-      if (match != null) return (proposal: match, over: false);
-    }
+    final open = findMatch(openAsync.value);
+    if (openAsync.hasError) return (proposal: open ?? proposal, state: _LiveState.unread);
+    if (open != null) return (proposal: open, state: _LiveState.live);
 
-    final past = ref.watch(multisigPastProposalsProvider(msig)).value;
-    if (past != null) {
-      final match = findMatch(past);
-      if (match != null) return (proposal: match, over: false);
-    }
-
-    final openIsFresh = openAsync.hasValue && !openAsync.isLoading && !openAsync.hasError;
-    return (proposal: proposal, over: openIsFresh);
+    final openIsFresh = openAsync.hasValue && !openAsync.isLoading;
+    return (proposal: proposal, state: openIsFresh ? _LiveState.over : _LiveState.live);
   }
 
   @override
@@ -155,10 +170,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
     final multisigService = ref.watch(multisigServiceProvider);
-    final (proposal: liveProposal, :over) = _resolveLiveProposal(ref);
+    final (proposal: liveProposal, state: liveState) = _resolveLiveProposal(ref);
     final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final localSignerIds = localSignersForMultisig(msig, accounts).map((a) => a.accountId).toSet();
-    final actions = over
+    final actions = liveState != _LiveState.live
         ? const ProposalOver(null)
         : proposalActionsOf(
             msig: msig,
@@ -196,7 +211,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
           const SizedBox(height: 24),
           _actionButtons(context, l10n, liveProposal: liveProposal, actions: actions),
           const SizedBox(height: 24),
-          _actionNote(context, l10n, actions.note),
+          if (liveState == _LiveState.unread)
+            _noteText(context, l10n.multisigProposalStateUnreadNote)
+          else
+            _actionNote(context, l10n, actions.note),
           Center(
             child: ExplorerLink(
               url: '${AppConstants.explorerEndpoint}/multisig-proposals/${liveProposal.explorerProposalId}',
@@ -432,6 +450,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       ProposalActionNote.cancelWaitsForApproval => l10n.multisigCancelWaitsNote,
     };
 
+    return _noteText(context, text);
+  }
+
+  Widget _noteText(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
