@@ -166,14 +166,24 @@ void main() {
     expect(device.storage.bools[_seenKey], isNull);
   });
 
+  /// Chooses Remove Wallet… on the notice that the phrase is gone, then
+  /// confirms it.
+  Future<void> removeWallet(WidgetTester tester) async {
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.widgetWithText(QuantusButton, 'Remove Wallet…'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.widgetWithText(QuantusButton, 'Remove'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+  }
+
   testOnMac('wiping a wallet whose phrase is gone leads to Welcome without the intro', (tester) async {
     final device = _freshDevice()..store([_root, _encrypted], mnemonic: null);
     await _launch(tester, device);
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(QuantusButton, 'OK'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+    await removeWallet(tester);
 
     expect(device.logouts, 1);
     expect(find.byType(BootIntro), findsNothing);
@@ -185,9 +195,7 @@ void main() {
     await _launch(tester, device);
     await tester.pump();
 
-    await tester.tap(find.widgetWithText(QuantusButton, 'OK'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+    await removeWallet(tester);
 
     expect(device.logouts, 1);
     expect(device.storage.bools, {_seenKey: true});

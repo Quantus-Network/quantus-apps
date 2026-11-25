@@ -13,15 +13,24 @@ class SenotiAuthClient {
 
   SenotiAuthClient(this.senotiEndpointUrl, {http.Client? client}) : _client = client ?? http.Client();
 
+  /// [apnsEnvironment] is which of Apple's push services [deviceToken]
+  /// belongs to (`development` or `production`): a Mac says it, a phone,
+  /// reached through Firebase, never does.
   Future<void> registerDevice({
     required List<String> addresses,
     required String deviceToken,
     required String platform,
+    String? apnsEnvironment,
   }) async {
     final r = await _client.post(
       Uri.parse('$senotiEndpointUrl/devices'),
       headers: getAuthHeaders(),
-      body: jsonEncode({'addresses': addresses, 'device_token': deviceToken, 'platform': platform}),
+      body: jsonEncode({
+        'addresses': addresses,
+        'device_token': deviceToken,
+        'platform': platform,
+        'apns_environment': ?apnsEnvironment,
+      }),
     );
     if (r.statusCode != 202) {
       throw Exception('register device failed: ${r.statusCode} ${r.body}');

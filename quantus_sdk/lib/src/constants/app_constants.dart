@@ -29,7 +29,13 @@ class AppConstants {
 
   static const String quersiEndpoint = 'https://qrc-1.quantus.com/api';
 
-  static const String senotiEndpoint = 'https://snt.quantus.com/api';
+  /// The push notification service. A build made with
+  /// `--dart-define=SENOTI_ENDPOINT=http://localhost:…` registers with a
+  /// Senoti run by hand instead, to test a change to it.
+  static const String senotiEndpoint = String.fromEnvironment(
+    'SENOTI_ENDPOINT',
+    defaultValue: 'https://snt.quantus.com/api',
+  );
 
   // Testnet mining rewards claim server (Quantus-Network/airdrop-claim).
   static const String miningRewardsClaimEndpoint = 'https://airdrop-claim.quantus.com';
