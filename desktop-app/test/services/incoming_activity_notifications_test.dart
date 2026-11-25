@@ -279,6 +279,31 @@ void main() {
       expect('${shown.title} ${shown.body}', isNot(contains('qz')), reason: 'no address');
     });
 
+    _test('is shown under the id the push server gives the same transfer, for the app\'s to replace a pushed one', (
+      tester,
+      wallet,
+    ) async {
+      wallet.chain.receive(
+        'qzMain',
+        TransferEvent(
+          id: '0001146057-3ef3e-000006',
+          from: 'qzAlice',
+          to: 'qzMain',
+          amount: _amount,
+          timestamp: DateTime(2026, 11, 24, 12),
+          fee: BigInt.zero,
+          extrinsicHash: '0xpushed',
+          blockNumber: 1146057,
+          blockHash: '0x3ef3e',
+        ),
+      );
+
+      await _advance(tester);
+
+      // Of the name `received_0001146057-3ef3e-000006`.
+      expect(wallet.notifications.shown.single.id, 149514113);
+    });
+
     _test('is notified once, however often the indexer is read', (tester, wallet) async {
       wallet.chain.receive('qzMain', _transfer(to: 'qzMain'));
 
@@ -348,12 +373,25 @@ void main() {
       expect(wallet.notifications.shown, isEmpty);
     });
 
-    _test('from a multisig of the wallet is notified: its other signers may have sent it', (tester, wallet) async {
+    // The push service takes a payment from an address the same Mac watches
+    // for the wallet moving its own funds, and cannot tell a multisig from
+    // an account: the running app says no more than a closed one is told.
+    _test('from a multisig of the wallet notifies nothing, received or scheduled to arrive', (tester, wallet) async {
       wallet.chain.receive('qzMain', _transfer(to: 'qzMain', from: 'qzTeam'));
+      wallet.chain.receive('qzSavings', _scheduled(to: 'qzSavings').copyWith(from: 'qzTeam'));
 
       await _advance(tester);
 
-      expect(_shown(wallet), [_receivedInMain]);
+      expect(wallet.notifications.shown, isEmpty);
+    });
+
+    _test('from an address outside the wallet is notified, received or scheduled to arrive', (tester, wallet) async {
+      wallet.chain.receive('qzMain', _transfer(to: 'qzMain', from: 'qzOutsider'));
+      wallet.chain.receive('qzSavings', _scheduled(to: 'qzSavings').copyWith(from: 'qzOutsider'));
+
+      await _advance(tester);
+
+      expect(_shown(wallet), [_receivedInMain, ('Incoming 12.5 QTC', 'Scheduled to arrive in Savings')]);
     });
 
     _test('paid by an Encrypted send from this computer notifies nothing: that send says it was sent', (
