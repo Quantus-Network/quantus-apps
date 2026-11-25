@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
+import 'package:quantus_desktop_wallet/utils/swap_words.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/active_swaps_provider.dart';
@@ -82,21 +83,13 @@ class _SwapRowViewState extends ConsumerState<SwapRowView> {
     // an awaited deposit's window closes.
     final now = ref.watch(swapClockProvider).value ?? clock.now();
     final swap = widget.swap;
-    final quote = swap.order.quote;
-    final swapOut = quote.fromToken.isQuantus;
+    final swapOut = swap.order.quote.fromToken.isQuantus;
     final preflight = ref.watch(swapPreflightProvider) != null;
     final view = swapProgressViewOf(swap, now);
     final words = _wordsOf(context, l10n, fmt, swap, view, now, preflight: preflight);
 
     // The account's side of it: what it pays, or what it receives.
-    final amount = swapOut
-        ? '-${formatSwapAmount(l10n, fmt, quote.amountIn, quote.fromToken)}'
-        : '+${formatSwapAmount(l10n, fmt, swap.order.amountOut ?? quote.amountOut, quote.toToken)}';
-    final foreign = swapOut ? quote.toToken : quote.fromToken;
-    final what = l10n.desktopSwapAmountOnNetwork(
-      formatSwapAmount(l10n, fmt, swapOut ? quote.amountOut : quote.amountIn, foreign),
-      foreign.networkName,
-    );
+    final (:amount, :what) = swapAmountWords(l10n, fmt, swap);
 
     final ended = view == SwapProgressView.failed || view == SwapProgressView.expired;
     final muted = text.caption.copyWith(color: colors.textMuted, fontFeatures: const [FontFeature.tabularFigures()]);
@@ -291,42 +284,24 @@ class _SwapRowViewState extends ConsumerState<SwapRowView> {
     required bool preflight,
   }) {
     final colors = context.colorsV3;
-    final quote = swap.order.quote;
-    final elapsed = formatSwapElapsed(swap.elapsedAt(now));
-    switch (view) {
-      case SwapProgressView.inProgress:
-        final receiver = quote.fromToken.isQuantus || preflight ? l10n.desktopSwapTheRecipient : swap.accountName;
-        final steps = swapStepLabels(l10n, quote, receiver, byHand: swap.depositByHand);
-        return (
-          label: l10n.swapStepSwapping,
-          time: elapsed,
-          step: steps[swapStage(swap.order, depositByHand: swap.depositByHand)],
-          accent: colors.semanticGlacier,
-        );
-      case SwapProgressView.deposit:
-        return (
-          label: l10n.desktopSwapAwaitingDeposit,
-          time: l10n.desktopSwapUntil(TimeOfDay.fromDateTime(quote.deadline.toLocal()).format(context)),
-          step: l10n.desktopSwapWaitingForDeposit,
-          accent: colors.semanticSand,
-        );
-      case SwapProgressView.complete:
-        return (label: l10n.swapLiveSwapped, time: elapsed, step: null, accent: colors.semanticSage);
-      case SwapProgressView.failed || SwapProgressView.expired:
-        final failure = swapFailureOf(
-          l10n,
-          fmt,
-          swap,
-          expired: view == SwapProgressView.expired,
-          preflight: preflight,
-          addressLabel: (address) => address,
-        );
-        return (
-          label: failure.refunded ? l10n.swapRefundedLabel : failure.title,
-          time: null,
-          step: null,
-          accent: failure.isWarning || failure.refunded ? colors.semanticSand : colors.semanticEmber,
-        );
-    }
+    final standing = swapStandingWords(l10n, fmt, swap, view, preflight: preflight);
+    final time = switch (view) {
+      SwapProgressView.inProgress || SwapProgressView.complete => formatSwapElapsed(swap.elapsedAt(now)),
+      SwapProgressView.deposit => l10n.desktopSwapUntil(
+        TimeOfDay.fromDateTime(swap.order.quote.deadline.toLocal()).format(context),
+      ),
+      SwapProgressView.failed || SwapProgressView.expired => null,
+    };
+    return (
+      label: standing.label,
+      time: time,
+      step: standing.step,
+      accent: switch (standing.tone) {
+        SwapTone.running => colors.semanticGlacier,
+        SwapTone.awaiting || SwapTone.caution => colors.semanticSand,
+        SwapTone.done => colors.semanticSage,
+        SwapTone.failed => colors.semanticEmber,
+      },
+    );
   }
 }
