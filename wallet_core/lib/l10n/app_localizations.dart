@@ -5756,6 +5756,30 @@ abstract class AppLocalizations {
   /// **'From {account}'**
   String desktopNotificationSentBody(String account);
 
+  /// Desktop notification title: a transfer from outside the wallet arrived in one of its accounts; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Received {amount}'**
+  String desktopNotificationReceivedTitle(String amount);
+
+  /// Desktop notification body: the account the received transfer arrived in
+  ///
+  /// In en, this message translates to:
+  /// **'In {account}'**
+  String desktopNotificationReceivedBody(String account);
+
+  /// Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming {amount}'**
+  String desktopNotificationIncomingTitle(String amount);
+
+  /// Desktop notification body: the account the scheduled reversible transfer will arrive in
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled to arrive in {account}'**
+  String desktopNotificationIncomingBody(String account);
+
   /// Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it
   ///
   /// In en, this message translates to:

@@ -10,7 +10,7 @@ import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
-import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
+import 'package:quantus_desktop_wallet/services/notification_delivery.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
@@ -46,7 +46,7 @@ final pendingWorkProvider = Provider<bool>(
 /// Otherwise closing the window quits the app.
 class BackgroundMode {
   /// How long the app stays once its last work has settled.
-  static const settleDelay = OwnActivityNotifications.settleDelay;
+  static const settleDelay = NotificationDelivery.settleDelay;
 
   /// How long the window stays closed with work that has not settled. A chain
   /// call has no timeout of its own, so one that hangs would otherwise leave
@@ -92,7 +92,7 @@ class BackgroundMode {
 
   /// Whether quitting now would cut work short or lose what it has to say.
   /// Every way of closing or quitting asks this, but Quit Now.
-  bool get _mustStay => _ref.read(pendingWorkProvider) || _ref.read(ownActivityNotificationsProvider).isSettling;
+  bool get _mustStay => _ref.read(pendingWorkProvider) || _ref.read(notificationDeliveryProvider).isSettling;
 
   /// File › Close Window: hides the window while work is under way, and
   /// otherwise asks the app to quit.
@@ -171,7 +171,7 @@ class BackgroundMode {
     if (!_ref.read(windowClosedProvider)) return;
     _quitTimer = Timer(settleDelay, () {
       if (_ref.read(pendingWorkProvider)) return;
-      if (_ref.read(ownActivityNotificationsProvider).isSettling) {
+      if (_ref.read(notificationDeliveryProvider).isSettling) {
         _quitOnceSettled();
         return;
       }

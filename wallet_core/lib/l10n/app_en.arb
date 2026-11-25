@@ -4614,6 +4614,42 @@
         }
       }
     },
+    "desktopNotificationReceivedTitle": "Received {amount}",
+    "@desktopNotificationReceivedTitle": {
+      "description": "Desktop notification title: a transfer from outside the wallet arrived in one of its accounts; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationReceivedBody": "In {account}",
+    "@desktopNotificationReceivedBody": {
+      "description": "Desktop notification body: the account the received transfer arrived in",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationIncomingTitle": "Incoming {amount}",
+    "@desktopNotificationIncomingTitle": {
+      "description": "Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationIncomingBody": "Scheduled to arrive in {account}",
+    "@desktopNotificationIncomingBody": {
+      "description": "Desktop notification body: the account the scheduled reversible transfer will arrive in",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
     "desktopNotificationSendNotConfirmedTitle": "Send not confirmed",
     "@desktopNotificationSendNotConfirmedTitle": {
       "description": "Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it"

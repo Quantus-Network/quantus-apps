@@ -3194,6 +3194,26 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationReceivedTitle(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String desktopNotificationReceivedBody(String account) {
+    return 'Di $account';
+  }
+
+  @override
+  String desktopNotificationIncomingTitle(String amount) {
+    return '$amount akan masuk';
+  }
+
+  @override
+  String desktopNotificationIncomingBody(String account) {
+    return 'Dijadwalkan masuk ke $account';
+  }
+
+  @override
   String get desktopNotificationSendNotConfirmedTitle => 'Pengiriman belum terkonfirmasi';
 
   @override
