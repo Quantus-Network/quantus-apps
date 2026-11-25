@@ -166,6 +166,35 @@ final class MultisigActionDropped extends MultisigActionOutcome {
   const MultisigActionDropped();
 }
 
+/// The proposal [proposalId] of [msig], whoever signs for it.
+class _ProposalKey {
+  final MultisigAccount msig;
+  final int proposalId;
+
+  const _ProposalKey(this.msig, this.proposalId);
+
+  @override
+  bool operator ==(Object other) =>
+      other is _ProposalKey && other.msig.accountId == msig.accountId && other.proposalId == proposalId;
+
+  @override
+  int get hashCode => Object.hash(msig.accountId, proposalId);
+}
+
+/// A proposal's call as the chain stores it, and what it decodes to: read once
+/// for every confirmation of the proposal open at the time, whichever signer
+/// each is for. A read that failed stays failed until a confirmation reads it
+/// again.
+final _proposalCallProvider = FutureProvider.autoDispose.family<({List<int> bytes, DecodedCall decoded}), _ProposalKey>(
+  (ref, key) async {
+    final bytes = await ref
+        .read(multisigServiceProvider)
+        .fetchProposalCallBytes(msig: key.msig, proposalId: key.proposalId);
+    return (bytes: bytes, decoded: MultisigProposal.decodeProposalCall(bytes));
+  },
+  retry: (_, _) => null,
+);
+
 /// Confirms an action on a multisig proposal: reads the proposal's call from
 /// the chain, estimates the fee, asks the person at the device, and sends it.
 ///
@@ -182,12 +211,27 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   MultisigProposal get _proposal => request.proposal;
   String get _logPrefix => '[Multisig ${request.kind.name}]';
 
+  _ProposalKey get _proposalKey => _ProposalKey(_msig, _proposal.id);
+
+  bool _readFailedBefore = false;
+
   @override
   MultisigActionConfirmState build() {
     final balance = effectiveBalanceProviderFamily(request.signer.accountId);
     ref.listen(balance, (_, next) => state = state.copyWith(signerBalance: () => next.value));
+    // Kept while this confirmation is open, for another signer chosen in it.
+    final call = _proposalCallProvider(_proposalKey);
+    ref.listen(call, (_, _) {});
+    final read = ref.read(call);
+    // A read that failed before this confirmation opened is not its answer.
+    _readFailedBefore = read.hasError;
     unawaited(Future.microtask(_prepare));
-    return MultisigActionConfirmState(signerBalance: ref.read(balance).value);
+    return MultisigActionConfirmState(
+      signerBalance: ref.read(balance).value,
+      loadingCall: !read.hasValue,
+      callBytes: read.value?.bytes,
+      decodedCall: read.value?.decoded,
+    );
   }
 
   /// The signer's account cannot pay the fee, as it stands now.
@@ -197,19 +241,8 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   Future<void> _prepare() async {
     // What the signer holds may have been read long ago: read it again.
     ref.invalidate(balanceProviderFamily(request.signer.accountId));
-    final List<int> bytes;
-    final DecodedCall decoded;
-    try {
-      bytes = await ref.read(multisigServiceProvider).fetchProposalCallBytes(msig: _msig, proposalId: _proposal.id);
-      decoded = MultisigProposal.decodeProposalCall(bytes);
-    } catch (e, st) {
-      quantusPrint('$_logPrefix proposal call unavailable: $e $st');
-      if (!ref.mounted) return;
-      state = state.copyWith(loadingCall: false, callUnavailable: true, loadingFee: false);
-      return;
-    }
-    if (!ref.mounted) return;
-    state = state.copyWith(loadingCall: false, callBytes: bytes, decodedCall: decoded);
+    final bytes = state.callBytes ?? await _readCall();
+    if (bytes == null || !ref.mounted) return;
 
     try {
       final fee = await _estimateFee(request.signer, bytes);
@@ -219,6 +252,24 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       quantusPrint('$_logPrefix fee estimate error: $e $st');
       if (!ref.mounted) return;
       state = state.copyWith(loadingFee: false, feeUnavailable: true);
+    }
+  }
+
+  /// The proposal's call, read from the chain unless another confirmation
+  /// already is; null when it cannot be read or does not decode.
+  Future<List<int>?> _readCall() async {
+    final call = _proposalCallProvider(_proposalKey);
+    if (_readFailedBefore) ref.invalidate(call);
+    try {
+      final read = await ref.read(call.future);
+      if (!ref.mounted) return null;
+      state = state.copyWith(loadingCall: false, callBytes: read.bytes, decodedCall: read.decoded);
+      return read.bytes;
+    } catch (e, st) {
+      quantusPrint('$_logPrefix proposal call unavailable: $e $st');
+      if (!ref.mounted) return null;
+      state = state.copyWith(loadingCall: false, callUnavailable: true, loadingFee: false);
+      return null;
     }
   }
 
