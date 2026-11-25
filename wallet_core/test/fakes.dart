@@ -142,10 +142,16 @@ class FakeSettingsService extends Fake implements SettingsService {
   /// When set, a save is recorded and then answers only once this completes.
   Completer<void>? holdMultisigSave;
 
+  /// When set, a save stores nothing and fails with this, after
+  /// [holdMultisigSave].
+  Object? addMultisigError;
+
   @override
   Future<void> addMultisigAccount(MultisigAccount account) async {
-    savedMultisigs.add(account);
+    final error = addMultisigError;
+    if (error == null) savedMultisigs.add(account);
     await holdMultisigSave?.future;
+    if (error != null) throw error;
   }
 }
 
@@ -370,11 +376,14 @@ class _FixedRemoteConfigService extends RemoteConfigService {
 
 /// A device with no wallet, and a chain that answers what the test says.
 class WalletTestBed {
-  WalletTestBed({String generatedMnemonic = '', List<Future<List<Account>> Function()>? scans})
+  /// [storage], when given, is the settings service the app uses in place
+  /// of [settings].
+  WalletTestBed({String generatedMnemonic = '', List<Future<List<Account>> Function()>? scans, this.storage})
     : substrate = FakeSubstrateService(mnemonic: generatedMnemonic),
       discovery = FakeAccountDiscoveryService(scans ?? [() async => []]);
 
   final settings = FakeSettingsService();
+  final SettingsService? storage;
   late final accounts = FakeAccountsService(settings);
   final hdWallet = FakeHdWalletService();
   final telemetry = FakeTelemetry();
@@ -399,7 +408,7 @@ class WalletTestBed {
       localNotifications: (_) => localNotifications,
       userApproval: (_) => userApproval,
     ),
-    settingsServiceProvider.overrideWithValue(settings),
+    settingsServiceProvider.overrideWithValue(storage ?? settings),
     accountsServiceProvider.overrideWithValue(accounts),
     hdWalletServiceProvider.overrideWithValue(hdWallet),
     substrateServiceProvider.overrideWithValue(substrate),

@@ -418,6 +418,10 @@
     "@multisigCreateTimeoutToast": {
       "description": "Toast when on-chain confirmation polling times out"
     },
+    "multisigCreateNotSavedToast": "Your multisig was created, but it could not be saved on this device. Restart the app to add it.",
+    "@multisigCreateNotSavedToast": {
+      "description": "Toast when a multisig is confirmed on chain but storing it on this device fails; the next start adds it"
+    },
     "multisigCreateAuthReason": "Authenticate to create this multisig",
     "@multisigCreateAuthReason": {
       "description": "Local auth prompt when submitting create multisig"

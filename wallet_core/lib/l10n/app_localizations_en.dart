@@ -314,6 +314,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Multisig creation is taking longer than expected. Check the chain or try again.';
 
   @override
+  String get multisigCreateNotSavedToast =>
+      'Your multisig was created, but it could not be saved on this device. Restart the app to add it.';
+
+  @override
   String get multisigCreateAuthReason => 'Authenticate to create this multisig';
 
   @override
