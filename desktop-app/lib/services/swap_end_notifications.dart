@@ -60,6 +60,7 @@ class SwapEndNotifications {
           accountId: swap.accountId,
           accountName: swap.accountName,
           extrinsicHash: null,
+          swapId: swap.id,
           intent: NotificationIntent.others,
           title: standing.label,
           body: l10n.desktopNotificationSwapBody(amount, foreignAmount, network),
