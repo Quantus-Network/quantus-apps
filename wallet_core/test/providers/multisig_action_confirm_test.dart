@@ -9,6 +9,10 @@ import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_a
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 import 'package:wallet_core/providers/shown_balances_provider.dart';
 import 'package:wallet_core/providers/controllers/multisig_action_confirm_controller.dart';
@@ -157,6 +161,26 @@ class _Submission extends Fake implements TransactionSubmissionService {
     required UnsignedTransactionData unsignedData,
     required Uint8List signatureWithPublicKey,
   }) => _submit('approve signed', signer, null, null);
+
+  @override
+  Future<String> executeProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+    BigInt? fee,
+  }) => _submit('execute signed', signer, fee, null);
+
+  @override
+  Future<String> cancelProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+    BigInt? fee,
+  }) => _submit('cancel signed', proposer, fee, null);
 }
 
 typedef _Confirm = ({
@@ -542,5 +566,28 @@ void main() {
       expect(hash, '0xapprove signed');
       expect(submission.submitted, [('approve signed', _keystone.accountId, null, null)]);
     });
+  });
+
+  group('a wallet reset', () {
+    for (final kind in MultisigActionKind.values) {
+      testWidgets('before a Keystone signature for ${kind.name} comes back: nothing sent, no row left', (tester) async {
+        final confirm = await open(tester, kind, signer: _keystone);
+        await tester.pump();
+        final session = ((await confirm.controller.confirm()) as MultisigActionNeedsHardwareSignature).session(
+          primaryDetail: 'Send 1 QTC',
+        );
+
+        await confirm.ref.read(logoutServiceProvider).logout();
+
+        await expectLater(
+          session.submitSigned(confirm.ref, unsignedData: _Unsigned(), signatureWithPublicKey: Uint8List(1)),
+          throwsStateError,
+        );
+        expect(submission.submitted, isEmpty);
+        expect(confirm.ref.read(pendingMultisigApprovalsProvider), isEmpty);
+        expect(confirm.ref.read(pendingMultisigExecutionsProvider), isEmpty);
+        expect(confirm.ref.read(pendingMultisigCancellationsProvider), isEmpty);
+      });
+    }
   });
 }
