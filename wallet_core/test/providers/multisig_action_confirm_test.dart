@@ -326,6 +326,24 @@ void main() {
 
       expect((outcome as MultisigActionFailed).error, MultisigActionError.feePayerInsufficient);
     });
+
+    testWidgets('falling below the fee while the Keystone signs sends nothing, and says why', (tester) async {
+      holds[_keystone.accountId] = _fee;
+      final confirm = await open(tester, MultisigActionKind.approve, signer: _keystone);
+      await tester.pump();
+      final session = ((await confirm.controller.confirm()) as MultisigActionNeedsHardwareSignature).session(
+        primaryDetail: 'Send 1 QTC',
+      );
+
+      holds[_keystone.accountId] = _fee - BigInt.one;
+      confirm.ref.invalidate(balanceProviderFamily(_keystone.accountId));
+
+      await expectLater(
+        session.submitSigned(confirm.ref, unsignedData: _Unsigned(), signatureWithPublicKey: Uint8List(1)),
+        throwsA(isA<SignerCannotPayFee>()),
+      );
+      expect(submission.submitted, isEmpty);
+    });
   });
 
   group('approval', () {
