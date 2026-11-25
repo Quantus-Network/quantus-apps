@@ -35,6 +35,19 @@ class AppDelegate: FlutterAppDelegate {
     return true
   }
 
+  /// macOS's answers to `PushNotifications` asking for this Mac's token.
+  override func application(
+    _ application: NSApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
+  ) {
+    PushNotifications.shared.didRegister(deviceToken: deviceToken)
+  }
+
+  override func application(
+    _ application: NSApplication, didFailToRegisterForRemoteNotificationsWithError error: Error
+  ) {
+    PushNotifications.shared.didFailToRegister(error: error)
+  }
+
   override func applicationSupportsSecureRestorableState(_ app: NSApplication) -> Bool {
     return true
   }
