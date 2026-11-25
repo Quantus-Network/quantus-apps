@@ -519,6 +519,17 @@ void main() {
       expect(_inPanel(find.text('Balances · transfer_keep_alive')), findsOne);
     });
 
+    testOnMac('a reversible transfer says what it is and its window, not only the amount and to whom', (tester) async {
+      final open = callProposal('ReversibleTransfers.schedule_transfer_with_delay');
+      expect(open.decodedCall!.summary?.reversible, isTrue, reason: 'the sample is a reversible transfer');
+
+      await openOnly(tester, open);
+
+      expect(_inPanel(find.text(open.decodedCall!.displayTitle)), findsOne);
+      expect(_inPanel(find.text('Reversible for')), findsOne);
+      expect(_inPanel(find.text('Destination')), findsNothing, reason: 'the recipient is already said');
+    });
+
     testOnMac('one that moves nothing is headed by its call in words, its pallet beside the date, and its fields as '
         'rows; no amount and no To', (tester) async {
       final open = callProposal('ReversibleTransfers.set_high_security');

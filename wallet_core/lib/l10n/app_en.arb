@@ -4151,6 +4151,159 @@
     "@desktopProposalUnreadable": {
       "description": "Desktop proposal panel: the sentence under \"Invalid proposal\" for a proposal whose call this wallet cannot decode"
     },
+    "desktopProposalApproving": "Approving",
+    "@desktopProposalApproving": {
+      "description": "Desktop proposal action review: the caps line over the proposal being approved"
+    },
+    "desktopProposalExecuting": "Executing",
+    "@desktopProposalExecuting": {
+      "description": "Desktop proposal action review: the caps line over the proposal being executed"
+    },
+    "desktopProposalCancelling": "Cancelling",
+    "@desktopProposalCancelling": {
+      "description": "Desktop proposal action review: the caps line over the proposal being cancelled"
+    },
+    "desktopProposalSignsAs": "Signs as",
+    "@desktopProposalSignsAs": {
+      "description": "Desktop proposal action review: the row naming the account of this wallet that signs, or the choice of them"
+    },
+    "desktopProposalSignedAs": "Signed as",
+    "@desktopProposalSignedAs": {
+      "description": "Desktop proposal action receipt: the row naming the account that signed"
+    },
+    "desktopProposalDepositRefunded": "Deposit refunded",
+    "@desktopProposalDepositRefunded": {
+      "description": "Desktop proposal cancel review: the row with the proposal deposit that cancelling returns"
+    },
+    "desktopProposalApprovalsChange": "{before} → {after}",
+    "@desktopProposalApprovalsChange": {
+      "description": "Desktop proposal approve review: the approval count before and after this approval, each as desktopProposeCountOf",
+      "placeholders": {
+        "before": {
+          "type": "String"
+        },
+        "after": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalKeystoneApprove": "{name} signs with a Keystone, which this app cannot sign with yet. Approve on your phone.",
+    "@desktopProposalKeystoneApprove": {
+      "description": "Desktop proposal panel: why Approve is unavailable when the only account that could approve is a Keystone",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalKeystoneExecute": "{name} signs with a Keystone, which this app cannot sign with yet. Execute on your phone.",
+    "@desktopProposalKeystoneExecute": {
+      "description": "Desktop proposal panel: why Execute is unavailable when the member that executes is a Keystone",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalKeystoneCancel": "{name} signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.",
+    "@desktopProposalKeystoneCancel": {
+      "description": "Desktop proposal panel: why Cancel Proposal is unavailable when the proposer is a Keystone",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalApprovingTitle": "Approving {what}",
+    "@desktopProposalApprovingTitle": {
+      "description": "Desktop proposal action receipt headline while the approval is confirmed; what is the amount or the call's name",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalApprovedTitle": "{what} approved",
+    "@desktopProposalApprovedTitle": {
+      "description": "Desktop proposal action receipt headline once the approval is confirmed",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalExecutingTitle": "Executing {what}",
+    "@desktopProposalExecutingTitle": {
+      "description": "Desktop proposal action receipt headline while the execution is confirmed",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalExecutedTitle": "{what} executed",
+    "@desktopProposalExecutedTitle": {
+      "description": "Desktop proposal action receipt headline once the proposal was executed, by this wallet or another signer",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalCancellingTitle": "Cancelling {what}",
+    "@desktopProposalCancellingTitle": {
+      "description": "Desktop proposal action receipt headline while the cancellation is confirmed",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalCancelledTitle": "Proposal cancelled",
+    "@desktopProposalCancelledTitle": {
+      "description": "Desktop proposal action receipt headline once the cancellation is confirmed"
+    },
+    "desktopProposalApprovalWaiting": "Waiting for the network to record your approval.",
+    "@desktopProposalApprovalWaiting": {
+      "description": "Desktop proposal action receipt: while the approval is confirmed"
+    },
+    "desktopProposalExecutionWaiting": "Waiting for the network to record your execution.",
+    "@desktopProposalExecutionWaiting": {
+      "description": "Desktop proposal action receipt: while the execution is confirmed"
+    },
+    "desktopProposalCancellationWaiting": "Waiting for the network to record your cancellation.",
+    "@desktopProposalCancellationWaiting": {
+      "description": "Desktop proposal action receipt: while the cancellation is confirmed"
+    },
+    "desktopProposalReadyToExecute": "It has every approval it needs, and can be executed.",
+    "@desktopProposalReadyToExecute": {
+      "description": "Desktop proposal action receipt: an approval that brought the proposal to its threshold"
+    },
+    "desktopProposalApprovalsNeeded": "{count, plural, =1{1 more approval needed.} other{{count} more approvals needed.}}",
+    "@desktopProposalApprovalsNeeded": {
+      "description": "Desktop proposal action receipt: an approval after which the proposal still needs more",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopProposalExecutedDone": "The proposal has run.",
+    "@desktopProposalExecutedDone": {
+      "description": "Desktop proposal action receipt: once this wallet's execution is confirmed"
+    },
+    "desktopProposalCancelledDone": "Your deposit is refunded.",
+    "@desktopProposalCancelledDone": {
+      "description": "Desktop proposal action receipt: once the cancellation is confirmed"
+    },
+    "desktopProposalExecutedByAnother": "Executed by another signer",
+    "@desktopProposalExecutedByAnother": {
+      "description": "Desktop proposal action receipt status: the proposal was executed, but not by this wallet's transaction"
+    },
+    "desktopProposalExecutedByAnotherBody": "Another signer executed this proposal first, so your transaction did not go through. Its network fee was still paid.",
+    "@desktopProposalExecutedByAnotherBody": {
+      "description": "Desktop proposal action receipt: under 'Executed by another signer'"
+    },
     "desktopFooterMainnet": "Mainnet",
     "@desktopFooterMainnet": {
       "description": "Desktop footer: the network the wallet is on, beside a dot that is green while online"

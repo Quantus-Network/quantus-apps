@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/chain_status_providers.dart';
 import 'package:quantus_desktop_wallet/ui/activity/inspector_parts.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_actions.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
@@ -19,11 +20,11 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
 import 'package:wallet_core/utils/multisig_expiry.dart';
 
-/// A multisig's proposal, read only: where it stands; what it does, by its
-/// amount and recipient or, for a call that moves nothing, by the call and
-/// its fields; how far its approvals are and who gave them; until when it is
-/// open; what proposing it cost; who proposed it; and its page. Approving,
-/// executing and cancelling come with the proposals' own feature.
+/// A multisig's proposal: where it stands; what it does, by its amount and
+/// recipient or, for a call that moves nothing, by the call and its fields;
+/// what this wallet can do with it, before the details; how far its approvals
+/// are and who gave them; until when it is open; what proposing it cost; who
+/// proposed it; and its page.
 class ProposalDetail extends ConsumerWidget {
   const ProposalDetail({super.key, required this.proposal});
 
@@ -112,7 +113,9 @@ class ProposalDetail extends ConsumerWidget {
             const SizedBox(height: 10),
             inspectorAccount(own[proposal.recipient], proposal.recipient),
           ],
+          if (call != null) ...[const SizedBox(height: 16), ProposalTransferDetails(call: call)],
         ],
+        ProposalActionsBar(msig: account, proposal: proposal),
         const SizedBox(height: 20),
         const MenuDivider(),
         const SizedBox(height: 4),
@@ -232,10 +235,16 @@ class ProposalSignerRow extends ConsumerWidget {
 /// under its label, whole, or by its badge and name when the wallet holds it;
 /// a hash, bytes or text under its label, whole; a figure at its line's end;
 /// a group or a nested call indented under its label.
+///
+/// See also [ProposalTransferDetails], for a call headed by what it moves.
 class ProposalCallFields extends ConsumerWidget {
-  const ProposalCallFields({super.key, required this.call});
+  const ProposalCallFields({super.key, required this.call, this.except = const []});
 
   final DecodedCall call;
+
+  /// Fields said already, where the call is headed by what it moves; left
+  /// out by identity, so another field of an equal value is still listed.
+  final List<CallField> except;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -244,7 +253,10 @@ class ProposalCallFields extends ConsumerWidget {
     final own = ref.watch(ownAccountsByAddressProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [for (final field in call.fields) _field(context, l10n, formatting, own, field)],
+      children: [
+        for (final field in call.fields)
+          if (!except.any((said) => identical(said, field))) _field(context, l10n, formatting, own, field),
+      ],
     );
   }
 
@@ -337,5 +349,36 @@ class ProposalCallFields extends ConsumerWidget {
         field.note,
       ),
     };
+  }
+}
+
+/// What a call headed by the amount it moves and to whom is, beyond those:
+/// its runtime name, so a reversible transfer or one that may close the
+/// sender's account is told from a plain one, and every field the headline
+/// does not say, such as how long the transfer stays reversible.
+class ProposalTransferDetails extends StatelessWidget {
+  const ProposalTransferDetails({super.key, required this.call});
+
+  final DecodedCall call;
+
+  @override
+  Widget build(BuildContext context) {
+    final summary = call.summary ?? (throw StateError('Only a call headed by what it moves has transfer details.'));
+    final said = [?summary.amountField, if (summary.recipient != null) ?summary.recipientField];
+    final rest = call.fields.where((field) => !said.any((s) => identical(s, field)));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          call.displayTitle,
+          style: context.themeTextV3.dataAddress.copyWith(
+            height: 1.3,
+            letterSpacing: 0.3,
+            color: context.colorsV3.textMuted,
+          ),
+        ),
+        if (rest.isNotEmpty) ...[const SizedBox(height: 8), ProposalCallFields(call: call, except: said)],
+      ],
+    );
   }
 }
