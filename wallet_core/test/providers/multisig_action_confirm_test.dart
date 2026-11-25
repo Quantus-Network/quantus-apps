@@ -13,6 +13,8 @@ import 'package:wallet_core/providers/pending_multisig_cancellations_provider.da
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/services/logout_service.dart';
+import 'package:wallet_core/utils/polling_refresh_scope.dart';
+import 'package:wallet_core/providers/shown_balances_provider.dart';
 import 'package:wallet_core/providers/controllers/multisig_action_confirm_controller.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
@@ -367,6 +369,65 @@ void main() {
         throwsA(isA<SignerCannotPayFee>()),
       );
       expect(submission.submitted, isEmpty);
+    });
+  });
+
+  group('a signer funded after its balance was read', () {
+    final refProvider = Provider<Ref>((ref) => ref);
+
+    /// The wallet with the multisig selected, the signer's balance already
+    /// read once, at nothing.
+    Future<ProviderContainer> walletWithStaleSigner(WidgetTester tester) async {
+      bed.settings.activeAccount = MultisigDisplayAccount(_msig);
+      final container = ProviderContainer(
+        overrides: [
+          ...bed.overrides,
+          multisigServiceProvider.overrideWithValue(chain),
+          transactionSubmissionServiceProvider.overrideWithValue(submission),
+          accountsProvider.overrideWith(
+            (ref) => AccountsNotifier(bed.accounts, initialAccounts: [_one, _two, _keystone]),
+          ),
+          balanceProviderFamily.overrideWith((ref, accountId) => holds[accountId] ?? _fee * BigInt.from(1000)),
+        ],
+      );
+      holds[_two.accountId] = BigInt.zero;
+      await container.read(balanceProviderFamily(_two.accountId).future);
+      holds[_two.accountId] = _fee * BigInt.from(1000);
+      return container;
+    }
+
+    MultisigActionRequest by(Account signer) =>
+        MultisigActionRequest(kind: MultisigActionKind.approve, msig: _msig, proposal: _proposal, signer: signer);
+
+    testWidgets('opening the confirmation reads it again: it can confirm', (tester) async {
+      final container = await walletWithStaleSigner(tester);
+
+      container.listen(multisigActionConfirmProvider(by(_two)), (_, _) {});
+      await tester.pump();
+      await tester.pump();
+
+      expect(container.read(multisigActionConfirmProvider(by(_two))).cannotPayFee, isFalse);
+      expect(container.read(multisigActionConfirmProvider(by(_two))).canConfirm, isTrue);
+      container.dispose();
+      await tester.pump(const Duration(minutes: 1));
+    });
+
+    testWidgets('with the multisig selected, its signers here are among the balances a refresh reads again', (
+      tester,
+    ) async {
+      final container = await walletWithStaleSigner(tester);
+      container.listen(activeAccountProvider, (_, _) {});
+      await tester.pump();
+      expect(container.read(activeAccountProvider).value?.account.accountId, _msig.accountId);
+
+      expect(container.read(shownBalanceAccountIdsProvider), containsAll([_one.accountId, _two.accountId]));
+      container.listen(balanceProviderFamily(_two.accountId), (_, _) {});
+      invalidateShownAccountBalances(container.read(refProvider));
+      await tester.pump();
+
+      expect(container.read(balanceProviderFamily(_two.accountId)).value, _fee * BigInt.from(1000));
+      container.dispose();
+      await tester.pump(const Duration(minutes: 1));
     });
   });
 
