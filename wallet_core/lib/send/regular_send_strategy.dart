@@ -211,10 +211,11 @@ class RegularSendStrategy extends SendStrategy {
         session: KeystoneSigningSession(
           account: account,
           buildCall: () => _transferCall(ref.read, recipient, amount, sendAll: sendAll),
-          primaryDetail: l10n.commonAmountBalance(
-            fmt.formatBalance(amount, smartDecimals: 4),
-            AppConstants.tokenSymbol,
-          ),
+          // A max send's `transfer_all` carries no amount: the cold wallet shows
+          // these words in its place.
+          primaryDetail: sendAll
+              ? l10n.keystoneSignEntireBalance
+              : l10n.commonAmountBalance(fmt.formatBalance(amount, smartDecimals: 4), AppConstants.tokenSymbol),
           secondaryDetail: recipient,
           secondaryIsAddress: true,
           cacheKey: _hardwareCacheKey(recipient, amount, sendAll: sendAll),

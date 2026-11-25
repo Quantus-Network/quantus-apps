@@ -1049,6 +1049,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get keystoneSignActionLabel => 'ACTION';
 
   @override
+  String get keystoneSignEntireBalance => 'Entire transferable balance';
+
+  @override
   String get keystoneSignYouAreSigning => 'YOU ARE SIGNING';
 
   @override
