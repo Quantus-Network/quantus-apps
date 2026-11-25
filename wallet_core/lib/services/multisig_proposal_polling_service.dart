@@ -24,6 +24,10 @@ Future<bool> _confirmIndexedProposal(Ref ref, MultisigAccount msig, PendingMulti
   if (indexed == null) return false;
   if (!await session.survivesReset(ticket, dropping: 'confirming proposal ${pending.id}')) return true;
 
+  // Known by its id before its pending row goes, so what showed the row can
+  // follow it to the proposal.
+  final created = indexed.proposal;
+  if (created != null) ref.read(multisigCreatedProposalsProvider.notifier).record(hash, created.entityId);
   removePendingMultisigProposal(ref, pending.id);
   ref.read(multisigProposalConfirmationsProvider.notifier).settle(hash, SendConfirmation.confirmed);
   await reconcileIndexedProposalCreation(ref, msig, indexed);

@@ -18,6 +18,27 @@ final multisigProposalConfirmationsProvider =
       MultisigProposalConfirmationsNotifier.new,
     );
 
+/// The proposals this wallet broadcast that the indexer has shown created:
+/// the indexer's id of each (`MultisigProposal.entityId`), by the hash of the
+/// transaction it was sent in.
+class MultisigCreatedProposalsNotifier extends Notifier<Map<String, String>> {
+  @override
+  Map<String, String> build() => const {};
+
+  /// The proposal sent in [extrinsicHash] was created as [entityId].
+  void record(String extrinsicHash, String entityId) => state = {...state, extrinsicHash: entityId};
+}
+
+final multisigCreatedProposalsProvider = NotifierProvider<MultisigCreatedProposalsNotifier, Map<String, String>>(
+  MultisigCreatedProposalsNotifier.new,
+);
+
+/// The indexer's id of the proposal sent in the transaction of this hash,
+/// once it has shown it created; null before, and for one it never showed.
+final multisigCreatedProposalIdProvider = Provider.family<String?, String>(
+  (ref, extrinsicHash) => ref.watch(multisigCreatedProposalsProvider.select((created) => created[extrinsicHash])),
+);
+
 /// What became of the proposal sent in the transaction of this hash: pending
 /// until the wallet has seen it created or has stopped watching for it.
 final multisigProposalConfirmationProvider = Provider.family<SendConfirmation, String>(

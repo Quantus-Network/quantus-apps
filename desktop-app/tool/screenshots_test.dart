@@ -59,6 +59,7 @@ import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
 import 'package:wallet_core/send/send_strategy.dart';
@@ -1756,6 +1757,27 @@ void _activityScenes() {
   }
 
   _scene('proposal_actions_panel', (tester) => openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8'));
+  // A proposal this wallet is still sending, open as its pending transaction.
+  _scene('activity_multisig_proposing_open', (tester) async {
+    await openTeamProposal(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    final pending = PendingMultisigProposalEvent.create(
+      msig: container.read(activeAccountProvider).requireValue!.account as MultisigAccount,
+      proposerId: _root.accountId,
+      recipient: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+      amount: oneToken * BigInt.from(120),
+      expiryBlock: 1300000,
+      fee: oneToken ~/ BigInt.from(100),
+      deposit: oneToken,
+      palletFee: oneToken ~/ BigInt.from(10),
+    ).copyWith(extrinsicHash: '0x8f3a51c0d27be94f6a1d3e5c7b9082f4e6d1a3c5b7e9f0a2c4d6e8b1a3c5d7e9');
+    container.read(pendingMultisigProposalsProvider.notifier).add(pending);
+    await tester.pump();
+    await tester.tap(find.byWidgetPredicate((widget) => widget is OpenProposalRowView && widget.id == pending.id));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
   _scene('proposal_action_approve', (tester) async {
     await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7');
     await press(tester, ProposalActionsBar.primaryKey);
