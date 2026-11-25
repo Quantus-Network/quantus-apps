@@ -1,0 +1,22 @@
+/* What macOS shows for a notification pushed while the app is closed. The
+   push service sends these keys, never text, and the value that fills each.
+   Keep the keys and the words as wallet_core's app_en.arb has them:
+   test/mac_push_strings_test.dart checks it. */
+
+"desktopNotificationReceivedTitle" = "Received %@";
+"desktopNotificationReceivedBody" = "In %@";
+"desktopNotificationIncomingTitle" = "Incoming %@";
+"desktopNotificationIncomingBody" = "Scheduled to arrive in %@";
+
+/* What happens to a multisig's proposal. Where a string takes two values,
+   they are numbered in the order the push service sends them. */
+
+"desktopNotificationProposalNewTitle" = "New proposal";
+"desktopNotificationProposalSignedTitle" = "Proposal signed: %1$@ of %2$@";
+"desktopNotificationProposalReadyTitle" = "Proposal ready to execute";
+"desktopNotificationProposalExecutedTitle" = "Proposal executed";
+"desktopNotificationProposalFailedTitle" = "Proposal execution failed";
+"desktopNotificationProposalCancelledTitle" = "Proposal cancelled";
+"desktopNotificationProposalRemovedTitle" = "Proposal removed";
+"desktopNotificationProposalCreatedBody" = "Send %1$@ from %2$@";
+"desktopNotificationProposalOtherBody" = "In %@";

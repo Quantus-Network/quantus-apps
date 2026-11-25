@@ -73,6 +73,13 @@ class _FakeEncryptedAccountService extends EncryptedAccountService {
   List<String> txHashes = const [];
   bool endsCancelled = false;
 
+  /// The hash of each transaction the operation hands to the chain as it
+  /// starts, before whatever it does next.
+  List<String> submitsAtOnce = const [];
+
+  /// What the operation fails with after those, when it does.
+  Object? failsWith;
+
   @override
   Future<ClaimResult> send({
     required WormholeSpendPlan plan,
@@ -81,6 +88,7 @@ class _FakeEncryptedAccountService extends EncryptedAccountService {
     required ClaimProgressCallback onProgress,
     String? rpcUrl,
     IsCancelledCallback? isCancelled,
+    void Function(String txHash)? onTransactionSubmitted,
   }) async {
     if (!reachedStartup.isCompleted) reachedStartup.complete();
     await startup?.future;
@@ -88,6 +96,11 @@ class _FakeEncryptedAccountService extends EncryptedAccountService {
 
     sentPlans.add(plan);
     if (!started.isCompleted) started.complete();
+    for (final hash in submitsAtOnce) {
+      onTransactionSubmitted?.call(hash);
+    }
+    final failure = failsWith;
+    if (failure != null) throw failure;
     if (runsUntilCancelled) {
       await (_operation = Completer<void>()).future;
       throw const ClaimCancelled();
@@ -290,6 +303,37 @@ void main() {
 
     expect(send.read().phase, EncryptedSendPhase.cancelled);
     expect(send.read().txHashes, ['0xfirst']);
+  });
+
+  test('a send still proving already holds the hash of each transaction it has submitted', () async {
+    final container = await containerWith([Future.value(_state(utxos))]);
+    final send = container.listen(encryptedSendControllerProvider, (_, _) {});
+    service
+      ..submitsAtOnce = const ['0xfirst']
+      ..runsUntilCancelled = true;
+
+    unawaited(start(container));
+    await service.started.future;
+    await pumpEventQueue();
+
+    expect(send.read().phase, EncryptedSendPhase.running);
+    expect(send.read().txHashes, ['0xfirst']);
+
+    await cancel(container);
+    await pumpEventQueue();
+  });
+
+  test('a send that fails after some transactions keeps the hashes of those', () async {
+    final container = await containerWith([Future.value(_state(utxos))]);
+    final send = container.listen(encryptedSendControllerProvider, (_, _) {});
+    service
+      ..submitsAtOnce = const ['0xfirst', '0xsecond']
+      ..failsWith = StateError('2/3 batches were submitted and paid out before this failure');
+
+    await start(container);
+
+    expect(send.read().phase, EncryptedSendPhase.failed);
+    expect(send.read().txHashes, ['0xfirst', '0xsecond']);
   });
 
   test('a cancel once the operation exists goes to the service, and the phase follows the operation', () async {

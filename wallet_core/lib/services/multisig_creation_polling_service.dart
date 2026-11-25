@@ -123,17 +123,28 @@ class MultisigCreationPollingService {
     }
   }
 
+  /// Adds the confirmed [draft] to the multisigs, and only then drops its
+  /// pending record. When it cannot be saved, the record stays for the next
+  /// start to add it.
   Future<void> _confirmCreation(MultisigAccount draft, String key, BigInt networkFee) async {
     final session = _ref.read(walletSessionProvider);
     final ticket = session.ticket;
     stopPolling(key);
-    removePendingMultisigCreation(_ref, key);
 
     final existing = _ref.read(multisigAccountsProvider).value ?? [];
     if (!existing.any((a) => a.accountId == draft.accountId)) {
-      if (!await _ref.read(multisigAccountsProvider.notifier).add(draft)) return;
+      try {
+        if (!await _ref.read(multisigAccountsProvider.notifier).add(draft)) return;
+      } catch (e) {
+        if (!await session.survivesReset(ticket, dropping: 'the failed save of $key')) return;
+        quantusPrint('[MultisigCreationPoller] could not save confirmed $key: $e');
+        _ref.read(telemetryProvider).sendError('multisig_creation_save_failed', error: e);
+        _ref.read(globalToastProvider.notifier).showError(_ref.read(l10nProvider).multisigCreateNotSavedToast);
+        return;
+      }
       _ref.invalidate(discoveredMultisigsProvider);
     }
+    removePendingMultisigCreation(_ref, key);
 
     await reconcileConfirmedMultisigCreation(_ref, draft, networkFee: networkFee);
     if (!await session.survivesReset(ticket, dropping: 'the toast for creating $key')) return;
