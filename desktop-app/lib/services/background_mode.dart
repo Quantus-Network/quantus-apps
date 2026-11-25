@@ -6,8 +6,11 @@ import 'package:flutter/widgets.dart' show AppLifecycleListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/models/status_item_swaps.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
+import 'package:quantus_desktop_wallet/providers/notification_click_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/status_item_swaps_provider.dart';
 import 'package:quantus_desktop_wallet/providers/swaps_in_progress_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
@@ -65,7 +68,12 @@ class BackgroundMode {
 
   BackgroundMode(this._ref) : _window = _ref.read(backgroundWindowProvider), _telemetry = _ref.read(telemetryProvider) {
     if (!supportsBackgroundMode) return;
-    _window.listen(onWillClose: _onCloseButton, onDidOpen: _markOpen);
+    _window.listen(
+      onWillClose: _onCloseButton,
+      onDidOpen: _markOpen,
+      onOpenSwap: ({required swapId, required accountId}) =>
+          _ref.read(notificationClickProvider).openSwap(swapId: swapId, accountId: accountId),
+    );
     final quitRequests = AppLifecycleListener(onExitRequested: _onQuitRequested);
     _ref.onDispose(() {
       quitRequests.dispose();
@@ -76,6 +84,11 @@ class BackgroundMode {
     _ref.listen<StatusItemLabels>(
       statusItemLabelsProvider,
       (_, labels) => unawaited(_reported(_window.configure(labels))),
+      fireImmediately: true,
+    );
+    _ref.listen<StatusItemSwaps>(
+      statusItemSwapsProvider,
+      (_, swaps) => unawaited(_reported(_window.setSwaps(swaps))),
       fireImmediately: true,
     );
     _ref.listen<bool>(keepsRunningProvider, (_, isRunning) {

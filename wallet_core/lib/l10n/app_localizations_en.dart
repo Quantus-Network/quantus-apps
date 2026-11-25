@@ -3578,6 +3578,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopStatusItemSwap(int step, int count) {
+    return 'Swap $step/$count';
+  }
+
+  @override
+  String desktopStatusItemSwapAndMore(int step, int count, int more) {
+    return 'Swap $step/$count +$more';
+  }
+
+  @override
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network) {
+    return '$amount for $foreignAmount on $network';
+  }
+
+  @override
   String get desktopQuitPendingTitle => 'A Transaction Is Still Under Way';
 
   @override

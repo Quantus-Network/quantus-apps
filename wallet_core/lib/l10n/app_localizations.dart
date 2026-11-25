@@ -6404,6 +6404,24 @@ abstract class AppLocalizations {
   /// **'Quit {appName}'**
   String desktopStatusItemQuit(String appName);
 
+  /// Desktop menu bar icon's text while a swap is in progress: the step the swap is on out of how many it has, e.g. Swap 2/4. Keep it short: it sits in the menu bar
+  ///
+  /// In en, this message translates to:
+  /// **'Swap {step}/{count}'**
+  String desktopStatusItemSwap(int step, int count);
+
+  /// Desktop menu bar icon's text while several swaps are in progress: the step the newest swap is on out of how many it has, and how many more swaps are in progress, e.g. Swap 3/4 +1. Keep it short: it sits in the menu bar
+  ///
+  /// In en, this message translates to:
+  /// **'Swap {step}/{count} +{more}'**
+  String desktopStatusItemSwapAndMore(int step, int count, int more);
+
+  /// Desktop menu bar icon's menu: a swap in progress, which opens it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} for {foreignAmount} on {network}'**
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network);
+
   /// Desktop dialog when the person quits while a send or multisig action is still under way: its title
   ///
   /// In en, this message translates to:

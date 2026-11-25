@@ -71,6 +71,18 @@ class NotificationClick {
       _ref.read(telemetryProvider).sendError('desktop_notification_click_unreadable', error: e);
       return;
     }
+    _start(accountId, hash: hash, proposalId: proposalId, swapId: swapId);
+  }
+
+  /// Opens the followed swap [swapId], from [accountId], as a click on its
+  /// notification does: it was picked from the menu bar icon's menu.
+  void openSwap({required String swapId, required String accountId}) {
+    unawaited(const WindowChrome().bringToFront());
+    _start(accountId, hash: null, proposalId: null, swapId: swapId);
+  }
+
+  /// Follows a click on what is about [accountId], in place of any before it.
+  void _start(String accountId, {required String? hash, required String? proposalId, required String? swapId}) {
     _cancelWait?.call();
     final click = Object();
     _current = click;
