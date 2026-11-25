@@ -38,6 +38,16 @@ final activeSwapProvider = Provider.family<ActiveSwap?, String>(
   (ref, id) => ref.watch(activeSwapsProvider.select((swaps) => swaps.firstWhereOrNull((s) => s.id == id))),
 );
 
+/// Whether as many swaps as can be followed are running, so that no other
+/// can start until one of them settles or is put away. A confirmation under
+/// way is not counted here: it is refused as it begins, when the slots are
+/// all taken ([ActiveSwapsNotifier.full]).
+final swapsAtLimitProvider = Provider<bool>(
+  (ref) => ref.watch(
+    activeSwapsProvider.select((swaps) => swaps.where((s) => !s.isFinal).length >= ActiveSwapsNotifier.maxFollowed),
+  ),
+);
+
 class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
   /// The most swaps followed at once: starting another drops the oldest
   /// settled one, and the review refuses when none is settled.

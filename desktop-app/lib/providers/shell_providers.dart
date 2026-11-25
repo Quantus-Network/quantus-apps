@@ -352,13 +352,19 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
 /// The account actions as the menus and their shortcuts offer them. While
 /// navigation asked for earlier is still to finish, the account it ends on
 /// is not known yet, so Receive, Send and Propose are offered whatever the
-/// active account allows, and checked against the account they open on
-/// ([ShellSheetNotifier.open]). The toolbar shows what the active account
-/// offers ([activeAccountActionsProvider]).
+/// active account allows, and Swap too where swaps are offered; each is
+/// checked against the account it opens on ([ShellSheetNotifier.open]). The
+/// toolbar shows what the active account offers
+/// ([activeAccountActionsProvider]).
 final menuAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final actions = ref.watch(activeAccountActionsProvider);
   if (!ref.watch(shellNavigationProvider)) return actions;
-  const whatever = [AccountActionKind.receive, AccountActionKind.send, AccountActionKind.propose];
+  final whatever = [
+    AccountActionKind.receive,
+    AccountActionKind.send,
+    AccountActionKind.propose,
+    if (ref.watch(remoteConfigProvider).swapAvailable) AccountActionKind.swap,
+  ];
   return [
     for (final kind in whatever) AccountAction(kind),
     for (final action in actions)

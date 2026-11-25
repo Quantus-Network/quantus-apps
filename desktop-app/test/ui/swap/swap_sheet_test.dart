@@ -179,6 +179,14 @@ void _putOnClipboard(WidgetTester tester, String text) {
 ProviderContainer _container(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
 
+/// [count] swaps under way from Main, each with a deposit address of its own.
+List<ActiveSwap> _running(int count) => [
+  for (var i = 0; i < count; i++) fakeActiveSwap(depositAddress: '0x${i.toString() * 40}'),
+];
+
+/// The sentence that says no more swaps can run for now.
+final _limitSentence = _l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed);
+
 void main() {
   group('opening', () {
     testOnMac('opens on the form: QTC paid from the account on top, the first token listed below', (tester) async {
@@ -770,25 +778,33 @@ void main() {
       expect(rows.map((row) => row.isSelected), [true, false]);
     });
 
-    testOnMac('with as many swaps running as can be followed, Confirm says so and starts nothing', (tester) async {
-      final running = [
-        for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++)
-          fakeActiveSwap(depositAddress: '0x${i.toString() * 40}'),
-      ];
+    testOnMac('a swap that takes the last place while a review is open: Confirm says the limit and starts nothing, '
+        'and the way back leads to no form', (tester) async {
+      final running = _running(ActiveSwapsNotifier.maxFollowed - 1);
       final chain = FakeSendChain();
       final approval = FakeUserApproval();
-      final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwaps = running;
+      final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount))
+        ..activeSwaps = [...running];
       final swaps = await _openSheet(tester, chain: chain, approval: approval, settings: settings);
       await _openReview(tester);
+      final last = fakeActiveSwap(depositAddress: '0x${'a' * 40}');
+      _container(tester).read(activeSwapsProvider.notifier).start(last);
+      await tester.pumpAndSettle();
+      expect(_key(SwapSheet.confirmKey), findsOneWidget, reason: 'the review stays');
 
       await _press(tester, SwapSheet.confirmKey);
 
-      expect(_text(tester, SwapSheet.noticeKey), _l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
+      expect(_text(tester, SwapSheet.noticeKey), _limitSentence);
       expect(find.byType(SwapSheet), findsOneWidget);
       expect(swaps.created, isEmpty, reason: 'no live order was asked for');
       expect(approval.reasons, isEmpty);
       expect(chain.transfers, isEmpty);
-      expect(settings.activeSwaps.map((s) => s.id), running.map((s) => s.id));
+      expect(settings.activeSwaps.map((s) => s.id), [...running.map((s) => s.id), last.id]);
+
+      await _press(tester, SwapSheet.backKey);
+
+      expect(find.text(_limitSentence), findsOneWidget);
+      expect(_key(SwapSheet.amountFieldKey), findsNothing);
     });
 
     testOnMac('a swap in sends nothing: the sheet gives way to the deposit to make', (tester) async {
@@ -938,6 +954,94 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(find.byType(SwapSheet), findsNothing);
+    });
+  });
+
+  group('with as many swaps running as can be followed', () {
+    FakeSettingsService following(List<ActiveSwap> swaps) =>
+        FakeSettingsService(activeAccount: const RegularAccount(mainAccount))..activeSwaps = swaps;
+
+    testOnMac('Swap opens on the limit, said in place of the form, with Close alone', (tester) async {
+      await _openSheet(tester, settings: following(_running(ActiveSwapsNotifier.maxFollowed)));
+
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(find.text(_limitSentence), findsOneWidget);
+      expect(_key(SwapSheet.closeKey), findsOneWidget);
+      expect(_key(SwapSheet.amountFieldKey), findsNothing);
+      expect(_key(SwapSheet.addressFieldKey), findsNothing);
+      expect(_key(SwapSheet.reviewKey), findsNothing);
+      expect(_key(SwapSheet.tryAgainKey), findsNothing);
+    });
+
+    testOnMac('no quote is asked for meanwhile, and Close closes the sheet with every swap still followed', (
+      tester,
+    ) async {
+      final settings = following(_running(ActiveSwapsNotifier.maxFollowed));
+      final swaps = await _openSheet(tester, settings: settings);
+      await _rest(tester);
+
+      expect(swaps.quoteRequests, isEmpty);
+      expect(swaps.created, isEmpty);
+
+      await _press(tester, SwapSheet.closeKey);
+
+      expect(find.byType(SwapSheet), findsNothing);
+      expect(settings.activeSwaps, hasLength(ActiveSwapsNotifier.maxFollowed));
+    });
+
+    testOnMac('one of them put away while the sheet is open: the form takes the place of the limit', (tester) async {
+      final running = _running(ActiveSwapsNotifier.maxFollowed);
+      await _openSheet(tester, settings: following(running));
+      expect(_key(SwapSheet.amountFieldKey), findsNothing);
+
+      await _container(tester).read(activeSwapsProvider.notifier).remove(running.first.id);
+      await tester.pumpAndSettle();
+
+      expect(find.text(_limitSentence), findsNothing);
+      expect(_key(SwapSheet.amountFieldKey), findsOneWidget);
+      expect(_button(tester, SwapSheet.reviewKey).isDisabled, isFalse);
+    });
+
+    testOnMac('with one fewer running, Swap opens on the form', (tester) async {
+      await _openSheet(tester, settings: following(_running(ActiveSwapsNotifier.maxFollowed - 1)));
+
+      expect(find.text(_limitSentence), findsNothing);
+      expect(_key(SwapSheet.amountFieldKey), findsOneWidget);
+    });
+
+    testOnMac('a swap that has ended takes no place: one fewer running and one complete, Swap opens on the form', (
+      tester,
+    ) async {
+      final complete = fakeActiveSwap(status: SwapStatus.success, depositAddress: '0x${'a' * 40}');
+      await _openSheet(tester, settings: following([..._running(ActiveSwapsNotifier.maxFollowed - 1), complete]));
+
+      expect(find.text(_limitSentence), findsNothing);
+      expect(_key(SwapSheet.amountFieldKey), findsOneWidget);
+    });
+
+    testOnMac('where swaps turn disabled for the location, that is what is said, and not the limit', (tester) async {
+      final config = FakeRemoteConfigService(RemoteConfigModel.defaults);
+      await _openSheet(tester, remoteConfig: config, settings: following(_running(ActiveSwapsNotifier.maxFollowed)));
+      expect(find.text(_limitSentence), findsOneWidget);
+
+      config.remote = swapsNotOffered;
+      unawaited(_container(tester).read(remoteConfigProvider.notifier).syncConfig());
+      await tester.pumpAndSettle();
+
+      expect(_caps(_l10n.swapDisabledTitle), findsOneWidget);
+      expect(find.text(_limitSentence), findsNothing);
+      expect(_key(SwapSheet.amountFieldKey), findsNothing);
+    });
+
+    testOnMac('the limit fits the smallest window', (tester) async {
+      await _openSheet(
+        tester,
+        settings: following(_running(ActiveSwapsNotifier.maxFollowed)),
+        window: const Size(960, 640),
+      );
+
+      expect(find.text(_limitSentence), findsOneWidget);
+      expect(tester.takeException(), isNull);
     });
   });
 
