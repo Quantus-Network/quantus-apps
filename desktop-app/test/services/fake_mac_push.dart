@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:quantus_desktop_wallet/services/mac_push.dart';
+import 'package:quantus_desktop_wallet/services/mac_push_store.dart';
 
 /// Stands in for the Mac's side of pushed notifications: answers as
 /// [environmentOfBuild], [token] and [tokenError] say, and clicks as a person
@@ -52,4 +53,18 @@ class FakeMacPush implements MacPush {
     if (onClick == null) throw StateError('Clicked a pushed notification before the app listened');
     onClick(payload);
   }
+}
+
+/// Keeps what the push service may hold of the Mac in memory, as the file
+/// would across launches: a test hands the same one to the next launch.
+class FakeMacPushStore implements MacPushStore {
+  FakeMacPushStore([this.hold = MacPushHold.none]);
+
+  MacPushHold hold;
+
+  @override
+  Future<MacPushHold> read() async => hold;
+
+  @override
+  Future<void> write(MacPushHold hold) async => this.hold = hold;
 }
