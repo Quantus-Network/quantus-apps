@@ -218,10 +218,7 @@ void main() {
       final (_, session, checked) = await signing(tester);
 
       expect(session.account, coldCreator);
-      expect(
-        (session.primaryLabel, session.primaryDetail),
-        (l10n.keystoneSignActionLabel, 'Create multisig'),
-      );
+      expect((session.primaryLabel, session.primaryDetail), (l10n.keystoneSignActionLabel, 'Create multisig'));
       expect(
         (session.secondaryLabel, session.secondaryDetail, session.secondaryIsAddress),
         (l10n.multisigCreatePredictedAddressLabel, checked.draft.accountId, true),
