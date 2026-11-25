@@ -989,6 +989,36 @@ void main() {
       expectInSheet(tester, _inSheet(find.text('0.6012 QTC')), 'the total on the receipt');
       expectInSheet(tester, _inSheet(find.text('paid')), 'who paid on the receipt');
     });
+
+    testOnMac('with several signers here, a very long name is cut short in the picker and its menu, in the smallest '
+        'window', (tester) async {
+      final name = 'Treasury' * 11;
+      await _openPropose(
+        tester,
+        window: _smallestWindow,
+        member: Account(walletIndex: 0, index: 0, name: name, accountId: 'qzMain'),
+        multisig: MultisigAccount(
+          name: 'Team',
+          accountId: 'qzTeam',
+          signers: const ['qzMain', 'qzSavings'],
+          threshold: 2,
+          nonce: BigInt.zero,
+          myMemberAccountId: 'qzMain',
+        ),
+      );
+
+      await _fill(tester);
+
+      expect(tester.takeException(), isNull, reason: 'the form');
+      expectInSheet(tester, _inSheet(find.text('0.6012 QTC, paid by')), 'the cost on the form');
+      expectInSheet(tester, _inSheet(find.byKey(SendSheet.proposerKey)), 'the picker on the form');
+
+      await _tap(tester, SendSheet.proposerKey);
+
+      expect(tester.takeException(), isNull, reason: 'the open menu');
+      final menu = tester.getRect(find.byKey(PopUpButton.menuKey));
+      expect((menu.left >= 0, menu.right <= _smallestWindow.width), (true, true), reason: 'the menu in the window');
+    });
   });
 
   group('the shortcut', () {

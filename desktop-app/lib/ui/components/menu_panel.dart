@@ -132,7 +132,13 @@ class MenuPanelRow extends StatelessWidget {
                         : null,
                   ),
                   Expanded(
-                    child: Text(label, style: text.body.copyWith(height: 1, color: color)),
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      softWrap: false,
+                      overflow: TextOverflow.ellipsis,
+                      style: text.body.copyWith(height: 1, color: color),
+                    ),
                   ),
                   if (hasSubmenu) ...[
                     const SizedBox(width: 20),

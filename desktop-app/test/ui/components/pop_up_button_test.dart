@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SemanticsAction, SemanticsActionEvent;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -16,6 +17,7 @@ Future<void> _pump(
   List<PopUpItem<String>> items = _items,
   Alignment alignment = Alignment.center,
   Size size = const Size(800, 600),
+  double maxWidth = double.infinity,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -30,11 +32,14 @@ Future<void> _pump(
               alignment: alignment,
               child: Padding(
                 padding: const EdgeInsets.all(8),
-                child: PopUpButton<String>(
-                  semanticLabel: 'Language',
-                  items: items,
-                  value: value,
-                  onSelected: chosen.add,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: PopUpButton<String>(
+                    semanticLabel: 'Language',
+                    items: items,
+                    value: value,
+                    onSelected: chosen.add,
+                  ),
                 ),
               ),
             ),
@@ -217,5 +222,71 @@ void main() {
 
     expect(_menu, findsOneWidget);
     semantics.dispose();
+  });
+
+  group('a label longer than its room', () {
+    final long = 'Treasury' * 11;
+    final items = [PopUpItem('long', long), const PopUpItem('en', 'English')];
+
+    testWidgets('is cut short on one line in the button, the chevrons kept inside it', (tester) async {
+      await _pump(tester, chosen: [], items: items, value: 'long', maxWidth: 200);
+
+      expect(tester.takeException(), isNull);
+      final button = tester.getRect(find.byType(PopUpButton<String>));
+      expect(button.width, lessThanOrEqualTo(200));
+      expect(button.height, 26);
+      final chevrons = tester.getRect(
+        find.descendant(of: find.byType(PopUpButton<String>), matching: find.byType(Icon)),
+      );
+      expect(chevrons.right, lessThanOrEqualTo(button.right));
+      expect(chevrons.center.dy, closeTo(button.center.dy, 0.5));
+      final label = tester.widget<Text>(_inButton(long));
+      expect((label.maxLines, label.overflow), (1, TextOverflow.ellipsis));
+    });
+
+    testWidgets('is cut short on one line in the open menu, inside a narrow window', (tester) async {
+      await _pump(tester, chosen: [], items: items, value: 'en', size: const Size(300, 400), maxWidth: 200);
+
+      await _open(tester);
+
+      expect(tester.takeException(), isNull);
+      final menu = tester.getRect(_menu);
+      expect(menu.left, greaterThanOrEqualTo(0));
+      expect(menu.right, lessThanOrEqualTo(300));
+      expect(
+        tester.getRect(find.ancestor(of: _inMenu(long), matching: find.byType(MenuPanelRow))).height,
+        PopUpButton.rowHeight,
+      );
+      // One line, as high as a short label's.
+      expect(tester.getSize(_inMenu(long)).height, tester.getSize(_inMenu('English')).height);
+    });
+  });
+
+  testWidgets('in a row that sets no width, the button takes its label\'s whole width', (tester) async {
+    tester.view.physicalSize = const Size(800, 600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Theme(
+            data: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
+            child: Scaffold(
+              body: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PopUpButton<String>(semanticLabel: 'Language', items: _items, value: 'id', onSelected: (_) {}),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    final label = tester.getRect(_inButton('Bahasa Indonesia'));
+    final chevrons = tester.getRect(find.descendant(of: find.byType(PopUpButton<String>), matching: find.byType(Icon)));
+    expect(chevrons.left, greaterThanOrEqualTo(label.right));
   });
 }

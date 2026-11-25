@@ -49,6 +49,10 @@ class PopUpButton<T> extends StatefulWidget {
 const double _buttonHeight = 26;
 const double _buttonLabelInset = 10;
 
+// The chevrons after the label, and the gap between them.
+const double _chevronsSize = 11;
+const double _chevronsGap = 8;
+
 // The menu's insets, which are the shared menu panel's.
 const double _menuPadding = MenuPanel.padding;
 
@@ -126,12 +130,34 @@ class _PopUpButtonState<T> extends State<PopUpButton<T>> {
                 height: _buttonHeight,
                 child: Padding(
                   padding: const EdgeInsets.only(left: _buttonLabelInset, right: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  // The label keeps room for the chevrons and is cut short to
+                  // fit where the button has less room than it; a flexible
+                  // label would fail in a row that sets no width.
+                  child: Stack(
+                    alignment: AlignmentDirectional.centerStart,
                     children: [
-                      Text(label, style: text.body.copyWith(height: 1, color: colors.textContent)),
-                      const SizedBox(width: 8),
-                      Icon(CupertinoIcons.chevron_up_chevron_down, size: 11, color: colors.textMuted),
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: _chevronsGap + _chevronsSize),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.body.copyWith(height: 1, color: colors.textContent),
+                        ),
+                      ),
+                      PositionedDirectional(
+                        end: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: Icon(
+                            CupertinoIcons.chevron_up_chevron_down,
+                            size: _chevronsSize,
+                            color: colors.textMuted,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
