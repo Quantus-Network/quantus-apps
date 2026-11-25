@@ -126,6 +126,15 @@ class MultisigActionConfirmState {
 
 bool _cannotPay(BigInt? balance, BigInt? fee) => balance != null && fee != null && balance < fee;
 
+/// Thrown by a hardware signing session instead of broadcasting, when the
+/// signer's account can no longer pay the fee it was signed with.
+class SignerCannotPayFee implements Exception {
+  const SignerCannotPayFee();
+
+  @override
+  String toString() => 'SignerCannotPayFee: the signer\'s account cannot pay the network fee';
+}
+
 sealed class MultisigActionOutcome {
   const MultisigActionOutcome();
 }
@@ -342,6 +351,10 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       ),
       telemetryPrefix: 'multisig_$kind',
       submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+        // What the signer holds can have moved while the Keystone signed.
+        if (_cannotPay(ref.read(effectiveBalanceProviderFamily(signer.accountId)).value, fee)) {
+          throw const SignerCannotPayFee();
+        }
         final submission = ref.read(transactionSubmissionServiceProvider);
         final hash = await switch (request.kind) {
           MultisigActionKind.approve => submission.approveProposalWithExternalSignature(
