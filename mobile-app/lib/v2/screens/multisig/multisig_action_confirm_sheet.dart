@@ -15,6 +15,7 @@ import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
 import 'package:wallet_core/send/keystone_signing_session.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 /// Estimates the network fee for the action being confirmed.
 ///
@@ -298,6 +299,11 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       ),
     );
 
+    // Taken before signing: a signature that comes back after a wallet reset
+    // is the wiped wallet's, and must not go out.
+    final walletSession = ref.read(walletSessionProvider);
+    final ticket = walletSession.ticket;
+
     final session = KeystoneSigningSession(
       account: signer,
       buildCall: () => widget.buildCall(signer, _callBytes),
@@ -305,7 +311,10 @@ class _MultisigActionConfirmSheetState extends ConsumerState<MultisigActionConfi
       secondaryDetail: headline.secondary,
       cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: signer.accountId, identity: widget.hardwareCacheIdentity),
       telemetryPrefix: widget.hardwareTelemetryPrefix,
-      submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) {
+      submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+        if (!walletSession.isCurrent(ticket)) {
+          throw StateError('The wallet was reset before this multisig action was signed');
+        }
         return widget.submitExternal(
           ref,
           signer: signer,
