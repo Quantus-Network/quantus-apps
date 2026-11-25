@@ -10,6 +10,7 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/account_utils.dart';
 
 /// An action on a multisig proposal that this wallet confirms and sends.
@@ -340,6 +341,10 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
   KeystoneSigningSession _hardwareSession(Account signer, String primaryDetail, String? secondaryDetail) {
     final kind = request.kind.name;
     final fee = state.fee;
+    // Taken now: a signature that comes back after the wallet was reset is
+    // for a wallet that is gone, and is not sent.
+    final walletSession = ref.read(walletSessionProvider);
+    final ticket = walletSession.ticket;
     return KeystoneSigningSession(
       account: signer,
       buildCall: _buildCall,
@@ -351,6 +356,9 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       ),
       telemetryPrefix: 'multisig_$kind',
       submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) async {
+        if (!walletSession.isCurrent(ticket)) {
+          throw StateError('The wallet was reset before this ${request.kind.name} was signed');
+        }
         // What the signer holds can have moved while the Keystone signed.
         if (_cannotPay(ref.read(effectiveBalanceProviderFamily(signer.accountId)).value, fee)) {
           throw const SignerCannotPayFee();
