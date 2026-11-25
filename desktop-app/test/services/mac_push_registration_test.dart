@@ -86,6 +86,10 @@ Completer<void>? _holdRegistrations;
 /// How many requests reached Senoti, applied or not yet.
 var _senotiReached = 0;
 
+/// When set, Senoti applies a registration but its answer never arrives: the
+/// connection closes first.
+var _registrationAnswersLost = false;
+
 /// A provider that was invalidated is only rebuilt once its zero-length
 /// timer fires, which a pump without a duration never does.
 Future<void> _settle(WidgetTester tester) async {
@@ -113,11 +117,13 @@ Future<_Mac> _open(
   Completer<void>? holdRegistrations,
   int senotiAnswers = 202,
   FakeMacPushStore? store,
+  bool registrationAnswersLost = false,
 }) async {
   SharedPreferences.setMockInitialValues({});
   _senotiAnswers = senotiAnswers;
   _holdRegistrations = holdRegistrations;
   _senotiReached = 0;
+  _registrationAnswersLost = registrationAnswersLost;
   final senoti = <_Asked>[];
   final telemetry = _RecordingTelemetry();
   final mac = push ?? FakeMacPush();
@@ -145,6 +151,9 @@ Future<_Mac> _open(
               what: '${request.method} ${request.url.path}',
               body: jsonDecode(request.body) as Map<String, dynamic>,
             ));
+            if (request.method == 'POST' && _registrationAnswersLost) {
+              throw http.ClientException('Connection closed before full header was received', request.url);
+            }
             return http.Response('', _senotiAnswers);
           }),
         ),
@@ -499,6 +508,53 @@ void main() {
         _removal,
         {'POST /api/devices': _registration},
       ]);
+    });
+
+    _test('a registration whose answer was lost is removed when notifications are switched off', (tester) async {
+      final mac = await _open(tester, synced: true, registrationAnswersLost: true);
+      expect(mac.telemetry.errors, ['desktop_push_register_failed']);
+
+      await _switchNotifications(mac, on: false);
+      await _settle(tester);
+
+      expect(_asked(mac), [
+        {'POST /api/devices': _registration},
+        _removal,
+      ]);
+    });
+
+    _test('an account flow\'s registration whose answer was lost is removed when notifications are switched off', (
+      tester,
+    ) async {
+      // The sync's own registration failed: it holds nothing yet.
+      final push = FakeMacPush()..tokenError = PlatformException(code: 'token-failed', message: 'no network');
+      final mac = await _open(tester, synced: true, push: push);
+      push.tokenError = null;
+      _registrationAnswersLost = true;
+      await expectLater(
+        mac.container.read(pushRegistrationProvider).registerDevice(),
+        throwsA(isA<http.ClientException>()),
+      );
+
+      await _switchNotifications(mac, on: false);
+      await _settle(tester);
+
+      expect(_asked(mac), [
+        {'POST /api/devices': _registration},
+        _removal,
+      ]);
+    });
+
+    _test('a registration whose answer was lost is removed at the next launch with notifications off', (tester) async {
+      final store = FakeMacPushStore();
+      final before = await _open(tester, synced: true, store: store, registrationAnswersLost: true);
+      expect(_asked(before), [
+        {'POST /api/devices': _registration},
+      ]);
+
+      final after = await _open(tester, synced: true, grants: false, store: store);
+
+      expect(_asked(after), [_removal]);
     });
 
     _test('a Mac that was never registered is not removed when the app starts with notifications off', (tester) async {
