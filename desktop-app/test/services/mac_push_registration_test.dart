@@ -110,9 +110,11 @@ Future<_Mac> _open(
   RemoteConfigModel remoteConfig = RemoteConfigModel.defaults,
   FakeMacPush? push,
   Completer<void>? holdRegistrations,
+  Map<String, bool> stored = const {},
+  int senotiAnswers = 202,
 }) async {
   SharedPreferences.setMockInitialValues({});
-  _senotiAnswers = 202;
+  _senotiAnswers = senotiAnswers;
   _holdRegistrations = holdRegistrations;
   _senotiReached = 0;
   final senoti = <_Asked>[];
@@ -123,7 +125,8 @@ Future<_Mac> _open(
     overrides: [
       ...shellOverrides(
         loadAccounts: () async => [...held],
-        settings: _Settings(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs ?? [teamMultisig]),
+        settings: _Settings(activeAccount: const RegularAccount(mainAccount), multisigs: multisigs ?? [teamMultisig])
+          ..bools.addAll(stored),
         remoteConfig: FakeRemoteConfigService(remoteConfig),
       ),
       notificationPluginProvider.overrideWithValue(FakeNotificationPlugin(grants: grants)),
@@ -166,6 +169,11 @@ Future<void> _switchNotifications(_Mac mac, {required bool on}) {
   final config = mac.container.read(notificationConfigProvider);
   return mac.container.read(notificationConfigProvider.notifier).updateConfig(config.copyWith(enabled: on));
 }
+
+const _registeredKey = MacPushRegistration.registeredKey;
+
+/// The account lists read again, as they are: the sync looks again.
+void _accountsChanged(_Mac mac) => mac.container.invalidate(accountsProvider);
 
 /// A reset as `LogoutService` runs one: the Mac is removed, unawaited, while
 /// the wallet is wiped.
@@ -402,6 +410,67 @@ void main() {
       await _settle(tester);
 
       expect(mac.senoti.map((asked) => asked.what), ['POST /api/devices', 'DELETE /api/devices', 'POST /api/devices']);
+    });
+
+    _test('a removal that fails is tried again at the next change, until it goes through', (tester) async {
+      final mac = await _open(tester, synced: true);
+      _senotiAnswers = 500;
+      await _switchNotifications(mac, on: false);
+      await _settle(tester);
+
+      _senotiAnswers = 202;
+      _accountsChanged(mac);
+      await _settle(tester);
+      _accountsChanged(mac);
+      await _settle(tester);
+
+      expect(mac.senoti.map((asked) => asked.what), [
+        'POST /api/devices',
+        'DELETE /api/devices',
+        'DELETE /api/devices',
+      ]);
+    });
+
+    _test('a Mac an earlier run left registered is removed when the app starts with notifications off', (tester) async {
+      final mac = await _open(tester, synced: true, grants: false, stored: {_registeredKey: true});
+
+      expect(_asked(mac), [_removal]);
+    });
+
+    _test('a Mac that was never registered is not removed when the app starts with notifications off', (tester) async {
+      final mac = await _open(tester, synced: true, grants: false);
+
+      expect(mac.senoti, isEmpty);
+      expect(mac.push.tokenRequests, 0);
+    });
+
+    _test('a registration that fails is tried again at the next change, though the addresses are the same', (
+      tester,
+    ) async {
+      final push = FakeMacPush()..tokenError = PlatformException(code: 'token-failed', message: 'no network');
+      final mac = await _open(tester, synced: true, push: push);
+      expect(mac.senoti, isEmpty);
+
+      push.tokenError = null;
+      _accountsChanged(mac);
+      await _settle(tester);
+      _accountsChanged(mac);
+      await _settle(tester);
+
+      expect(_asked(mac), [
+        {'POST /api/devices': _registration},
+      ], reason: 'once registered, the same addresses are not sent again');
+    });
+
+    _test('a registration Senoti refuses is tried again at the next change', (tester) async {
+      final mac = await _open(tester, synced: true, senotiAnswers: 500);
+      expect(mac.senoti.map((asked) => asked.what), ['POST /api/devices']);
+      _senotiAnswers = 202;
+
+      _accountsChanged(mac);
+      await _settle(tester);
+
+      expect(mac.senoti.map((asked) => asked.what), ['POST /api/devices', 'POST /api/devices']);
     });
 
     _test('registers again when the wallet gains an account, and not when nothing changed', (tester) async {
