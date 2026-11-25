@@ -383,6 +383,61 @@ void main() {
       expect(_opened(container), OpenedTransaction(row));
     });
 
+    for (final multisig in [false, true]) {
+      final who = multisig ? 'multisig' : 'account';
+      testOnMac('a transfer the open $who received while an older page of its activity loads: it is read again', (
+        tester,
+      ) async {
+        final accountId = multisig ? teamMultisig.accountId : mainAccount.accountId;
+        final row = TransferEvent(
+          id: 'received',
+          from: 'qzAlice',
+          to: accountId,
+          amount: oneToken,
+          timestamp: _when,
+          fee: BigInt.zero,
+          extrinsicHash: _hash,
+          blockNumber: 10,
+          blockHash: '0xblock',
+        );
+        final older = [_transfer(hash: '0xolder', id: 'older')];
+        final oldest = [_transfer(hash: '0xoldest', id: 'oldest')];
+        final notifications = FakeNotificationPlugin();
+        // The list asks for its next page by itself while it does not fill
+        // the panel: that read is held.
+        final page = Completer<void>();
+        final chain = FakeSendChain()
+          ..historyPages = [older, oldest]
+          ..holdHistoryPages[1] = page;
+        final container = await _openWallet(
+          tester,
+          notifications,
+          chain: chain,
+          multisigs: multisig ? [teamMultisig] : const [],
+        );
+        if (multisig) {
+          notifications.click(_about(teamMultisig.accountId));
+          await tester.pumpAndSettle();
+        }
+        expect(_activeAccountId(container), accountId);
+        expect(chain.historyReads.sublist(chain.historyReads.length - 2), [0, 1], reason: 'the older page is loading');
+        chain.historyReads.clear();
+        chain.historyPages = [
+          [row, ...older],
+          oldest,
+        ];
+
+        notifications.click(_aboutTransaction(accountId));
+        await tester.pump(const Duration(milliseconds: 100));
+        page.complete();
+        await tester.pumpAndSettle();
+
+        expect(_opened(container), OpenedTransaction(row));
+        // Then the list, short again, asks for its next page by itself.
+        expect(chain.historyReads.first, 0, reason: 'the first page is read once the older one is in');
+      });
+    }
+
     testOnMac('a created proposal, from Open Proposals of its multisig', (tester) async {
       final proposal = _proposal();
       final notifications = FakeNotificationPlugin();

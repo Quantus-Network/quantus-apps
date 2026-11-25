@@ -676,6 +676,9 @@ class FakeSendChain {
   /// When set, every read of history waits for it.
   Completer<void>? holdHistory;
 
+  /// The pages of history whose reads wait for their completer.
+  final holdHistoryPages = <int, Completer<void>>{};
+
   /// When set, a read of history fails with this.
   Object? historyError;
 
@@ -922,6 +925,7 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
     final page = otherAfter == null ? 0 : int.parse(otherAfter.id);
     chain.historyReads.add(page);
     await chain.holdHistory?.future;
+    await chain.holdHistoryPages[page]?.future;
     if (chain.historyError case final error?) throw error;
     if (chain.failingHistoryPages.contains(page)) throw StateError('page $page could not be read');
     final pages = chain.historyPages;
