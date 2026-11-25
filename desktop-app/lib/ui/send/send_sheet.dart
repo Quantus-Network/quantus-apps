@@ -850,11 +850,14 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ? null
         : l10n.desktopProposeCostNotCovered(signer.name);
     // Beside the buttons: what stops the send, or why the last press sent
-    // nothing.
-    final problem =
-        _amountProblem(l10n, review.amountStatus, fee: review.fee) ??
-        costProblem ??
-        (review.feeFailed ? strings.feeFetchFailedMessage : _error);
+    // nothing. Nothing while it goes out: the wallet holds what it spends
+    // back from the account before it is broadcast, so the account reads as
+    // too short for it until the receipt opens.
+    final problem = _isSending
+        ? null
+        : _amountProblem(l10n, review.amountStatus, fee: review.fee) ??
+              costProblem ??
+              (review.feeFailed ? strings.feeFetchFailedMessage : _error);
 
     return [
       const SizedBox(height: 26),
