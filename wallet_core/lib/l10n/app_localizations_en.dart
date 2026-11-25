@@ -419,6 +419,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
 
   @override
+  String get multisigProposalStateUnreadNote =>
+      'Could not check where this proposal stands now, so nothing can be done with it here. Try again when you are back online.';
+
+  @override
   String get multisigProposalInvalid => 'Invalid proposal';
 
   @override
