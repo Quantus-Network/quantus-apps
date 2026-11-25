@@ -432,7 +432,14 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
       if (primary != null)
         _Detail(
           label: session.primaryLabel ?? l10n.sendReviewAmount,
-          child: Text(primary, style: context.themeTextV3.amountRow.copyWith(color: context.colorsV3.textContent)),
+          child: Text(
+            primary,
+            // An amount reads as a figure; words, such as a whole balance or
+            // an action, read as running text.
+            style: session.primaryIsAmount
+                ? context.themeTextV3.amountRow.copyWith(color: context.colorsV3.textContent)
+                : context.sendBody(color: context.colorsV3.textContent),
+          ),
         ),
       if (secondary != null)
         _Detail(
@@ -461,7 +468,11 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (final (index, detail) in _details(context, l10n).indexed)
-              if (index == 0) SizedBox(width: 110, child: detail) else Expanded(child: detail),
+              if (index == 0)
+                // Words, such as a whole balance, get the room to stay on a line or two.
+                SizedBox(width: widget.session.primaryIsAmount ? 110 : 200, child: detail)
+              else
+                Expanded(child: detail),
           ],
         ),
       ),

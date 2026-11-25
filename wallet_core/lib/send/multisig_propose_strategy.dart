@@ -246,6 +246,7 @@ class MultisigProposeStrategy extends SendStrategy {
             fmt.formatBalance(amount, smartDecimals: 4),
             AppConstants.tokenSymbol,
           ),
+          primaryIsAmount: true,
           secondaryDetail: recipient,
           secondaryIsAddress: true,
           cacheKey: _hardwareCacheKey(signer, recipient: recipient, amount: amount, expiryBlock: breakdown.expiryBlock),
