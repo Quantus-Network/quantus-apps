@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +18,9 @@ import 'package:quantus_desktop_wallet/ui/components/summary_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/utility.dart' as utility_pallet;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
@@ -473,6 +478,47 @@ void main() {
       await _openRow(tester, 'proposal-executed');
 
       expect(_inPanel(find.text(_l10n.multisigStatusExecuted)), findsOne);
+    });
+
+    testOnMac('a batch names each call in it, so two transfers of the same amount to the same account tell apart', (
+      tester,
+    ) async {
+      final dest = multi_address.MultiAddress.values.id(Uint8List.fromList(List.filled(32, 0xBB)));
+      final batch = Uint8List.fromList(
+        const utility_pallet.Txs()
+            .batchAll(
+              calls: [
+                const balances_pallet.Txs().transferAllowDeath(dest: dest, value: oneToken),
+                const balances_pallet.Txs().transferKeepAlive(dest: dest, value: oneToken),
+              ],
+            )
+            .encode(),
+      );
+      final open = MultisigProposal(
+        entityId: 'batch',
+        id: 4,
+        multisigAddress: teamMultisig.accountId,
+        proposer: _bob,
+        createdAt: _now.subtract(const Duration(hours: 2)),
+        updatedAt: _now.subtract(const Duration(hours: 2)),
+        pallet: 'Utility',
+        call: 'batch_all',
+        recipient: '',
+        amount: BigInt.zero,
+        callRaw: batch,
+        expiryBlock: 1284220,
+        approvals: const ['qzMain'],
+        deposit: oneToken,
+        status: MultisigProposalStatus.active,
+        threshold: teamMultisig.threshold,
+        signerCount: teamMultisig.signers.length,
+      );
+      expect(open.hasUndecodableCall, isFalse);
+
+      await openOnly(tester, open);
+
+      expect(_inPanel(find.text('Balances · transfer_allow_death')), findsOne);
+      expect(_inPanel(find.text('Balances · transfer_keep_alive')), findsOne);
     });
 
     testOnMac('one that moves nothing is headed by its call in words, its pallet beside the date, and its fields as '
