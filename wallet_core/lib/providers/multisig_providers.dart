@@ -16,11 +16,15 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     _load();
   }
 
+  /// A list replaced while it loads answers no one: the one that replaced it
+  /// loads for itself.
   Future<void> _load() async {
     try {
       final accounts = await _settingsService.getMultisigAccounts();
+      if (!mounted) return;
       state = AsyncValue.data(accounts);
     } catch (e, st) {
+      if (!mounted) return;
       quantusPrint('multisig accounts load error: $e $st');
       state = AsyncValue.error(e, st);
     }
@@ -123,21 +127,31 @@ void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
   ref.invalidate(multisigCurrentBlockProvider);
 }
 
-/// As [invalidateMultisigProposals], and waits until the open proposals are
-/// read again: what stands for an action under way goes only once the list
-/// shows what it did, or that action is offered again in between. A read
-/// that fails is logged, and the list says so itself.
+/// As [invalidateMultisigProposals], and waits until the open and the past
+/// proposals are read again: what stands for an action under way goes only
+/// once the lists show what it did, or that action is offered again in
+/// between. A proposal it ended leaves the open list and is found among the
+/// past only once those are in. A read that fails is logged, and the list
+/// says so itself.
 Future<void> rereadMultisigProposals(Ref ref, MultisigAccount msig) async {
-  final open = multisigOpenProposalsProvider(msig);
+  final lists = {'open': multisigOpenProposalsProvider(msig), 'past': multisigPastProposalsProvider(msig)};
   invalidateMultisigProposals(ref, msig);
-  // Kept while it is read, though nothing may be watching it.
-  final kept = ref.listen(open, (_, _) {});
+  // Kept while they are read, though nothing may be watching them.
+  final kept = [for (final list in lists.values) ref.listen(list, (_, _) {})];
   try {
-    await ref.read(open.future);
-  } catch (e) {
-    quantusPrint('[Multisig] open proposals of ${msig.accountId} not read again: $e');
+    await Future.wait([
+      for (final MapEntry(key: name, value: list) in lists.entries)
+        ref
+            .read(list.future)
+            .then<void>(
+              (_) {},
+              onError: (Object e) => quantusPrint('[Multisig] $name proposals of ${msig.accountId} not read again: $e'),
+            ),
+    ]);
   } finally {
-    kept.close();
+    for (final subscription in kept) {
+      subscription.close();
+    }
   }
 }
 

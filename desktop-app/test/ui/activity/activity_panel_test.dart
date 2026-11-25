@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
@@ -30,20 +31,23 @@ import '../../fakes.dart';
 final _l10n = lookupAppLocalizations(const Locale('en'));
 final _now = DateTime.now();
 
-TransferEvent _transfer(String id, {required String from, required String to, required Duration ago}) => TransferEvent(
-  id: id,
-  from: from,
-  to: to,
-  amount: oneToken * BigInt.from(5),
-  timestamp: _now.subtract(ago),
-  fee: FakeSendChain.usualFee,
-  extrinsicHash: '0x$id',
-  blockNumber: 1,
-  blockHash: '0xblock',
-);
+TransferEvent _transfer(String id, {required String from, required String to, required Duration ago, DateTime? now}) =>
+    TransferEvent(
+      id: id,
+      from: from,
+      to: to,
+      amount: oneToken * BigInt.from(5),
+      timestamp: (now ?? _now).subtract(ago),
+      fee: FakeSendChain.usualFee,
+      extrinsicHash: '0x$id',
+      blockNumber: 1,
+      blockHash: '0xblock',
+    );
 
-TransferEvent _sent(String id, Duration ago) => _transfer(id, from: 'qzMain', to: 'qzBob', ago: ago);
-TransferEvent _received(String id, Duration ago) => _transfer(id, from: 'qzBob', to: 'qzMain', ago: ago);
+TransferEvent _sent(String id, Duration ago, {DateTime? now}) =>
+    _transfer(id, from: 'qzMain', to: 'qzBob', ago: ago, now: now);
+TransferEvent _received(String id, Duration ago, {DateTime? now}) =>
+    _transfer(id, from: 'qzBob', to: 'qzMain', ago: ago, now: now);
 
 ProviderContainer _container(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
@@ -86,25 +90,30 @@ List<String> _rowsIn(WidgetTester tester, Type panel) => [
 
 void main() {
   testOnMac('settled activity is listed under its days, in capitals, newest first', (tester) async {
-    final chain = FakeSendChain()
-      ..historyPages = [
-        [
-          _received('today', const Duration(minutes: 5)),
-          _sent('yesterday', const Duration(days: 1)),
-          _received('older', const Duration(days: 9)),
-        ],
-      ];
-    await _open(tester, chain: chain);
+    // Just after midnight, where something minutes old can be yesterday's. In
+    // June, so no time zone changes its clocks on either day.
+    final now = DateTime(2026, 6, 10, 0, 3);
+    await withClock(Clock.fixed(now), () async {
+      final chain = FakeSendChain()
+        ..historyPages = [
+          [
+            _received('today', const Duration(minutes: 2), now: now),
+            _sent('yesterday', const Duration(days: 1), now: now),
+            _received('older', const Duration(days: 9), now: now),
+          ],
+        ];
+      await _open(tester, chain: chain);
 
-    expect(_rowsIn(tester, ActivityPanel), ['today', 'yesterday', 'older']);
-    final headings = [_l10n.activityDateToday, _l10n.activityDateYesterday];
-    for (final heading in headings) {
-      expect(find.descendant(of: find.byType(ActivityPanel), matching: find.text(heading.toUpperCase())), findsOne);
-    }
-    expect(
-      tester.getTopLeft(find.text('TODAY')).dy,
-      lessThan(tester.getTopLeft(find.byType(ActivityRowView).first).dy),
-    );
+      expect(_rowsIn(tester, ActivityPanel), ['today', 'yesterday', 'older']);
+      final headings = [_l10n.activityDateToday, _l10n.activityDateYesterday];
+      for (final heading in headings) {
+        expect(find.descendant(of: find.byType(ActivityPanel), matching: find.text(heading.toUpperCase())), findsOne);
+      }
+      expect(
+        tester.getTopLeft(find.text('TODAY')).dy,
+        lessThan(tester.getTopLeft(find.byType(ActivityRowView).first).dy),
+      );
+    });
   });
 
   testOnMac('what is under way is in the In progress panel, in the phone\'s order, and not in Activity', (

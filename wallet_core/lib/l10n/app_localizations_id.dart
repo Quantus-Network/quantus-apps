@@ -12,10 +12,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Bermasalah';
 
   @override
-  String get walletInitErrorMessage => 'Gagal mencari secret phrase. Coba pulihkan wallet anda.';
+  String get walletInitErrorMessage => 'Tidak dapat membaca recovery phrase Anda dari perangkat ini.';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
+  String get walletInitErrorRemoveWallet => 'Hapus Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Hapus Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Hapus semua wallet dari perangkat ini?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'Ini tidak dapat dibatalkan.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Hapus';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk mengakses wallet';
@@ -302,6 +314,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get multisigCreateTimeoutToast =>
       'Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
+
+  @override
+  String get multisigCreateNotSavedToast =>
+      'Multisig Anda telah dibuat, tetapi tidak dapat disimpan di perangkat ini. Mulai ulang aplikasi untuk menambahkannya.';
 
   @override
   String get multisigCreateAuthReason => 'Autentikasi untuk membuat multisig ini';
@@ -913,35 +929,35 @@ class AppLocalizationsId extends AppLocalizations {
   String get innerHashLoadError => 'Gagal memuat inner hash';
 
   @override
-  String get addKeystoneAppBarTitle => 'Add Cold Wallet';
+  String get addKeystoneAppBarTitle => 'Tambah Cold Wallet';
 
   @override
   String get addKeystoneIntroTitle => 'Cold Wallet';
 
   @override
   String get addKeystoneIntroSubtitle =>
-      'An air-gapped wallet that talks to this app only through QR codes. Keys never leave the device.';
+      'Dompet air-gapped yang terhubung ke aplikasi ini hanya melalui kode QR. Kunci tidak pernah meninggalkan perangkat.';
 
   @override
-  String get addKeystoneConnectButton => 'Connect Cold Wallet';
+  String get addKeystoneConnectButton => 'Hubungkan Cold Wallet';
 
   @override
-  String get addKeystoneConnectTitle => 'Connect Cold Wallet';
+  String get addKeystoneConnectTitle => 'Hubungkan Cold Wallet';
 
   @override
-  String get addKeystoneConnectSubtitle => 'Scan your device\'s QR code to connect.';
+  String get addKeystoneConnectSubtitle => 'Pindai kode QR perangkat Anda untuk menghubungkan.';
 
   @override
-  String get addKeystoneOnYourKeystone => 'ON YOUR COLD WALLET';
+  String get addKeystoneOnYourKeystone => 'DI COLD WALLET ANDA';
 
   @override
-  String get addKeystoneStepUnlock => 'Unlock your cold wallet';
+  String get addKeystoneStepUnlock => 'Buka kunci cold wallet Anda';
 
   @override
-  String get addKeystoneStepSelectQuantus => 'Show your account QR code';
+  String get addKeystoneStepSelectQuantus => 'Tampilkan kode QR akun Anda';
 
   @override
-  String get addKeystoneReadyToScan => 'Ready to Scan';
+  String get addKeystoneReadyToScan => 'Siap Memindai';
 
   @override
   String get invalidAddress => 'Alamat tidak valid';
@@ -1045,57 +1061,57 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendTxSubmittedDone => 'Selesai';
 
   @override
-  String get keystoneSignScreenTitle => 'Sign with Cold Wallet';
+  String get keystoneSignScreenTitle => 'Tanda Tangani dengan Cold Wallet';
 
   @override
   String keystoneSignStep(int current, int total) {
-    return 'STEP $current/$total';
+    return 'LANGKAH $current/$total';
   }
 
   @override
   String get keystoneSignTitle => 'Pindai dengan cold wallet Anda';
 
   @override
-  String get keystoneSignInstruction => 'Open your cold wallet and scan this QR code to load the transaction.';
+  String get keystoneSignInstruction => 'Buka cold wallet Anda dan pindai kode QR ini untuk memuat transaksi.';
 
   @override
-  String get keystoneSignActionLabel => 'ACTION';
+  String get keystoneSignActionLabel => 'TINDAKAN';
 
   @override
-  String get keystoneSignYouAreSigning => 'YOU ARE SIGNING';
+  String get keystoneSignYouAreSigning => 'ANDA MENANDATANGANI';
 
   @override
-  String get keystoneSignNext => 'Continue to Sign';
+  String get keystoneSignNext => 'Lanjut ke Tanda Tangan';
 
   @override
-  String get keystoneSignCancel => 'Cancel Transaction';
+  String get keystoneSignCancel => 'Batalkan Transaksi';
 
   @override
   String get keystoneSignError => 'Gagal menyiapkan transaksi. Silakan coba lagi.';
 
   @override
-  String get keystoneVerifyTitle => 'Check your Cold Wallet Screen';
+  String get keystoneVerifyTitle => 'Periksa Layar Cold Wallet Anda';
 
   @override
   String get keystoneVerifyInstruction =>
-      'Before approving on your cold wallet, make sure its screen shows exactly this:';
+      'Sebelum menyetujui di cold wallet Anda, pastikan layarnya menampilkan persis ini:';
 
   @override
   String get keystoneVerifyWarning =>
-      'If the amount or address on your cold wallet screen is different from what\'s shown here, reject the transaction on your device.';
+      'Jika jumlah atau alamat di layar cold wallet Anda berbeda dari yang ditampilkan di sini, tolak transaksi di perangkat Anda.';
 
   @override
-  String get keystoneVerifyMismatch => 'It doesn\'t match';
+  String get keystoneVerifyMismatch => 'Tidak cocok';
 
   @override
-  String get keystoneScanTitle => 'Scan the signature';
+  String get keystoneScanTitle => 'Pindai tanda tangan';
 
   @override
   String get keystoneScanInstruction =>
-      'Your cold wallet is now showing an animated QR. Hold your phone up to it, this takes a moment.';
+      'Cold wallet Anda sekarang menampilkan QR animasi. Arahkan ponsel Anda ke sana, ini memerlukan beberapa saat.';
 
   @override
-  String get keystoneScanReceiving => 'RECEIVING SIGNATURE';
+  String get keystoneScanReceiving => 'MENERIMA TANDA TANGAN';
 
   @override
   String get keystoneScanSubmitting => 'Mengirim transaksi...';
@@ -1108,28 +1124,30 @@ class AppLocalizationsId extends AppLocalizations {
       'Transaksi kedaluwarsa sebelum sempat dikirim. Kembali dan pindai kode QR baru dengan perangkat Anda.';
 
   @override
-  String get keystoneRejectTitle => 'Don\'t approve this transaction';
+  String get keystoneRejectTitle => 'Jangan setujui transaksi ini';
 
   @override
-  String get keystoneRejectStep1Title => 'Reject the transaction on your cold wallet.';
+  String get keystoneRejectStep1Title => 'Tolak transaksi di cold wallet Anda.';
 
   @override
-  String get keystoneRejectStep1Body => 'Nothing is signed or sent until you approve there.';
+  String get keystoneRejectStep1Body => 'Tidak ada yang ditandatangani atau dikirim sampai Anda menyetujuinya di sana.';
 
   @override
-  String get keystoneRejectStep2Title => 'Don\'t retry from this phone.';
+  String get keystoneRejectStep2Title => 'Jangan coba lagi dari ponsel ini.';
 
   @override
-  String get keystoneRejectStep2Body => 'If it\'s compromised, retrying gives the attacker another chance.';
+  String get keystoneRejectStep2Body =>
+      'Jika ponsel ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.';
 
   @override
-  String get keystoneRejectStep3Title => 'Your funds are safe on the cold wallet.';
+  String get keystoneRejectStep3Title => 'Dana Anda aman di cold wallet.';
 
   @override
-  String get keystoneRejectStep3Body => 'Keys never left the device. Move to a trusted phone before sending again.';
+  String get keystoneRejectStep3Body =>
+      'Kunci tidak pernah meninggalkan perangkat. Pindah ke ponsel tepercaya sebelum mengirim lagi.';
 
   @override
-  String get keystoneRejectConfirm => 'I rejected it on the cold wallet';
+  String get keystoneRejectConfirm => 'Saya sudah menolaknya di cold wallet';
 
   @override
   String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
@@ -3297,6 +3315,26 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationReceivedTitle(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String desktopNotificationReceivedBody(String account) {
+    return 'Di $account';
+  }
+
+  @override
+  String desktopNotificationIncomingTitle(String amount) {
+    return '$amount akan masuk';
+  }
+
+  @override
+  String desktopNotificationIncomingBody(String account) {
+    return 'Dijadwalkan masuk ke $account';
+  }
+
+  @override
   String get desktopNotificationSendNotConfirmedTitle => 'Pengiriman belum terkonfirmasi';
 
   @override
@@ -3318,6 +3356,34 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String desktopNotificationProposalCreatedBody(String amount, String multisig) {
     return 'Kirim $amount dari $multisig';
+  }
+
+  @override
+  String get desktopNotificationProposalNewTitle => 'Proposal baru';
+
+  @override
+  String desktopNotificationProposalSignedTitle(int count, int threshold) {
+    return 'Proposal ditandatangani: $count dari $threshold';
+  }
+
+  @override
+  String get desktopNotificationProposalReadyTitle => 'Proposal siap dieksekusi';
+
+  @override
+  String get desktopNotificationProposalExecutedTitle => 'Proposal dieksekusi';
+
+  @override
+  String get desktopNotificationProposalFailedTitle => 'Eksekusi proposal gagal';
+
+  @override
+  String get desktopNotificationProposalCancelledTitle => 'Proposal dibatalkan';
+
+  @override
+  String get desktopNotificationProposalRemovedTitle => 'Proposal dihapus';
+
+  @override
+  String desktopNotificationProposalOtherBody(String multisig) {
+    return 'Di $multisig';
   }
 
   @override
@@ -3419,6 +3485,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopMenuConnectColdWallet => 'Hubungkan Cold Wallet…';
+
+  @override
+  String get desktopColdWalletAddAccountTitle => 'Tambah Akun Cold Wallet';
 
   @override
   String get desktopColdWalletStepHold => 'Arahkan ke kamera ini';

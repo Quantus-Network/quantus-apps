@@ -3,13 +3,29 @@
     "@walletInitErrorTitle": {
       "description": "Title for the error dialog when the wallet is not found"
     },
-    "walletInitErrorMessage": "Unable to find secret phrase. Please restore your wallet.",
+    "walletInitErrorMessage": "Unable to read your recovery phrase from this device.",
     "@walletInitErrorMessage": {
-      "description": "Message for the error dialog when the wallet is not found"
+      "description": "Message for the error dialog when the wallet's recovery phrase cannot be read at start"
     },
-    "walletInitErrorButtonLabel": "OK",
-    "@walletInitErrorButtonLabel": {
-      "description": "Label for the button on the error dialog when the wallet is not found"
+    "walletInitErrorRemoveWallet": "Remove Wallet",
+    "@walletInitErrorRemoveWallet": {
+      "description": "Phone: on the error sheet when the recovery phrase cannot be read, the button that asks to remove every wallet from the device"
+    },
+    "desktopWalletInitErrorRemoveWallet": "Remove Wallet…",
+    "@desktopWalletInitErrorRemoveWallet": {
+      "description": "Desktop: on the error dialog when the recovery phrase cannot be read, the button that asks to remove every wallet from the device"
+    },
+    "walletInitErrorRemoveTitle": "Remove all wallets from this device?",
+    "@walletInitErrorRemoveTitle": {
+      "description": "Title of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read"
+    },
+    "walletInitErrorRemoveBody": "This cannot be undone.",
+    "@walletInitErrorRemoveBody": {
+      "description": "Body of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read"
+    },
+    "walletInitErrorRemoveConfirm": "Remove",
+    "@walletInitErrorRemoveConfirm": {
+      "description": "The button that removes every wallet from the device, on the confirmation asked from the error dialog"
     },
     "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
     "@authUseDeviceBiometricsToUnlock": {
@@ -401,6 +417,10 @@
     "multisigCreateTimeoutToast": "Multisig creation is taking longer than expected. Check the chain or try again.",
     "@multisigCreateTimeoutToast": {
       "description": "Toast when on-chain confirmation polling times out"
+    },
+    "multisigCreateNotSavedToast": "Your multisig was created, but it could not be saved on this device. Restart the app to add it.",
+    "@multisigCreateNotSavedToast": {
+      "description": "Toast when a multisig is confirmed on chain but storing it on this device fails; the next start adds it"
     },
     "multisigCreateAuthReason": "Authenticate to create this multisig",
     "@multisigCreateAuthReason": {
@@ -4775,6 +4795,42 @@
         }
       }
     },
+    "desktopNotificationReceivedTitle": "Received {amount}",
+    "@desktopNotificationReceivedTitle": {
+      "description": "Desktop notification title: a transfer from outside the wallet arrived in one of its accounts; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationReceivedBody": "In {account}",
+    "@desktopNotificationReceivedBody": {
+      "description": "Desktop notification body: the account the received transfer arrived in",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationIncomingTitle": "Incoming {amount}",
+    "@desktopNotificationIncomingTitle": {
+      "description": "Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationIncomingBody": "Scheduled to arrive in {account}",
+    "@desktopNotificationIncomingBody": {
+      "description": "Desktop notification body: the account the scheduled reversible transfer will arrive in",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
     "desktopNotificationSendNotConfirmedTitle": "Send not confirmed",
     "@desktopNotificationSendNotConfirmedTitle": {
       "description": "Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it"
@@ -4818,6 +4874,51 @@
         "amount": {
           "type": "String"
         },
+        "multisig": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationProposalNewTitle": "New proposal",
+    "@desktopNotificationProposalNewTitle": {
+      "description": "Desktop notification title: another signer proposed something in a multisig of the wallet"
+    },
+    "desktopNotificationProposalSignedTitle": "Proposal signed: {count} of {threshold}",
+    "@desktopNotificationProposalSignedTitle": {
+      "description": "Desktop notification title: another signer approved a proposal that still needs more approvals; count is the approvals it has now, threshold how many it needs",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "threshold": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopNotificationProposalReadyTitle": "Proposal ready to execute",
+    "@desktopNotificationProposalReadyTitle": {
+      "description": "Desktop notification title: another signer gave the approval a proposal still needed, so it can now be executed"
+    },
+    "desktopNotificationProposalExecutedTitle": "Proposal executed",
+    "@desktopNotificationProposalExecutedTitle": {
+      "description": "Desktop notification title: another signer executed a proposal and what it proposed went through"
+    },
+    "desktopNotificationProposalFailedTitle": "Proposal execution failed",
+    "@desktopNotificationProposalFailedTitle": {
+      "description": "Desktop notification title: another signer executed a proposal and what it proposed failed on the chain"
+    },
+    "desktopNotificationProposalCancelledTitle": "Proposal cancelled",
+    "@desktopNotificationProposalCancelledTitle": {
+      "description": "Desktop notification title: another signer cancelled a proposal"
+    },
+    "desktopNotificationProposalRemovedTitle": "Proposal removed",
+    "@desktopNotificationProposalRemovedTitle": {
+      "description": "Desktop notification title: another signer removed a proposal that had expired"
+    },
+    "desktopNotificationProposalOtherBody": "In {multisig}",
+    "@desktopNotificationProposalOtherBody": {
+      "description": "Desktop notification body for a proposal that is not a transfer: the multisig it is in",
+      "placeholders": {
         "multisig": {
           "type": "String"
         }
@@ -4978,6 +5079,10 @@
     "desktopMenuConnectColdWallet": "Connect Cold Wallet…",
     "@desktopMenuConnectColdWallet": {
       "description": "Desktop: the item that opens the Connect Cold Wallet sheet, in the Account menu and the sidebar's Add Account menu"
+    },
+    "desktopColdWalletAddAccountTitle": "Add Cold Wallet Account",
+    "@desktopColdWalletAddAccountTitle": {
+      "description": "Desktop Connect Cold Wallet sheet: its title when the app already has a cold wallet, which the account scanned is added to"
     },
     "desktopColdWalletStepHold": "Hold it up to this camera",
     "@desktopColdWalletStepHold": {

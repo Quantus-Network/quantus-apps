@@ -82,6 +82,21 @@ class _Chain extends Fake implements MultisigService {
     return [?proposal].where((proposal) => !proposal.isTerminal).toList();
   }
 
+  /// How many times the multisig's past proposals were read; while
+  /// [heldPast] is set, each read waits for it, then fails with [pastError]
+  /// if set.
+  int pastReads = 0;
+  Completer<void>? heldPast;
+  Object? pastError;
+
+  @override
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
+    pastReads++;
+    await heldPast?.future;
+    if (pastError case final error?) throw error;
+    return [?proposal].where((proposal) => proposal.isTerminal).toList();
+  }
+
   @override
   Future<Uint8List> submitApproveExtrinsic({
     required MultisigAccount msig,
@@ -764,6 +779,44 @@ void main() {
 
           expect(action.rows(wallet.container), isEmpty);
           expect(wallet.chain.openReads, reads + 1, reason: 'read once');
+          await _close(tester, wallet);
+        });
+
+        testWidgets('${action.name} $path: its row stays until the fresh past list is in as well', (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          if (path == 'the indexer shows') wallet.indexer.event = action.event();
+          wallet.chain.proposal = action.resolved();
+          final openReads = wallet.chain.openReads;
+          final pastReads = wallet.chain.pastReads;
+          final held = wallet.chain.heldPast = Completer<void>();
+
+          await tester.pump(wait);
+          await _settle(tester);
+
+          expect(wallet.chain.openReads, openReads + 1, reason: 'the open list is in');
+          expect(wallet.chain.pastReads, pastReads + 1);
+          expect(action.rows(wallet.container), hasLength(1));
+
+          held.complete();
+          await _settle(tester);
+
+          expect(action.rows(wallet.container), isEmpty);
+          expect(wallet.chain.pastReads, pastReads + 1, reason: 'read once');
+          await _close(tester, wallet);
+        });
+
+        testWidgets('${action.name} $path: a past list that cannot be read again lets its row go', (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          if (path == 'the indexer shows') wallet.indexer.event = action.event();
+          wallet.chain.proposal = action.resolved();
+          wallet.chain.pastError = StateError('the indexer is down');
+
+          await tester.pump(wait);
+          await _settle(tester);
+
+          expect(action.rows(wallet.container), isEmpty);
           await _close(tester, wallet);
         });
       }

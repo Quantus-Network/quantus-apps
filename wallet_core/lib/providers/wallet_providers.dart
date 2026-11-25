@@ -245,6 +245,21 @@ final activeBalanceProvider = Provider<AsyncValue<BigInt>>((ref) {
 
 /// Calculates the total amount of pending outgoing transactions for a
 /// specific account
+/// What [accountId] has sent or committed that the chain may not have
+/// settled yet, as the effective balance leaves it out of the chain's. It
+/// waits for the creations stored when the app last quit to load.
+Future<BigInt> pendingOutgoingOf(Ref ref, String accountId) async {
+  await ref.read(pendingMultisigCreationsProvider.notifier).ready;
+  return _calculatePendingOutgoing(
+    ref.read(pendingTransactionsProvider),
+    ref.read(pendingMultisigProposalsProvider),
+    ref.read(pendingMultisigExecutionsProvider),
+    ref.read(pendingMultisigCancellationsProvider),
+    ref.read(pendingMultisigCreationsProvider),
+    accountId,
+  );
+}
+
 BigInt _calculatePendingOutgoing(
   List<PendingTransactionEvent> pendingTransactions,
   List<PendingMultisigProposalEvent> pendingMultisigProposals,

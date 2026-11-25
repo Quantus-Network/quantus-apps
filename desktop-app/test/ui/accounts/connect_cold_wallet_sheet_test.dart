@@ -80,11 +80,16 @@ class _Harness {
   final List<Uri> openedUrls;
 }
 
-/// Main and Savings in Wallet 1 and Vault in a Cold Wallet, so the next free
-/// wallet index is 2.
-Future<_Harness> _pump(WidgetTester tester, {bool offered = true, List<MultisigAccount> multisigs = const []}) async {
+/// Main and Savings in Wallet 1, so the next free wallet index is 1; with
+/// [withColdWallet], Vault in a Cold Wallet there as well.
+Future<_Harness> _pump(
+  WidgetTester tester, {
+  bool offered = true,
+  bool withColdWallet = false,
+  List<MultisigAccount> multisigs = const [],
+}) async {
   final device = FakeWalletDevice()..store([mainAccount, savingsAccount]);
-  device.storage.accounts.add(vaultAccount);
+  if (withColdWallet) device.storage.accounts.add(vaultAccount);
   device.storage.multisigStore.addAll(multisigs);
   if (!offered) device.remoteConfig = _withoutColdWallets;
   final source = _FakeScanSource();
@@ -221,6 +226,30 @@ void main() {
       expect(_inSheet(find.text('Show your account QR code')), findsOneWidget);
       expect(_inSheet(find.text('Hold it up to this camera')), findsOneWidget);
       expect(_inSheet(find.text('Looking for a QR code')), findsOneWidget);
+    });
+
+    testWidgets('with no cold wallet, it is called Connect Cold Wallet', (tester) async {
+      await _pump(tester);
+      await _open(tester);
+
+      expect(_inSheet(find.text('Connect Cold Wallet')), findsOneWidget);
+      expect(_inSheet(find.text('Add Cold Wallet Account')), findsNothing);
+    });
+
+    testWidgets('with one, it is called Add Cold Wallet Account, and Confirm Address shows the name it will get', (
+      tester,
+    ) async {
+      final harness = await _pump(tester, withColdWallet: true);
+      await _open(tester);
+
+      expect(_inSheet(find.text('Add Cold Wallet Account')), findsOneWidget);
+      expect(_inSheet(find.text('Connect Cold Wallet')), findsNothing);
+
+      await _readThreeTimes(tester, harness.source);
+
+      expect(_inSheet(find.text('Cold Wallet 2')), findsOneWidget);
+      expect(_inSheet(find.text('Add Cold Wallet Account')), findsOneWidget);
+      expect(_saved(harness), isNull);
     });
 
     testWidgets('Cancel closes the sheet and turns the camera off', (tester) async {
@@ -461,14 +490,35 @@ void main() {
 
       expect(_sheet, findsNothing);
       final saved = _saved(harness)!;
-      expect(saved.walletIndex, 2);
+      expect(saved.walletIndex, 1);
       expect(saved.index, 0);
       expect(saved.name, 'Cold Wallet');
       expect(saved.accountType, AccountType.keystone);
       final container = _container(tester);
       expect(container.read(activeAccountProvider).value?.account.accountId, _cold);
-      expect(container.read(keptOpenWalletsProvider), contains(2));
+      expect(container.read(keptOpenWalletsProvider), contains(1));
       expect(_inSidebar(find.text('Cold Wallet')), findsWidgets);
+    });
+
+    testWidgets('with a cold wallet, Connect adds the account to it as Cold Wallet 2, active, and closes', (
+      tester,
+    ) async {
+      final harness = await _pump(tester, withColdWallet: true);
+      await _open(tester);
+      await _readThreeTimes(tester, harness.source);
+
+      await _tapButton(tester, 'Connect');
+
+      expect(_sheet, findsNothing);
+      final saved = _saved(harness)!;
+      expect((saved.walletIndex, saved.index, saved.name), (1, 1, 'Cold Wallet 2'));
+      final coldWallets = {
+        for (final account in harness.device.storage.accounts)
+          if (account.accountType == AccountType.keystone) account.walletIndex,
+      };
+      expect(coldWallets, {1});
+      expect(_container(tester).read(activeAccountProvider).value?.account.accountId, _cold);
+      expect(_inSidebar(find.widgetWithText(SidebarRow, 'Cold Wallet 2')), findsOneWidget);
     });
 
     testWidgets('a connected account can receive, but not send, swap or create a multisig', (tester) async {
