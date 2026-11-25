@@ -1296,6 +1296,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activityDetailTitleCancelling => 'Cancelling proposal';
 
   @override
+  String get activityDetailTitleApproving => 'Approving proposal';
+
+  @override
   String get activityDetailTitleExecuting => 'Executing proposal';
 
   @override

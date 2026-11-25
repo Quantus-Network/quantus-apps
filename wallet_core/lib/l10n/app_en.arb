@@ -1823,6 +1823,10 @@
     "@activityDetailTitleCancelling": {
       "description": "Detail sheet title while a multisig proposal cancellation is confirming on-chain"
     },
+    "activityDetailTitleApproving": "Approving proposal",
+    "@activityDetailTitleApproving": {
+      "description": "Detail sheet title while the approver's approval of a multisig proposal is confirming on-chain"
+    },
     "activityDetailTitleExecuting": "Executing proposal",
     "@activityDetailTitleExecuting": {
       "description": "Detail sheet title while a multisig proposal execution is confirming on-chain"
