@@ -47,10 +47,14 @@ final pendingWorkProvider = Provider<bool>(
 
 /// Whether anything keeps the app running with its window closed: work under
 /// way ([pendingWorkProvider]), or a swap in progress, so that how it ends is
-/// told. A swap goes on whether the app runs or not, so quitting does not wait
-/// for one, and one that runs long is not taken for work that is stuck.
+/// told, or one whose end is yet to be told ([swapEndsUntoldProvider]). A swap
+/// goes on whether the app runs or not, so quitting does not wait for one, and
+/// one that runs long is not taken for work that is stuck.
 final keepsRunningProvider = Provider<bool>(
-  (ref) => ref.watch(pendingWorkProvider) || ref.watch(swapsInProgressProvider.select((swaps) => swaps.isNotEmpty)),
+  (ref) =>
+      ref.watch(pendingWorkProvider) ||
+      ref.watch(swapsInProgressProvider.select((swaps) => swaps.isNotEmpty)) ||
+      ref.watch(swapEndsUntoldProvider),
 );
 
 /// Keeps the app running with its window closed while something is under

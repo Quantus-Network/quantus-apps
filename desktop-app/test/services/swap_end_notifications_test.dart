@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' show AppExitResponse;
 
 import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
@@ -333,6 +334,130 @@ void main() {
 
     await tester.pump(BackgroundMode.settleDelay * 3);
     expect(exits, ['exit']);
+  });
+
+  group('a swap\'s end kept until notifications can be shown', () {
+    /// Opens the wallet following one swap in progress, notifications held as
+    /// [notifications] holds them, the app's requests to quit kept in the
+    /// returned list.
+    Future<({ProviderContainer container, FakeBackgroundWindow window, List<String> exits, ActiveSwap swap})> held(
+      WidgetTester tester,
+      FakeNotificationPlugin notifications,
+      FakeSwapService oneClick,
+    ) async {
+      final window = FakeBackgroundWindow();
+      final exits = <String>[];
+      final swap = fakeActiveSwap();
+      final container = await _open(
+        tester,
+        notifications,
+        oneClick,
+        [swap],
+        window: window,
+        extra: [requestAppExitProvider.overrideWithValue(() => exits.add('exit'))],
+      );
+      return (container: container, window: window, exits: exits, swap: swap);
+    }
+
+    Future<void> close(WidgetTester tester, FakeBackgroundWindow window) async {
+      final closing = window.pressCloseButton();
+      await tester.pump();
+      await closing;
+    }
+
+    testOnMac('keeps the app with its window closed until notifications have started, then is told and the app '
+        'quits', (tester) async {
+      final started = Completer<void>();
+      final notifications = FakeNotificationPlugin()..heldStart = started;
+      final oneClick = FakeSwapService();
+      final (:window, :exits, container: _, swap: _) = await held(tester, notifications, oneClick);
+      await close(tester, window);
+      expect(window.calls, ['hide']);
+
+      oneClick.status = _answering(SwapStatus.success);
+      await _interval(tester);
+      await tester.pump(BackgroundMode.settleDelay * 3);
+      expect(exits, isEmpty, reason: 'not before it is told');
+
+      started.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(_titles(notifications), [_l10n.swapLiveSwapped]);
+      await tester.pump(BackgroundMode.settleDelay * 3);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('keeps the app with its window closed until macOS has answered: told if it allows them, not if it '
+        'refuses, and the app quits either way', (tester) async {
+      for (final allows in [true, false]) {
+        await tester.pumpWidget(const SizedBox.shrink());
+        final answer = Completer<bool>();
+        final notifications = FakeNotificationPlugin()..heldAnswer = answer;
+        final oneClick = FakeSwapService();
+        final (:window, :exits, container: _, swap: _) = await held(tester, notifications, oneClick);
+        await close(tester, window);
+
+        oneClick.status = _answering(SwapStatus.success);
+        await _interval(tester);
+        await tester.pump(BackgroundMode.settleDelay * 3);
+        expect(exits, isEmpty, reason: 'not before macOS has answered (allows: $allows)');
+
+        answer.complete(allows);
+        await tester.pump();
+        await tester.pump();
+        expect(_titles(notifications), allows ? [_l10n.swapLiveSwapped] : isEmpty, reason: 'allows: $allows');
+        await tester.pump(BackgroundMode.settleDelay * 3);
+        expect(exits, ['exit'], reason: 'allows: $allows');
+      }
+    });
+
+    testOnMac('the window closed after it was kept hides, and the app quits once it is told', (tester) async {
+      final started = Completer<void>();
+      final notifications = FakeNotificationPlugin()..heldStart = started;
+      final oneClick = FakeSwapService();
+      final (:window, :exits, container: _, swap: _) = await held(tester, notifications, oneClick);
+      oneClick.status = _answering(SwapStatus.success);
+      await _interval(tester);
+
+      await close(tester, window);
+      expect(window.calls, ['hide']);
+      await tester.pump(BackgroundMode.settleDelay * 3);
+      expect(exits, isEmpty);
+
+      started.complete();
+      await tester.pump();
+      await tester.pump();
+      expect(_titles(notifications), [_l10n.swapLiveSwapped]);
+      await tester.pump(BackgroundMode.settleDelay * 3);
+      expect(exits, ['exit']);
+    });
+
+    testOnMac('lets the app quit once its swap is put away', (tester) async {
+      final notifications = FakeNotificationPlugin()..heldStart = Completer<void>();
+      final oneClick = FakeSwapService();
+      final (:window, :exits, :container, :swap) = await held(tester, notifications, oneClick);
+      await close(tester, window);
+      oneClick.status = _answering(SwapStatus.success);
+      await _interval(tester);
+      await tester.pump(BackgroundMode.settleDelay * 3);
+      expect(exits, isEmpty);
+
+      await container.read(activeSwapsProvider.notifier).remove(swap.id);
+      await tester.pump(BackgroundMode.settleDelay * 3);
+
+      expect(exits, ['exit']);
+      expect(notifications.shown, isEmpty);
+    });
+
+    testOnMac('does not hold up Cmd+Q', (tester) async {
+      final notifications = FakeNotificationPlugin()..heldStart = Completer<void>();
+      final oneClick = FakeSwapService();
+      await held(tester, notifications, oneClick);
+      oneClick.status = _answering(SwapStatus.success);
+      await _interval(tester);
+
+      expect(await tester.binding.handleRequestAppExit(), AppExitResponse.exit);
+    });
   });
 
   testOnMac('nothing is told with notifications off in Settings, or not allowed by macOS', (tester) async {

@@ -1,6 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/notification_status.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_delivery.dart';
 import 'package:quantus_desktop_wallet/utils/swap_words.dart';
@@ -21,8 +22,9 @@ import 'package:wallet_core/swap/swap_progress.dart';
 /// app started was told then, or is in its row. One that ended while the app
 /// was not running is told at its first poll. One learned before the system
 /// has said whether it shows notifications is told once it has, if the swap
-/// is still followed. A swap's steps on its way are not told, nor a deposit
-/// by hand that never came: the person did not send one.
+/// is still followed, and keeps the app running with its window closed until
+/// then. A swap's steps on its way are not told, nor a deposit by hand that
+/// never came: the person did not send one.
 class SwapEndNotifications {
   SwapEndNotifications(this._ref) {
     _ref.listen<List<ActiveSwap>>(activeSwapsProvider, _onChanged);
@@ -32,7 +34,7 @@ class SwapEndNotifications {
   final Ref _ref;
 
   /// What was learned before the system said whether it shows notifications,
-  /// each with the swap as it was then.
+  /// each with the swap as it was then, while the swap is still followed.
   final _untold = <({ActiveSwap swap, String id})>[];
 
   /// Whether the system has yet to say whether it shows notifications: they
@@ -42,6 +44,8 @@ class SwapEndNotifications {
 
   void _onChanged(List<ActiveSwap>? before, List<ActiveSwap> now) {
     if (before == null) return;
+    final followed = {for (final swap in now) swap.id};
+    _untold.removeWhere((untold) => !followed.contains(untold.swap.id));
     final statusBefore = {for (final swap in before) swap.id: swap.order.status};
     for (final swap in now) {
       final was = statusBefore[swap.id];
@@ -53,6 +57,7 @@ class SwapEndNotifications {
         _tell(swap, id: 'swap_short_${swap.id}');
       }
     }
+    _ref.read(swapEndsUntoldProvider.notifier).set(_untold.isNotEmpty);
   }
 
   void _tell(ActiveSwap swap, {required String id}) {
@@ -69,10 +74,11 @@ class SwapEndNotifications {
     if (_unanswered(status) || _untold.isEmpty) return;
     final untold = [..._untold];
     _untold.clear();
-    final followed = {for (final swap in _ref.read(activeSwapsProvider)) swap.id};
     for (final (:swap, :id) in untold) {
-      if (followed.contains(swap.id)) _notify(swap, id: id);
+      _notify(swap, id: id);
     }
+    // Only now: a notification handed over keeps the app running on its own.
+    _ref.read(swapEndsUntoldProvider.notifier).set(false);
   }
 
   void _notify(ActiveSwap swap, {required String id}) {
