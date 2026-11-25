@@ -103,6 +103,7 @@ void main() {
       final signing = await session(ref, sendAll: true);
 
       expect((signing.primaryDetail, signing.secondaryDetail), ('Entire transferable balance', recipient.accountId));
+      expect(signing.primaryIsAmount, isFalse);
     });
 
     testWidgets('of a send of an amount says that amount', (tester) async {
@@ -111,6 +112,7 @@ void main() {
       final signing = await session(ref, sendAll: false);
 
       expect(signing.primaryDetail, endsWith(' QTC'));
+      expect(signing.primaryIsAmount, isTrue);
     });
   });
 
