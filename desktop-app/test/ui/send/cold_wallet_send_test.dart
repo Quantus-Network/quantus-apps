@@ -12,6 +12,7 @@ import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -268,6 +269,10 @@ void main() {
       expect(_inSheet(find.text('CHECK YOUR COLD WALLET\'S SCREEN')), findsOneWidget);
       expect(_inSheet(find.text('Approve there only if it shows exactly this.')), findsOneWidget);
       expect(_inSheet(find.text('250 QTC')), findsOneWidget);
+      expect(
+        tester.widget<Text>(_inSheet(find.text('250 QTC'))).style?.fontSize,
+        tester.element(find.byType(KeystoneSigningView)).themeTextV3.amountRow.fontSize,
+      );
       _expectAddressOverCheckphrase(tester, 'qzPayee');
       expect(_inSheet(find.text('Hold its signature QR code up to this computer\'s camera.')), findsOneWidget);
       expect(_inSheet(find.text('Keep it there until every part has arrived.')), findsOneWidget);
@@ -293,7 +298,10 @@ void main() {
 
       expect(harness.chain.signRequests, [(recipient: 'qzPayee', amount: null)]);
       final signing = find.byType(KeystoneSigningView);
-      expect(find.descendant(of: signing, matching: find.text('Entire transferable balance')), findsOneWidget);
+      final words = find.descendant(of: signing, matching: find.text('Entire transferable balance'));
+      expect(words, findsOneWidget);
+      // Words, not a figure: in the running text's size, not the amount's.
+      expect(tester.widget<Text>(words).style?.fontSize, tester.element(signing).sendBody().fontSize);
       expect(find.descendant(of: signing, matching: find.textContaining('QTC')), findsNothing);
       _expectAddressOverCheckphrase(tester, 'qzPayee');
     });

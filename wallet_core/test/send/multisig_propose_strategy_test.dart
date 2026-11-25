@@ -175,6 +175,24 @@ void main() {
     }
   });
 
+  testWidgets('a Keystone member signs the proposal with its amount, shown as an amount', (tester) async {
+    final keystoneMember = makeAccount(1, accountType: AccountType.keystone);
+    final ref = await pumpRef(
+      tester,
+      overrides: [
+        ...bed.overrides,
+        accountsProvider.overrideWith((ref) => AccountsNotifier(bed.accounts, initialAccounts: [keystoneMember])),
+        multisigServiceProvider.overrideWithValue(_FakeMultisigService()),
+        transactionSubmissionServiceProvider.overrideWithValue(submission),
+      ],
+    );
+
+    final session = ((await submit(ref)) as SendNeedsHardwareSignature).session;
+
+    expect(session.primaryDetail, endsWith(' QTC'));
+    expect(session.primaryIsAmount, isTrue);
+  });
+
   group('a wallet reset', () {
     final keystoneMember = makeAccount(1, accountType: AccountType.keystone);
 
