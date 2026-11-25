@@ -543,10 +543,32 @@ void main() {
       ]);
     });
 
+    _test('a reset that leaves the account lists loading: the same accounts restored are registered again', (
+      tester,
+    ) async {
+      final mac = await _open(tester, synced: true);
+
+      // As LogoutService does: the Mac is removed, and the lists go back to
+      // loading.
+      _reset(mac);
+      mac.container.read(accountsProvider.notifier).reset();
+      mac.container.read(multisigAccountsProvider.notifier).reset();
+      await _settle(tester);
+      // An import asks before the restored lists have loaded.
+      await mac.container.read(pushRegistrationProvider).registerDevice();
+      mac.container
+        ..invalidate(accountsProvider)
+        ..invalidate(multisigAccountsProvider);
+      await _settle(tester);
+
+      expect(mac.senoti.map((asked) => asked.what), ['POST /api/devices', 'DELETE /api/devices', 'POST /api/devices']);
+    });
+
     _test('a wallet restored after a reset is registered again, though its accounts are the same', (tester) async {
       final mac = await _open(tester, synced: true, multisigs: const []);
       final restored = [...mac.accounts];
 
+      _reset(mac);
       mac.accounts.clear();
       mac.container.invalidate(accountsProvider);
       await _settle(tester);
@@ -556,8 +578,9 @@ void main() {
 
       expect(mac.senoti.map((asked) => asked.body['addresses']), [
         ['qzMain', 'qzSavings'],
+        null,
         ['qzMain', 'qzSavings'],
-      ]);
+      ], reason: 'registered, removed by the reset, registered again');
     });
 
     _test('a click on a pushed notification opens what it was about', (tester) async {

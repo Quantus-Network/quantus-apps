@@ -45,6 +45,11 @@ class MacPushRegistration implements PushRegistration {
   /// Ends when the last request asked for is done, however it ended.
   Future<void> _requests = Future.value();
 
+  /// The token and addresses the push service last took this Mac's
+  /// registration with, in this run; null while it holds none from this run.
+  /// A removal that went through, a reset's included, clears it.
+  String? _registeredFor;
+
   /// Runs [request] once every request asked before it is done.
   Future<T> _inTurn<T>(Future<T> Function() request) {
     final turn = _requests.then((_) => request());
@@ -85,8 +90,9 @@ class MacPushRegistration implements PushRegistration {
   @override
   Future<void> registerDevice() => register();
 
-  /// As [registerDevice]: true once the push service took the registration,
-  /// false when nothing was sent. Throws when it failed.
+  /// As [registerDevice]: true once the push service holds the registration
+  /// for the addresses there are now, as it already did or does from this
+  /// request; false when nothing was sent. Throws when it failed.
   Future<bool> register() {
     final session = _ref.read(walletSessionProvider);
     final ticket = session.ticket;
@@ -106,9 +112,12 @@ class MacPushRegistration implements PushRegistration {
       if (!await _stillThisWallet(session, ticket) || !isWanted) return false;
       final addresses = notifiableAddresses;
       if (addresses == null || addresses.isEmpty) return false;
+      final registration = _keyOf(token, addresses);
+      if (registration == _registeredFor) return true;
       await _ref
           .read(senotiClientProvider)
           .registerDevice(addresses: addresses, deviceToken: token, platform: platform, apnsEnvironment: environment);
+      _registeredFor = registration;
       await _keepRegistered(true);
       return true;
     });
@@ -149,6 +158,7 @@ class MacPushRegistration implements PushRegistration {
         return true;
       }
       await _ref.read(senotiClientProvider).unregisterDevice(deviceToken: await push.requestToken());
+      _registeredFor = null;
       await _keepRegistered(false);
       return true;
     } catch (e) {
@@ -157,6 +167,8 @@ class MacPushRegistration implements PushRegistration {
       return false;
     }
   }
+
+  static String _keyOf(String token, List<String> addresses) => [token, ...addresses].join('\n');
 
   void _notSignedForPushes() => quantusPrint('This build was not signed to receive pushes: nothing to register');
 }
@@ -179,9 +191,6 @@ class MacPushSync {
   }
 
   final Ref _ref;
-
-  /// The addresses the Mac was last registered for; null while it is not.
-  String? _registeredFor;
 
   /// Whether a look at what changed is already waiting its turn.
   var _isQueued = false;
@@ -206,27 +215,19 @@ class MacPushSync {
     });
   }
 
-  /// Brings the push service to what is wanted now. What it holds changes
-  /// here only once it said so: a change that failed is tried again at the
-  /// next change looked at, or at the next launch.
+  /// Brings the push service to what is wanted now. [MacPushRegistration]
+  /// knows what it holds, and changes that only once it said so: a change
+  /// that failed is tried again at the next change looked at, or at the next
+  /// launch.
   Future<void> _reconcile() async {
     if (!_ref.mounted) return;
     final registration = _ref.read(macPushRegistrationProvider);
     if (!registration.isWanted) {
-      if (await registration.removeIfHeld()) _registeredFor = null;
-      return;
-    }
-    final addresses = registration.notifiableAddresses;
-    if (addresses == null) return;
-    // A reset removed the Mac itself: the wallet that comes next is new to
-    // the push service, even with the same accounts.
-    final key = addresses.isEmpty ? null : addresses.join('\n');
-    if (key == null || key == _registeredFor) {
-      _registeredFor = key;
+      await registration.removeIfHeld();
       return;
     }
     try {
-      if (await registration.register()) _registeredFor = key;
+      await registration.register();
     } catch (e) {
       quantusPrint('Registering this Mac with the push service failed: $e');
       if (_ref.mounted) _ref.read(telemetryProvider).sendError('desktop_push_register_failed', error: e);
