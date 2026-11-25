@@ -239,7 +239,16 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
       );
     }
 
-    final approval = await ref.read(userApprovalProvider).approve(reason: _authReason(ref.read(l10nProvider)));
+    final ApprovalResult approval;
+    try {
+      approval = await ref.read(userApprovalProvider).approve(reason: _authReason(ref.read(l10nProvider)));
+    } catch (e, st) {
+      // The system could not ask (a prompt that cannot be shown, a login
+      // check that failed to run): nothing went out, as when sending.
+      quantusPrint('$_logPrefix approval failed: $e $st');
+      if (!ref.mounted) return const MultisigActionDropped();
+      return _fail(MultisigActionError.submitFailed);
+    }
     if (!ref.mounted) return const MultisigActionDropped();
     if (approval != ApprovalResult.approved) return _fail(MultisigActionError.approvalRequired);
 

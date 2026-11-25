@@ -290,6 +290,22 @@ void main() {
       expect(_inSheet(find.text(approvalNotSetUpNote(_l10n))), findsOne);
     });
 
+    testOnMac('an approval prompt that fails: said beside the buttons, nothing sent, and the sheet can be closed', (
+      tester,
+    ) async {
+      final approval = FakeUserApproval()..answer = () async => throw StateError('the prompt could not be shown');
+      final sheet = await _open(tester, MultisigActionKind.approve, _proposal(), approval: approval);
+
+      await _confirm(tester);
+
+      expect(_inSheet(find.text(_l10n.multisigApproveFailed)), findsOne);
+      expect(sheet.chain.actions, isEmpty);
+      expect(_offered(tester, ProposalActionSheet.dismissKey), isTrue);
+      await tester.tap(_inSheet(find.byKey(ProposalActionSheet.dismissKey)));
+      await tester.pumpAndSettle();
+      expect(find.byType(ProposalActionSheet), findsNothing);
+    });
+
     testOnMac('a failed submission: said beside the buttons, and trying again sends it', (tester) async {
       final chain = FakeSendChain()..submitAction = () async => throw StateError('rejected');
       await _open(tester, MultisigActionKind.approve, _proposal(), chain: chain);
