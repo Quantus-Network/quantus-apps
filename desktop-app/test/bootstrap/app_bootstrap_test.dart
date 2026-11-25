@@ -5,6 +5,7 @@ import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/services/desktop_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/desktop_telemetry.dart';
+import 'package:quantus_desktop_wallet/services/mac_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/push_registration.dart';
@@ -24,6 +25,23 @@ void main() {
       container.read(localNotificationsProvider),
       same(container.read(desktopLocalNotificationsProvider.notifier)),
     );
+  });
+
+  test('buildApp registers a Mac for pushes, and nothing on Windows or Linux', () {
+    final scope = buildApp() as ProviderScope;
+    for (final platform in [TargetPlatform.macOS, TargetPlatform.windows, TargetPlatform.linux]) {
+      debugDefaultTargetPlatformOverride = platform;
+      addTearDown(() => debugDefaultTargetPlatformOverride = null);
+      final container = ProviderContainer(overrides: scope.overrides);
+      addTearDown(container.dispose);
+
+      expect(
+        container.read(pushRegistrationProvider),
+        platform == TargetPlatform.macOS ? isA<MacPushRegistration>() : isA<DesktopPushRegistration>(),
+        reason: '$platform',
+      );
+    }
+    debugDefaultTargetPlatformOverride = null;
   });
 
   test('buildApp binds the approval that wallet_core asks for to the system\'s own', () {
