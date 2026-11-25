@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/shortcut_bindings.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
+import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
@@ -27,6 +28,24 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import '../../fakes.dart';
 
 const _travel = Account(walletIndex: 3, index: 0, name: 'Travel', accountId: 'qzTravel');
+
+/// A camera that is on and reads nothing, for the Connect Cold Wallet sheet.
+class _IdleScanSource implements QrScanSource {
+  @override
+  Stream<String> get reads => const Stream.empty();
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Widget buildPreview() => const SizedBox.expand();
+
+  @override
+  Future<void> dispose() async {}
+}
 
 /// Main (active unless [active] says) and Savings in Wallet 1, and Vault in the
 /// Cold Wallet; with [severalWallets], Trading in Wallet 2 and Travel in
@@ -49,6 +68,7 @@ Future<FakeWalletDevice> _pump(WidgetTester tester, {bool severalWallets = true,
       encryptedAccountServiceProvider.overrideWith(
         (ref, walletIndex) => FakeEncryptedAccountService(() async => 'qzDeposit', innerHash: () async => '0xinner'),
       ),
+      qrScanSourceFactoryProvider.overrideWithValue(_IdleScanSource.new),
     ],
   );
   return device;
@@ -94,6 +114,15 @@ PlatformMenuItem _newAccount(WidgetTester tester) {
 }
 
 List<PlatformMenuItem> _submenuItems(WidgetTester tester) => (_newAccount(tester) as PlatformMenu).menus;
+
+/// The Account menu's Connect Cold Wallet….
+PlatformMenuItem _connectColdWallet(WidgetTester tester) {
+  final menus = tester.widget<PlatformMenuBar>(find.byType(PlatformMenuBar)).menus.cast<PlatformMenu>();
+  return [
+    for (final entry in menus.singleWhere((menu) => menu.label == 'Account').menus)
+      if (entry is PlatformMenuItemGroup) ...entry.members else entry,
+  ].singleWhere((item) => item.label == 'Connect Cold Wallet…');
+}
 
 Future<void> _pressWithCommand(WidgetTester tester, List<LogicalKeyboardKey> keys) async {
   await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
@@ -229,13 +258,24 @@ void main() {
       expect(device.storage.accounts.map((a) => a.accountId), contains('qzNew0-2'));
     });
 
-    testOnMac('with a Cold Wallet account active, no wallet has ⌘N and the key does nothing', (tester) async {
+    testOnMac('with a software account active, Connect Cold Wallet… has no shortcut', (tester) async {
+      await _pump(tester);
+
+      expect(_connectColdWallet(tester).shortcut, isNull);
+    });
+
+    testOnMac('with a Cold Wallet account active, ⌘N is on Connect Cold Wallet…, not New Account, and opens it', (
+      tester,
+    ) async {
       final device = await _pump(tester, active: vaultAccount);
       final before = device.storage.accounts.length;
 
+      expect(_submenuItems(tester).map((item) => item.label), ['Wallet 1', 'Wallet 2', 'Wallet 3']);
       expect(_submenuItems(tester).map((item) => item.shortcut), everyElement(isNull));
+      expect((_connectColdWallet(tester).shortcut! as SingleActivator).trigger, LogicalKeyboardKey.keyN);
       await _pressWithCommand(tester, [LogicalKeyboardKey.keyN]);
 
+      expect(_container(tester).read(shellSheetProvider), ShellSheet.connectColdWallet);
       expect(device.storage.accounts, hasLength(before));
     });
 

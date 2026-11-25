@@ -106,6 +106,10 @@ class MainFlutterWindow: NSWindow {
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
+    // After the plugins: it takes the notification center from the
+    // notifications plugin, which claims it as it is registered.
+    PushNotifications.shared.install(with: flutterViewController.engine.binaryMessenger)
+
     // The system lays the title bar out again on these events and puts the
     // traffic lights back where a standard title bar has them.
     for name in [
