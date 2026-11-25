@@ -12,10 +12,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Error';
 
   @override
-  String get walletInitErrorMessage => 'Unable to find secret phrase. Please restore your wallet.';
+  String get walletInitErrorMessage => 'Unable to read your recovery phrase from this device.';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
+  String get walletInitErrorRemoveWallet => 'Remove Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Remove Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Remove all wallets from this device?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'This cannot be undone.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Remove';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Use device biometrics to unlock';
@@ -300,6 +312,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get multisigCreateTimeoutToast =>
       'Multisig creation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigCreateNotSavedToast =>
+      'Your multisig was created, but it could not be saved on this device. Restart the app to add it.';
 
   @override
   String get multisigCreateAuthReason => 'Authenticate to create this multisig';
@@ -2870,6 +2886,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopProposeWaiting => 'Waiting for the network to create the proposal.';
 
   @override
+  String get desktopProposalApproved => 'Approved';
+
+  @override
+  String get desktopProposalExpired => 'Expired';
+
+  @override
+  String get desktopProposalUnreadable =>
+      'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.';
+
+  @override
   String get desktopFooterMainnet => 'Mainnet';
 
   @override
@@ -3171,6 +3197,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationReceivedTitle(String amount) {
+    return 'Received $amount';
+  }
+
+  @override
+  String desktopNotificationReceivedBody(String account) {
+    return 'In $account';
+  }
+
+  @override
+  String desktopNotificationIncomingTitle(String amount) {
+    return 'Incoming $amount';
+  }
+
+  @override
+  String desktopNotificationIncomingBody(String account) {
+    return 'Scheduled to arrive in $account';
+  }
+
+  @override
   String get desktopNotificationSendNotConfirmedTitle => 'Send not confirmed';
 
   @override
@@ -3192,6 +3238,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String desktopNotificationProposalCreatedBody(String amount, String multisig) {
     return 'Send $amount from $multisig';
+  }
+
+  @override
+  String get desktopNotificationProposalNewTitle => 'New proposal';
+
+  @override
+  String desktopNotificationProposalSignedTitle(int count, int threshold) {
+    return 'Proposal signed: $count of $threshold';
+  }
+
+  @override
+  String get desktopNotificationProposalReadyTitle => 'Proposal ready to execute';
+
+  @override
+  String get desktopNotificationProposalExecutedTitle => 'Proposal executed';
+
+  @override
+  String get desktopNotificationProposalFailedTitle => 'Proposal execution failed';
+
+  @override
+  String get desktopNotificationProposalCancelledTitle => 'Proposal cancelled';
+
+  @override
+  String get desktopNotificationProposalRemovedTitle => 'Proposal removed';
+
+  @override
+  String desktopNotificationProposalOtherBody(String multisig) {
+    return 'In $multisig';
   }
 
   @override
@@ -3293,6 +3367,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopMenuConnectColdWallet => 'Connect Cold Wallet…';
+
+  @override
+  String get desktopColdWalletAddAccountTitle => 'Add Cold Wallet Account';
 
   @override
   String get desktopColdWalletStepHold => 'Hold it up to this camera';

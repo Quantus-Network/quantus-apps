@@ -98,17 +98,41 @@ abstract class AppLocalizations {
   /// **'Wallet Error'**
   String get walletInitErrorTitle;
 
-  /// Message for the error dialog when the wallet is not found
+  /// Message for the error dialog when the wallet's recovery phrase cannot be read at start
   ///
   /// In en, this message translates to:
-  /// **'Unable to find secret phrase. Please restore your wallet.'**
+  /// **'Unable to read your recovery phrase from this device.'**
   String get walletInitErrorMessage;
 
-  /// Label for the button on the error dialog when the wallet is not found
+  /// Phone: on the error sheet when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
   ///
   /// In en, this message translates to:
-  /// **'OK'**
-  String get walletInitErrorButtonLabel;
+  /// **'Remove Wallet'**
+  String get walletInitErrorRemoveWallet;
+
+  /// Desktop: on the error dialog when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Wallet…'**
+  String get desktopWalletInitErrorRemoveWallet;
+
+  /// Title of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all wallets from this device?'**
+  String get walletInitErrorRemoveTitle;
+
+  /// Body of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get walletInitErrorRemoveBody;
+
+  /// The button that removes every wallet from the device, on the confirmation asked from the error dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get walletInitErrorRemoveConfirm;
 
   /// Text for the text on the lock screen when using device biometrics to unlock
   ///
@@ -631,6 +655,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multisig creation is taking longer than expected. Check the chain or try again.'**
   String get multisigCreateTimeoutToast;
+
+  /// Toast when a multisig is confirmed on chain but storing it on this device fails; the next start adds it
+  ///
+  /// In en, this message translates to:
+  /// **'Your multisig was created, but it could not be saved on this device. Restart the app to add it.'**
+  String get multisigCreateNotSavedToast;
 
   /// Local auth prompt when submitting create multisig
   ///
@@ -5234,6 +5264,24 @@ abstract class AppLocalizations {
   /// **'Waiting for the network to create the proposal.'**
   String get desktopProposeWaiting;
 
+  /// Desktop proposal panel: where an open proposal stands once it has all the approvals it needs and waits to be executed; drawn in small capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get desktopProposalApproved;
+
+  /// Desktop proposal panel: where an open proposal stands once it is past its expiry block, drawn in small capitals; also the label of the row that says when it expired, in place of "Expires"
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get desktopProposalExpired;
+
+  /// Desktop proposal panel: the sentence under "Invalid proposal" for a proposal whose call this wallet cannot decode
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.'**
+  String get desktopProposalUnreadable;
+
   /// Desktop footer: the network the wallet is on, beside a dot that is green while online
   ///
   /// In en, this message translates to:
@@ -5726,6 +5774,30 @@ abstract class AppLocalizations {
   /// **'From {account}'**
   String desktopNotificationSentBody(String account);
 
+  /// Desktop notification title: a transfer from outside the wallet arrived in one of its accounts; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Received {amount}'**
+  String desktopNotificationReceivedTitle(String amount);
+
+  /// Desktop notification body: the account the received transfer arrived in
+  ///
+  /// In en, this message translates to:
+  /// **'In {account}'**
+  String desktopNotificationReceivedBody(String account);
+
+  /// Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming {amount}'**
+  String desktopNotificationIncomingTitle(String amount);
+
+  /// Desktop notification body: the account the scheduled reversible transfer will arrive in
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled to arrive in {account}'**
+  String desktopNotificationIncomingBody(String account);
+
   /// Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it
   ///
   /// In en, this message translates to:
@@ -5761,6 +5833,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send {amount} from {multisig}'**
   String desktopNotificationProposalCreatedBody(String amount, String multisig);
+
+  /// Desktop notification title: another signer proposed something in a multisig of the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'New proposal'**
+  String get desktopNotificationProposalNewTitle;
+
+  /// Desktop notification title: another signer approved a proposal that still needs more approvals; count is the approvals it has now, threshold how many it needs
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal signed: {count} of {threshold}'**
+  String desktopNotificationProposalSignedTitle(int count, int threshold);
+
+  /// Desktop notification title: another signer gave the approval a proposal still needed, so it can now be executed
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal ready to execute'**
+  String get desktopNotificationProposalReadyTitle;
+
+  /// Desktop notification title: another signer executed a proposal and what it proposed went through
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get desktopNotificationProposalExecutedTitle;
+
+  /// Desktop notification title: another signer executed a proposal and what it proposed failed on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal execution failed'**
+  String get desktopNotificationProposalFailedTitle;
+
+  /// Desktop notification title: another signer cancelled a proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cancelled'**
+  String get desktopNotificationProposalCancelledTitle;
+
+  /// Desktop notification title: another signer removed a proposal that had expired
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal removed'**
+  String get desktopNotificationProposalRemovedTitle;
+
+  /// Desktop notification body for a proposal that is not a transfer: the multisig it is in
+  ///
+  /// In en, this message translates to:
+  /// **'In {multisig}'**
+  String desktopNotificationProposalOtherBody(String multisig);
 
   /// Desktop notification title: a multisig proposal made on this computer was not seen on the chain in time
   ///
@@ -5929,6 +6049,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Connect Cold Wallet…'**
   String get desktopMenuConnectColdWallet;
+
+  /// Desktop Connect Cold Wallet sheet: its title when the app already has a cold wallet, which the account scanned is added to
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cold Wallet Account'**
+  String get desktopColdWalletAddAccountTitle;
 
   /// Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device
   ///

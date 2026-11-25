@@ -6,6 +6,7 @@ import 'package:wallet_core/providers/controllers/multisig_action_confirm_contro
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/decoded_call_view.dart';
+import 'package:wallet_core/activity/decoded_call_headline.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
 
 /// Localized labels for a multisig confirmation sheet.

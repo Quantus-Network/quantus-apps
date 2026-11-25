@@ -142,6 +142,51 @@ void main() {
     expect(find.text(_l10n.multisigStatusApproved), findsNothing);
   });
 
+  /// A proposal whose call is the sample call [name].
+  MultisigProposal callProposal(String name) => MultisigProposal(
+    entityId: 'call-$name',
+    id: 9,
+    multisigAddress: teamMultisig.accountId,
+    proposer: 'qzOther',
+    createdAt: _now.subtract(const Duration(hours: 1)),
+    updatedAt: _now.subtract(const Duration(hours: 1)),
+    pallet: name.split('.').first,
+    call: name.split('.').last,
+    recipient: '',
+    amount: BigInt.zero,
+    callRaw: corpusCall(name),
+    expiryBlock: 1300000,
+    approvals: const [],
+    deposit: oneToken,
+    status: MultisigProposalStatus.active,
+    threshold: teamMultisig.threshold,
+    signerCount: teamMultisig.signers.length,
+  );
+
+  Finder inPanel(Finder finder) => find.descendant(of: find.byType(OpenProposalsPanel), matching: finder);
+
+  testOnMac('a row of a proposal that moves nothing names its call where the amount stands, and its runtime name '
+      'where the recipient does', (tester) async {
+    final open = callProposal('ReversibleTransfers.set_high_security');
+    await _openTeam(tester, FakeSendChain()..openProposals = [open]);
+
+    expect(inPanel(find.text('Set high security')), findsOne);
+    expect(inPanel(find.text(open.decodedCall!.displayTitle)), findsOne);
+    expect(inPanel(find.textContaining('0 ${AppConstants.tokenSymbol}')), findsNothing);
+    expect(inPanel(find.text(_l10n.activityTxTo)), findsNothing);
+  });
+
+  testOnMac('a row of a proposal this wallet cannot read says Invalid proposal in ember, and names nothing else', (
+    tester,
+  ) async {
+    await _openTeam(tester, FakeSendChain()..openProposals = [callProposal('System.remark')]);
+
+    final words = tester.widget<Text>(inPanel(find.text(_l10n.multisigProposalInvalid)));
+    expect(words.style?.color, tester.element(find.byType(OpenProposalsPanel)).colorsV3.semanticEmber);
+    expect(inPanel(find.textContaining('0 ${AppConstants.tokenSymbol}')), findsNothing);
+    expect(inPanel(find.text(_l10n.activityTxTo)), findsNothing);
+  });
+
   // Two approvals are few circles, ten the most circles, eleven the fewest
   // drawn as the bar. The widths are the wide and tight forms' least, and a
   // brief one whose line just holds the rest of the row.
@@ -192,6 +237,53 @@ void main() {
           expect(row.left <= marks.left && marks.right <= count.left && count.right <= row.right, isTrue);
         },
       );
+    }
+  }
+
+  // The calls that move nothing with the longest names, at each form's least width.
+  for (final name in ['ReversibleTransfers.set_high_security', 'Multisig.create_multisig']) {
+    for (final (form, width) in [
+      (ActivityRowForm.wide, ActivityRowForm.wideFrom),
+      (ActivityRowForm.tight, ActivityRowForm.tightFrom),
+      (ActivityRowForm.brief, 400.0),
+    ]) {
+      testWidgets('$name fits a ${form.name} row $width wide', (tester) async {
+        useFakeCheckphrases(fakeCheckphrase);
+        final call = MultisigProposal.decodeProposalCall(corpusCall(name));
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [settingsServiceProvider.overrideWithValue(FakeSettingsService())],
+            child: Builder(
+              builder: (context) => MaterialApp(
+                theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
+                home: Scaffold(
+                  body: Align(
+                    alignment: Alignment.topLeft,
+                    child: SizedBox(
+                      width: width,
+                      child: OpenProposalRowView(
+                        id: 'proposal',
+                        amount: BigInt.zero,
+                        recipient: '',
+                        call: call,
+                        wait: ProposalWait.proposed,
+                        approved: 1,
+                        needed: 2,
+                        form: form,
+                        l10n: _l10n,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(tester.takeException(), isNull, reason: 'nothing overflows');
+        expect(find.text(call.humanCall), findsOne);
+      });
     }
   }
 

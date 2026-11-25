@@ -12,6 +12,7 @@ import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
+import 'package:quantus_desktop_wallet/services/mac_push.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
@@ -20,6 +21,7 @@ import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pa
 import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -34,6 +36,7 @@ import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import 'services/fake_background_window.dart';
+import 'services/fake_mac_push.dart';
 import 'services/fake_notification_plugin.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
@@ -380,6 +383,8 @@ class FakeWalletStorage extends FakeSettingsService {
     accounts
       ..clear()
       ..addAll(remaining);
+    // A wallet goes with its last account, as a hardware wallet's can.
+    if (!remaining.any((a) => a.walletIndex == account.walletIndex)) names.remove(account.walletIndex);
   }
 
   @override
@@ -674,6 +679,9 @@ class FakeSendChain {
   /// When set, every read of history waits for it.
   Completer<void>? holdHistory;
 
+  /// The pages of history whose reads wait for their completer.
+  final holdHistoryPages = <int, Completer<void>>{};
+
   /// When set, a read of history fails with this.
   Object? historyError;
 
@@ -726,6 +734,33 @@ class FakeSendChain {
   List<ReversibleTransferEvent> stillScheduled = const [];
   final stillScheduledReads = <List<String>>[];
 
+  /// What each account received, oldest first, as the indexer holds it.
+  final received = <String, List<TransactionEvent>>{};
+
+  /// The indexer now holds [event] as received by the account [accountId].
+  void receive(String accountId, TransactionEvent event) => received.putIfAbsent(accountId, () => []).add(event);
+
+  /// The accounts asked what they received, each time, in order.
+  final receivedReads = <List<String>>[];
+
+  /// When set, a read of what accounts received fails with this; and waits
+  /// for [holdReceived], when that is set.
+  Object? receivedError;
+  Completer<void>? holdReceived;
+
+  /// What happened to each multisig's proposals, oldest first, as the indexer
+  /// holds it.
+  final proposalActivity = <String, List<MultisigProposalActivity>>{};
+
+  /// The multisigs asked what happened to their proposals, each time, in
+  /// order.
+  final proposalActivityReads = <List<String>>[];
+
+  /// When set, a read of what happened to proposals fails with this; and
+  /// waits for [holdProposalActivity], when that is set.
+  Object? proposalActivityError;
+  Completer<void>? holdProposalActivity;
+
   /// When set, a read of past proposals waits for it; and fails with
   /// [pastProposalsError], when that is set.
   Completer<void>? holdPastProposals;
@@ -752,6 +787,31 @@ class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.chain);
 
   final FakeSendChain chain;
+
+  /// A cursor counts, under every kind, how many of the multisig's records
+  /// were read.
+  @override
+  Future<Map<String, MultisigProposalActivitySince>> fetchProposalActivitySince(
+    List<MultisigAccount> multisigs,
+    Map<String, MultisigProposalActivityCursor> cursors,
+  ) async {
+    chain.proposalActivityReads.add([for (final msig in multisigs) msig.accountId]);
+    await chain.holdProposalActivity?.future;
+    if (chain.proposalActivityError case final error?) throw error;
+    return {
+      for (final msig in multisigs)
+        msig.accountId: MultisigProposalActivitySince(
+          activity: switch (cursors[msig.accountId]) {
+            null => const [],
+            final cursor => [...?chain.proposalActivity[msig.accountId]?.skip(int.parse(cursor.values.first.id))],
+          },
+          cursor: {
+            for (final kind in MultisigProposalActivityKind.values)
+              kind: AccountEventCursor(timestamp: '', id: '${chain.proposalActivity[msig.accountId]?.length ?? 0}'),
+          },
+        ),
+    };
+  }
 
   @override
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) {
@@ -868,6 +928,7 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
     final page = otherAfter == null ? 0 : int.parse(otherAfter.id);
     chain.historyReads.add(page);
     await chain.holdHistory?.future;
+    await chain.holdHistoryPages[page]?.future;
     if (chain.historyError case final error?) throw error;
     if (chain.failingHistoryPages.contains(page)) throw StateError('page $page could not be read');
     final pages = chain.historyPages;
@@ -887,6 +948,21 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   Future<List<ReversibleTransferEvent>> fetchStillScheduledTransfers({required List<String> accountIds}) async {
     chain.stillScheduledReads.add(accountIds);
     return chain.stillScheduled;
+  }
+
+  /// A cursor counts how many of the account's rows were read.
+  @override
+  Future<Map<String, IncomingSince>> fetchIncomingSince(Map<String, AccountEventCursor?> after) async {
+    chain.receivedReads.add(after.keys.toList());
+    await chain.holdReceived?.future;
+    if (chain.receivedError case final error?) throw error;
+    return {
+      for (final MapEntry(key: account, value: cursor) in after.entries)
+        account: IncomingSince(
+          received: cursor == null ? const [] : [...?chain.received[account]?.skip(int.parse(cursor.id))],
+          cursor: AccountEventCursor(timestamp: '', id: '${chain.received[account]?.length ?? 0}'),
+        ),
+    };
   }
 }
 
@@ -1814,6 +1890,9 @@ Future<void> pumpShell(
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
         ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
         notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
+        // Never the Mac's own push service: a build not signed to receive
+        // pushes, which registers nothing.
+        macPushProvider.overrideWithValue(FakeMacPush(environmentOfBuild: null)),
         backgroundWindowProvider.overrideWithValue(backgroundWindow ?? FakeBackgroundWindow()),
       ],
     ),
@@ -1890,3 +1969,11 @@ EncryptedAccountState emptyEncryptedState(int walletIndex) => EncryptedAccountSt
   nextIndex: 0,
   nextChangeIndex: 0,
 );
+
+/// The bytes of a real runtime call from quantus_sdk's sample calls, by its
+/// name there (e.g. `ReversibleTransfers.set_high_security`), as a
+/// proposal's `callRaw` carries them.
+Uint8List corpusCall(String name) {
+  final hex = callCorpus[name] ?? (throw ArgumentError.value(name, 'name', 'not a sample call'));
+  return Uint8List.fromList([for (var i = 0; i < hex.length; i += 2) int.parse(hex.substring(i, i + 2), radix: 16)]);
+}

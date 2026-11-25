@@ -12,14 +12,21 @@ import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/utils/polling_refresh_scope.dart';
 
 /// Where a notification's metadata holds the hash of its transaction.
 const notificationHashKey = 'extrinsicHash';
+
+/// Where a notification's metadata holds the id the lists know its proposal
+/// by. The transaction that created a proposal does not name it: one
+/// transaction can create several.
+const notificationProposalKey = 'proposalId';
 
 /// What a click on [notification] needs to find what it was about.
 String notificationClickPayload(NotificationData notification) => jsonEncode({
   'accountId': notification.accountId,
   if (notification.metadata?[notificationHashKey] case final String hash) notificationHashKey: hash,
+  if (notification.metadata?[notificationProposalKey] case final String proposalId) notificationProposalKey: proposalId,
 });
 
 /// Opens what a clicked notification was about: the window comes to the
@@ -45,10 +52,12 @@ class NotificationClick {
     unawaited(const WindowChrome().bringToFront());
     final String accountId;
     final String? hash;
+    final String? proposalId;
     try {
       final clicked = jsonDecode(payload!) as Map<String, dynamic>;
       accountId = clicked['accountId'] as String;
       hash = clicked[notificationHashKey] as String?;
+      proposalId = clicked[notificationProposalKey] as String?;
     } catch (e) {
       quantusPrint('A clicked notification could not be read: $e');
       _ref.read(telemetryProvider).sendError('desktop_notification_click_unreadable', error: e);
@@ -57,7 +66,7 @@ class NotificationClick {
     _cancelWait?.call();
     final click = Object();
     _current = click;
-    unawaited(_follow(click, accountId, hash));
+    unawaited(_follow(click, accountId, hash: hash, proposalId: proposalId));
   }
 
   /// Drops the click being followed: its wallet was wiped.
@@ -66,7 +75,7 @@ class NotificationClick {
     _cancelWait?.call();
   }
 
-  Future<void> _follow(Object click, String accountId, String? hash) async {
+  Future<void> _follow(Object click, String accountId, {required String? hash, required String? proposalId}) async {
     // Before they have loaded, restoring the saved active account would undo
     // the switch.
     final loaded = await _until(click, [sidebarAccountsProvider, activeAccountProvider], () {
@@ -81,11 +90,17 @@ class NotificationClick {
     if (account == null) return;
 
     await _ref.read(sidebarSelectionProvider.notifier).showAccount(account);
-    if (hash == null || !_isShowing(click, accountId)) return;
+    if ((hash == null && proposalId == null) || !_isShowing(click, accountId)) return;
 
     final leaving = _dropWhenLeft(click, accountId);
     try {
-      await _openListed(click, accountId, hash, isMultisig: account.account is MultisigAccount);
+      await _openListed(
+        click,
+        accountId,
+        hash: hash,
+        proposalId: proposalId,
+        isMultisig: account.account is MultisigAccount,
+      );
     } finally {
       for (final subscription in leaving) {
         subscription.close();
@@ -112,23 +127,64 @@ class NotificationClick {
     ];
   }
 
-  /// Opens what the transaction [hash] was, once the lists hold it.
-  Future<void> _openListed(Object click, String accountId, String hash, {required bool isMultisig}) async {
-    String? proposalId;
-    if (isMultisig) {
-      proposalId = await _proposalCreatedIn(hash);
-      if (proposalId == null || !_isShowing(click, accountId)) return;
+  /// Opens what the transaction [hash] was, once the lists hold it: as they
+  /// are, or else read once more.
+  ///
+  /// A notification that names its proposal is taken at its word. One that
+  /// names only a transaction in a multisig is asked of the indexer, which
+  /// answers with the proposal that transaction created, if it created one.
+  Future<void> _openListed(
+    Object click,
+    String accountId, {
+    required String? hash,
+    required String? proposalId,
+    required bool isMultisig,
+  }) async {
+    var listedAs = proposalId;
+    if (listedAs == null && isMultisig) {
+      // A click that names no proposal names a transaction.
+      final created = await _proposalCreatedIn(hash!);
+      if (created == null || !_isShowing(click, accountId)) return;
+      listedAs = created.proposalId;
     }
 
-    final listsLoaded = await _until(click, [
-      activityViewProvider,
-      openProposalsViewProvider,
-    ], () => _isShowing(click, accountId) ? _listsLoaded() : false);
-    if (!listsLoaded) return;
-
-    final activity = _listedActivity(hash: hash, proposalId: proposalId);
+    if (!await _untilListsLoaded(click, accountId)) return;
+    if (listedAs != null) {
+      // What happened to the proposal is newer than the lists read before
+      // it, and showing the multisig already in front reads nothing: without
+      // this it would open as it was, or not at all.
+      if (!await _readProposalsAgain() || !await _untilListsLoaded(click, accountId)) return;
+    }
+    var activity = _listedActivity(hash: hash, proposalId: listedAs);
+    if (activity == null) {
+      // What the notification is about can be newer than the rows last
+      // read, and showing the account already in front reads nothing.
+      await silentRefreshActiveAccount(_ref);
+      if (!await _untilListsLoaded(click, accountId)) return;
+      activity = _listedActivity(hash: hash, proposalId: listedAs);
+    }
     if (activity != null) _ref.read(openedActivityProvider.notifier).open(activity);
   }
+
+  /// Reads the proposals of the multisig in front again. False when they
+  /// cannot be read: the proposal is then not opened as it was before.
+  Future<bool> _readProposalsAgain() async {
+    try {
+      await refreshActiveMultisigProposals(_ref);
+      return true;
+    } catch (e) {
+      quantusPrint('The proposals of a clicked notification could not be read again: $e');
+      if (_ref.mounted) _ref.read(telemetryProvider).sendError('desktop_notification_proposals_unread', error: e);
+      return false;
+    }
+  }
+
+  /// Waits for the lists of the account in front. False when they cannot be
+  /// read, or the click is no longer followed there.
+  Future<bool> _untilListsLoaded(Object click, String accountId) => _until(click, [
+    activityViewProvider,
+    openProposalsViewProvider,
+  ], () => _isShowing(click, accountId) ? _listsLoaded() : false);
 
   /// Whether the click is still the latest and its account still in front.
   bool _isShowing(Object click, String accountId) =>
@@ -139,13 +195,16 @@ class NotificationClick {
       _ref.read(activeAccountProvider).value?.account.accountId == accountId;
 
   /// The id of the proposal created in the transaction [hash], which is what
-  /// the lists know it by. Null when it cannot be told.
-  Future<String?> _proposalCreatedIn(String hash) async {
+  /// the lists know it by; no id when the transaction created none, as a
+  /// transfer the multisig received did not. Null when it cannot be told.
+  Future<({String? proposalId})?> _proposalCreatedIn(String hash) async {
     try {
       final created = await _ref
           .read(chainHistoryServiceProvider)
           .searchProposalCreatedByExtrinsicHash(extrinsicHash: hash);
-      return created?.proposal?.entityId;
+      if (created == null) return (proposalId: null);
+      final proposalId = created.proposal?.entityId;
+      return proposalId == null ? null : (proposalId: proposalId);
     } catch (e) {
       quantusPrint('The proposal of a clicked notification could not be read: $e');
       if (_ref.mounted) _ref.read(telemetryProvider).sendError('desktop_notification_proposal_unread', error: e);
@@ -166,7 +225,7 @@ class NotificationClick {
 
   /// What the loaded lists hold of the transaction [hash], or of the proposal
   /// [proposalId] when there is one.
-  OpenedActivity? _listedActivity({required String hash, required String? proposalId}) {
+  OpenedActivity? _listedActivity({required String? hash, required String? proposalId}) {
     final view = _ref.read(activityViewProvider).requireValue;
     final rows = [...view.inProgress, ...view.settled];
     if (proposalId == null) {
