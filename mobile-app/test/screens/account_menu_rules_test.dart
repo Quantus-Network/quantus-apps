@@ -274,6 +274,39 @@ void main() {
       expect((await storedAccounts()).map((a) => a.accountId), [a1.accountId]);
     });
 
+    String? walletNameShown(WidgetTester tester, int walletIndex) => ProviderScope.containerOf(
+      tester.element(find.byType(AccountsScreen, skipOffstage: false)),
+    ).read(walletNameProvider(walletIndex));
+
+    testWidgets('a Keystone wallet\'s last account takes the wallet\'s name with it', (tester) async {
+      await seed([a1, keystone]);
+      await SettingsService().setWalletName(1, 'Retired wallet');
+      await pumpAndOpen(tester);
+      final l10n = l10nOf(tester);
+      expect(walletNameShown(tester, 1), 'Retired wallet');
+      await expandWallet(tester, 'Retired wallet');
+      await openMenuOf(tester, keystone.name);
+      await tapVisible(tester, find.text(l10n.accountMenuDisconnectAccount));
+      await tapVisible(tester, find.text(l10n.accountMenuDisconnect));
+
+      expect(walletNameShown(tester, 1), isNull);
+    });
+
+    testWidgets('a software wallet removed whole takes its name with it', (tester) async {
+      await seed([a1, keystone, second]);
+      await SettingsService().setWalletName(3, 'Retired wallet');
+      await pumpAndOpen(tester);
+      final l10n = l10nOf(tester);
+      expect(walletNameShown(tester, 3), 'Retired wallet');
+      await expandWallet(tester, 'Retired wallet');
+      await openMenuOf(tester, second.name);
+      await tapVisible(tester, find.text(l10n.accountMenuDisconnectAccount));
+      await tapVisible(tester, find.text(l10n.accountMenuDisconnectWalletConfirm));
+      await tapVisible(tester, find.text(l10n.accountMenuDeleteWalletConfirm));
+
+      expect(walletNameShown(tester, 3), isNull);
+    });
+
     testWidgets('a multisig: the multisig confirm, then it leaves the multisig list', (tester) async {
       await seed([a1, a2], multisigs: [multisig()]);
       await pumpAndOpen(tester);

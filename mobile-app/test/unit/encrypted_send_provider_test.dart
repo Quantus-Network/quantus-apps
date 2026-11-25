@@ -63,6 +63,7 @@ class _FakeEncryptedAccountService extends EncryptedAccountService {
     required ClaimProgressCallback onProgress,
     String? rpcUrl,
     IsCancelledCallback? isCancelled,
+    void Function(String txHash)? onTransactionSubmitted,
   }) async {
     sentPlans.add(plan);
     return ClaimResult(
