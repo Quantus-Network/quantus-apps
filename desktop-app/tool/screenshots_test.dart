@@ -1593,7 +1593,13 @@ void _activityScenes() {
   // A multisig's proposal open; in the smallest window too, with the sidebar
   // and the panel at the right made their widest, where they give way and
   // the lists are the narrowest they get.
-  Future<void> openTeamProposal(WidgetTester tester, {Size? window}) async {
+  Future<void> openTeamProposal(
+    WidgetTester tester, {
+    Size? window,
+    List<MultisigProposal> calls = const [],
+    String openId = 'proposal-1',
+    int? block,
+  }) async {
     useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
     final team = MultisigAccount(
       name: 'Team',
@@ -1604,7 +1610,9 @@ void _activityScenes() {
       myMemberAccountId: _root.accountId,
     );
     final chain = FakeSendChain()
+      ..currentBlock = (() async => block ?? 1250000)
       ..openProposals = [
+        ...calls,
         proposal(
           1,
           tokens: 250,
@@ -1655,11 +1663,44 @@ void _activityScenes() {
       tester.view.physicalSize = window * _pixelRatio;
       await tester.pumpAndSettle();
     }
-    await tester.tap(find.byType(OpenProposalRowView).first);
+    await tester.tap(find.byWidgetPredicate((widget) => widget is OpenProposalRowView && widget.id == openId));
     await tester.pumpAndSettle();
   }
 
+  // A proposal whose call is the sample call [name]: one that moves nothing,
+  // or one this wallet cannot read.
+  MultisigProposal callProposal(int id, String name) => MultisigProposal(
+    entityId: 'proposal-$id',
+    id: id,
+    multisigAddress: _activityTeam,
+    proposer: _root.accountId,
+    createdAt: _activityNow.subtract(const Duration(hours: 1)),
+    updatedAt: _activityNow.subtract(const Duration(hours: 1)),
+    pallet: name.split('.').first,
+    call: name.split('.').last,
+    recipient: '',
+    amount: BigInt.zero,
+    callRaw: corpusCall(name),
+    expiryBlock: 1284220,
+    approvals: [_root.accountId],
+    deposit: oneToken,
+    burnedPalletFee: oneToken ~/ BigInt.from(10),
+    networkFee: BigInt.from(1240000000),
+    status: MultisigProposalStatus.active,
+    threshold: 2,
+    signerCount: 3,
+  );
+  final calls = [callProposal(5, 'ReversibleTransfers.set_high_security'), callProposal(6, 'System.remark')];
+
   _scene('activity_multisig', openTeamProposal);
+  _scene('activity_multisig_call', (tester) => openTeamProposal(tester, calls: calls, openId: 'proposal-5'));
+  _scene(
+    'activity_multisig_call_smallest_window',
+    (tester) => openTeamProposal(tester, window: const Size(960, 640), calls: calls, openId: 'proposal-5'),
+  );
+  _scene('activity_multisig_invalid', (tester) => openTeamProposal(tester, calls: calls, openId: 'proposal-6'));
+  // The chain past the open proposals' expiry block.
+  _scene('activity_multisig_expired', (tester) => openTeamProposal(tester, block: 1300000));
   _scene('activity_multisig_smallest_window', (tester) => openTeamProposal(tester, window: const Size(960, 640)));
 }
 

@@ -2891,6 +2891,16 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopProposeWaiting => 'Menunggu jaringan membuat proposal.';
 
   @override
+  String get desktopProposalApproved => 'Disetujui';
+
+  @override
+  String get desktopProposalExpired => 'Telah kedaluwarsa';
+
+  @override
+  String get desktopProposalUnreadable =>
+      'Dompet ini tidak dapat membaca apa yang akan dilakukan proposal ini, jadi proposal ini tidak dapat disetujui atau dijalankan di sini.';
+
+  @override
   String get desktopFooterMainnet => 'Mainnet';
 
   @override
