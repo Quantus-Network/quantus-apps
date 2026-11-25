@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
@@ -211,6 +214,49 @@ void main() {
       expect(_inSheet(find.text('Couldn\'t read the signature. Please try again.')), findsOneWidget);
       expect(harness.camera.isOn, isTrue);
       expect(_container(tester).read(pendingMultisigCreationsProvider), isEmpty);
+    });
+
+    testOnMac('from a whole signature until its creation is known, the app counts it as work under way', (
+      tester,
+    ) async {
+      final harness = await _pump(tester);
+      final block = Completer<int>();
+      harness.device.chain.currentBlock = () => block.future;
+      await _toShow(tester);
+      await _tap(tester, KeystoneSigningView.continueKey);
+
+      for (final frame in fakeSignatureFrames(3)) {
+        harness.camera.read(frame);
+        await tester.pump();
+      }
+
+      expect(_container(tester).read(pendingMultisigCreationsProvider), isEmpty);
+      expect(_container(tester).read(pendingWorkProvider), isTrue);
+      block.complete(1250000);
+      await tester.pumpAndSettle();
+      expect(_container(tester).read(pendingMultisigCreationsProvider), hasLength(1));
+      expect(_container(tester).read(pendingWorkProvider), isTrue);
+    });
+
+    testOnMac('a signature refused on its way leaves no work under way', (tester) async {
+      final harness = await _pump(tester);
+      final block = Completer<int>();
+      harness.device.chain.currentBlock = () => block.future;
+      await _toShow(tester);
+      await _tap(tester, KeystoneSigningView.continueKey);
+      for (final frame in fakeSignatureFrames(3)) {
+        harness.camera.read(frame);
+        await tester.pump();
+      }
+      expect(_container(tester).read(pendingWorkProvider), isTrue);
+
+      // Past the era of the transaction shown: the signature is refused.
+      block.complete(1250052);
+      await tester.pumpAndSettle();
+
+      expect(_inSheet(find.byType(KeystoneSigningView)), findsOneWidget);
+      expect(harness.device.chain.externallySignedCreations, isEmpty);
+      expect(_container(tester).read(pendingWorkProvider), isFalse);
     });
 
     testOnMac('"I rejected it on the cold wallet" returns to the review, nothing created', (tester) async {

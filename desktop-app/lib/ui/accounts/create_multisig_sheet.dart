@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
@@ -84,6 +85,22 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
   /// The creator's cold wallet signing the creation, on the signing step.
   KeystoneSigningSession? _signing;
 
+  /// Where a cold wallet's signature being handed over counts as work under
+  /// way, until the creation is known or came to nothing. Set and cleared
+  /// where that happens, not in a build: a closed window draws no frames.
+  WorkHoldsNotifier? _workHold;
+
+  void _onColdWalletSubmitting(bool isSubmitting) {
+    if (isSubmitting) {
+      final holds = ref.read(workHoldsProvider.notifier);
+      holds.hold(this);
+      _workHold = holds;
+    } else {
+      _workHold?.release(this);
+      _workHold = null;
+    }
+  }
+
   List<String> get _signers => multisigSigners(_creator.accountId, _others);
 
   @override
@@ -107,6 +124,9 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
 
   @override
   void dispose() {
+    // After this frame: no provider may change while the tree is being built.
+    final hold = _workHold;
+    if (hold != null) scheduleMicrotask(() => hold.release(this));
     _name.dispose();
     _signerField.dispose();
     _nameFocus.dispose();
@@ -362,7 +382,7 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
                     account: _creator,
                     parentTitle: l10n.multisigAddTitle,
                     onLeave: _backFromSigning,
-                    onSubmitting: (_) {},
+                    onSubmitting: _onColdWalletSubmitting,
                     onSigned: (_) => Navigator.of(context).pop(),
                   ),
                 ],
