@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import 'package:wallet_core/providers/controllers/multisig_action_confirm_contro
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
+import 'package:wallet_core/services/multisig_execution_polling_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import '../../fakes.dart';
@@ -83,16 +85,17 @@ Finder _inPanel(Finder finder) => find.descendant(of: find.byType(ActivityInspec
 
 /// Opens the team with [proposal] as its only proposal, open or past, and
 /// opens that, with [accounts] in the wallet and [pending] this device's
-/// actions under way.
+/// actions under way, on [chain] when given.
 Future<void> _openProposal(
   WidgetTester tester,
   MultisigProposal proposal, {
   List<Account> accounts = const [mainAccount],
   void Function(ProviderContainer container)? pending,
   ApprovalAvailability approval = ApprovalAvailability.available,
+  FakeSendChain? chain,
 }) async {
   final isOpen = !proposal.isTerminal;
-  final chain = FakeSendChain();
+  chain ??= FakeSendChain();
   if (isOpen) {
     chain.openProposals = [proposal];
   } else {
@@ -287,6 +290,56 @@ void main() {
       expect(_button(tester, ProposalActionsBar.primaryKey), isNull);
       expect(_button(tester, ProposalActionsBar.cancelKey), isNull);
     });
+  });
+
+  testOnMac('an execution the indexer shows: Execute is not offered again while the proposals are read again', (
+    tester,
+  ) async {
+    final chain = FakeSendChain();
+    await _openProposal(tester, _ready(), chain: chain);
+    final container = _container(tester);
+    const hash = '0xexecuted';
+    final pending = PendingMultisigExecutionEvent.create(
+      multisigAddress: _team.accountId,
+      proposalId: 1,
+      executorId: 'qzMain',
+      recipient: _bob,
+      amount: oneToken,
+    ).copyWith(extrinsicHash: hash);
+    container.read(pendingMultisigExecutionsProvider.notifier).add(pending);
+    container.read(multisigExecutionPollingServiceProvider).startPolling(_team, pending);
+    await tester.pumpAndSettle();
+    expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse);
+
+    final executed = _ready().copyWith(status: MultisigProposalStatus.executed);
+    chain.proposalsById[1] = executed;
+    chain.indexedExecutions[hash] = MultisigProposalExecutedEvent(
+      id: 'executed',
+      executorId: 'qzMain',
+      multisigAddress: _team.accountId,
+      recipient: _bob,
+      amount: oneToken,
+      proposalId: 1,
+      approvers: const ['qzOther', 'qzSavings'],
+      result: 'success',
+      timestamp: DateTime.now(),
+      blockNumber: 2,
+      blockHash: '0xblock',
+    );
+    final held = chain.holdOpenProposals = Completer<void>();
+    await tester.pump(const Duration(seconds: 6));
+    await tester.pump();
+
+    expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse, reason: 'while the list is read');
+
+    chain
+      ..openProposals = const []
+      ..pastProposals = [executed];
+    held.complete();
+    await tester.pumpAndSettle();
+
+    expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse);
+    expect(container.read(pendingMultisigExecutionsProvider), isEmpty);
   });
 
   group('a Keystone account', () {
