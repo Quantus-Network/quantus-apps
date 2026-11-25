@@ -32,23 +32,27 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
   Future<void>? _inFlight;
   List<String>? _inFlightIds;
+  bool _inFlightIsFirstPage = false;
 
   /// Runs [load] for [ids], joining a running load only when it is fetching the
-  /// same accounts.
+  /// same accounts, and the same page: the first ([firstPage]) or a later one.
   ///
   /// `_init` and the accounts listener both fire when accounts settle, and
   /// `loadingRefresh` resets `isFetching` before it fetches, so the state flag
   /// alone cannot keep them from hitting the indexer twice. A load for a
   /// *different* scope is queued behind the running one instead of joining it:
   /// the account set can change mid-flight, and the newer scope has to win the
-  /// final state write or the list keeps showing the previous account.
-  Future<void> _once(List<String> ids, Future<void> Function() load) {
+  /// final state write or the list keeps showing the previous account. A
+  /// refresh asked while a later page loads is queued too: joining it would
+  /// leave the first page unread, and what arrived since unseen.
+  Future<void> _once(List<String> ids, Future<void> Function() load, {required bool firstPage}) {
     final running = _inFlight;
-    if (running != null && listEquals(_inFlightIds, ids)) return running;
+    if (running != null && listEquals(_inFlightIds, ids) && _inFlightIsFirstPage == firstPage) return running;
 
     final task = running == null ? load() : _queueAfter(running, load);
     _inFlight = task;
     _inFlightIds = List<String>.unmodifiable(ids);
+    _inFlightIsFirstPage = firstPage;
 
     return task.whenComplete(() {
       if (identical(_inFlight, task)) {
@@ -90,7 +94,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       return;
     }
 
-    await _once(ids, () => _fetchPage(ids));
+    await _once(ids, () => _fetchPage(ids), firstPage: true);
   }
 
   Future<List<String>> _getAccountIdsAsync() async {
@@ -152,7 +156,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
     final targetAccountIds = _getAccountIds();
     if (targetAccountIds.isEmpty) return;
 
-    await _once(targetAccountIds, () => _fetchPage(targetAccountIds));
+    await _once(targetAccountIds, () => _fetchPage(targetAccountIds), firstPage: false);
   }
 
   /// Refresh data silently without showing loading indicators.
@@ -165,7 +169,10 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
 
     // The poller can fire before `_init` runs; a silent fetch would then win the
     // dedup and never clear `isLoading`, leaving empty accounts on the skeleton.
-    if (state.isLoading) return _once(targetAccountIds, () => _fetchPage(targetAccountIds));
+    // Only while the first page is unread: `fetchMore` sets `isLoading` too, and
+    // `_fetchPage` would then read the page after it, not the first.
+    final firstPageUnread = state.isLoading && state.otherCursor == null && state.scheduledCursor == null;
+    if (firstPageUnread) return _once(targetAccountIds, () => _fetchPage(targetAccountIds), firstPage: true);
 
     await _once(targetAccountIds, () async {
       state = state.copyWith(isFetching: true);
@@ -174,7 +181,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       } finally {
         state = state.copyWith(isFetching: false);
       }
-    });
+    }, firstPage: true);
   }
 
   /// Refresh data with loading indicators.
@@ -199,7 +206,7 @@ class UnifiedPaginationController extends StateNotifier<PaginationState> {
       // Reset to initial state to show loading
       state = PaginationState.initial();
       return _fetchPage(targetAccountIds);
-    });
+    }, firstPage: true);
   }
 
   Future<void> _silentFetchFirstPage(List<String> targetAccountIds) async {
