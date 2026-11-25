@@ -33,6 +33,8 @@ Future<bool> _confirmIndexedCancellation(
   if (indexed == null) return false;
   if (!await session.survivesReset(ticket, dropping: 'confirming cancellation ${pending.id}')) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: 'confirming cancellation ${pending.id}')) return true;
   removePendingMultisigCancellation(ref, pending.id);
   _settle(ref, hash, MultisigActionConfirmation.confirmed);
   await reconcileIndexedCancellation(ref, msig, indexed);
@@ -56,8 +58,9 @@ Future<bool> _tryResolveCancellationTimeout(
   }
   if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
   removePendingMultisigCancellation(ref, pending.id);
-  invalidateMultisigProposals(ref, msig);
 
   // Only the proposer cancels, so the proposal being cancelled is this one.
   final hash = pending.extrinsicHash;

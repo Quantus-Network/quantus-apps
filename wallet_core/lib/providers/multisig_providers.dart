@@ -123,6 +123,24 @@ void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
   ref.invalidate(multisigCurrentBlockProvider);
 }
 
+/// As [invalidateMultisigProposals], and waits until the open proposals are
+/// read again: what stands for an action under way goes only once the list
+/// shows what it did, or that action is offered again in between. A read
+/// that fails is logged, and the list says so itself.
+Future<void> rereadMultisigProposals(Ref ref, MultisigAccount msig) async {
+  final open = multisigOpenProposalsProvider(msig);
+  invalidateMultisigProposals(ref, msig);
+  // Kept while it is read, though nothing may be watching it.
+  final kept = ref.listen(open, (_, _) {});
+  try {
+    await ref.read(open.future);
+  } catch (e) {
+    quantusPrint('[Multisig] open proposals of ${msig.accountId} not read again: $e');
+  } finally {
+    kept.close();
+  }
+}
+
 /// Current best block number, used to derive proposal expiry.
 final multisigCurrentBlockProvider = FutureProvider.autoDispose<int>((ref) async {
   final service = ref.watch(multisigServiceProvider);
