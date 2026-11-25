@@ -76,12 +76,20 @@ MultisigProposal _proposal({
   signerCount: _msig.signers.length,
 );
 
+/// The indexer lists [listed] among the open proposals or the past ones, as
+/// its status says; with none, it lists nothing.
 class _FakeMultisigService extends Fake implements MultisigService {
-  @override
-  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async => [];
+  _FakeMultisigService(this.listed);
+
+  final MultisigProposal? listed;
 
   @override
-  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async => [];
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async =>
+      [?listed].where((proposal) => !proposal.isTerminal).toList();
+
+  @override
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async =>
+      [?listed].where((proposal) => proposal.isTerminal).toList();
 
   @override
   Future<int> currentBlockNumber() async => _currentBlock;
@@ -121,12 +129,14 @@ ProviderContainer _container(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(MaterialApp)));
 
 /// Opens the proposal sheet for [proposal] with [accounts] in the wallet,
-/// after [pending] has put this device's in-flight actions in place.
+/// after [pending] has put this device's in-flight actions in place. The
+/// indexer lists [proposal] unless [listed] is false.
 Future<void> _open(
   WidgetTester tester,
   MultisigProposal proposal, {
   List<Account>? accounts,
   void Function(ProviderContainer container)? pending,
+  bool listed = true,
 }) async {
   tester.view.physicalSize = const Size(800, 1600);
   tester.view.devicePixelRatio = 1;
@@ -134,7 +144,7 @@ Future<void> _open(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        multisigServiceProvider.overrideWithValue(_FakeMultisigService()),
+        multisigServiceProvider.overrideWithValue(_FakeMultisigService(listed ? proposal : null)),
         accountsProvider.overrideWith(
           (ref) => AccountsNotifier(AccountsService(), initialAccounts: accounts ?? [_one]),
         ),
@@ -256,6 +266,32 @@ void main() {
         expect(find.text(_l10n.multisigExecuteButton), findsNothing);
         expect(find.text(_l10n.multisigCancelProposalButton), findsNothing);
         expect(_note(), note());
+      });
+    }
+
+    // Once the lists are read again after an execution or cancellation, the
+    // open list no longer has it, while the past one may not have it yet, or
+    // could not be read.
+    for (final (name, proposal) in [
+      ('still to approve', _proposal(proposer: _one.accountId)),
+      (
+        'ready to execute',
+        _proposal(
+          status: MultisigProposalStatus.approved,
+          approvals: [_two.accountId, _three.accountId],
+          proposer: _one.accountId,
+        ),
+      ),
+    ]) {
+      testWidgets('$name as opened, but in neither the open proposals just read nor the past ones: only Done, '
+          'and no note', (tester) async {
+        await _open(tester, proposal, listed: false);
+
+        expect(find.text(_l10n.multisigDone), findsOneWidget);
+        expect(find.text(_l10n.multisigApproveButton), findsNothing);
+        expect(find.text(_l10n.multisigExecuteButton), findsNothing);
+        expect(find.text(_l10n.multisigCancelProposalButton), findsNothing);
+        expect(_note(), isNull);
       });
     }
 

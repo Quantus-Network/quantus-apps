@@ -118,7 +118,10 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
 
   const _MultisigProposalDetailSheet({required this.msig, required this.proposal});
 
-  MultisigProposal _resolveLiveProposal(WidgetRef ref) {
+  /// The proposal as the lists now show it. It is [over] when the open
+  /// proposals, just read, no longer have it and the past ones do not yet,
+  /// or could not be read: it is shown as it was, and nothing is offered.
+  ({MultisigProposal proposal, bool over}) _resolveLiveProposal(WidgetRef ref) {
     MultisigProposal? findMatch(Iterable<MultisigProposal> proposals) {
       for (final p in proposals) {
         if (p.id == proposal.id && p.multisigAddress == proposal.multisigAddress) {
@@ -128,19 +131,21 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
       return null;
     }
 
-    final open = ref.watch(multisigOpenProposalsProvider(msig)).value;
+    final openAsync = ref.watch(multisigOpenProposalsProvider(msig));
+    final open = openAsync.value;
     if (open != null) {
       final match = findMatch(open);
-      if (match != null) return match;
+      if (match != null) return (proposal: match, over: false);
     }
 
     final past = ref.watch(multisigPastProposalsProvider(msig)).value;
     if (past != null) {
       final match = findMatch(past);
-      if (match != null) return match;
+      if (match != null) return (proposal: match, over: false);
     }
 
-    return proposal;
+    final openIsFresh = openAsync.hasValue && !openAsync.isLoading && !openAsync.hasError;
+    return (proposal: proposal, over: openIsFresh);
   }
 
   @override
@@ -150,18 +155,20 @@ class _MultisigProposalDetailSheet extends ConsumerWidget {
     final fmt = ref.watch(numberFormattingServiceProvider);
     final currentBlock = ref.watch(multisigCurrentBlockProvider).value;
     final multisigService = ref.watch(multisigServiceProvider);
-    final liveProposal = _resolveLiveProposal(ref);
+    final (proposal: liveProposal, :over) = _resolveLiveProposal(ref);
     final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
     final localSignerIds = localSignersForMultisig(msig, accounts).map((a) => a.accountId).toSet();
-    final actions = proposalActionsOf(
-      msig: msig,
-      proposal: liveProposal,
-      accounts: accounts,
-      currentBlock: currentBlock,
-      pendingApprovals: ref.watch(pendingMultisigApprovalsProvider),
-      pendingExecutions: ref.watch(pendingMultisigExecutionsProvider),
-      pendingCancellations: ref.watch(pendingMultisigCancellationsProvider),
-    );
+    final actions = over
+        ? const ProposalOver(null)
+        : proposalActionsOf(
+            msig: msig,
+            proposal: liveProposal,
+            accounts: accounts,
+            currentBlock: currentBlock,
+            pendingApprovals: ref.watch(pendingMultisigApprovalsProvider),
+            pendingExecutions: ref.watch(pendingMultisigExecutionsProvider),
+            pendingCancellations: ref.watch(pendingMultisigCancellationsProvider),
+          );
 
     return BottomSheetContainer(
       title: l10n.multisigProposalTitle,
