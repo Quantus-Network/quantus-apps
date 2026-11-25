@@ -2000,6 +2000,12 @@ abstract class AppLocalizations {
   /// **'ACTION'**
   String get keystoneSignActionLabel;
 
+  /// The action a cold wallet creator signs, on the cold wallet signing screens; the new multisig's address is shown beside it
+  ///
+  /// In en, this message translates to:
+  /// **'Create multisig'**
+  String get keystoneSignCreateMultisig;
+
   /// In place of the amount on the cold wallet signing screens for a maximum send: the cold wallet shows these words, since the transfer carries no amount
   ///
   /// In en, this message translates to:

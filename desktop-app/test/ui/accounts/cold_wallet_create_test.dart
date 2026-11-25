@@ -182,7 +182,7 @@ void main() {
       expect(tester.widget<AnimatedUrQr>(find.byType(AnimatedUrQr)).parts, ['UR:QUANTUS-SIGN-REQUEST/qzVault/1249990']);
       expect(harness.device.chain.signRequests, [(recipient: 'a new multisig', amount: null)]);
       expect(_inSheet(find.text('ACTION')), findsOneWidget);
-      expect(_inSheet(find.text('Create 2 of 3 multisig')), findsOneWidget);
+      expect(_inSheet(find.text('Create multisig')), findsOneWidget);
       expect(_inSheet(find.text(_threeSigners)), findsOneWidget);
       expect(_inSheet(find.text('Phrase-$_threeSigners')), findsOneWidget);
     });
