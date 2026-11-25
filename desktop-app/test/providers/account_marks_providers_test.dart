@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/active_swaps_provider.dart';
@@ -188,11 +189,41 @@ void main() {
     await close(tester, container);
   });
 
-  testWidgets('a swap whose account the wallet no longer holds counts on no account', (tester) async {
-    final container = await wallet(tester, FakeSendChain(), swap: fakeActiveSwap(account: tradingAccount));
+  testWidgets('a swap whose account the wallet no longer holds counts on every account, a multisig too: each lists '
+      'it', (tester) async {
+    final container = await wallet(
+      tester,
+      FakeSendChain(),
+      multisigs: [teamMultisig],
+      swap: fakeActiveSwap(account: tradingAccount),
+    );
 
+    for (final account in <BaseAccount>[mainAccount, savingsAccount, encryptedAccount, teamMultisig]) {
+      expect(markOf(container, account.accountId), const AccountMark(inProgress: 1), reason: account.name);
+    }
+    await close(tester, container);
+  });
+
+  testWidgets('an account counts the swaps it lists: its own, and each whose account the wallet no longer holds', (
+    tester,
+  ) async {
+    final container = await wallet(
+      tester,
+      FakeSendChain(),
+      swaps: [
+        fakeActiveSwap(),
+        fakeActiveSwap(account: tradingAccount, depositAddress: '0x1111111111111111111111111111111111111111'),
+      ],
+    );
+
+    expect(markOf(container, mainAccount.accountId), const AccountMark(inProgress: 2));
+    expect(markOf(container, savingsAccount.accountId), const AccountMark(inProgress: 1));
     for (final account in [mainAccount, savingsAccount, encryptedAccount]) {
-      expect(markOf(container, account.accountId), const AccountMark(), reason: account.name);
+      expect(
+        markOf(container, account.accountId).inProgress,
+        container.read(accountSwapsProvider(account.accountId)).length,
+        reason: '${account.name} lists as many',
+      );
     }
     await close(tester, container);
   });

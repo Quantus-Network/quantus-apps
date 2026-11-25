@@ -1,3 +1,4 @@
+import 'package:clock/clock.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 
@@ -47,7 +48,7 @@ int calendarDaysBetween(DateTime from, DateTime to) =>
 /// person saw it rather than the UTC day.
 String dateGroupLabel(DateTime date, AppLocalizations l10n, String localeName, {DateTime? now}) {
   // Indexer timestamps are UTC; group by the day the user saw, not the UTC day.
-  final diff = calendarDaysBetween(date.toLocal(), (now ?? DateTime.now()).toLocal());
+  final diff = calendarDaysBetween(date.toLocal(), (now ?? clock.now()).toLocal());
   if (diff == 0) return l10n.activityDateToday;
   if (diff == 1) return l10n.activityDateYesterday;
   return DatetimeFormattingService.formatDateGroupLabel(date, localeName);

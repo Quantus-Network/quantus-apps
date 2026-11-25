@@ -7,7 +7,6 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/activity/activity_progress.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
@@ -16,9 +15,9 @@ import 'package:wallet_core/services/transaction_service.dart';
 import 'package:wallet_core/utils/multisig_local_signers.dart';
 
 /// What of an account needs a look: how many of its transfers are in
-/// progress, as its In progress panel would list them, with each swap from
-/// it that is not yet put away; and, for a multisig, how many of its open
-/// proposals wait for a signature from this wallet.
+/// progress, as its In progress panel would list them, with each swap that
+/// panel lists; and, for a multisig, how many of its open proposals wait for
+/// a signature from this wallet.
 @immutable
 class AccountMark {
   const AccountMark({this.inProgress = 0, this.waitingForSignature = 0});
@@ -80,16 +79,17 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
   final block = ref.watch(latestBlockProvider);
   final service = ref.read(transactionServiceProvider);
 
-  // Each swap counts for the account it is from until it is put away: one
-  // that has ended is still to be looked at, and only its row leads to it.
-  final swaps = ref.watch(activeSwapsProvider);
-  int swapsOf(BaseAccount account) => swaps.where((swap) => swap.accountId == account.accountId).length;
+  // Each swap counts where it is listed until it is put away: one that has
+  // ended is still to be looked at, and only its row leads to it. One whose
+  // account the wallet no longer holds is listed under every account, so it
+  // counts on each.
+  int swapsOf(BaseAccount account) => ref.watch(accountSwapsProvider(account.accountId)).length;
 
   int inProgressOf(BaseAccount account) {
     final CombinedTransactionsList data;
     if (account is Account && isEncryptedAccount(account)) {
       final history = ref.watch(encryptedHistoryProvider(account.walletIndex)).value ?? const <TransactionEvent>[];
-      data = CombinedTransactionsList.empty.copyWith(otherTransfers: [...history]);
+      data = CombinedTransactionsList.empty.copyWith(otherTransfers: history);
     } else {
       final id = account.accountId;
       data = combinedTransactionsOf(
@@ -100,11 +100,9 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
           for (final transfer in scheduled)
             if (transfer.from == id || transfer.to == id) transfer,
         ],
-        otherTransfers: [],
+        otherTransfers: const [],
       );
     }
-    // The lists the transfers go in are the combiner's own to add to and
-    // sort: it moves a send that failed among the settled ones.
     return partActivityByProgress(activityOf(service, account, data, const [])).inProgress.length;
   }
 
@@ -123,6 +121,9 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
     for (final account in accounts)
       account.accountId: AccountMark(inProgress: inProgressOf(account) + swapsOf(account)),
     for (final multisig in multisigs)
-      multisig.accountId: AccountMark(inProgress: inProgressOf(multisig), waitingForSignature: waitingOf(multisig)),
+      multisig.accountId: AccountMark(
+        inProgress: inProgressOf(multisig) + swapsOf(multisig),
+        waitingForSignature: waitingOf(multisig),
+      ),
   };
 });

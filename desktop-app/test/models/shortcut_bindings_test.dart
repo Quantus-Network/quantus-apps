@@ -28,6 +28,7 @@ void main() {
       expect(mac[AppCommand.receive], _combo(LogicalKeyboardKey.keyR, _cmd));
       expect(mac[AppCommand.send], _combo(LogicalKeyboardKey.keyS, _cmd));
       expect(mac[AppCommand.propose], _combo(LogicalKeyboardKey.keyP, _cmd));
+      expect(mac[AppCommand.swap], _combo(LogicalKeyboardKey.keyS, _shiftCmd));
       expect(mac[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _cmd));
       expect(mac[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _cmd));
       expect(mac[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _optCmd));
@@ -43,6 +44,7 @@ void main() {
       expect(pc[AppCommand.receive], _combo(LogicalKeyboardKey.keyR, _ctrl));
       expect(pc[AppCommand.send], _combo(LogicalKeyboardKey.keyS, _ctrl));
       expect(pc[AppCommand.propose], _combo(LogicalKeyboardKey.keyP, _ctrl));
+      expect(pc[AppCommand.swap], _combo(LogicalKeyboardKey.keyS, _ctrlShift));
       expect(pc[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _ctrl));
       expect(pc[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _ctrl));
       expect(pc[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _ctrlAlt));
@@ -324,6 +326,27 @@ void main() {
         expect(read[AppCommand.refresh], isNull);
         expect(read[AppCommand.receive], bindings[AppCommand.receive]);
         expect(ShortcutBindings.fromJson(_stored(read), isMac: bindings.isMac), read);
+      }
+    });
+
+    test('from before Swap had its keys keep a command on them, and Swap has none', () {
+      for (final (bindings, keys) in [(mac, _shiftCmd), (pc, _ctrlShift)]) {
+        // Saved when no command shipped with Shift and S: Send moved there.
+        final json = {
+          'commands': {'send': _combo(LogicalKeyboardKey.keyS, keys).toJson()},
+        };
+
+        final read = ShortcutBindings.fromJson(json, isMac: bindings.isMac);
+
+        expect(read[AppCommand.send], _combo(LogicalKeyboardKey.keyS, keys));
+        expect(read[AppCommand.swap], isNull);
+        expect(read[AppCommand.receive], bindings[AppCommand.receive]);
+        expect(ShortcutBindings.fromJson(_stored(read), isMac: bindings.isMac), read);
+        // Swap can be given other keys, and gets its own back once they are
+        // free.
+        expect(read.refusal(AppCommand.swap, _combo(LogicalKeyboardKey.keyJ, keys)), isNull);
+        final freed = read.withShortcut(AppCommand.send, bindings[AppCommand.send]);
+        expect(freed.refusal(AppCommand.swap, _combo(LogicalKeyboardKey.keyS, keys)), isNull);
       }
     });
 

@@ -12,10 +12,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Error';
 
   @override
-  String get walletInitErrorMessage => 'Unable to find secret phrase. Please restore your wallet.';
+  String get walletInitErrorMessage => 'Unable to read your recovery phrase from this device.';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
+  String get walletInitErrorRemoveWallet => 'Remove Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Remove Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Remove all wallets from this device?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'This cannot be undone.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Remove';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Use device biometrics to unlock';
@@ -300,6 +312,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get multisigCreateTimeoutToast =>
       'Multisig creation is taking longer than expected. Check the chain or try again.';
+
+  @override
+  String get multisigCreateNotSavedToast =>
+      'Your multisig was created, but it could not be saved on this device. Restart the app to add it.';
 
   @override
   String get multisigCreateAuthReason => 'Authenticate to create this multisig';
@@ -3341,6 +3357,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopMenuConnectColdWallet => 'Connect Cold Wallet…';
+
+  @override
+  String get desktopColdWalletAddAccountTitle => 'Add Cold Wallet Account';
 
   @override
   String get desktopColdWalletStepHold => 'Hold it up to this camera';
