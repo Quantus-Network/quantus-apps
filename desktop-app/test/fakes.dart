@@ -752,6 +752,12 @@ class FakeSendChain {
   /// Executions the indexer has, by the hash they were sent in.
   final indexedExecutions = <String, MultisigProposalExecutedEvent>{};
 
+  /// Approvals the indexer has, by the hash they were sent in.
+  final indexedApprovals = <String, MultisigProposalApprovedEvent>{};
+
+  /// Cancellations the indexer has, by the hash they were sent in.
+  final indexedCancellations = <String, MultisigProposalCancelledEvent>{};
+
   /// The multisigs whose open proposals were read, in order.
   final openProposalReads = <String>[];
 
@@ -963,6 +969,14 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   @override
   Future<MultisigProposalExecutedEvent?> searchExecutedByExtrinsicHash({required String extrinsicHash}) async =>
       chain.indexedExecutions[extrinsicHash];
+
+  @override
+  Future<MultisigProposalApprovedEvent?> searchSignerApprovedByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedApprovals[extrinsicHash];
+
+  @override
+  Future<MultisigProposalCancelledEvent?> searchCancelledByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedCancellations[extrinsicHash];
 
   @override
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {

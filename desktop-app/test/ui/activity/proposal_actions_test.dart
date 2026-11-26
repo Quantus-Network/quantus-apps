@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/providers/proposal_action_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -20,6 +21,8 @@ import 'package:wallet_core/providers/controllers/multisig_action_confirm_contro
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
+import 'package:wallet_core/services/multisig_approval_polling_service.dart';
+import 'package:wallet_core/services/multisig_cancellation_polling_service.dart';
 import 'package:wallet_core/services/multisig_execution_polling_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -340,6 +343,142 @@ void main() {
 
     expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse);
     expect(container.read(pendingMultisigExecutionsProvider), isEmpty);
+  });
+
+  // A multisig's activity waits for its history too: until that is read, the
+  // proposal open is answered for by its lists (n13's review of #829).
+  group('with the history not read yet', () {
+    const hash = '0xaction';
+    final at = DateTime.now();
+
+    for (final (name, before, after, track, indexed)
+        in <
+          (
+            String,
+            MultisigProposal,
+            MultisigProposal,
+            void Function(ProviderContainer container),
+            void Function(FakeSendChain chain),
+          )
+        >[
+          (
+            'an execution',
+            _ready(),
+            _ready().copyWith(status: MultisigProposalStatus.executed),
+            (container) {
+              final pending = PendingMultisigExecutionEvent.create(
+                multisigAddress: _team.accountId,
+                proposalId: 1,
+                executorId: 'qzMain',
+                recipient: _bob,
+                amount: oneToken,
+              ).copyWith(extrinsicHash: hash);
+              container.read(pendingMultisigExecutionsProvider.notifier).add(pending);
+              container.read(multisigExecutionPollingServiceProvider).startPolling(_team, pending);
+            },
+            (chain) => chain.indexedExecutions[hash] = MultisigProposalExecutedEvent(
+              id: 'executed',
+              executorId: 'qzMain',
+              multisigAddress: _team.accountId,
+              recipient: _bob,
+              amount: oneToken,
+              proposalId: 1,
+              approvers: const ['qzOther', 'qzSavings'],
+              result: 'success',
+              timestamp: at,
+              blockNumber: 2,
+              blockHash: '0xblock',
+            ),
+          ),
+          (
+            'an approval',
+            _proposal(),
+            _proposal(status: MultisigProposalStatus.approved, approvals: const ['qzOther', 'qzMain']),
+            (container) {
+              final pending = PendingMultisigApprovalEvent.create(
+                multisigAddress: _team.accountId,
+                proposalId: 1,
+                approverId: 'qzMain',
+              ).copyWith(extrinsicHash: hash);
+              container.read(pendingMultisigApprovalsProvider.notifier).add(pending);
+              container.read(multisigApprovalPollingServiceProvider).startPolling(_team, pending);
+            },
+            (chain) => chain.indexedApprovals[hash] = MultisigProposalApprovedEvent(
+              id: 'approved',
+              approverId: 'qzMain',
+              multisigAddress: _team.accountId,
+              recipient: _bob,
+              amount: oneToken,
+              proposalId: 1,
+              approvalsCount: 2,
+              timestamp: at,
+              blockNumber: 2,
+              blockHash: '0xblock',
+            ),
+          ),
+          (
+            'a cancellation',
+            _proposal(proposer: 'qzMain'),
+            _proposal(proposer: 'qzMain', status: MultisigProposalStatus.cancelled),
+            (container) {
+              final pending = PendingMultisigCancellationEvent.create(
+                multisigAddress: _team.accountId,
+                proposalId: 1,
+                proposerId: 'qzMain',
+                recipient: _bob,
+                amount: oneToken,
+              ).copyWith(extrinsicHash: hash);
+              container.read(pendingMultisigCancellationsProvider.notifier).add(pending);
+              container.read(multisigCancellationPollingServiceProvider).startPolling(_team, pending);
+            },
+            (chain) => chain.indexedCancellations[hash] = MultisigProposalCancelledEvent(
+              id: 'cancelled',
+              proposerId: 'qzMain',
+              multisigAddress: _team.accountId,
+              recipient: _bob,
+              amount: oneToken,
+              proposalId: 1,
+              timestamp: at,
+              blockNumber: 2,
+              blockHash: '0xblock',
+            ),
+          ),
+        ]) {
+      testOnMac('$name the indexer shows: the proposal open turns to what the lists now say, and what it did is '
+          'not offered again', (tester) async {
+        final chain = FakeSendChain()..holdHistory = Completer<void>();
+        await _openProposal(tester, before, chain: chain);
+        final container = _container(tester);
+        track(container);
+        await tester.pumpAndSettle();
+
+        chain.proposalsById[1] = after;
+        indexed(chain);
+        if (after.isTerminal) {
+          chain
+            ..openProposals = const []
+            ..pastProposals = [after];
+        } else {
+          chain.openProposals = [after];
+        }
+        await tester.pump(const Duration(seconds: 6));
+        await tester.pumpAndSettle();
+
+        expect(container.read(pendingMultisigExecutionsProvider), isEmpty);
+        expect(container.read(pendingMultisigApprovalsProvider), isEmpty);
+        expect(container.read(pendingMultisigCancellationsProvider), isEmpty);
+        expect(chain.holdHistory!.isCompleted, isFalse, reason: 'the history is still not read');
+        expect((container.read(openedActivityViewProvider) as OpenedProposal?)?.proposal.status, after.status);
+        expect(_inPanel(find.text(_l10n.multisigApproveButton)), findsNothing);
+        if (after.isTerminal) {
+          expect(_button(tester, ProposalActionsBar.primaryKey), isNull);
+          expect(_button(tester, ProposalActionsBar.cancelKey), isNull);
+        }
+
+        chain.holdHistory!.complete();
+        await tester.pumpAndSettle();
+      });
+    }
   });
 
   group('a Keystone account', () {
