@@ -35,8 +35,9 @@ class SwapHarnessService extends SwapService {
     isQuantus: true,
   );
 
-  /// An address on the foreign token's chain, and the deposit address a swap
-  /// into QTC is given.
+  /// An address on the foreign token's chain, and the start of the deposit
+  /// address a swap into QTC is given: each has its own, as from 1Click, so
+  /// that several can be followed at once.
   static const externalAddress = '0xa5f3c2b1d4e8a7c9f2b5e6d7c8b9a0f1e2d3c7b9';
   static const externalDeposit = '0x6b2c9e4d1f8a3b5c7e9d0f2a4b6c8d0e1f3a5b7c';
   static const txHash = '0x9cbe7d1f3a5b7c9e1f3a5b7c9e1f3a5b7c9e1f3a5b7c9e1f3a5b7c9e1f3a5b7c';
@@ -141,7 +142,9 @@ class SwapHarnessService extends SwapService {
       deadline: clock.now().add(SwapService.depositWindow),
       swapType: quote.swapType,
       slippageBps: quote.slippageBps,
-      depositAddress: externalDeposit,
+      // Unique across runs too, so it never takes the place of a swap kept
+      // from one before.
+      depositAddress: '$externalDeposit-${clock.now().microsecondsSinceEpoch}',
     );
     return SwapOrder(quote: live, status: SwapStatus.pendingDeposit);
   }

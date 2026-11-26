@@ -3697,6 +3697,21 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopStatusItemSwap(int step, int count) {
+    return 'Tukar $step/$count';
+  }
+
+  @override
+  String desktopStatusItemSwapAndMore(int step, int count, int more) {
+    return 'Tukar $step/$count +$more';
+  }
+
+  @override
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network) {
+    return '$amount untuk $foreignAmount di $network';
+  }
+
+  @override
   String get desktopQuitPendingTitle => 'Transaksi Masih Berjalan';
 
   @override

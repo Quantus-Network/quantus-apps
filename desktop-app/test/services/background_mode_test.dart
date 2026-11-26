@@ -9,6 +9,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/models/status_item_swaps.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -1443,11 +1444,11 @@ void main() {
     });
 
     /// Calls [method] as the window does, and gives the app's answer.
-    Future<Object?> fromNative(String method) async {
+    Future<Object?> fromNative(String method, [Object? arguments]) async {
       final answered = Completer<Object?>();
       await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.handlePlatformMessage(
         WindowChrome.channel.name,
-        WindowChrome.channel.codec.encodeMethodCall(MethodCall(method)),
+        WindowChrome.channel.codec.encodeMethodCall(MethodCall(method, arguments)),
         (reply) => answered.complete(WindowChrome.channel.codec.decodeEnvelope(reply!)),
       );
       return answered.future;
@@ -1458,6 +1459,52 @@ void main() {
 
       expect(sent.single.method, 'setStatusItemLabels');
       expect(sent.single.arguments, {'openLabel': 'Open Quantus Wallet', 'quitLabel': 'Quit Quantus Wallet'});
+    });
+
+    test('is told the swaps in progress, for the menu bar icon', () async {
+      await const BackgroundWindow().setSwaps(
+        const StatusItemSwaps(
+          title: 'Swap 2/4',
+          swaps: [
+            StatusItemSwap(
+              swapId: 'swap-1',
+              accountId: 'qzMain',
+              label: '-250 QTC for 104.37 USDC on Arbitrum',
+              steps: ['QTC sent', 'Confirming on Quantus', 'Swapping', 'Sending USDC to the recipient'],
+              current: 1,
+            ),
+          ],
+        ),
+      );
+      await const BackgroundWindow().setSwaps(StatusItemSwaps.none);
+
+      expect([for (final call in sent) call.method], ['setStatusItemSwaps', 'setStatusItemSwaps']);
+      expect(sent.first.arguments, {
+        'title': 'Swap 2/4',
+        'swaps': [
+          {
+            'swapId': 'swap-1',
+            'accountId': 'qzMain',
+            'label': '-250 QTC for 104.37 USDC on Arbitrum',
+            'steps': ['QTC sent', 'Confirming on Quantus', 'Swapping', 'Sending USDC to the recipient'],
+            'current': 1,
+          },
+        ],
+      });
+      expect(sent.last.arguments, {'title': null, 'swaps': <Object?>[]});
+    });
+
+    test('tells the app which swap was picked from the menu bar icon\'s menu', () async {
+      final picked = <(String, String)>[];
+      const BackgroundWindow().listen(
+        onWillClose: () async => false,
+        onDidOpen: () {},
+        onOpenSwap: ({required swapId, required accountId}) => picked.add((swapId, accountId)),
+      );
+
+      await fromNative('openSwap', {'swapId': 'swap-1', 'accountId': 'qzSavings'});
+
+      expect(picked, [('swap-1', 'qzSavings')]);
     });
 
     test('is asked to hide', () async {
@@ -1476,7 +1523,11 @@ void main() {
     test('is answered only once the app is ready for the window to close, with whether to hide it', () async {
       final ready = Completer<bool>();
       var opened = 0;
-      const BackgroundWindow().listen(onWillClose: () => ready.future, onDidOpen: () => opened++);
+      const BackgroundWindow().listen(
+        onWillClose: () => ready.future,
+        onDidOpen: () => opened++,
+        onOpenSwap: ({required swapId, required accountId}) => fail('No swap was picked'),
+      );
       Object? answer = 'unanswered';
       unawaited(fromNative('windowWillClose').then((reply) => answer = reply));
       await Future<void>.delayed(Duration.zero);
