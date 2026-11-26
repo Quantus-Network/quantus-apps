@@ -23,6 +23,13 @@ class _Substrate extends FakeSubstrateService {
   }
 }
 
+/// How long the code for [makeUnsignedTransactionData]'s transaction may stay
+/// on screen: its era, less the reserve a trip through the cold wallet needs.
+final _maxAge = keystoneSignCacheMaxAge(makeUnsignedTransactionData().payloadToSign);
+
+/// How often the screen checks the code's age.
+const _check = Duration(seconds: 5);
+
 void main() {
   late _Substrate substrate;
 
@@ -41,8 +48,7 @@ void main() {
     ),
   );
 
-  /// Shows a cold wallet's request code for a transaction alive for 64 blocks,
-  /// which is used for 54 of them: 648 seconds.
+  /// Shows a cold wallet's request code for a transaction alive for 64 blocks.
   Future<void> showCode(WidgetTester tester) async {
     final cold = makeAccount(3, accountType: AccountType.keystone);
     await tester.pumpApp(
@@ -69,7 +75,8 @@ void main() {
     await showCode(tester);
     expect(substrate.built, 1);
 
-    await tester.pump(const Duration(seconds: 650));
+    await tester.pump(_maxAge);
+    await tester.pump(_check);
 
     expect(substrate.built, 2);
   });
@@ -77,7 +84,7 @@ void main() {
   testWidgets('a code still within its age is kept', (tester) async {
     await showCode(tester);
 
-    await tester.pump(const Duration(seconds: 640));
+    await tester.pump(_maxAge - const Duration(seconds: 1));
 
     expect(substrate.built, 1);
   });

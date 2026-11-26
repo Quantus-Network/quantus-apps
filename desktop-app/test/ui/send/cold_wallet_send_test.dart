@@ -220,9 +220,8 @@ void main() {
       await _toShow(tester);
       harness.chain.unsigned = (_) async => fakeUnsignedTransaction(blockNumber: 1250040);
 
-      // 54 of its 64 blocks, at 12 seconds each; checked every 5 seconds.
-      await tester.pump(const Duration(seconds: 648));
-      await tester.pump(const Duration(seconds: 5));
+      await tester.pump(keystoneSignCacheMaxAge(fakeUnsignedTransaction().payloadToSign));
+      await tester.pump(KeystoneSigningView.freshnessCheck);
       await tester.pumpAndSettle();
 
       expect(harness.chain.signRequests, hasLength(2));
@@ -235,7 +234,7 @@ void main() {
       harness.chain.unsigned = (_) async => fakeUnsignedTransaction(blockNumber: 1250040);
 
       // Past its age, before the next check.
-      await tester.pump(const Duration(seconds: 649));
+      await tester.pump(keystoneSignCacheMaxAge(fakeUnsignedTransaction().payloadToSign) + const Duration(seconds: 1));
       await _tap(tester, KeystoneSigningView.continueKey);
 
       expect(harness.chain.signRequests, hasLength(2));
