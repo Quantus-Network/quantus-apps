@@ -300,6 +300,13 @@ void main() {
     await _openSend(tester);
   });
 
+  _scene('send_form_many_recents', (tester) async {
+    await _openSend(
+      tester,
+      moreRecents: [for (final letter in ['E', 'F', 'G']) 'qz${letter * 44}'],
+    );
+  });
+
   _scene('send_form_smallest_window', (tester) async {
     await _openSend(tester);
     tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
@@ -1257,14 +1264,18 @@ const _recentPhrases = {
 
 /// Opens the wallet, holding 1,250 tokens, and its Send. The system approves
 /// unless [approval] says otherwise.
-Future<FakeWalletDevice> _openSend(WidgetTester tester, {FakeUserApproval? approval}) async {
+Future<FakeWalletDevice> _openSend(
+  WidgetTester tester, {
+  FakeUserApproval? approval,
+  List<String> moreRecents = const [],
+}) async {
   _useEmptyPreferences(tester);
   useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
   final device = FakeWalletDevice()
     ..store([_root, _second, _encrypted])
     ..balance = oneToken * BigInt.from(1250);
   device.chain
-    ..recents = _recentPhrases.keys.toList()
+    ..recents = [..._recentPhrases.keys, ...moreRecents]
     ..isValidAddress = (address) => address.startsWith('qz') && address.length == _depositAddress.length;
   await _open(
     tester,

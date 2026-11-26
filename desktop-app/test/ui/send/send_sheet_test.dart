@@ -12,6 +12,7 @@ import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_form_parts.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -252,7 +253,9 @@ void main() {
       expect(_inSheet(find.text('Network fee')), findsOneWidget);
     });
 
-    testOnMac('lists the four addresses paid last, never its own, each whole over its checkphrase', (tester) async {
+    testOnMac('lists every address paid before, newest first, never its own, each whole over its checkphrase', (
+      tester,
+    ) async {
       const long = 'qzpK3wXs9DfL2mVb7NcQ8rTy4HgJ6aZe1UoBi5WnRk7tYe';
       final chain = FakeSendChain()..recents = [long, 'qzMain', 'qzBo', 'qzCy', 'qzDee', 'qzEve'];
 
@@ -263,7 +266,47 @@ void main() {
         _expectAddressOverCheckphrase(tester, address, within: find.byKey(SendSheet.recentKey(address)));
       }
       expect(find.byKey(SendSheet.recentKey('qzMain')), findsNothing);
-      expect(find.byKey(SendSheet.recentKey('qzEve')), findsNothing);
+
+      // The fifth is under the fourth, out of view until the list is scrolled.
+      _recentsScroll(tester).position.jumpTo(_recentsScroll(tester).position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      _expectAddressOverCheckphrase(tester, 'qzEve', within: find.byKey(SendSheet.recentKey('qzEve')));
+      expect(
+        tester.getTopLeft(find.byKey(SendSheet.recentKey('qzEve'))).dy,
+        greaterThan(tester.getTopLeft(find.byKey(SendSheet.recentKey('qzDee'))).dy),
+      );
+    });
+
+    testOnMac('in a window with room, more than four addresses paid before: four rows show and the rest scroll in', (
+      tester,
+    ) async {
+      final six = [..._fourRecents, 'qz${'E' * 44}', 'qz${'F' * 44}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = six);
+
+      final row = tester.getRect(find.byKey(SendSheet.recentKey(six.first))).height;
+      expect(tester.getRect(find.byKey(SendSheet.recentsKey)).height, moreOrLessEquals(4 * row, epsilon: 0.5));
+      expect(find.byKey(SendSheet.recentKey(six.last)).hitTestable(), findsNothing);
+
+      final wheel = TestPointer(1, PointerDeviceKind.mouse)..hover(tester.getCenter(find.byKey(SendSheet.recentsKey)));
+      await tester.sendEventToBinding(wheel.scroll(Offset(0, _recentsScroll(tester).position.maxScrollExtent)));
+      await tester.pumpAndSettle();
+      await _tap(tester, SendSheet.recentKey(six.last));
+
+      expect(_typed(tester, SendSheet.addressFieldKey), six.last);
+    });
+
+    testOnMac('of a hundred addresses paid before, only the rows in view are built', (tester) async {
+      final hundred = [for (var i = 0; i < 100; i++) 'qz${i.toString().padLeft(44, '0')}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = hundred);
+
+      // Every row built, those kept just out of view included.
+      final built = find.descendant(
+        of: find.byKey(SendSheet.recentsKey),
+        matching: find.byType(SendRecentRow, skipOffstage: false),
+        skipOffstage: false,
+      );
+      expect(built.evaluate().length, lessThan(20));
+      expect(find.byKey(SendSheet.recentKey(hundred.first)).hitTestable(), findsOneWidget);
     });
 
     testOnMac('in the smallest window, four addresses paid before leave the form whole and its buttons in reach', (

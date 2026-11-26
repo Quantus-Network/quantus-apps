@@ -93,8 +93,9 @@ class SendSheet extends ConsumerStatefulWidget {
   /// The row of [address] among the addresses paid before.
   static Key recentKey(String address) => ValueKey('send-recent-$address');
 
-  /// How many of the addresses paid before the form offers.
-  static const recentsShown = 4;
+  /// How many rows of the addresses paid before show at once; the rest
+  /// scroll in.
+  static const recentsInView = 4;
 
   @override
   ConsumerState<SendSheet> createState() => _SendSheetState();
@@ -253,8 +254,46 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final all = await ref.read(recentAddressesServiceProvider).getAddresses();
     if (!mounted) return;
     setState(() {
-      _recents = all.where((a) => a != _strategy.sourceAccountId).take(SendSheet.recentsShown).toList();
+      _recents = all.where((a) => a != _strategy.sourceAccountId).toList();
     });
+  }
+
+  /// The addresses paid before, in a list that scrolls. Every row is as tall
+  /// as the longest address's, as real addresses all are; hidden copies of it
+  /// size the list.
+  Widget _recentsList() {
+    final longest = _recents.reduce((a, b) => b.length > a.length ? b : a);
+    final prototype = SendRecentRow(address: longest, onPressed: () {});
+    return Stack(
+      children: [
+        Visibility.maintain(
+          visible: false,
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [for (var i = 0; i < _recents.length && i < SendSheet.recentsInView; i++) prototype],
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: ListView.builder(
+            key: SendSheet.recentsKey,
+            padding: EdgeInsets.zero,
+            prototypeItem: prototype,
+            itemCount: _recents.length,
+            itemBuilder: (context, index) {
+              final address = _recents[index];
+              return SendRecentRow(
+                key: SendSheet.recentKey(address),
+                address: address,
+                onPressed: () => _address.text = address,
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   /// The controller also tells of selection changes, so an unchanged address
@@ -685,23 +724,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           padding: const EdgeInsets.only(bottom: 6),
           child: CapsText(l10n.sendSelectRecipientRecents, style: context.sendCaps()),
         ),
-        // The list takes the height the window leaves and scrolls within it,
-        // so the fields and the buttons under it stay in the sheet.
-        Flexible(
-          child: ListView(
-            key: SendSheet.recentsKey,
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            children: [
-              for (final address in _recents)
-                SendRecentRow(
-                  key: SendSheet.recentKey(address),
-                  address: address,
-                  onPressed: () => _address.text = address,
-                ),
-            ],
-          ),
-        ),
+        // Up to [SendSheet.recentsInView] rows tall, no taller than the
+        // window leaves, so the fields and the buttons under it stay in the
+        // sheet; the rest scroll in, each row built as it comes into view.
+        Flexible(child: _recentsList()),
       ] else if (_isChecking) ...[
         const SizedBox(height: 10),
         Text(l10n.sendRecipientChecking, style: context.sendBody()),
