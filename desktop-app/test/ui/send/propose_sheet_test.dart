@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,7 @@ import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/user_approval.dart';
@@ -637,6 +640,47 @@ void main() {
         (multisig: 'qzTeam', signer: 'qzMain', recipient: 'qzPayee', amount: _qtc(250), expiryBlock: 1284220),
       ]);
       expect(chain.transfers, isEmpty);
+    });
+
+    // The wallet lists a proposal as pending, holding its cost back from the
+    // member's account, before it is broadcast (hand test, 2026-11-25).
+    testOnMac('while the proposal goes out, nothing is said beside the buttons, though the cost it holds back '
+        'leaves the member short; then the receipt', (tester) async {
+      final broadcast = Completer<String>();
+      final chain = FakeSendChain();
+      chain.submit = () {
+        final cost = FakeSendChain.usualProposalCost;
+        ProviderScope.containerOf(tester.element(find.byType(ShellSheetView)))
+            .read(pendingMultisigProposalsProvider.notifier)
+            .add(
+              PendingMultisigProposalEvent.create(
+                msig: _team,
+                proposerId: mainAccount.accountId,
+                recipient: 'qzPayee',
+                amount: _qtc(250),
+                expiryBlock: cost.expiryBlock,
+                fee: cost.networkFee,
+                deposit: cost.deposit,
+                palletFee: cost.creationFee,
+              ),
+            );
+        return broadcast.future;
+      };
+      await _openPropose(tester, chain: chain, mainHolds: 1);
+      await _toReview(tester);
+      expect(find.byKey(SendSheet.costProblemKey), findsNothing);
+
+      await tester.tap(find.byKey(SendSheet.sendKey));
+      await tester.pump();
+      await tester.pump();
+
+      expect(_inSheet(find.text('Main does not hold enough to pay the proposal cost.')), findsNothing);
+      expect(find.byKey(SendSheet.costProblemKey), findsNothing);
+
+      broadcast.complete('0xhash');
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(SendSheet.doneKey), findsOneWidget);
     });
 
     testOnMac('a declined approval submits nothing and says so beside the buttons', (tester) async {

@@ -113,6 +113,7 @@ export 'src/models/multisig_proposal_created_event.dart';
 export 'src/models/multisig_proposal_approved_event.dart';
 export 'src/models/multisig_proposal_executed_event.dart';
 export 'src/models/multisig_proposal_cancelled_event.dart';
+export 'src/models/multisig_proposal_activity.dart';
 export 'src/models/pending_multisig_approval_event.dart';
 export 'src/models/pending_multisig_execution_event.dart';
 export 'src/models/pending_multisig_cancellation_event.dart';

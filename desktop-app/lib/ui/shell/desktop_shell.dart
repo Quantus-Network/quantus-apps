@@ -26,6 +26,7 @@ import 'package:quantus_desktop_wallet/ui/shell/app_menu.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu_bar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/live_data_scope.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
+import 'package:quantus_desktop_wallet/ui/shell/missing_phrase_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/shell/panel_widths.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_footer.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
@@ -146,9 +147,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     switch (next.value) {
       case WalletPresence.phraseMissing:
         unawaited(_reportMissingPhrase());
-      // Found by the check at start. A wallet that onboarding just added is
-      // complete already.
-      case WalletPresence.present when previous?.value == null:
+      // Found by the check at start, or by checking again after the phrase
+      // could not be read. A wallet that onboarding just added is complete
+      // already.
+      case WalletPresence.present when previous?.value == null || previous?.value == WalletPresence.phraseMissing:
         unawaited(_finishWalletSetup());
       // Likewise found at start: the intro comes before the first Welcome
       // only, not before one reached by wiping a wallet.
@@ -167,18 +169,41 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     unawaited(ref.read(bootIntroSeenProvider.notifier).markSeen());
   }
 
-  /// Says the wallet cannot be used, then wipes it so it can be set up again.
+  /// Says the wallet cannot be used, and asks until the person chooses: Try
+  /// Again reads the keychain again, Quit quits, and the wallet is wiped only
+  /// when its removal is confirmed. The phrase may still be there, hidden by a
+  /// locked keychain or a changed app.
   Future<void> _reportMissingPhrase() async {
     final l10n = ref.read(l10nProvider);
-    await showQuantusDialog(
-      context,
-      title: l10n.walletInitErrorTitle,
-      body: l10n.walletInitErrorMessage,
-      actionLabel: l10n.walletInitErrorButtonLabel,
-      showCancel: false,
-      barrierDismissible: false,
-    );
-    if (mounted) await ref.read(walletPresenceProvider.notifier).wipeWallet();
+    final presence = ref.read(walletPresenceProvider.notifier);
+    while (true) {
+      if (!mounted) return;
+      final choice = await showMissingPhraseDialog(context, l10n);
+      switch (choice) {
+        case MissingPhraseChoice.tryAgain:
+          // Anything else is shown by what the check found.
+          if (await presence.checkAgain() != WalletPresence.phraseMissing) return;
+        case MissingPhraseChoice.quit:
+          ref.read(backgroundModeProvider).quitNow();
+          return;
+        case MissingPhraseChoice.removeWallet:
+          if (!mounted) return;
+          final confirmed = await showQuantusDialog(
+            context,
+            title: l10n.walletInitErrorRemoveTitle,
+            body: l10n.walletInitErrorRemoveBody,
+            actionLabel: l10n.walletInitErrorRemoveConfirm,
+            cancelLabel: l10n.commonCancel,
+            isDestructive: true,
+            barrierDismissible: false,
+          );
+          if (!confirmed) continue;
+          if (mounted) await presence.wipeWallet();
+          return;
+        case null:
+          return;
+      }
+    }
   }
 
   /// Says an account could not be made the active account, and why.

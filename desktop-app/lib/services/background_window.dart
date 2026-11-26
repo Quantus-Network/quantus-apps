@@ -1,13 +1,15 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/models/status_item_swaps.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 
 /// The items of the menu bar icon, there while the window is closed with work
-/// under way.
+/// under way or a swap is in progress.
 typedef StatusItemLabels = ({String openLabel, String quitLabel});
 
-/// The native side of running with the window closed, on the channel of
-/// [WindowChrome]. Served by `MainFlutterWindow.swift`; only macOS has it.
+/// The native side of running with the window closed, and of the menu bar
+/// icon, on the channel of [WindowChrome]. Served by `MainFlutterWindow.swift`;
+/// only macOS has it.
 class BackgroundWindow {
   const BackgroundWindow();
 
@@ -17,6 +19,22 @@ class BackgroundWindow {
   Future<void> configure(StatusItemLabels labels) => WindowChrome.channel.invokeMethod<void>('setStatusItemLabels', {
     'openLabel': labels.openLabel,
     'quitLabel': labels.quitLabel,
+  });
+
+  /// Tells the menu bar icon the swaps in progress, which it shows whether
+  /// the window is open or not.
+  Future<void> setSwaps(StatusItemSwaps swaps) => WindowChrome.channel.invokeMethod<void>('setStatusItemSwaps', {
+    'title': swaps.title,
+    'swaps': [
+      for (final swap in swaps.swaps)
+        {
+          'swapId': swap.swapId,
+          'accountId': swap.accountId,
+          'label': swap.label,
+          'steps': swap.steps,
+          'current': swap.current,
+        },
+    ],
   });
 
   /// Takes the window off the screen and leaves the app running.
@@ -31,14 +49,22 @@ class BackgroundWindow {
 
   /// Answers the window: [onWillClose] when the person closed it, which it
   /// waits for and which says whether to hide (true) or to close and quit
-  /// (false), and [onDidOpen] when it came back.
-  void listen({required Future<bool> Function() onWillClose, required VoidCallback onDidOpen}) {
+  /// (false), [onDidOpen] when it came back, and [onOpenSwap] when a swap was
+  /// picked from the menu bar icon's menu.
+  void listen({
+    required Future<bool> Function() onWillClose,
+    required VoidCallback onDidOpen,
+    required void Function({required String swapId, required String accountId}) onOpenSwap,
+  }) {
     WindowChrome.channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'windowWillClose':
           return onWillClose();
         case 'windowDidOpen':
           onDidOpen();
+        case 'openSwap':
+          final arguments = call.arguments as Map<Object?, Object?>;
+          onOpenSwap(swapId: arguments['swapId']! as String, accountId: arguments['accountId']! as String);
         default:
           throw MissingPluginException('The app does not answer ${call.method}');
       }

@@ -80,6 +80,7 @@ ActivityDetail activityDetailOf(
 bool isActivitySend(TransactionEvent tx, {required String accountId}) =>
     switch (tx) {
       PendingMultisigProposalEvent() ||
+      PendingMultisigApprovalEvent() ||
       PendingMultisigExecutionEvent() ||
       PendingMultisigCancellationEvent() ||
       MultisigProposalCreatedEvent() ||
@@ -95,6 +96,7 @@ bool _isInProcess(TransactionEvent tx) => switch (tx) {
   PendingTransactionEvent() ||
   PendingMultisigCreationEvent() ||
   PendingMultisigProposalEvent() ||
+  PendingMultisigApprovalEvent() ||
   PendingMultisigExecutionEvent() ||
   PendingMultisigCancellationEvent() => true,
   _ => false,
@@ -104,6 +106,8 @@ String _title(TransactionEvent tx, {required bool isSend, required bool isPrivat
   switch (tx) {
     case PendingMultisigProposalEvent():
       return l10n.activityDetailTitleProposing;
+    case PendingMultisigApprovalEvent():
+      return l10n.activityDetailTitleApproving;
     case PendingMultisigExecutionEvent():
       return l10n.activityDetailTitleExecuting;
     case PendingMultisigCancellationEvent():

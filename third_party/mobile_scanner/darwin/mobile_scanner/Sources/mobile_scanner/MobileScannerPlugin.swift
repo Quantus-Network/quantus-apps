@@ -51,6 +51,9 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
     var interfaceOrientationObserver: NSObjectProtocol?
 #endif
 
+    // Patched (PATCHES.md): what reports a running camera that stops.
+    var cameraStoppingObservers: [NSObjectProtocol] = []
+
     private var stopped: Bool {
         return device == nil || captureSession == nil
     }
@@ -460,6 +463,9 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
 
         captureSession!.commitConfiguration()
 
+        // Patched (PATCHES.md): report the camera stopping while it runs.
+        observeCameraStopping(device: device, session: captureSession!)
+
 #if os(iOS)
         // Set up observer to update video orientation when interface orientation changes
         setupInterfaceOrientationObserver()
@@ -842,7 +848,41 @@ public class MobileScannerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler,
         result(nil)
     }
 
+    // Patched (PATCHES.md): a camera unplugged, or a session that fails,
+    // while running is sent to Dart as CAMERA_STOPPED. Without this the
+    // picture just freezes.
+    private func observeCameraStopping(device: AVCaptureDevice, session: AVCaptureSession) {
+        stopObservingCameraStopping()
+        let center = NotificationCenter.default
+        cameraStoppingObservers = [
+            center.addObserver(forName: AVCaptureDevice.wasDisconnectedNotification, object: device, queue: .main) { [weak self] _ in
+                self?.reportCameraStopped(message: MobileScannerErrorCodes.CAMERA_STOPPED_DISCONNECTED_MESSAGE)
+            },
+            center.addObserver(forName: AVCaptureSession.runtimeErrorNotification, object: session, queue: .main) { [weak self] notification in
+                let error = notification.userInfo?[AVCaptureSessionErrorKey] as? Error
+                self?.reportCameraStopped(
+                    message: error?.localizedDescription ?? MobileScannerErrorCodes.CAMERA_STOPPED_RUNTIME_ERROR_MESSAGE)
+            },
+        ]
+    }
+
+    private func stopObservingCameraStopping() {
+        for observer in cameraStoppingObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        cameraStoppingObservers = []
+    }
+
+    private func reportCameraStopped(message: String) {
+        // A camera already released has nothing left to report.
+        guard captureSession != nil else {
+            return
+        }
+        sink?(FlutterError(code: MobileScannerErrorCodes.CAMERA_STOPPED, message: message, details: nil))
+    }
+
     private func releaseCamera() {
+        stopObservingCameraStopping()
 #if os(iOS)
         removeInterfaceOrientationObserver()
 #endif

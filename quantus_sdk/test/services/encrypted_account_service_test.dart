@@ -236,6 +236,7 @@ class _FakeSendService extends WormholeSendService {
     required String circuitBinsDir,
     required ClaimProgressCallback onProgress,
     Future<void> Function(int batchIndex, List<String> nullifierHexes)? onBatchSubmitted,
+    void Function(String txHash)? onTransactionSubmitted,
     String? rpcUrl,
   }) async {
     capturedBatchesList.add(batches);
@@ -250,6 +251,7 @@ class _FakeSendService extends WormholeSendService {
     final err = error;
     if (err != null) throw err;
     for (var i = 0; i < batches.length; i++) {
+      onTransactionSubmitted?.call('0xbatch$i');
       await onBatchSubmitted?.call(i, [for (final s in batches[i]) '0xsubmitted_${i}_${s.outputAmount1}']);
     }
     return ClaimResult(
@@ -625,6 +627,22 @@ void main() {
       mnemonicGate = null;
       await service.send(plan: plan, recipientAddress: recipient, circuitBinsDir: '/unused', onProgress: (_) {});
       expect(sendService.capturedBatches![0][0].exitAccount2, Address.decode(changeAddressAt(0)).pubkey);
+    });
+
+    test('a send says each transaction it submits as it submits it', () async {
+      await seedState(nextIndex: 1);
+      final plan = selectWormholeInputs(utxos: [_utxo(1000)], amountToken: wormholeTokenFromScaled(400));
+      final submitted = <String>[];
+
+      await service.send(
+        plan: plan,
+        recipientAddress: recipient,
+        circuitBinsDir: '/unused',
+        onProgress: (_) {},
+        onTransactionSubmitted: submitted.add,
+      );
+
+      expect(submitted, ['0xbatch0']);
     });
 
     test('a send that is not cancelled goes through as before', () async {

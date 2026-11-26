@@ -12,10 +12,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Bermasalah';
 
   @override
-  String get walletInitErrorMessage => 'Gagal mencari secret phrase. Coba pulihkan wallet anda.';
+  String get walletInitErrorMessage => 'Tidak dapat membaca recovery phrase Anda dari perangkat ini.';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
+  String get walletInitErrorRemoveWallet => 'Hapus Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Hapus Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Hapus semua wallet dari perangkat ini?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'Ini tidak dapat dibatalkan.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Hapus';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk mengakses wallet';
@@ -304,6 +316,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
+  String get multisigCreateNotSavedToast =>
+      'Multisig Anda telah dibuat, tetapi tidak dapat disimpan di perangkat ini. Mulai ulang aplikasi untuk menambahkannya.';
+
+  @override
   String get multisigCreateAuthReason => 'Autentikasi untuk membuat multisig ini';
 
   @override
@@ -398,6 +414,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get multisigProposalCallUnavailable =>
       'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
+
+  @override
+  String get multisigProposalStateUnreadNote =>
+      'Tidak dapat memeriksa keadaan usulan ini sekarang, jadi belum ada yang bisa dilakukan di sini. Coba lagi setelah Anda kembali online.';
 
   @override
   String get multisigProposalInvalid => 'Proposal tidak valid';
@@ -534,6 +554,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigApproveUnavailableNote => 'Proposal ini tidak dapat disetujui lagi.';
+
+  @override
+  String get multisigProposalExpiredNote => 'Proposal ini sudah kedaluwarsa.';
+
+  @override
+  String get multisigNoSignerHereNote => 'Tidak ada penanda tangan multisig ini di dompet ini.';
+
+  @override
+  String get multisigCancelWaitsNote =>
+      'Pembatalan menunggu hingga persetujuan yang dikirim dari perangkat ini terkonfirmasi.';
 
   @override
   String get activityTxApproving => 'Menyetujui…';
@@ -1291,6 +1321,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleCancelling => 'Membatalkan proposal';
+
+  @override
+  String get activityDetailTitleApproving => 'Menyetujui proposal';
 
   @override
   String get activityDetailTitleExecuting => 'Mengeksekusi proposal';
@@ -2879,6 +2912,114 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopProposeWaiting => 'Menunggu jaringan membuat proposal.';
 
   @override
+  String get desktopProposalApproved => 'Disetujui';
+
+  @override
+  String get desktopProposalExpired => 'Telah kedaluwarsa';
+
+  @override
+  String get desktopProposalUnreadable =>
+      'Dompet ini tidak dapat membaca apa yang akan dilakukan proposal ini, jadi proposal ini tidak dapat disetujui atau dijalankan di sini.';
+
+  @override
+  String get desktopProposalApproving => 'Menyetujui';
+
+  @override
+  String get desktopProposalExecuting => 'Menjalankan';
+
+  @override
+  String get desktopProposalCancelling => 'Membatalkan';
+
+  @override
+  String get desktopProposalSignsAs => 'Menandatangani sebagai';
+
+  @override
+  String get desktopProposalSignedAs => 'Ditandatangani sebagai';
+
+  @override
+  String get desktopProposalDepositRefunded => 'Deposit dikembalikan';
+
+  @override
+  String desktopProposalApprovalsChange(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String desktopProposalKeystoneApprove(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Setujui di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalKeystoneExecute(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Jalankan di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalKeystoneCancel(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Batalkan di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalApprovingTitle(String what) {
+    return 'Menyetujui $what';
+  }
+
+  @override
+  String desktopProposalApprovedTitle(String what) {
+    return '$what disetujui';
+  }
+
+  @override
+  String desktopProposalExecutingTitle(String what) {
+    return 'Menjalankan $what';
+  }
+
+  @override
+  String desktopProposalExecutedTitle(String what) {
+    return '$what dijalankan';
+  }
+
+  @override
+  String desktopProposalCancellingTitle(String what) {
+    return 'Membatalkan $what';
+  }
+
+  @override
+  String get desktopProposalCancelledTitle => 'Proposal dibatalkan';
+
+  @override
+  String get desktopProposalApprovalWaiting => 'Menunggu jaringan mencatat persetujuan Anda.';
+
+  @override
+  String get desktopProposalExecutionWaiting => 'Menunggu jaringan mencatat eksekusi Anda.';
+
+  @override
+  String get desktopProposalCancellationWaiting => 'Menunggu jaringan mencatat pembatalan Anda.';
+
+  @override
+  String get desktopProposalReadyToExecute =>
+      'Proposal ini telah mendapat semua persetujuan yang diperlukan, dan dapat dijalankan.';
+
+  @override
+  String desktopProposalApprovalsNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Perlu $count persetujuan lagi.');
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopProposalExecutedDone => 'Proposal telah dijalankan.';
+
+  @override
+  String get desktopProposalCancelledDone => 'Deposit Anda telah dikembalikan.';
+
+  @override
+  String get desktopProposalExecutedByAnother => 'Dijalankan oleh penanda tangan lain';
+
+  @override
+  String get desktopProposalExecutedByAnotherBody =>
+      'Penanda tangan lain menjalankan proposal ini lebih dulu, jadi transaksi Anda tidak berhasil. Biaya jaringannya tetap dibayar.';
+
+  @override
   String get desktopFooterMainnet => 'Mainnet';
 
   @override
@@ -3182,6 +3323,31 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationReceivedTitle(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String desktopNotificationReceivedBody(String account) {
+    return 'Di $account';
+  }
+
+  @override
+  String desktopNotificationSwapBody(String amount, String foreignAmount, String network) {
+    return '$amount untuk $foreignAmount di $network';
+  }
+
+  @override
+  String desktopNotificationIncomingTitle(String amount) {
+    return '$amount akan masuk';
+  }
+
+  @override
+  String desktopNotificationIncomingBody(String account) {
+    return 'Dijadwalkan masuk ke $account';
+  }
+
+  @override
   String get desktopNotificationSendNotConfirmedTitle => 'Pengiriman belum terkonfirmasi';
 
   @override
@@ -3203,6 +3369,34 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String desktopNotificationProposalCreatedBody(String amount, String multisig) {
     return 'Kirim $amount dari $multisig';
+  }
+
+  @override
+  String get desktopNotificationProposalNewTitle => 'Proposal baru';
+
+  @override
+  String desktopNotificationProposalSignedTitle(int count, int threshold) {
+    return 'Proposal ditandatangani: $count dari $threshold';
+  }
+
+  @override
+  String get desktopNotificationProposalReadyTitle => 'Proposal siap dieksekusi';
+
+  @override
+  String get desktopNotificationProposalExecutedTitle => 'Proposal dieksekusi';
+
+  @override
+  String get desktopNotificationProposalFailedTitle => 'Eksekusi proposal gagal';
+
+  @override
+  String get desktopNotificationProposalCancelledTitle => 'Proposal dibatalkan';
+
+  @override
+  String get desktopNotificationProposalRemovedTitle => 'Proposal dihapus';
+
+  @override
+  String desktopNotificationProposalOtherBody(String multisig) {
+    return 'Di $multisig';
   }
 
   @override
@@ -3508,6 +3702,21 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String desktopStatusItemQuit(String appName) {
     return 'Keluar dari $appName';
+  }
+
+  @override
+  String desktopStatusItemSwap(int step, int count) {
+    return 'Tukar $step/$count';
+  }
+
+  @override
+  String desktopStatusItemSwapAndMore(int step, int count, int more) {
+    return 'Tukar $step/$count +$more';
+  }
+
+  @override
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network) {
+    return '$amount untuk $foreignAmount di $network';
   }
 
   @override

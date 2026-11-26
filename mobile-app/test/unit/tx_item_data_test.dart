@@ -400,6 +400,29 @@ void main() {
       expect((row.amount, row.hideAmount), (BigInt.zero, true));
     });
 
+    test('approving: on its way out, now, the fee to approve', () {
+      final event = PendingMultisigApprovalEvent.create(
+        multisigAddress: msig.accountId,
+        proposalId: 4,
+        approverId: me,
+        recipient: recipient,
+        amount: BigInt.from(500),
+        fee: BigInt.from(7),
+      );
+
+      expect(rowOf(event), (
+        label: l10n.activityTxApproving,
+        time: l10n.activityTxTimeNow,
+        colors: leaving,
+        icon: proposalIcon,
+        isSend: true,
+        amount: BigInt.from(7),
+        hideAmount: false,
+        counterparty: short(recipient),
+        prefix: null,
+      ));
+    });
+
     test('executing: on its way out, now, the fee to execute', () {
       final event = PendingMultisigExecutionEvent.create(
         multisigAddress: msig.accountId,

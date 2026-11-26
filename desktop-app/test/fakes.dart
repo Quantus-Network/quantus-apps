@@ -14,6 +14,7 @@ import 'package:quantus_desktop_wallet/providers/keystone_signing_providers.dart
 import 'package:quantus_desktop_wallet/services/background_window.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
+import 'package:quantus_desktop_wallet/services/mac_push.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
@@ -23,6 +24,7 @@ import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pa
 import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
@@ -38,6 +40,7 @@ import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
 import 'services/fake_background_window.dart';
+import 'services/fake_mac_push.dart';
 import 'services/fake_notification_plugin.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
@@ -766,6 +769,26 @@ class FakeSendChain {
   /// signed it, and what it proposes.
   final proposals = <({String multisig, String signer, String recipient, BigInt amount, int expiryBlock})>[];
 
+  /// The call a proposal stores on chain, as reading it answers; it may
+  /// throw. A sample transfer unless told otherwise.
+  Future<List<int>> Function(int proposalId) proposalCall = (_) async => corpusCall('Balances.transfer_allow_death');
+
+  /// What pricing an approval, execution or cancellation answers; it may
+  /// throw.
+  Future<BigInt> Function() actionFee = () async => usualFee;
+
+  /// Every approval, execution or cancellation priced, in order: the action,
+  /// the account that signs it, and the call it was priced with.
+  final actionQuotes = <(String action, String signer, List<int>? callBytes)>[];
+
+  /// What handing an approval, execution or cancellation over answers, the
+  /// transaction's hash; it may throw.
+  Future<String> Function() submitAction = () async => '0xaction';
+
+  /// Every approval, execution or cancellation handed over: the action, the
+  /// account that signed it, its fee and the call it carried.
+  final actions = <(String action, String signer, BigInt? fee, List<int>? callBytes)>[];
+
   /// When the chain is said to reach any block.
   DateTime blockTime = DateTime(2026, 11, 20, 22, 14);
 
@@ -797,6 +820,9 @@ class FakeSendChain {
 
   /// When set, every read of history waits for it.
   Completer<void>? holdHistory;
+
+  /// The pages of history whose reads wait for their completer.
+  final holdHistoryPages = <int, Completer<void>>{};
 
   /// When set, a read of history fails with this.
   Object? historyError;
@@ -846,6 +872,18 @@ class FakeSendChain {
   /// When set, a read of open proposals waits for it.
   Completer<void>? holdOpenProposals;
 
+  /// The proposals the chain stores, by id, as a check of one reads them.
+  final proposalsById = <int, MultisigProposal>{};
+
+  /// Executions the indexer has, by the hash they were sent in.
+  final indexedExecutions = <String, MultisigProposalExecutedEvent>{};
+
+  /// Approvals the indexer has, by the hash they were sent in.
+  final indexedApprovals = <String, MultisigProposalApprovedEvent>{};
+
+  /// Cancellations the indexer has, by the hash they were sent in.
+  final indexedCancellations = <String, MultisigProposalCancelledEvent>{};
+
   /// The multisigs whose open proposals were read, in order.
   final openProposalReads = <String>[];
 
@@ -853,6 +891,33 @@ class FakeSendChain {
   /// indexer gives it, and the accounts asked about each time.
   List<ReversibleTransferEvent> stillScheduled = const [];
   final stillScheduledReads = <List<String>>[];
+
+  /// What each account received, oldest first, as the indexer holds it.
+  final received = <String, List<TransactionEvent>>{};
+
+  /// The indexer now holds [event] as received by the account [accountId].
+  void receive(String accountId, TransactionEvent event) => received.putIfAbsent(accountId, () => []).add(event);
+
+  /// The accounts asked what they received, each time, in order.
+  final receivedReads = <List<String>>[];
+
+  /// When set, a read of what accounts received fails with this; and waits
+  /// for [holdReceived], when that is set.
+  Object? receivedError;
+  Completer<void>? holdReceived;
+
+  /// What happened to each multisig's proposals, oldest first, as the indexer
+  /// holds it.
+  final proposalActivity = <String, List<MultisigProposalActivity>>{};
+
+  /// The multisigs asked what happened to their proposals, each time, in
+  /// order.
+  final proposalActivityReads = <List<String>>[];
+
+  /// When set, a read of what happened to proposals fails with this; and
+  /// waits for [holdProposalActivity], when that is set.
+  Object? proposalActivityError;
+  Completer<void>? holdProposalActivity;
 
   /// When set, a read of past proposals waits for it; and fails with
   /// [pastProposalsError], when that is set.
@@ -882,6 +947,31 @@ class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.chain);
 
   final FakeSendChain chain;
+
+  /// A cursor counts, under every kind, how many of the multisig's records
+  /// were read.
+  @override
+  Future<Map<String, MultisigProposalActivitySince>> fetchProposalActivitySince(
+    List<MultisigAccount> multisigs,
+    Map<String, MultisigProposalActivityCursor> cursors,
+  ) async {
+    chain.proposalActivityReads.add([for (final msig in multisigs) msig.accountId]);
+    await chain.holdProposalActivity?.future;
+    if (chain.proposalActivityError case final error?) throw error;
+    return {
+      for (final msig in multisigs)
+        msig.accountId: MultisigProposalActivitySince(
+          activity: switch (cursors[msig.accountId]) {
+            null => const [],
+            final cursor => [...?chain.proposalActivity[msig.accountId]?.skip(int.parse(cursor.values.first.id))],
+          },
+          cursor: {
+            for (final kind in MultisigProposalActivityKind.values)
+              kind: AccountEventCursor(timestamp: '', id: '${chain.proposalActivity[msig.accountId]?.length ?? 0}'),
+          },
+        ),
+    };
+  }
 
   @override
   Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) {
@@ -966,7 +1056,39 @@ class _FakeMultisigService extends Fake implements MultisigService {
   }
 
   @override
+  Future<List<int>> fetchProposalCallBytes({required MultisigAccount msig, required int proposalId}) =>
+      chain.proposalCall(proposalId);
+
+  Future<BigInt> _actionFee(String action, Account signer, List<int>? callBytes) {
+    chain.actionQuotes.add((action, signer.accountId, callBytes));
+    return chain.actionFee();
+  }
+
+  @override
+  Future<BigInt> estimateApproveFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    List<int>? callBytes,
+  }) => _actionFee('approve', signer, callBytes);
+
+  @override
+  Future<BigInt> estimateExecuteFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    List<int>? callBytes,
+  }) => _actionFee('execute', signer, callBytes);
+
+  @override
+  Future<BigInt> estimateCancelFee({required MultisigAccount msig, required Account signer, required int proposalId}) =>
+      _actionFee('cancel', signer, null);
+
+  @override
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
+
+  @override
+  Future<MultisigProposal?> getProposal(MultisigAccount msig, int id) async => chain.proposalsById[id];
 
   @override
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
@@ -989,6 +1111,18 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   _FakeChainHistoryService(this.chain);
 
   final FakeSendChain chain;
+
+  @override
+  Future<MultisigProposalExecutedEvent?> searchExecutedByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedExecutions[extrinsicHash];
+
+  @override
+  Future<MultisigProposalApprovedEvent?> searchSignerApprovedByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedApprovals[extrinsicHash];
+
+  @override
+  Future<MultisigProposalCancelledEvent?> searchCancelledByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedCancellations[extrinsicHash];
 
   @override
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
@@ -1016,6 +1150,7 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
     final page = otherAfter == null ? 0 : int.parse(otherAfter.id);
     chain.historyReads.add(page);
     await chain.holdHistory?.future;
+    await chain.holdHistoryPages[page]?.future;
     if (chain.historyError case final error?) throw error;
     if (chain.failingHistoryPages.contains(page)) throw StateError('page $page could not be read');
     final pages = chain.historyPages;
@@ -1035,6 +1170,21 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   Future<List<ReversibleTransferEvent>> fetchStillScheduledTransfers({required List<String> accountIds}) async {
     chain.stillScheduledReads.add(accountIds);
     return chain.stillScheduled;
+  }
+
+  /// A cursor counts how many of the account's rows were read.
+  @override
+  Future<Map<String, IncomingSince>> fetchIncomingSince(Map<String, AccountEventCursor?> after) async {
+    chain.receivedReads.add(after.keys.toList());
+    await chain.holdReceived?.future;
+    if (chain.receivedError case final error?) throw error;
+    return {
+      for (final MapEntry(key: account, value: cursor) in after.entries)
+        account: IncomingSince(
+          received: cursor == null ? const [] : [...?chain.received[account]?.skip(int.parse(cursor.id))],
+          cursor: AccountEventCursor(timestamp: '', id: '${chain.received[account]?.length ?? 0}'),
+        ),
+    };
   }
 }
 
@@ -1148,6 +1298,38 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
     ));
     return hash;
   }
+
+  Future<String> _action(String action, Account signer, BigInt? fee, List<int>? callBytes) async {
+    final hash = await chain.submitAction();
+    chain.actions.add((action, signer.accountId, fee, callBytes));
+    return hash;
+  }
+
+  @override
+  Future<String> approveProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    List<int>? callBytes,
+    BigInt? fee,
+  }) => _action('approve', signer, fee, callBytes);
+
+  @override
+  Future<String> executeProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    List<int>? callBytes,
+    BigInt? fee,
+  }) => _action('execute', signer, fee, callBytes);
+
+  @override
+  Future<String> cancelProposal({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    BigInt? fee,
+  }) => _action('cancel', proposer, fee, null);
 }
 
 class _FakeRecentAddressesService extends Fake implements RecentAddressesService {
@@ -2009,6 +2191,9 @@ Future<void> pumpShell(
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
         ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
         notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
+        // Never the Mac's own push service: a build not signed to receive
+        // pushes, which registers nothing.
+        macPushProvider.overrideWithValue(FakeMacPush(environmentOfBuild: null)),
         backgroundWindowProvider.overrideWithValue(backgroundWindow ?? FakeBackgroundWindow()),
       ],
     ),
@@ -2128,4 +2313,12 @@ class FakeScanSource implements QrScanSource {
     isOn = false;
     _reads.addError(QrCameraException(failure));
   }
+}
+
+/// The bytes of a real runtime call from quantus_sdk's sample calls, by its
+/// name there (e.g. `ReversibleTransfers.set_high_security`), as a
+/// proposal's `callRaw` carries them.
+Uint8List corpusCall(String name) {
+  final hex = callCorpus[name] ?? (throw ArgumentError.value(name, 'name', 'not a sample call'));
+  return Uint8List.fromList([for (var i = 0; i < hex.length; i += 2) int.parse(hex.substring(i, i + 2), radix: 16)]);
 }
