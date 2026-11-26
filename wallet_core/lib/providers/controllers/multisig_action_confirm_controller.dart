@@ -148,9 +148,18 @@ final class MultisigActionSubmitted extends MultisigActionOutcome {
 }
 
 /// The signer signs on a Keystone: [session] hands the action to the QR flow,
-/// headed by the details the caller words.
+/// headed by the details the caller words, and labelled as it says (a
+/// transfer's amount and recipient unless told otherwise).
 final class MultisigActionNeedsHardwareSignature extends MultisigActionOutcome {
-  final KeystoneSigningSession Function({required String primaryDetail, String? secondaryDetail}) session;
+  final KeystoneSigningSession Function({
+    required String primaryDetail,
+    String? secondaryDetail,
+    String? primaryLabel,
+    bool primaryIsAmount,
+    String? secondaryLabel,
+    bool secondaryIsAddress,
+  })
+  session;
 
   const MultisigActionNeedsHardwareSignature(this.session);
 }
@@ -311,7 +320,22 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
     if (signer.signsWithHardware) {
       state = state.copyWith(submitting: false);
       return MultisigActionNeedsHardwareSignature(
-        ({required primaryDetail, secondaryDetail}) => _hardwareSession(signer, primaryDetail, secondaryDetail),
+        ({
+          required primaryDetail,
+          secondaryDetail,
+          primaryLabel,
+          primaryIsAmount = false,
+          secondaryLabel,
+          secondaryIsAddress = false,
+        }) => _hardwareSession(
+          signer,
+          primaryDetail: primaryDetail,
+          secondaryDetail: secondaryDetail,
+          primaryLabel: primaryLabel,
+          primaryIsAmount: primaryIsAmount,
+          secondaryLabel: secondaryLabel,
+          secondaryIsAddress: secondaryIsAddress,
+        ),
       );
     }
 
@@ -376,34 +400,51 @@ class MultisigActionConfirmController extends Notifier<MultisigActionConfirmStat
     ref.invalidate(multisigCurrentBlockProvider);
   }
 
-  RuntimeCall _buildCall() {
+  /// The action's call, built by [service] with the proposal's [callBytes].
+  RuntimeCall _buildCall(MultisigService service, List<int>? callBytes) {
     return switch (request.kind) {
-      MultisigActionKind.approve => MultisigService().buildApproveCall(
+      MultisigActionKind.approve => service.buildApproveCall(
         msig: _msig,
         proposalId: _proposal.id,
-        call: requireCallBytes(state.callBytes, 'Approve'),
+        call: requireCallBytes(callBytes, 'Approve'),
       ),
-      MultisigActionKind.execute => MultisigService().buildExecuteCall(
+      MultisigActionKind.execute => service.buildExecuteCall(
         msig: _msig,
         proposalId: _proposal.id,
-        call: requireCallBytes(state.callBytes, 'Execute'),
+        call: requireCallBytes(callBytes, 'Execute'),
       ),
-      MultisigActionKind.cancel => MultisigService().buildCancelCall(msig: _msig, proposalId: _proposal.id),
+      MultisigActionKind.cancel => service.buildCancelCall(msig: _msig, proposalId: _proposal.id),
     };
   }
 
-  KeystoneSigningSession _hardwareSession(Account signer, String primaryDetail, String? secondaryDetail) {
+  KeystoneSigningSession _hardwareSession(
+    Account signer, {
+    required String primaryDetail,
+    required String? secondaryDetail,
+    required String? primaryLabel,
+    required bool primaryIsAmount,
+    required String? secondaryLabel,
+    required bool secondaryIsAddress,
+  }) {
     final kind = request.kind.name;
     final fee = state.fee;
+    // Taken now, as the fee is: the call is built when the request is shown,
+    // and again whenever it is shown afresh.
+    final service = ref.read(multisigServiceProvider);
+    final callBytes = state.callBytes;
     // Taken now: a signature that comes back after the wallet was reset is
     // for a wallet that is gone, and is not sent.
     final walletSession = ref.read(walletSessionProvider);
     final ticket = walletSession.ticket;
     return KeystoneSigningSession(
       account: signer,
-      buildCall: _buildCall,
+      buildCall: () => _buildCall(service, callBytes),
+      primaryLabel: primaryLabel,
       primaryDetail: primaryDetail,
+      primaryIsAmount: primaryIsAmount,
+      secondaryLabel: secondaryLabel,
       secondaryDetail: secondaryDetail,
+      secondaryIsAddress: secondaryIsAddress,
       cacheKey: KeystoneSignCacheKey.forExtrinsic(
         accountId: signer.accountId,
         identity: '$kind|${_msig.accountId}|${_proposal.id}',

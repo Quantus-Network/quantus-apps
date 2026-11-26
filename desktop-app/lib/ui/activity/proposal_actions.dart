@@ -20,9 +20,9 @@ import 'package:wallet_core/utils/multisig_proposal_actions.dart';
 /// its panel: Approve or Execute, Cancel Proposal for its proposer, and why
 /// an action is not offered, by the rules the phone has.
 ///
-/// Desktop signs only with keys it holds: a Keystone account is never the one
-/// that acts, and an action only it could do is unavailable, saying so.
-/// Neither is one offered where the computer cannot ask for approval.
+/// An account whose key is here signs with the computer's approval; a cold
+/// wallet account signs on its cold wallet. Where the computer cannot ask
+/// for approval, only what a cold wallet account here can do is offered.
 class ProposalActionsBar extends ConsumerWidget {
   const ProposalActionsBar({super.key, required this.msig, required this.proposal});
 
@@ -61,38 +61,30 @@ class ProposalActionsBar extends ConsumerWidget {
     }
 
     final approvalNotSetUp = ref.watch(approvalAvailabilityProvider).value == ApprovalAvailability.notSetUp;
-    String? keystoneNote;
 
     var primaryState = open.primaryState;
-    if (primaryState == ProposalActionState.offered) {
-      switch (open.primary) {
-        case ProposalPrimaryAction.approve:
-          if (!open.eligibleApprovers.any((a) => !a.signsWithHardware)) {
-            primaryState = ProposalActionState.unavailable;
-            keystoneNote = l10n.desktopProposalKeystoneApprove(open.eligibleApprovers.first.name);
-          }
-        case ProposalPrimaryAction.execute:
-          if (!open.executors.any((a) => !a.signsWithHardware)) {
-            primaryState = ProposalActionState.unavailable;
-            keystoneNote = l10n.desktopProposalKeystoneExecute(open.executors.first.name);
-          }
-      }
-    }
-
     var cancelState = open.cancel;
-    if (cancelState == ProposalActionState.offered) {
-      final canceller = open.canceller ?? (throw StateError('Cancel was offered with no proposer in this wallet.'));
-      if (canceller.signsWithHardware) {
-        cancelState = ProposalActionState.unavailable;
-        keystoneNote ??= l10n.desktopProposalKeystoneCancel(canceller.name);
-      }
-    }
-
-    final offersAny = primaryState == ProposalActionState.offered || cancelState == ProposalActionState.offered;
-    final approvalNote = approvalNotSetUp && offersAny ? approvalNotSetUpNote(l10n) : null;
+    // Without the computer's approval, only a cold wallet account here can
+    // sign: what none could do is unavailable, and the note says why.
+    var awaitsApproval = false;
     if (approvalNotSetUp) {
-      if (primaryState == ProposalActionState.offered) primaryState = ProposalActionState.unavailable;
-      if (cancelState == ProposalActionState.offered) cancelState = ProposalActionState.unavailable;
+      if (primaryState == ProposalActionState.offered) {
+        final signers = switch (open.primary) {
+          ProposalPrimaryAction.approve => open.eligibleApprovers,
+          ProposalPrimaryAction.execute => open.executors,
+        };
+        if (!signers.any((a) => a.signsWithHardware)) {
+          primaryState = ProposalActionState.unavailable;
+          awaitsApproval = true;
+        }
+      }
+      if (cancelState == ProposalActionState.offered) {
+        final canceller = open.canceller ?? (throw StateError('Cancel was offered with no proposer in this wallet.'));
+        if (!canceller.signsWithHardware) {
+          cancelState = ProposalActionState.unavailable;
+          awaitsApproval = true;
+        }
+      }
     }
 
     void start(MultisigActionKind kind) => ref
@@ -114,7 +106,7 @@ class ProposalActionsBar extends ConsumerWidget {
 
     final note = switch (open.note) {
       final note? => _noteText(l10n, note),
-      null => keystoneNote ?? approvalNote,
+      null => awaitsApproval ? approvalNotSetUpNote(l10n) : null,
     };
 
     return _bar(
