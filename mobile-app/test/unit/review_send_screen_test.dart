@@ -11,6 +11,7 @@ import 'package:wallet_core/services/exchange_rate_service.dart';
 import 'package:resonance_network_wallet/shared/constants/e2e_keys.dart';
 import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/send/review_send_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/send_terminal_screen.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
 import 'package:wallet_core/send/send_screen_logic.dart';
 import 'package:wallet_core/send/send_strategy.dart';
@@ -18,6 +19,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../extensions.dart';
 import '../fakes.dart';
+
+/// A send whose broadcast waits for the test. As the wallet does, it holds
+/// what it spends back from the account first, by [goingOut].
+class _HeldSendStrategy extends RegularSendStrategy {
+  _HeldSendStrategy({required super.account, required this.goingOut});
+
+  final void Function() goingOut;
+  final outcome = Completer<SendOutcome>();
+
+  @override
+  Future<SendOutcome> submit(
+    WidgetRef ref, {
+    required String recipientAddress,
+    required BigInt amount,
+    required SendFee fee,
+    required bool isPayMode,
+    bool sendAll = false,
+  }) {
+    goingOut();
+    return outcome.future;
+  }
+}
 
 /// Review re-derives its figures from the live fee. A max send waits for the
 /// settled `transfer_all` fee; an ordinary send is only blocked when the
@@ -42,10 +65,12 @@ void main() {
     required SendFee fee,
     bool sendAll = false,
     BigInt? balance,
+    SendStrategy? strategy,
+    BigInt Function()? balanceNow,
   }) async {
     await tester.pumpApp(
       ReviewSendScreen(
-        strategy: RegularSendStrategy(account: sender),
+        strategy: strategy ?? RegularSendStrategy(account: sender),
         recipientAddress: recipient.accountId,
         amount: amount,
         fee: fee,
@@ -53,7 +78,9 @@ void main() {
       ),
       overrides: [
         settingsServiceProvider.overrideWithValue(FakeSettingsService(activeAccount: RegularAccount(sender))),
-        effectiveBalanceProviderFamily.overrideWith((ref, accountId) => AsyncValue.data(balance ?? spendable)),
+        effectiveBalanceProviderFamily.overrideWith(
+          (ref, accountId) => AsyncValue.data(balanceNow?.call() ?? balance ?? spendable),
+        ),
         exchangeRateServiceProvider.overrideWithValue(ExchangeRateService(rates: {})),
         substrateServiceProvider.overrideWithValue(FakeSubstrateService()),
         balancesServiceProvider.overrideWithValue(FakeBalancesService()),
@@ -206,5 +233,98 @@ void main() {
 
     expect(container.read(sendFeeProvider).settled, isTrue);
     expect(confirmDisabled(tester), isTrue);
+  });
+
+  // The wallet holds a send's amount back from the account before it is
+  // broadcast, so the account reads as too short for it while it goes out
+  // (n13's review of #833).
+  group('while a send goes out', () {
+    final amount = BigInt.from(4) * NumberFormattingService.scaleFactorBigInt;
+
+    /// The review of sending 4 of 5 QTC, its broadcast held once Confirm is
+    /// pressed, the account then holding 1 QTC less the fee.
+    Future<({ProviderContainer container, _HeldSendStrategy strategy, void Function(BigInt) holds})> goingOut(
+      WidgetTester tester,
+    ) async {
+      var now = spendable;
+      late ProviderContainer container;
+      final strategy = _HeldSendStrategy(
+        account: sender,
+        goingOut: () {
+          now = spendable - amount - lowFee;
+          container.invalidate(effectiveBalanceProviderFamily);
+        },
+      );
+      container = await pumpReview(
+        tester,
+        amount: amount,
+        fee: RegularFee(networkFee: lowFee),
+        strategy: strategy,
+        balanceNow: () => now,
+      );
+      void holds(BigInt value) {
+        now = value;
+        container.invalidate(effectiveBalanceProviderFamily);
+      }
+
+      return (container: container, strategy: strategy, holds: holds);
+    }
+
+    testWidgets('nothing is said of the amount, though what it holds back leaves too little', (tester) async {
+      final (:container, strategy: _, holds: _) = await goingOut(tester);
+      final l10n = container.read(l10nProvider);
+      expect(find.text(l10n.sendLogicInsufficientBalance), findsNothing);
+
+      await tester.tap(find.byKey(const Key(E2EKeys.sendConfirmButton)));
+      await settle(tester);
+
+      expect(find.text(l10n.sendLogicInsufficientBalance), findsNothing);
+      expect(confirmDisabled(tester), isTrue);
+    });
+
+    testWidgets('once it went out, nothing is said of it either while the receipt slides in, nor under it', (
+      tester,
+    ) async {
+      final (:container, :strategy, holds: _) = await goingOut(tester);
+      final l10n = container.read(l10nProvider);
+      await tester.tap(find.byKey(const Key(E2EKeys.sendConfirmButton)));
+      await settle(tester);
+
+      strategy.outcome.complete(
+        SendSubmitted(
+          buildSentTerminalContent(
+            l10n,
+            container.read(numberFormattingServiceProvider),
+            recipient: recipient.accountId,
+            amount: amount,
+            isPayMode: false,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(find.text(l10n.sendLogicInsufficientBalance), findsNothing);
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SendTerminalScreen), findsOneWidget);
+      expect(find.text(l10n.sendLogicInsufficientBalance, skipOffstage: false), findsNothing);
+    });
+
+    testWidgets('one that fails says why once it ends, and can be confirmed again', (tester) async {
+      final (:container, :strategy, :holds) = await goingOut(tester);
+      await tester.tap(find.byKey(const Key(E2EKeys.sendConfirmButton)));
+      await settle(tester);
+
+      // A failed broadcast drops what it held back.
+      holds(spendable);
+      strategy.outcome.complete(const SendFailed('the node refused it'));
+      await settle(tester);
+
+      expect(find.text('the node refused it'), findsOneWidget);
+      expect(find.text(container.read(l10nProvider).sendLogicInsufficientBalance), findsNothing);
+      expect(confirmDisabled(tester), isFalse);
+    });
   });
 }
