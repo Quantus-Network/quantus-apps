@@ -92,9 +92,15 @@ class AppConstants {
   /// Average Quantus block time in seconds (~12s). Used for mortal-era TTL and block↔time estimates.
   static const int avgBlockTimeSeconds = 12;
 
-  /// Mortal era length for signed transactions, in blocks. Must be a power of
-  /// two (the era encoding rounds up); 16 blocks ≈ 3.2 minutes at 12s blocks.
+  /// Mortal era length for transactions signed on this device, in blocks. Must
+  /// be a power of two (the era encoding rounds up); 16 blocks ≈ 3.2 minutes at
+  /// 12s blocks.
   static const int txMortalEraPeriodBlocks = 16;
+
+  /// Mortal era length for a transaction a cold wallet signs: it is scanned,
+  /// checked and approved there and its signature scanned back, all inside the
+  /// era. A power of two; 64 blocks ≈ 12.8 minutes at 12s blocks.
+  static const int coldWalletTxMortalEraPeriodBlocks = 64;
 
   // Digits of precision
   static const int decimals = 12;
