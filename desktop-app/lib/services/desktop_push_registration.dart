@@ -1,7 +1,8 @@
 import 'package:wallet_core/services/push_registration.dart';
 
-/// The desktop app has no push transport, so there is no device or address to
-/// register: every call completes without doing anything.
+/// Windows and Linux have no push transport that reaches a closed app, so
+/// there is no device or address to register: every call completes without
+/// doing anything. A Mac registers through `MacPushRegistration`.
 class DesktopPushRegistration implements PushRegistration {
   const DesktopPushRegistration();
 

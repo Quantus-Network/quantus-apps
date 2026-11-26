@@ -50,6 +50,10 @@ class ReviewSendScreen extends ConsumerStatefulWidget {
 
 class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
   bool _submitting = false;
+
+  /// The send went out: what it spends is held back from the account, so
+  /// the amount is no longer judged against what is left.
+  bool _wentOut = false;
   String? _errorMessage;
   Timer? _prefetchTimer;
 
@@ -135,6 +139,7 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
       case SendSubmitted(:final terminal):
         setState(() {
           _submitting = false;
+          _wentOut = true;
           _errorMessage = null;
         });
         Navigator.push(context, MaterialPageRoute(builder: (_) => SendTerminalScreen(content: terminal)));
@@ -145,9 +150,13 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
           MaterialPageRoute(builder: (_) => KeystoneSignScreen(session: session)),
         );
         if (!mounted || hash == null) return;
+        setState(() => _wentOut = true);
         Navigator.push(context, MaterialPageRoute(builder: (_) => SendTerminalScreen(content: terminalForHash(hash))));
       case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
-        setState(() => _submitting = false);
+        setState(() {
+          _submitting = false;
+          _wentOut = true;
+        });
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -183,7 +192,12 @@ class _ReviewSendScreenState extends ConsumerState<ReviewSendScreen> {
     final feeApplies = review.feeApplies;
     final amountStatus = review.amountStatus;
     final feeFailed = review.feeFailed;
-    final message = amountStatus != AmountStatus.valid
+    // Nothing while the send goes out, nor once it went out: the wallet holds
+    // what it spends back from the account before it is broadcast, so the
+    // account reads as too short for it. A failure says why once it ends.
+    final message = _submitting || _wentOut
+        ? null
+        : amountStatus != AmountStatus.valid
         ? SendScreenLogic.getButtonText(
             l10n: l10n,
             hasAddressError: false,

@@ -21,6 +21,9 @@ class FakeNotificationPlugin implements NotificationPlugin {
   /// not answered yet does.
   Completer<bool>? heldAnswer;
 
+  /// Keeps starting from finishing until completed, as a slow system does.
+  Completer<void>? heldStart;
+
   /// What reading the permission throws, when it fails.
   Object? permissionCheckError;
   var permissionChecks = 0;
@@ -40,6 +43,7 @@ class FakeNotificationPlugin implements NotificationPlugin {
   @override
   Future<void> initialize(InitializationSettings settings, {required void Function(String? payload) onClick}) async {
     initializations.add(settings);
+    await heldStart?.future;
     final error = startError;
     if (error != null) throw error;
     _onClick = onClick;

@@ -83,11 +83,12 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
       MultisigProposalEvent(:final proposal) => OpenedProposal(proposal),
       _ => OpenedTransaction(tx),
     };
-    final open = ref.read(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
+    final proposals = ref.read(openProposalsViewProvider)?.value;
     return [
       ...swapRows,
       for (final tx in view.inProgress) of(tx),
-      for (final proposal in open) OpenedProposal(proposal),
+      for (final pending in proposals?.proposing ?? const <PendingMultisigProposalEvent>[]) OpenedTransaction(pending),
+      for (final proposal in proposals?.open ?? const <MultisigProposal>[]) OpenedProposal(proposal),
       for (final tx in view.settled) of(tx),
     ];
   }
@@ -156,12 +157,15 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
     // Activity while none is open), or in the panel at the right.
     final listsHaveKeys = _lists.hasFocus;
     final openId = opened?.id;
-    final openProposals = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
+    final proposals = ref.watch(openProposalsViewProvider)?.value;
     final holder = openId == null
         ? ActivityPanel
         : swaps.any((swap) => swap.id == openId) || inProgress.any((tx) => tx.id == openId)
         ? InProgressPanel
-        : openProposals.any((proposal) => proposal.entityId == openId)
+        : [
+            ...?proposals?.proposing.map((pending) => pending.id),
+            ...?proposals?.open.map((proposal) => proposal.entityId),
+          ].contains(openId)
         ? OpenProposalsPanel
         : ActivityPanel;
     bool holds(Type panel) => listsHaveKeys && holder == panel;

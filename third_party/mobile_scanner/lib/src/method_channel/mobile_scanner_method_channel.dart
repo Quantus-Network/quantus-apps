@@ -247,16 +247,22 @@ class MethodChannelMobileScanner extends MobileScannerPlatform {
         .handleError(_parseBarcodeError);
   }
 
+  /// Patched (PATCHES.md): an error event on this channel is a scanning
+  /// error, which [barcodesStream] delivers. The other streams skip it, as
+  /// their listeners have no error handler and would rethrow it uncaught.
+  Stream<Map<Object?, Object?>> get _eventsWithoutErrors =>
+      eventsStream.handleError((Object _) {});
+
   @override
   Stream<TorchState> get torchStateStream {
-    return eventsStream
+    return _eventsWithoutErrors
         .where((event) => event['name'] == kTorchStateEventName)
         .map((event) => TorchState.fromRawValue(event['data'] as int? ?? 0));
   }
 
   @override
   Stream<double> get zoomScaleStateStream {
-    return eventsStream
+    return _eventsWithoutErrors
         .where((event) => event['name'] == kZoomScaleStateEventName)
         .map((event) => event['data'] as double? ?? 0.0);
   }

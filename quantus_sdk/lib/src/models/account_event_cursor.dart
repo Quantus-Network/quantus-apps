@@ -10,6 +10,10 @@ class AccountEventCursor {
 
   const AccountEventCursor({required this.timestamp, required this.id});
 
+  /// Where a history read oldest first starts when nothing of it has been
+  /// read and it holds nothing yet: every row is strictly after it.
+  static const beforeAnyEvent = AccountEventCursor(timestamp: '1970-01-01T00:00:00+00:00', id: '');
+
   @override
   String toString() => 'AccountEventCursor(timestamp: $timestamp, id: $id)';
 }

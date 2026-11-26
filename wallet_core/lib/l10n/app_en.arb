@@ -3,13 +3,29 @@
     "@walletInitErrorTitle": {
       "description": "Title for the error dialog when the wallet is not found"
     },
-    "walletInitErrorMessage": "Unable to find secret phrase. Please restore your wallet.",
+    "walletInitErrorMessage": "Unable to read your recovery phrase from this device.",
     "@walletInitErrorMessage": {
-      "description": "Message for the error dialog when the wallet is not found"
+      "description": "Message for the error dialog when the wallet's recovery phrase cannot be read at start"
     },
-    "walletInitErrorButtonLabel": "OK",
-    "@walletInitErrorButtonLabel": {
-      "description": "Label for the button on the error dialog when the wallet is not found"
+    "walletInitErrorRemoveWallet": "Remove Wallet",
+    "@walletInitErrorRemoveWallet": {
+      "description": "Phone: on the error sheet when the recovery phrase cannot be read, the button that asks to remove every wallet from the device"
+    },
+    "desktopWalletInitErrorRemoveWallet": "Remove Wallet…",
+    "@desktopWalletInitErrorRemoveWallet": {
+      "description": "Desktop: on the error dialog when the recovery phrase cannot be read, the button that asks to remove every wallet from the device"
+    },
+    "walletInitErrorRemoveTitle": "Remove all wallets from this device?",
+    "@walletInitErrorRemoveTitle": {
+      "description": "Title of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read"
+    },
+    "walletInitErrorRemoveBody": "This cannot be undone.",
+    "@walletInitErrorRemoveBody": {
+      "description": "Body of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read"
+    },
+    "walletInitErrorRemoveConfirm": "Remove",
+    "@walletInitErrorRemoveConfirm": {
+      "description": "The button that removes every wallet from the device, on the confirmation asked from the error dialog"
     },
     "authUseDeviceBiometricsToUnlock": "Use device biometrics to unlock",
     "@authUseDeviceBiometricsToUnlock": {
@@ -402,6 +418,10 @@
     "@multisigCreateTimeoutToast": {
       "description": "Toast when on-chain confirmation polling times out"
     },
+    "multisigCreateNotSavedToast": "Your multisig was created, but it could not be saved on this device. Restart the app to add it.",
+    "@multisigCreateNotSavedToast": {
+      "description": "Toast when a multisig is confirmed on chain but storing it on this device fails; the next start adds it"
+    },
     "multisigCreateAuthReason": "Authenticate to create this multisig",
     "@multisigCreateAuthReason": {
       "description": "Local auth prompt when submitting create multisig"
@@ -553,6 +573,10 @@
     "multisigProposalCallUnavailable": "Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.",
     "@multisigProposalCallUnavailable": {
       "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
+    },
+    "multisigProposalStateUnreadNote": "Could not check where this proposal stands now, so nothing can be done with it here. Try again when you are back online.",
+    "@multisigProposalStateUnreadNote": {
+      "description": "Proposal detail: the open proposals could not be read again, so its actions are held back"
     },
     "multisigProposalInvalid": "Invalid proposal",
     "@multisigProposalInvalid": {
@@ -750,6 +774,18 @@
     "multisigApproveUnavailableNote": "This proposal can no longer be approved.",
     "@multisigApproveUnavailableNote": {
       "description": "Note when approve is unavailable (expired or closed)"
+    },
+    "multisigProposalExpiredNote": "This proposal has expired.",
+    "@multisigProposalExpiredNote": {
+      "description": "Note under a proposal's actions when it is past its expiry block, so it can no longer be approved, executed or cancelled"
+    },
+    "multisigNoSignerHereNote": "None of this multisig's signers is in this wallet.",
+    "@multisigNoSignerHereNote": {
+      "description": "Note under a proposal's actions when no signer of its multisig is an account in this wallet"
+    },
+    "multisigCancelWaitsNote": "Cancel waits until the approval sent from this device is confirmed.",
+    "@multisigCancelWaitsNote": {
+      "description": "Note under a proposal's actions when Cancel is unavailable because an approval from this device is still on its way to the chain"
     },
     "activityTxApproving": "Approving…",
     "@activityTxApproving": {
@@ -1814,6 +1850,10 @@
     "activityDetailTitleCancelling": "Cancelling proposal",
     "@activityDetailTitleCancelling": {
       "description": "Detail sheet title while a multisig proposal cancellation is confirming on-chain"
+    },
+    "activityDetailTitleApproving": "Approving proposal",
+    "@activityDetailTitleApproving": {
+      "description": "Detail sheet title while the approver's approval of a multisig proposal is confirming on-chain"
     },
     "activityDetailTitleExecuting": "Executing proposal",
     "@activityDetailTitleExecuting": {
@@ -4123,6 +4163,171 @@
     "@desktopProposeWaiting": {
       "description": "Desktop Propose receipt: the line under the headline while the proposal's transaction was broadcast and the network has not yet created the proposal"
     },
+    "desktopProposalApproved": "Approved",
+    "@desktopProposalApproved": {
+      "description": "Desktop proposal panel: where an open proposal stands once it has all the approvals it needs and waits to be executed; drawn in small capitals"
+    },
+    "desktopProposalExpired": "Expired",
+    "@desktopProposalExpired": {
+      "description": "Desktop proposal panel: where an open proposal stands once it is past its expiry block, drawn in small capitals; also the label of the row that says when it expired, in place of \"Expires\""
+    },
+    "desktopProposalUnreadable": "This wallet can't read what this proposal would do, so it can't be approved or executed here.",
+    "@desktopProposalUnreadable": {
+      "description": "Desktop proposal panel: the sentence under \"Invalid proposal\" for a proposal whose call this wallet cannot decode"
+    },
+    "desktopProposalApproving": "Approving",
+    "@desktopProposalApproving": {
+      "description": "Desktop proposal action review: the caps line over the proposal being approved"
+    },
+    "desktopProposalExecuting": "Executing",
+    "@desktopProposalExecuting": {
+      "description": "Desktop proposal action review: the caps line over the proposal being executed"
+    },
+    "desktopProposalCancelling": "Cancelling",
+    "@desktopProposalCancelling": {
+      "description": "Desktop proposal action review: the caps line over the proposal being cancelled"
+    },
+    "desktopProposalSignsAs": "Signs as",
+    "@desktopProposalSignsAs": {
+      "description": "Desktop proposal action review: the row naming the account of this wallet that signs, or the choice of them"
+    },
+    "desktopProposalSignedAs": "Signed as",
+    "@desktopProposalSignedAs": {
+      "description": "Desktop proposal action receipt: the row naming the account that signed"
+    },
+    "desktopProposalDepositRefunded": "Deposit refunded",
+    "@desktopProposalDepositRefunded": {
+      "description": "Desktop proposal cancel review: the row with the proposal deposit that cancelling returns"
+    },
+    "desktopProposalApprovalsChange": "{before} → {after}",
+    "@desktopProposalApprovalsChange": {
+      "description": "Desktop proposal approve review: the approval count before and after this approval, each as desktopProposeCountOf",
+      "placeholders": {
+        "before": {
+          "type": "String"
+        },
+        "after": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalKeystoneApprove": "{name} signs with a Keystone, which this app cannot sign with yet. Approve on your phone.",
+    "@desktopProposalKeystoneApprove": {
+      "description": "Desktop proposal panel: why Approve is unavailable when the only account that could approve is a Keystone",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalKeystoneExecute": "{name} signs with a Keystone, which this app cannot sign with yet. Execute on your phone.",
+    "@desktopProposalKeystoneExecute": {
+      "description": "Desktop proposal panel: why Execute is unavailable when the member that executes is a Keystone",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalKeystoneCancel": "{name} signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.",
+    "@desktopProposalKeystoneCancel": {
+      "description": "Desktop proposal panel: why Cancel Proposal is unavailable when the proposer is a Keystone",
+      "placeholders": {
+        "name": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalApprovingTitle": "Approving {what}",
+    "@desktopProposalApprovingTitle": {
+      "description": "Desktop proposal action receipt headline while the approval is confirmed; what is the amount or the call's name",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalApprovedTitle": "{what} approved",
+    "@desktopProposalApprovedTitle": {
+      "description": "Desktop proposal action receipt headline once the approval is confirmed",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalExecutingTitle": "Executing {what}",
+    "@desktopProposalExecutingTitle": {
+      "description": "Desktop proposal action receipt headline while the execution is confirmed",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalExecutedTitle": "{what} executed",
+    "@desktopProposalExecutedTitle": {
+      "description": "Desktop proposal action receipt headline once the proposal was executed, by this wallet or another signer",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalCancellingTitle": "Cancelling {what}",
+    "@desktopProposalCancellingTitle": {
+      "description": "Desktop proposal action receipt headline while the cancellation is confirmed",
+      "placeholders": {
+        "what": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopProposalCancelledTitle": "Proposal cancelled",
+    "@desktopProposalCancelledTitle": {
+      "description": "Desktop proposal action receipt headline once the cancellation is confirmed"
+    },
+    "desktopProposalApprovalWaiting": "Waiting for the network to record your approval.",
+    "@desktopProposalApprovalWaiting": {
+      "description": "Desktop proposal action receipt: while the approval is confirmed"
+    },
+    "desktopProposalExecutionWaiting": "Waiting for the network to record your execution.",
+    "@desktopProposalExecutionWaiting": {
+      "description": "Desktop proposal action receipt: while the execution is confirmed"
+    },
+    "desktopProposalCancellationWaiting": "Waiting for the network to record your cancellation.",
+    "@desktopProposalCancellationWaiting": {
+      "description": "Desktop proposal action receipt: while the cancellation is confirmed"
+    },
+    "desktopProposalReadyToExecute": "It has every approval it needs, and can be executed.",
+    "@desktopProposalReadyToExecute": {
+      "description": "Desktop proposal action receipt: an approval that brought the proposal to its threshold"
+    },
+    "desktopProposalApprovalsNeeded": "{count, plural, =1{1 more approval needed.} other{{count} more approvals needed.}}",
+    "@desktopProposalApprovalsNeeded": {
+      "description": "Desktop proposal action receipt: an approval after which the proposal still needs more",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopProposalExecutedDone": "The proposal has run.",
+    "@desktopProposalExecutedDone": {
+      "description": "Desktop proposal action receipt: once this wallet's execution is confirmed"
+    },
+    "desktopProposalCancelledDone": "Your deposit is refunded.",
+    "@desktopProposalCancelledDone": {
+      "description": "Desktop proposal action receipt: once the cancellation is confirmed"
+    },
+    "desktopProposalExecutedByAnother": "Executed by another signer",
+    "@desktopProposalExecutedByAnother": {
+      "description": "Desktop proposal action receipt status: the proposal was executed, but not by this wallet's transaction"
+    },
+    "desktopProposalExecutedByAnotherBody": "Another signer executed this proposal first, so your transaction did not go through. Its network fee was still paid.",
+    "@desktopProposalExecutedByAnotherBody": {
+      "description": "Desktop proposal action receipt: under 'Executed by another signer'"
+    },
     "desktopFooterMainnet": "Mainnet",
     "@desktopFooterMainnet": {
       "description": "Desktop footer: the network the wallet is on, beside a dot that is green while online"
@@ -4598,6 +4803,57 @@
         }
       }
     },
+    "desktopNotificationReceivedTitle": "Received {amount}",
+    "@desktopNotificationReceivedTitle": {
+      "description": "Desktop notification title: a transfer from outside the wallet arrived in one of its accounts; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationReceivedBody": "In {account}",
+    "@desktopNotificationReceivedBody": {
+      "description": "Desktop notification body: the account the received transfer arrived in",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationSwapBody": "{amount} for {foreignAmount} on {network}",
+    "@desktopNotificationSwapBody": {
+      "description": "Desktop notification body: what a swap that ended or came short was about, as its row says it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "foreignAmount": {
+          "type": "String"
+        },
+        "network": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationIncomingTitle": "Incoming {amount}",
+    "@desktopNotificationIncomingTitle": {
+      "description": "Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationIncomingBody": "Scheduled to arrive in {account}",
+    "@desktopNotificationIncomingBody": {
+      "description": "Desktop notification body: the account the scheduled reversible transfer will arrive in",
+      "placeholders": {
+        "account": {
+          "type": "String"
+        }
+      }
+    },
     "desktopNotificationSendNotConfirmedTitle": "Send not confirmed",
     "@desktopNotificationSendNotConfirmedTitle": {
       "description": "Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it"
@@ -4641,6 +4897,51 @@
         "amount": {
           "type": "String"
         },
+        "multisig": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopNotificationProposalNewTitle": "New proposal",
+    "@desktopNotificationProposalNewTitle": {
+      "description": "Desktop notification title: another signer proposed something in a multisig of the wallet"
+    },
+    "desktopNotificationProposalSignedTitle": "Proposal signed: {count} of {threshold}",
+    "@desktopNotificationProposalSignedTitle": {
+      "description": "Desktop notification title: another signer approved a proposal that still needs more approvals; count is the approvals it has now, threshold how many it needs",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        },
+        "threshold": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopNotificationProposalReadyTitle": "Proposal ready to execute",
+    "@desktopNotificationProposalReadyTitle": {
+      "description": "Desktop notification title: another signer gave the approval a proposal still needed, so it can now be executed"
+    },
+    "desktopNotificationProposalExecutedTitle": "Proposal executed",
+    "@desktopNotificationProposalExecutedTitle": {
+      "description": "Desktop notification title: another signer executed a proposal and what it proposed went through"
+    },
+    "desktopNotificationProposalFailedTitle": "Proposal execution failed",
+    "@desktopNotificationProposalFailedTitle": {
+      "description": "Desktop notification title: another signer executed a proposal and what it proposed failed on the chain"
+    },
+    "desktopNotificationProposalCancelledTitle": "Proposal cancelled",
+    "@desktopNotificationProposalCancelledTitle": {
+      "description": "Desktop notification title: another signer cancelled a proposal"
+    },
+    "desktopNotificationProposalRemovedTitle": "Proposal removed",
+    "@desktopNotificationProposalRemovedTitle": {
+      "description": "Desktop notification title: another signer removed a proposal that had expired"
+    },
+    "desktopNotificationProposalOtherBody": "In {multisig}",
+    "@desktopNotificationProposalOtherBody": {
+      "description": "Desktop notification body for a proposal that is not a transfer: the multisig it is in",
+      "placeholders": {
         "multisig": {
           "type": "String"
         }
@@ -5117,6 +5418,48 @@
       "description": "Desktop menu bar icon's menu: quits the app",
       "placeholders": {
         "appName": {
+          "type": "String"
+        }
+      }
+    },
+    "desktopStatusItemSwap": "Swap {step}/{count}",
+    "@desktopStatusItemSwap": {
+      "description": "Desktop menu bar icon's text while a swap is in progress: the step the swap is on out of how many it has, e.g. Swap 2/4. Keep it short: it sits in the menu bar",
+      "placeholders": {
+        "step": {
+          "type": "int"
+        },
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopStatusItemSwapAndMore": "Swap {step}/{count} +{more}",
+    "@desktopStatusItemSwapAndMore": {
+      "description": "Desktop menu bar icon's text while several swaps are in progress: the step the newest swap is on out of how many it has, and how many more swaps are in progress, e.g. Swap 3/4 +1. Keep it short: it sits in the menu bar",
+      "placeholders": {
+        "step": {
+          "type": "int"
+        },
+        "count": {
+          "type": "int"
+        },
+        "more": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopStatusItemSwapFor": "{amount} for {foreignAmount} on {network}",
+    "@desktopStatusItemSwapFor": {
+      "description": "Desktop menu bar icon's menu: a swap in progress, which opens it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain",
+      "placeholders": {
+        "amount": {
+          "type": "String"
+        },
+        "foreignAmount": {
+          "type": "String"
+        },
+        "network": {
           "type": "String"
         }
       }

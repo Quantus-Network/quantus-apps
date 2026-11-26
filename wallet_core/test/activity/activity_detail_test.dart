@@ -279,6 +279,26 @@ void main() {
       );
     });
 
+    test('being approved is in process, on the transaction\'s page', () {
+      final approving = PendingMultisigApprovalEvent.create(
+        multisigAddress: msig.accountId,
+        proposalId: 4,
+        approverId: me,
+        recipient: recipient,
+        amount: BigInt.from(500),
+      ).copyWith(extrinsicHash: '0xapproving');
+
+      expect(
+        detailOf(approving),
+        ActivityDetail(
+          title: l10n.activityDetailTitleApproving,
+          status: ActivityStatus.inProcess,
+          isSend: true,
+          explorerUrl: link('transactions/0xapproving'),
+        ),
+      );
+    });
+
     test('being executed or cancelled is in process, on the transaction\'s page', () {
       final executing = PendingMultisigExecutionEvent.create(
         multisigAddress: msig.accountId,

@@ -257,6 +257,8 @@ ActivityRow activityRowOf(
         recipient: tx.recipient,
         amount: tx.networkFee,
       );
+    case PendingMultisigApprovalEvent():
+      return proposalRow(l10n.activityTxApproving, isUnderWay: true, recipient: tx.recipient, amount: tx.memberCost);
     case PendingMultisigExecutionEvent():
       return proposalRow(l10n.activityTxExecuting, isUnderWay: true, recipient: tx.recipient, amount: tx.memberCost);
     case MultisigProposalExecutedEvent():

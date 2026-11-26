@@ -334,6 +334,43 @@ void main() {
       unawaited(subscription.cancel());
       await unmount(tester, scan);
     });
+
+    testWidgets('a camera that stops while scanning is reported as stopped and turned off', (tester) async {
+      final scan = await mounted(tester);
+      final errors = <Object>[];
+      final subscription = scan.reads.listen(null, onError: errors.add);
+      await scan.start();
+
+      platform.barcodes.addError(
+        PlatformException(code: 'MOBILE_SCANNER_CAMERA_STOPPED', message: 'The camera was disconnected.'),
+      );
+      await tester.pump();
+
+      expect(
+        errors.single,
+        isA<QrCameraException>()
+            .having((e) => e.failure, 'failure', QrCameraFailure.stopped)
+            .having((e) => e.detail, 'detail', 'The camera was disconnected.'),
+      );
+      expect(platform.stops, 1);
+      unawaited(subscription.cancel());
+      await unmount(tester, scan);
+    });
+
+    testWidgets('any other platform error while scanning is reported as a failed camera', (tester) async {
+      final scan = await mounted(tester);
+      final errors = <Object>[];
+      final subscription = scan.reads.listen(null, onError: errors.add);
+      await scan.start();
+
+      platform.barcodes.addError(PlatformException(code: 'MOBILE_SCANNER_CAMERA_ERROR', message: 'broken'));
+      await tester.pump();
+
+      expect(errors.single, isA<QrCameraException>().having((e) => e.failure, 'failure', QrCameraFailure.failed));
+      expect(platform.stops, 1);
+      unawaited(subscription.cancel());
+      await unmount(tester, scan);
+    });
   });
 
   group('MacQrScanSource over the real method channel', () {
@@ -382,6 +419,45 @@ void main() {
       expect(paths, hasLength(2));
       expect(paths, everyElement(contains('commitConfiguration()')));
     });
+
+    test('the Swift this app builds reports a camera that stops while running', () {
+      final swift = _resolvedScannerSwift();
+      final observing = _swiftFunction(swift, 'observeCameraStopping');
+
+      expect(_swiftFunction(swift, 'start'), contains('observeCameraStopping('));
+      expect(observing, contains('AVCaptureDevice.wasDisconnectedNotification'));
+      expect(observing, contains('AVCaptureSession.runtimeErrorNotification'));
+      expect(_swiftFunction(swift, 'reportCameraStopped'), contains('MobileScannerErrorCodes.CAMERA_STOPPED'));
+      expect(_swiftFunction(swift, 'releaseCamera'), contains('stopObservingCameraStopping()'));
+      expect(_swiftFunction(swift, 'stopObservingCameraStopping'), contains('removeObserver'));
+    });
+
+    testWidgets('a camera that stops while scanning is released as stopped, and a retry works', (tester) async {
+      native.hasCamera = true;
+      final scan = await mounted(tester);
+      final errors = <Object>[];
+      final subscription = scan.reads.listen(null, onError: errors.add);
+      await scan.start();
+
+      await messenger.handlePlatformMessage(
+        events.name,
+        events.codec.encodeErrorEnvelope(
+          code: 'MOBILE_SCANNER_CAMERA_STOPPED',
+          message: 'The camera was disconnected.',
+        ),
+        null,
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(errors.single, isA<QrCameraException>().having((e) => e.failure, 'failure', QrCameraFailure.stopped));
+      expect(native.holdsAnything, isFalse);
+
+      await scan.start();
+      expect(native.isRunning, isTrue);
+      unawaited(subscription.cancel());
+      await unmount(tester, scan);
+    }, variant: onMac);
 
     testWidgets('a start with no camera releases the native session, and a retry works', (tester) async {
       final scan = await mounted(tester);
@@ -476,6 +552,14 @@ String _resolvedScannerSwift() {
   );
   final root = Directory.fromUri(configFile.uri.resolve(package['rootUri'] as String)).path;
   return File('$root/darwin/mobile_scanner/Sources/mobile_scanner/MobileScannerPlugin.swift').readAsStringSync();
+}
+
+/// The body of the Swift function [name], up to the next function.
+String _swiftFunction(String swift, String name) {
+  final at = swift.indexOf(RegExp('func $name\\('));
+  expect(at, isNot(-1), reason: 'no func $name in the Swift');
+  final next = swift.indexOf(RegExp(r'\n\s*(public |private |fileprivate )?func '), at + 1);
+  return swift.substring(at, next == -1 ? swift.length : next);
 }
 
 /// The code of each way native `start` gives up after beginning its session's
