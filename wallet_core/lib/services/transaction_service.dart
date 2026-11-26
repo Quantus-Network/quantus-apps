@@ -38,6 +38,7 @@ class TransactionService {
     required List<PendingTransactionEvent> pendingTransactions,
     required List<PendingMultisigCreationEvent> pendingMultisigCreations,
     required List<PendingMultisigProposalEvent> pendingMultisigProposals,
+    required List<PendingMultisigApprovalEvent> pendingMultisigApprovals,
     required List<PendingMultisigExecutionEvent> pendingMultisigExecutions,
     required List<PendingMultisigCancellationEvent> pendingMultisigCancellations,
     required List<ReversibleTransferEvent> scheduledReversibleTransfers,
@@ -48,6 +49,7 @@ class TransactionService {
     final settled = [...otherTransfers];
     final seenIds = <String>{};
     final seenProposalKeys = <String>{};
+    final seenApprovalKeys = <String>{};
     final seenExecutionKeys = <String>{};
     final seenCancellationKeys = <String>{};
     final List<TransactionEvent> result = [];
@@ -62,6 +64,13 @@ class TransactionService {
       final key = proposal.activityDedupKey;
       if (seenProposalKeys.add(key) && seenIds.add(proposal.id)) {
         result.add(proposal);
+      }
+    }
+
+    for (final approval in pendingMultisigApprovals) {
+      final key = approval.activityDedupKey;
+      if (seenApprovalKeys.add(key) && seenIds.add(approval.id)) {
+        result.add(approval);
       }
     }
 
@@ -115,6 +124,13 @@ class TransactionService {
           result.removeWhere((e) => e is PendingMultisigProposalEvent && e.activityDedupKey == key);
         }
         seenProposalKeys.add(key);
+      }
+      if (transaction is MultisigProposalApprovedEvent) {
+        final key = transaction.activityDedupKey;
+        if (seenApprovalKeys.contains(key)) {
+          result.removeWhere((e) => e is PendingMultisigApprovalEvent && e.activityDedupKey == key);
+        }
+        seenApprovalKeys.add(key);
       }
       if (transaction is MultisigProposalExecutedEvent) {
         final key = transaction.activityDedupKey;

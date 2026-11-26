@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/proposal_action_providers.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
@@ -303,6 +304,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
   bool _isOffered(ShellSheet sheet) {
     if (sheet == ShellSheet.createMultisig) return ref.read(multisigCreatorProvider) != null;
     if (sheet == ShellSheet.connectColdWallet) return ref.read(remoteConfigProvider).enableKeystoneHardwareWallet;
+    if (sheet == ShellSheet.proposalAction) return ref.read(proposalActionTargetProvider) != null;
     final kind = switch (sheet) {
       ShellSheet.receive => AccountActionKind.receive,
       ShellSheet.send => AccountActionKind.send,
@@ -313,7 +315,8 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       ShellSheet.importWallet ||
       ShellSheet.connectColdWallet ||
       ShellSheet.createMultisig ||
-      ShellSheet.manageMultisigs => null,
+      ShellSheet.manageMultisigs ||
+      ShellSheet.proposalAction => null,
     };
     if (kind == null) return true;
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);

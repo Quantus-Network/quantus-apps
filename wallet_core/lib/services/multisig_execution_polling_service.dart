@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/global_toast_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_action_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -28,7 +29,10 @@ Future<bool> _confirmIndexedExecution(Ref ref, MultisigAccount msig, PendingMult
   if (indexed == null) return false;
   if (!await session.survivesReset(ticket, dropping: 'confirming execution ${pending.id}')) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: 'confirming execution ${pending.id}')) return true;
   removePendingMultisigExecution(ref, pending.id);
+  _settle(ref, hash, MultisigActionConfirmation.confirmed);
   await reconcileIndexedExecution(ref, msig, indexed);
   return true;
 }
@@ -46,8 +50,9 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
   }
   if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
   removePendingMultisigExecution(ref, pending.id);
-  invalidateMultisigProposals(ref, msig);
 
   final hash = pending.extrinsicHash;
   if (hash != null) {
@@ -55,6 +60,7 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
       final indexed = await ref.read(chainHistoryServiceProvider).searchExecutedByExtrinsicHash(extrinsicHash: hash);
       if (!await session.survivesReset(ticket, dropping: dropping)) return true;
       if (indexed != null) {
+        _settle(ref, hash, MultisigActionConfirmation.confirmed);
         await reconcileIndexedExecution(ref, msig, indexed);
         return true;
       }
@@ -71,11 +77,22 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
     '[MultisigExecutionPoller] proposal ${pending.proposalId} executed but extrinsic '
     '${hash ?? '(no hash)'} not indexed; likely executed by another signer',
   );
+  if (hash != null) _settle(ref, hash, MultisigActionConfirmation.executedByAnother);
   ref.read(globalToastProvider.notifier).showInfo(ref.read(l10nProvider).multisigExecutedByOtherToast);
 
   invalidateAccountBalances(ref, {pending.executorId, msig.accountId});
   return true;
 }
+
+/// Stops watching for an execution the indexer never showed.
+void _giveUpOnExecution(Ref ref, String id) {
+  final hash = findPendingMultisigExecution(ref, id)?.extrinsicHash;
+  if (hash != null) _settle(ref, hash, MultisigActionConfirmation.unconfirmed);
+  removePendingMultisigExecution(ref, id);
+}
+
+void _settle(Ref ref, String hash, MultisigActionConfirmation outcome) =>
+    ref.read(multisigActionConfirmationsProvider.notifier).settle(hash, outcome);
 
 final multisigExecutionPollingServiceProvider = Provider<MultisigExecutionPollingService>((ref) {
   final service = ExtrinsicIndexerPollingService<PendingMultisigExecutionEvent, MultisigAccount>(
@@ -85,7 +102,7 @@ final multisigExecutionPollingServiceProvider = Provider<MultisigExecutionPollin
       getId: (pending) => pending.id,
       getExtrinsicHash: (pending) => pending.extrinsicHash,
       isStillPending: (ref, id) => findPendingMultisigExecution(ref, id) != null,
-      removePending: removePendingMultisigExecution,
+      removePending: _giveUpOnExecution,
       showTimeoutToast: (ref) {
         ref.read(globalToastProvider.notifier).showError(ref.read(l10nProvider).multisigExecutionTimeoutToast);
       },

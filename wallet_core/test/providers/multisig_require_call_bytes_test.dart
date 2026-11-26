@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:resonance_network_wallet/v2/screens/multisig/multisig_action_confirm_sheet.dart';
+import 'package:wallet_core/providers/controllers/multisig_action_confirm_controller.dart';
 
 void main() {
   group('requireCallBytes', () {

@@ -1,5 +1,6 @@
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/combined_transactions_list.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
@@ -93,6 +94,7 @@ List<TransactionEvent> multisigActivityOf(
     pendingTransactions: data.pendingTransactions,
     pendingMultisigCreations: data.pendingMultisigCreations,
     pendingMultisigProposals: pendingProposalsExcludingMultisig(data.pendingMultisigProposals, multisig),
+    pendingMultisigApprovals: pendingApprovalsExcludingMultisig(data.pendingMultisigApprovals, multisig),
     pendingMultisigExecutions: pendingExecutionsExcludingMultisig(data.pendingMultisigExecutions, multisig),
     pendingMultisigCancellations: pendingCancellationsExcludingMultisig(data.pendingMultisigCancellations, multisig),
     scheduledReversibleTransfers: data.scheduledReversibleTransfers,

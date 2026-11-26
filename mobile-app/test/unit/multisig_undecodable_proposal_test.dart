@@ -78,10 +78,10 @@ void main() {
     await SettingsService().initialize();
   });
 
-  Widget wrap(Widget child) {
+  Widget wrap(Widget child, {List<MultisigProposal> openProposals = const []}) {
     return ProviderScope(
       overrides: [
-        multisigServiceProvider.overrideWithValue(FakeMultisigService()),
+        multisigServiceProvider.overrideWithValue(FakeMultisigService(openProposals: openProposals)),
         accountsProvider.overrideWith((ref) => AccountsNotifier(AccountsService(), initialAccounts: [makeAccount(1)])),
       ],
       child: MediaQuery(
@@ -219,6 +219,9 @@ void main() {
               child: const Text('open'),
             ),
           ),
+          // As the indexer lists it: an open proposal missing from its open
+          // proposals is over.
+          openProposals: [proposal],
         ),
       );
       await tester.tap(find.text('open'));
