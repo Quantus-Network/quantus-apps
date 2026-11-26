@@ -74,7 +74,7 @@ class MultisigCreatedEvent extends MultisigCreationEvent {
       threshold: threshold,
       nonce: bigIntFromJson(multisig['nonce']),
       signers: signers,
-      palletFee: MultisigCreationEvent.palletConstants.multisigFee,
+      palletFee: bigIntFromJson(multisig['burned_pallet_fee']),
       networkFee: _networkFeeFromGraphql(multisig),
       timestamp: accountEventTimestamp ?? dateTimeFromJson(multisig['timestamp']),
       blockNumber: blockHeightFromJsonMap(block),

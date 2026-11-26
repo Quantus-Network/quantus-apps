@@ -13,6 +13,7 @@ class MultisigGraphql {
       nonce
       signers
       fee
+      burned_pallet_fee
       creator {
         id
       }
