@@ -10,9 +10,11 @@ import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
+import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -84,12 +86,18 @@ List<Override> _overrides({
   num teamHolds = 4800,
   num mainHolds = 1250,
   Account member = mainAccount,
+  List<Account> extra = const [],
 }) {
   _mainHolds = _qtc(mainHolds);
-  final others = {'qzTeam': _qtc(teamHolds), 'qzSavings': oneToken, 'qzVault': oneToken};
+  final others = {
+    'qzTeam': _qtc(teamHolds),
+    'qzSavings': oneToken,
+    'qzVault': oneToken,
+    for (final account in extra) account.accountId: oneToken,
+  };
   return [
     ...shellOverrides(
-      accounts: [member, savingsAccount, vaultAccount],
+      accounts: [member, savingsAccount, vaultAccount, ...extra],
       settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(multisig), multisigs: [multisig]),
       balanceOf: (accountId) async =>
           accountId == 'qzMain' ? _mainHolds : others[accountId] ?? (throw StateError('no balance set for $accountId')),
@@ -119,6 +127,7 @@ Future<FakeSendChain> _openPropose(
   Size? window,
   MultisigAccount? multisig,
   Account member = mainAccount,
+  List<Account> extra = const [],
 }) async {
   _opened.clear();
   _shared.clear();
@@ -132,6 +141,7 @@ Future<FakeSendChain> _openPropose(
       teamHolds: teamHolds,
       mainHolds: mainHolds,
       member: member,
+      extra: extra,
     ),
   );
   if (window != null) {
@@ -217,6 +227,159 @@ void main() {
         expect(find.byType(ShellSheetView), findsNothing);
       });
     }
+
+    testOnMac('with its member gone, another of its signers here proposes and pays', (tester) async {
+      final multisig = MultisigAccount(
+        name: 'Team',
+        accountId: 'qzTeam',
+        signers: const ['qzGone', 'qzSavings'],
+        threshold: 2,
+        nonce: BigInt.zero,
+        myMemberAccountId: 'qzGone',
+      );
+      final chain = await _openPropose(tester, multisig: multisig);
+
+      expect(find.byType(ShellSheetView), findsOneWidget);
+      expect(_accountBeside(tester, 'Proposal cost', 'Savings'), findsOneWidget);
+      expect(_inSheet(find.byKey(SendSheet.proposerKey)), findsNothing);
+      await _toReceipt(tester);
+      expect(chain.proposals.single.signer, 'qzSavings');
+    });
+  });
+
+  group('the account that proposes', () {
+    /// A multisig of which Main (its member), Savings and Vault, a cold
+    /// wallet account, are all signers in this wallet.
+    final shared = MultisigAccount(
+      name: 'Team',
+      accountId: 'qzTeam',
+      signers: const ['qzVault', 'qzOther', 'qzSavings', 'qzMain'],
+      threshold: 2,
+      nonce: BigInt.zero,
+      myMemberAccountId: 'qzMain',
+    );
+
+    PopUpButton<String> proposer(WidgetTester tester) =>
+        tester.widget<PopUpButton<String>>(_inSheet(find.byKey(SendSheet.proposerKey)));
+
+    Future<void> choose(WidgetTester tester, String name) async {
+      await _tap(tester, SendSheet.proposerKey);
+      await tester.tap(find.descendant(of: find.byKey(PopUpButton.menuKey), matching: find.text(name)));
+      await tester.pumpAndSettle();
+    }
+
+    testOnMac('with one signer here, the cost names it with nothing to choose', (tester) async {
+      await _openPropose(tester);
+
+      expect(_accountBeside(tester, 'Proposal cost', 'Main'), findsOneWidget);
+      expect(_inSheet(find.byKey(SendSheet.proposerKey)), findsNothing);
+    });
+
+    testOnMac('with several signers here, the cost\'s payer is a choice of them, the member first and chosen', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await _openPropose(tester, multisig: shared);
+
+      expect(_inSheet(find.text('0.6012 QTC, paid by')), findsOneWidget);
+      expect(proposer(tester).items.map((item) => item.label), ['Main', 'Savings', 'Vault']);
+      expect(proposer(tester).value, 'qzMain');
+      final data = tester.getSemantics(_inSheet(find.byKey(SendSheet.proposerKey))).getSemanticsData();
+      expect((data.label, data.value), ('Paid by', 'Main'));
+      semantics.dispose();
+    });
+
+    testOnMac('another signer chosen is priced, named on the review, and signs the proposal', (tester) async {
+      final chain = await _openPropose(tester, multisig: shared);
+
+      await choose(tester, 'Savings');
+      expect(chain.proposalQuoteSigners.last, 'qzSavings');
+      await _toReview(tester);
+
+      expect(_accountBeside(tester, 'Proposed by', 'Savings'), findsOneWidget);
+      expect(_accountBeside(tester, 'Proposed by', 'Main'), findsNothing);
+      await _tap(tester, SendSheet.sendKey);
+      expect(chain.proposals.single.signer, 'qzSavings');
+    });
+
+    testOnMac('when the member cannot pay, choosing a signer who can clears the problem and opens Review', (
+      tester,
+    ) async {
+      await _openPropose(tester, multisig: shared, mainHolds: 0.2);
+      await _fill(tester);
+      expect(
+        tester.widget<Text>(find.byKey(SendSheet.costProblemKey)).data,
+        'Main does not hold enough to pay the proposal cost.',
+      );
+      expect(_canPress(tester, SendSheet.reviewKey), isFalse);
+
+      await choose(tester, 'Savings');
+
+      expect(find.byKey(SendSheet.costProblemKey), findsNothing);
+      expect(_canPress(tester, SendSheet.reviewKey), isTrue);
+    });
+
+    testOnMac('a cold wallet signer chosen signs on its cold wallet, with no approval asked', (tester) async {
+      final approval = FakeUserApproval();
+      final chain = await _openPropose(tester, multisig: shared, approval: approval);
+
+      await choose(tester, 'Vault');
+      await _toReview(tester);
+      await _tap(tester, SendSheet.sendKey);
+
+      expect(tester.widget<KeystoneSigningView>(_inSheet(find.byType(KeystoneSigningView))).account.name, 'Vault');
+      expect(approval.reasons, isEmpty);
+      expect(chain.proposals, isEmpty);
+    });
+
+    testOnMac('a signer who signs here chosen again after a cold wallet one asks for approval', (tester) async {
+      final approval = FakeUserApproval();
+      final chain = await _openPropose(tester, multisig: shared, approval: approval);
+
+      await choose(tester, 'Vault');
+      await choose(tester, 'Main');
+      await _toReview(tester);
+      await _tap(tester, SendSheet.sendKey);
+
+      expect(approval.reasons, hasLength(1));
+      expect(chain.proposals.single.signer, 'qzMain');
+      expect(find.byType(KeystoneSigningView), findsNothing);
+    });
+
+    testOnMac('where this Mac cannot approve, Review opens once a cold wallet signer is chosen', (tester) async {
+      await _openPropose(
+        tester,
+        multisig: shared,
+        approval: FakeUserApproval()..availabilityAnswer = ApprovalAvailability.notSetUp,
+      );
+      await _fill(tester);
+      expect(_canPress(tester, SendSheet.reviewKey), isFalse);
+
+      await choose(tester, 'Vault');
+
+      expect(_canPress(tester, SendSheet.reviewKey), isTrue);
+    });
+
+    testOnMac('back from the review, the signer chosen is still chosen', (tester) async {
+      await _openPropose(tester, multisig: shared);
+      await choose(tester, 'Savings');
+      await _toReview(tester);
+
+      await _tap(tester, SendSheet.backKey);
+
+      expect(proposer(tester).value, 'qzSavings');
+    });
+
+    testOnMac('the sheet opened again starts on the member', (tester) async {
+      await _openPropose(tester, multisig: shared);
+      await choose(tester, 'Savings');
+
+      await _tap(tester, SendSheet.cancelKey);
+      await tester.tap(_toolbarPropose());
+      await tester.pumpAndSettle();
+
+      expect(proposer(tester).value, 'qzMain');
+    });
   });
 
   group('the form', () {
@@ -877,6 +1040,73 @@ void main() {
       expect(tester.takeException(), isNull, reason: 'the receipt');
       expectInSheet(tester, _inSheet(find.text('0.6012 QTC')), 'the total on the receipt');
       expectInSheet(tester, _inSheet(find.text('paid')), 'who paid on the receipt');
+    });
+
+    testOnMac('with several signers here, a very long name is cut short in the picker and its menu, in the smallest '
+        'window', (tester) async {
+      final name = 'Treasury' * 11;
+      await _openPropose(
+        tester,
+        window: _smallestWindow,
+        member: Account(walletIndex: 0, index: 0, name: name, accountId: 'qzMain'),
+        multisig: MultisigAccount(
+          name: 'Team',
+          accountId: 'qzTeam',
+          signers: const ['qzMain', 'qzSavings'],
+          threshold: 2,
+          nonce: BigInt.zero,
+          myMemberAccountId: 'qzMain',
+        ),
+      );
+
+      await _fill(tester);
+
+      expect(tester.takeException(), isNull, reason: 'the form');
+      expectInSheet(tester, _inSheet(find.text('0.6012 QTC, paid by')), 'the cost on the form');
+      expectInSheet(tester, _inSheet(find.byKey(SendSheet.proposerKey)), 'the picker on the form');
+
+      await _tap(tester, SendSheet.proposerKey);
+
+      expect(tester.takeException(), isNull, reason: 'the open menu');
+      final menu = tester.getRect(find.byKey(PopUpButton.menuKey));
+      expect((menu.left >= 0, menu.right <= _smallestWindow.width), (true, true), reason: 'the menu in the window');
+    });
+
+    testOnMac('with more signers here than the smallest window holds, the picker\'s menu scrolls to the last, who can '
+        'be chosen', (tester) async {
+      final signers = [
+        for (var i = 0; i < 30; i++) Account(walletIndex: 0, index: 2 + i, name: 'Signer $i', accountId: 'qzSigner$i'),
+      ];
+      final chain = await _openPropose(
+        tester,
+        window: _smallestWindow,
+        extra: signers,
+        multisig: MultisigAccount(
+          name: 'Team',
+          accountId: 'qzTeam',
+          signers: ['qzMain', for (final signer in signers) signer.accountId],
+          threshold: 2,
+          nonce: BigInt.zero,
+          myMemberAccountId: 'qzMain',
+        ),
+      );
+      await _fill(tester);
+
+      await _tap(tester, SendSheet.proposerKey);
+
+      expect(tester.takeException(), isNull, reason: 'the open menu');
+      final menu = tester.getRect(find.byKey(PopUpButton.menuKey));
+      expect((menu.top >= 0, menu.bottom <= _smallestWindow.height), (true, true), reason: 'the menu in the window');
+      final last = find.descendant(of: find.byKey(PopUpButton.menuKey), matching: find.text('Signer 29'));
+      await tester.drag(
+        find.descendant(of: find.byKey(PopUpButton.menuKey), matching: find.text('Signer 5')),
+        const Offset(0, -2000),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(last.hitTestable());
+      await tester.pumpAndSettle();
+
+      expect(chain.proposalQuoteSigners.last, 'qzSigner29');
     });
   });
 

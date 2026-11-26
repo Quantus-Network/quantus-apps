@@ -16,6 +16,7 @@ import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/notice_box.dart';
+import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -31,6 +32,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/multisig_propose_strategy.dart';
 import 'package:wallet_core/send/send_review.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/send/send_screen_logic.dart';
@@ -65,6 +67,7 @@ class SendSheet extends ConsumerStatefulWidget {
   static const maxKey = Key('send-max');
   static const retryFeeKey = Key('send-retry-fee');
   static const costProblemKey = Key('send-cost-problem');
+  static const proposerKey = Key('send-proposer');
   static const cancelKey = Key('send-cancel');
   static const reviewKey = Key('send-review');
   static const backKey = Key('send-back');
@@ -100,15 +103,20 @@ class SendSheet extends ConsumerStatefulWidget {
 class _SendSheetState extends ConsumerState<SendSheet> {
   /// The sheet opens on the active account and stays on it while it is open.
   late final BaseAccount _account;
-  late final SendStrategy _strategy;
+  late SendStrategy _strategy;
 
   /// The account that signs a proposal and pays what it costs; null for a
   /// send, which the account it leaves pays.
-  late final Account? _signer;
+  late Account? _signer;
 
   /// The send is signed on a cold wallet, not approved on this computer: the
-  /// account it leaves signs there, or, for a proposal, the member who does.
-  late final bool _signsOnColdWallet;
+  /// account it leaves signs there, or, for a proposal, the signer who does.
+  late bool _signsOnColdWallet;
+
+  /// The signers here that could propose, as the sheet opened, the member
+  /// first; the form offers a choice of them when there is more than one.
+  /// Empty for a send.
+  late final List<Account> _proposers;
 
   /// The cold wallet's signing of the send, on the signing step.
   SendNeedsHardwareSignature? _signing;
@@ -208,6 +216,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       (null, RegularAccount(:final account)) => account.signsWithHardware,
       _ => false,
     };
+    _proposers = strategy is MultisigProposeStrategy ? proposersFor(strategy.msig, accounts) : const [];
     _address.addListener(_onAddressChanged);
     _addressFocus.requestFocus();
     unawaited(_loadRecents());
@@ -318,6 +327,18 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// Who the send's fee is priced to. Until there is someone to pay, that
   /// is the account itself: a transfer costs the same whoever it pays.
   String get _pricedRecipient => _recipientAccepted ? _recipient : (_strategy.sourceAccountId ?? '');
+
+  /// The proposal is now [proposer]'s to sign and pay for, and is priced
+  /// for it.
+  void _chooseProposer(Account proposer) {
+    final strategy = _strategy;
+    if (strategy is! MultisigProposeStrategy) throw StateError('Only a proposal has a signer to choose.');
+    setState(() {
+      _strategy = MultisigProposeStrategy(msig: strategy.msig, proposerId: proposer.accountId);
+      _signer = proposer;
+      _signsOnColdWallet = proposer.signsWithHardware;
+    });
+  }
 
   ProviderListenable<SendFeeState> get _feeProvider =>
       _strategy.feeProvider(recipient: _pricedRecipient, amount: _amount);
@@ -863,7 +884,19 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           // The name takes what the cost leaves it, and is cut short there.
           if (signer != null) ...[
             const SizedBox(width: 8),
-            Flexible(child: AccountLabel(account: signer, revealsAddress: true)),
+            if (_proposers.length > 1)
+              Flexible(
+                child: PopUpButton<String>(
+                  key: SendSheet.proposerKey,
+                  semanticLabel: l10n.desktopProposePaidBy,
+                  items: [for (final proposer in _proposers) PopUpItem(proposer.accountId, proposer.name)],
+                  value: signer.accountId,
+                  onSelected: (accountId) =>
+                      _chooseProposer(_proposers.singleWhere((proposer) => proposer.accountId == accountId)),
+                ),
+              )
+            else
+              Flexible(child: AccountLabel(account: signer, revealsAddress: true)),
           ],
         ],
       ],

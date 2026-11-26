@@ -5192,6 +5192,12 @@ abstract class AppLocalizations {
   /// **'{cost}, paid by'**
   String desktopProposeCostPaidBy(String cost);
 
+  /// Desktop Propose: what a screen reader calls the pop-up choosing which of this wallet's signers of the multisig signs the proposal and pays its cost
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by'**
+  String get desktopProposePaidBy;
+
   /// Desktop Propose: under the amount, when the member's own account cannot pay what proposing costs
   ///
   /// In en, this message translates to:

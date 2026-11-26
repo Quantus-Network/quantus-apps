@@ -4060,6 +4060,10 @@
         }
       }
     },
+    "desktopProposePaidBy": "Paid by",
+    "@desktopProposePaidBy": {
+      "description": "Desktop Propose: what a screen reader calls the pop-up choosing which of this wallet's signers of the multisig signs the proposal and pays its cost"
+    },
     "desktopProposeCostNotCovered": "{account} does not hold enough to pay the proposal cost.",
     "@desktopProposeCostNotCovered": {
       "description": "Desktop Propose: under the amount, when the member's own account cannot pay what proposing costs",

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
@@ -48,6 +49,10 @@ class PopUpButton<T> extends StatefulWidget {
 // The button's insets, which the menu lines its labels up with.
 const double _buttonHeight = 26;
 const double _buttonLabelInset = 10;
+
+// The chevrons after the label, and the gap between them.
+const double _chevronsSize = 11;
+const double _chevronsGap = 8;
 
 // The menu's insets, which are the shared menu panel's.
 const double _menuPadding = MenuPanel.padding;
@@ -126,12 +131,34 @@ class _PopUpButtonState<T> extends State<PopUpButton<T>> {
                 height: _buttonHeight,
                 child: Padding(
                   padding: const EdgeInsets.only(left: _buttonLabelInset, right: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  // The label keeps room for the chevrons and is cut short to
+                  // fit where the button has less room than it; a flexible
+                  // label would fail in a row that sets no width.
+                  child: Stack(
+                    alignment: AlignmentDirectional.centerStart,
                     children: [
-                      Text(label, style: text.body.copyWith(height: 1, color: colors.textContent)),
-                      const SizedBox(width: 8),
-                      Icon(CupertinoIcons.chevron_up_chevron_down, size: 11, color: colors.textMuted),
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(end: _chevronsGap + _chevronsSize),
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.body.copyWith(height: 1, color: colors.textContent),
+                        ),
+                      ),
+                      PositionedDirectional(
+                        end: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: Center(
+                          child: Icon(
+                            CupertinoIcons.chevron_up_chevron_down,
+                            size: _chevronsSize,
+                            color: colors.textMuted,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -241,16 +268,52 @@ class _PopUpMenuState<T> extends State<_PopUpMenu<T>> {
   /// The row the pointer or the arrow keys are on, if any.
   late int? _highlighted = widget.currentIndex;
 
+  /// Each row's key, to bring it into view where there are more rows than the
+  /// window holds and the menu scrolls.
+  late final List<GlobalKey> _rowKeys = [for (final _ in widget.items) GlobalKey()];
+
+  @override
+  void initState() {
+    super.initState();
+    // Laid out first: only then is it known whether the menu scrolls.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _centreCurrent();
+    });
+  }
+
+  /// Scrolls the current item to the middle of the menu's view, as far as
+  /// the rows go. Does nothing to a menu that shows every row.
+  void _centreCurrent() {
+    final row = _rowKeys[widget.currentIndex].currentContext;
+    if (row == null) return;
+    unawaited(Scrollable.ensureVisible(row, alignment: 0.5));
+  }
+
   void _choose(int index) => Navigator.of(context).pop(index);
+
+  /// The arrow keys move the highlight to [index], kept in view.
+  void _highlight(int index, {required bool down}) {
+    setState(() => _highlighted = index);
+    final row = _rowKeys[index].currentContext;
+    if (row == null) return;
+    unawaited(
+      Scrollable.ensureVisible(
+        row,
+        alignmentPolicy: down
+            ? ScrollPositionAlignmentPolicy.keepVisibleAtEnd
+            : ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+      ),
+    );
+  }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent && event is! KeyRepeatEvent) return KeyEventResult.ignored;
     final last = widget.items.length - 1;
     final key = event.logicalKey;
     if (key == LogicalKeyboardKey.arrowDown) {
-      setState(() => _highlighted = math.min((_highlighted ?? -1) + 1, last));
+      _highlight(math.min((_highlighted ?? -1) + 1, last), down: true);
     } else if (key == LogicalKeyboardKey.arrowUp) {
-      setState(() => _highlighted = math.max((_highlighted ?? last + 1) - 1, 0));
+      _highlight(math.max((_highlighted ?? last + 1) - 1, 0), down: false);
     } else if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.numpadEnter ||
         key == LogicalKeyboardKey.space) {
@@ -275,9 +338,11 @@ class _PopUpMenuState<T> extends State<_PopUpMenu<T>> {
       child: MenuPanel(
         key: PopUpButton.menuKey,
         minWidth: minWidth,
+        scrolls: true,
         children: [
           for (final (index, item) in widget.items.indexed)
             MouseRegion(
+              key: _rowKeys[index],
               onEnter: (_) => setState(() => _highlighted = index),
               onExit: (_) => setState(() => _highlighted = _highlighted == index ? null : _highlighted),
               child: GestureDetector(
