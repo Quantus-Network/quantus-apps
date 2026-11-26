@@ -303,27 +303,43 @@ final class OpenedSwap extends OpenedActivity {
 
 /// What is open, as the lists hold it now: a transaction by its id, or, once
 /// it settled under the indexer's own id, by its hash; a proposal among the
-/// open ones or the past ones; a swap while it is followed. A multisig's
+/// past ones or the open ones; a swap while it is followed. A multisig's
 /// proposal still being proposed is the pending one, then, once the network
 /// has created it, that proposal. Null when it is no longer there. While the
 /// lists load, what was opened of them stands.
+///
+/// A proposal is answered for by its own lists, not the activity, which also
+/// waits for the history: what an action did must show once the lists do,
+/// or that action is offered again.
 final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
   final opened = ref.watch(openedActivityProvider);
   if (opened == null) return null;
   if (opened is OpenedSwap) return ref.watch(activeSwapProvider(opened.swapId)) == null ? null : opened;
+  final account = ref.watch(activeAccountProvider).value?.account;
+
+  // Among the past proposals it is over, whatever the open ones last held.
+  OpenedProposal? proposalOf(String entityId) {
+    if (account is! MultisigAccount) return null;
+    bool same(MultisigProposal other) => other.entityId == entityId;
+    final found =
+        ref.watch(multisigPastProposalsProvider(account)).value?.where(same).firstOrNull ??
+        ref.watch(openProposalsViewProvider)?.value?.open.where(same).firstOrNull;
+    return found == null ? null : OpenedProposal(found);
+  }
+
+  if (opened case OpenedProposal(:final proposal)) {
+    if (account == null) return opened;
+    final found = proposalOf(proposal.entityId);
+    if (found != null) return found;
+    // Until the open proposals first answer, what was opened stands; read
+    // without it, or not read, it is no longer open here.
+    final open = ref.watch(openProposalsViewProvider);
+    return open != null && !open.hasValue && !open.hasError ? opened : null;
+  }
+
   final view = ref.watch(activityViewProvider).value;
   if (view == null) return opened;
   final activity = [...view.inProgress, ...view.settled];
-
-  OpenedProposal? proposalOf(String entityId) {
-    final open = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
-    final past = [
-      for (final tx in activity)
-        if (tx is MultisigProposalEvent) tx.proposal,
-    ];
-    final found = [...open, ...past].where((other) => other.entityId == entityId).firstOrNull;
-    return found == null ? null : OpenedProposal(found);
-  }
 
   // A multisig lists what it is proposing among its open proposals, not in
   // its activity.
@@ -349,7 +365,7 @@ final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
       return byHash == null ? null : OpenedTransaction(byHash);
     case OpenedSwap():
       throw StateError('A swap is answered for before the lists are read.');
-    case OpenedProposal(:final proposal):
-      return proposalOf(proposal.entityId);
+    case OpenedProposal():
+      throw StateError('A proposal is answered for by its lists, before the activity is read.');
   }
 });
