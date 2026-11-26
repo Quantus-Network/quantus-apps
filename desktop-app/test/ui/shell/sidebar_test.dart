@@ -69,6 +69,21 @@ void main() {
     expect(_inSidebar(find.text('WALLET 2')), findsOneWidget);
   });
 
+  testOnMac('a cold wallet keeps its numbered name, whatever name is saved for it', (tester) async {
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount, vaultAccount],
+        settings: FakeSettingsService(walletNames: const {0: 'Personal', 1: 'Ledger'}),
+        balances: oneTokenEach,
+      ),
+    );
+
+    expect(_inSidebar(find.text('PERSONAL')), findsOneWidget);
+    expect(_inSidebar(find.text('COLD WALLET')), findsOneWidget);
+    expect(_inSidebar(find.text('LEDGER')), findsNothing);
+  });
+
   testOnMac('making an account in another wallet active does not reorder the list', (tester) async {
     await pumpShell(
       tester,
@@ -133,27 +148,55 @@ void main() {
     expect(find.descendant(of: _row('Main'), matching: find.text('Balance unavailable')), findsOneWidget);
   });
 
-  testOnMac('a multisig sits under its owner\'s wallet with the multisig tag; an ownerless one trails the wallets', (
-    tester,
-  ) async {
+  testOnMac('every multisig sits under MULTISIGS after the wallets, by name, with no tag', (tester) async {
+    final coldTeam = MultisigAccount(
+      name: 'Cold Team',
+      accountId: 'qzColdTeam',
+      signers: const ['qzVault', 'qzOther'],
+      threshold: 2,
+      nonce: BigInt.zero,
+      myMemberAccountId: 'qzVault',
+    );
     await pumpShell(
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, vaultAccount],
         settings: FakeSettingsService(
           activeAccount: const RegularAccount(mainAccount),
-          multisigs: [orphanMultisig, teamMultisig],
+          multisigs: [orphanMultisig, teamMultisig, coldTeam],
           openWallets: const {1},
+          multisigsOpen: true,
         ),
         balances: oneTokenEach,
       ),
     );
 
-    expect(find.descendant(of: _row('Team'), matching: find.text('MULTISIG')), findsOneWidget);
-    expect(find.descendant(of: _row('Orphan'), matching: find.text('MULTISIG')), findsOneWidget);
-    expect(_top(tester, 'Main'), lessThan(_top(tester, 'Team')));
-    expect(_top(tester, 'Team'), lessThan(_top(tester, 'COLD WALLET')));
-    expect(_top(tester, 'Vault'), lessThan(_top(tester, 'Orphan')));
+    final order = [
+      'WALLET 1',
+      'Main',
+      'COLD WALLET',
+      'Vault',
+      'MULTISIGS',
+      'Cold Team',
+      'Orphan',
+      'Team',
+    ].map((text) => _top(tester, text)).toList();
+    expect(order, orderedEquals([...order]..sort()));
+    expect(order.toSet(), hasLength(order.length));
+    expect(_inSidebar(find.text('MULTISIG')), findsNothing);
+  });
+
+  testOnMac('with no multisig there is no MULTISIGS heading', (tester) async {
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount, vaultAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigsOpen: true),
+        balances: oneTokenEach,
+      ),
+    );
+
+    expect(_inSidebar(find.text('MULTISIGS')), findsNothing);
   });
 
   testOnMac('the active account is selected; clicking another row makes it the active account', (tester) async {
@@ -183,7 +226,11 @@ void main() {
   });
 
   testOnMac('a multisig row becomes the active account as a multisig', (tester) async {
-    final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: [teamMultisig]);
+    final settings = FakeSettingsService(
+      activeAccount: const RegularAccount(mainAccount),
+      multisigs: [teamMultisig],
+      multisigsOpen: true,
+    );
     await pumpShell(
       tester,
       overrides: shellOverrides(accounts: const [mainAccount], settings: settings, balances: oneTokenEach),
@@ -206,6 +253,7 @@ void main() {
           activeAccount: const RegularAccount(mainAccount),
           multisigs: [teamMultisig],
           openWallets: const {1},
+          multisigsOpen: true,
         ),
         balances: oneTokenEach,
         encryptedBalances: {0: oneToken},
@@ -364,6 +412,7 @@ void main() {
           settings: FakeSettingsService(
             activeAccount: const RegularAccount(mainAccount),
             multisigs: [teamMultisig, orphanMultisig],
+            multisigsOpen: true,
           ),
           balances: oneTokenEach,
         ),
@@ -391,7 +440,7 @@ void main() {
       expect(count.right, greaterThan(badge.right - 4), reason: 'on the corner, not inside the badge');
     });
 
-    testOnMac('the count moves nothing in its row: MULTISIG and the balance stay where they are', (tester) async {
+    testOnMac('the count moves nothing in its row: the name and the balance stay where they are', (tester) async {
       await open(tester);
 
       Rect within(String row, Finder part) {
@@ -400,7 +449,7 @@ void main() {
       }
 
       // Team has a count, Orphan none; both are multisigs alike.
-      expect(within('Team', find.text('MULTISIG')), within('Orphan', find.text('MULTISIG')));
+      expect(within('Team', find.text('Team')).topLeft, within('Orphan', find.text('Orphan')).topLeft);
       expect(within('Team', find.text('1 QTC')), within('Orphan', find.text('1 QTC')));
     });
 

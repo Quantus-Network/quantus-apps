@@ -1054,5 +1054,6 @@
   "desktopKeystoneScanStepKeep": "Tahan di sana sampai semua bagian diterima.",
   "desktopKeystoneRejectStep2Title": "Jangan coba lagi dari komputer ini.",
   "desktopKeystoneRejectStep3Body": "Kunci tidak pernah meninggalkan perangkat. Pindah ke komputer tepercaya sebelum mengirim lagi.",
-  "desktopKeystoneRejectStep2Body": "Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain."
+  "desktopKeystoneRejectStep2Body": "Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.",
+  "desktopSidebarMultisigs": "Multisig"
 }

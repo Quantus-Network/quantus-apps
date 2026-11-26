@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -344,8 +345,12 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
       quantusPrint('Creating the multisig failed: $e');
       return _stop(l10n.desktopCreateMultisigFailed('$e'));
     }
+    _showCreating();
     if (mounted) Navigator.of(context).pop();
   }
+
+  /// Opens the multisigs in the sidebar, where the one being created shows.
+  void _showCreating() => ref.read(keptOpenMultisigsProvider.notifier).keepOpen();
 
   // --------------------------------------------------------------- drawing
 
@@ -383,7 +388,10 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
                     parentTitle: l10n.multisigAddTitle,
                     onLeave: _backFromSigning,
                     onSubmitting: _onColdWalletSubmitting,
-                    onSigned: (_) => Navigator.of(context).pop(),
+                    onSigned: (_) {
+                      _showCreating();
+                      Navigator.of(context).pop();
+                    },
                   ),
                 ],
               },

@@ -31,8 +31,9 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
-/// The Accounts panel: the accounts grouped by wallet, with Mining Rewards
-/// beneath them, and Settings and Add Account at the foot. Choosing an account
+/// The Accounts panel: the accounts grouped by wallet, then the multisigs
+/// under a heading of their own, with Mining Rewards beneath them, and
+/// Settings and Add Account at the foot. Choosing an account
 /// makes it the active account. The shell sets its width
 /// ([sidebarWidthProvider]).
 ///
@@ -132,18 +133,15 @@ class Sidebar extends ConsumerWidget {
     if (accounts.hasError || multisigs.hasError) return [_message(context, l10n.accountsSheetFailedLoadAccounts)];
     if (active.hasError) return [_message(context, l10n.accountsSheetFailedLoadActiveAccount)];
 
-    final grouping = groupWallets(accounts: accounts.value ?? [], multisigs: multisigs.value ?? []);
-    if (grouping.wallets.isEmpty && grouping.standaloneMultisigs.isEmpty) {
+    final groups = groupSidebar(accounts: accounts.value ?? [], multisigs: multisigs.value ?? []);
+    if (groups.wallets.isEmpty && groups.multisigs.isEmpty) {
       return [_message(context, l10n.accountsSheetNoAccountsFound)];
     }
+    // Each where it will be once the chain has it: after the multisigs.
     final creating = ref.watch(creatingMultisigsProvider);
-    // One whose creator has since been disconnected is in no wallet here.
-    final creatingAlone = creating.where(
-      (multisig) => !grouping.wallets.any((wallet) => wallet.contains(multisig.myMemberAccountId)),
-    );
 
     final selectedAccountId = selection == SidebarSelection.account ? active.value?.account.accountId : null;
-    // Keyed: a wallet opening or closing moves what is below it, and a row or
+    // Keyed: a group opening or closing moves what is below it, and a row or
     // heading keeps what it holds, a name being typed or a failure, as it moves.
     Widget row(DisplayAccount display) => _AccountRow(
       key: ValueKey('sidebar-account-${display.account.accountId}'),
@@ -151,34 +149,32 @@ class Sidebar extends ConsumerWidget {
       isSelected: display.account.accountId == selectedAccountId,
     );
     final open = ref.watch(openWalletsProvider);
-    final activeWallet = ref.watch(activeWalletIndexProvider);
+    final activeWallet = ref.watch(activeRowWalletIndexProvider);
+    final multisigsOpen = ref.watch(multisigsOpenProvider);
 
     return [
-      for (final wallet in grouping.wallets) ...[
+      for (final wallet in groups.wallets) ...[
         _WalletHeader(
           key: ValueKey('sidebar-wallet-${wallet.walletIndex}'),
           wallet: wallet,
           isOpen: open.contains(wallet.walletIndex),
           holdsActiveAccount: wallet.walletIndex == activeWallet,
         ),
-        if (open.contains(wallet.walletIndex)) ...[
+        if (open.contains(wallet.walletIndex))
           for (final account in walletAccountsInOrder(wallet)) row(account),
-          // Where each will be once the chain has it: after the wallet's
-          // multisigs.
-          for (final multisig in creating)
-            if (wallet.contains(multisig.myMemberAccountId))
-              _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
-        ],
       ],
-      if (grouping.standaloneMultisigs.isNotEmpty || creatingAlone.isNotEmpty) ...[
-        if (grouping.wallets.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          const MenuDivider(),
-          const SizedBox(height: 12),
+      if (groups.multisigs.isNotEmpty || creating.isNotEmpty) ...[
+        _MultisigsHeader(
+          key: const ValueKey('sidebar-multisigs'),
+          count: groups.multisigs.length + creating.length,
+          isOpen: multisigsOpen,
+          holdsActiveAccount: ref.watch(activeIsMultisigProvider),
+        ),
+        if (multisigsOpen) ...[
+          for (final multisig in groups.multisigs) row(MultisigDisplayAccount(multisig)),
+          for (final multisig in creating)
+            _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
         ],
-        for (final multisig in grouping.standaloneMultisigs) row(MultisigDisplayAccount(multisig)),
-        for (final multisig in creatingAlone)
-          _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
       ],
     ];
   }
@@ -302,23 +298,84 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
 
   /// The name, with the wallet's chevron and, while it is closed, how many
   /// accounts it holds.
-  Widget _heading(String name, AppLocalizations l10n) {
+  Widget _heading(String name, AppLocalizations l10n) => _GroupHeading(
+    name: name,
+    count: widget.wallet.accountCount,
+    countDescription: l10n.desktopWalletAccountCount(widget.wallet.accountCount),
+    isOpen: widget.isOpen,
+    isControl: !widget.holdsActiveAccount,
+    onToggle: _toggle,
+  );
+}
+
+/// The multisigs' heading, which opens and closes them as a wallet's does,
+/// and stays open while one of them is the active account. Its name is
+/// fixed, so it is always clear which group holds the multisigs.
+class _MultisigsHeader extends ConsumerWidget {
+  const _MultisigsHeader({super.key, required this.count, required this.isOpen, required this.holdsActiveAccount});
+
+  /// The multisigs, and those being created.
+  final int count;
+  final bool isOpen;
+  final bool holdsActiveAccount;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = ref.watch(l10nProvider);
+    return MultisigsContextMenu(
+      child: _GroupHeading(
+        name: l10n.desktopSidebarMultisigs,
+        count: count,
+        countDescription: l10n.desktopWalletAccountCount(count),
+        isOpen: isOpen,
+        isControl: !holdsActiveAccount,
+        onToggle: () {
+          // A Control-click opens the menu instead.
+          if (ContextMenuRegion.isControlClick) return;
+          ref.read(keptOpenMultisigsProvider.notifier).toggle();
+        },
+      ),
+    );
+  }
+}
+
+/// A group's heading in the sidebar: its [name] in capitals with a chevron
+/// when it is a control, and [count] while it is closed. [onToggle] opens or
+/// closes the group where it [isControl].
+class _GroupHeading extends StatelessWidget {
+  const _GroupHeading({
+    required this.name,
+    required this.count,
+    required this.countDescription,
+    required this.isOpen,
+    required this.isControl,
+    required this.onToggle,
+  });
+
+  final String name;
+  final int count;
+
+  /// [count] as a screen reader hears it.
+  final String countDescription;
+  final bool isOpen;
+  final bool isControl;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final radius = context.radiusV3.smBorder;
-    final isControl = !widget.holdsActiveAccount;
-    final isOpen = widget.isOpen;
-    final count = widget.wallet.accountCount;
     final quiet = text.caption.copyWith(color: colors.textMuted2);
 
     // Drawn in capitals, which is a look and not the name: a screen reader
     // gets the name as it is written.
     return Semantics(
       label: name,
-      value: isOpen ? null : l10n.desktopWalletAccountCount(count),
+      value: isOpen ? null : countDescription,
       button: isControl,
       expanded: isOpen,
-      onTap: isControl ? _toggle : null,
+      onTap: isControl ? onToggle : null,
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.only(top: 8),
@@ -326,7 +383,7 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
           color: Colors.transparent,
           borderRadius: radius,
           child: InkWell(
-            onTap: isControl ? _toggle : null,
+            onTap: isControl ? onToggle : null,
             borderRadius: radius,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
@@ -419,7 +476,6 @@ class _AccountRow extends ConsumerWidget {
               account: account,
               style: context.themeTextV3.caption.copyWith(color: context.colorsV3.textMuted),
             ),
-      trailing: display is MultisigDisplayAccount ? QuantusBadge(label: ref.watch(l10nProvider).multisigTag) : null,
       // A Control-click opens the menu instead; a click while the name is
       // being typed over only ends the typing.
       onTap: () {

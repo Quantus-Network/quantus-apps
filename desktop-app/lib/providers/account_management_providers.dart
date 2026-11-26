@@ -398,6 +398,7 @@ class AccountManager {
       ...pending.records.map((record) => record.draft),
     ]);
     await _ref.read(multisigAccountsProvider.notifier).add(multisig.copyWith(name: name));
+    if (_ref.mounted) _ref.read(keptOpenMultisigsProvider.notifier).keepOpen();
   });
 
   /// Removes [multisig] from this app, after the navigation asked for

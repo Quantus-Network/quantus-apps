@@ -911,7 +911,11 @@ void main() {
     testOnWindowsAndLinux('Ctrl+P pressed while the switch to the multisig is still being saved opens Propose on it', (
       tester,
     ) async {
-      final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount), multisigs: [_team]);
+      final settings = SlowSettingsService(
+        activeAccount: const RegularAccount(mainAccount),
+        multisigs: [_team],
+        multisigsOpen: true,
+      );
       await pumpShell(
         tester,
         overrides: shellOverrides(

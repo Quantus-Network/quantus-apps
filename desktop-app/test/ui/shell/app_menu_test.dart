@@ -117,7 +117,12 @@ Finder _toolbarButton(String label) =>
 
 List<Override> _withActive(DisplayAccount active) => shellOverrides(
   accounts: const [mainAccount, vaultAccount],
-  settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig], openWallets: const {0, 1}),
+  settings: FakeSettingsService(
+    activeAccount: active,
+    multisigs: [teamMultisig],
+    openWallets: const {0, 1},
+    multisigsOpen: true,
+  ),
   balances: oneTokenEach,
 );
 
@@ -139,6 +144,7 @@ List<Override> _withStrayTeamActive() => shellOverrides(
     activeAccount: MultisigDisplayAccount(_strayTeam),
     multisigs: [_strayTeam],
     openWallets: const {0, 1},
+    multisigsOpen: true,
   ),
   balances: oneTokenEach,
 );
@@ -365,7 +371,7 @@ void main() {
 
       final accounts = _accountMenuAccounts(tester);
       expect(accounts.map((item) => item.label), _sidebarAccounts(tester));
-      expect(accounts.map((item) => item.label), ['Main', 'Team', 'Vault']);
+      expect(accounts.map((item) => item.label), ['Main', 'Vault', 'Team']);
       for (final (index, item) in accounts.indexed) {
         expect(item.shortcut, _isShortcut(_digits[index], meta: true), reason: item.label);
       }
@@ -532,6 +538,7 @@ void main() {
         activeAccount: const RegularAccount(mainAccount),
         multisigs: [_strayTeam],
         openWallets: const {0, 1},
+        multisigsOpen: true,
       );
       await pumpShell(
         tester,
@@ -667,14 +674,14 @@ void main() {
       }
 
       expect(_selected(tester), 'Main');
-      expect(await choose('Next Sidebar Item'), 'Team');
       expect(await choose('Next Sidebar Item'), 'Vault');
+      expect(await choose('Next Sidebar Item'), 'Team');
       expect(await choose('Next Sidebar Item'), 'Mining Rewards');
       expect(find.byType(MiningRewardsPane), findsOneWidget);
       expect(await choose('Next Sidebar Item'), 'Main');
       expect(find.byType(AccountPane), findsOneWidget);
       expect(await choose('Previous Sidebar Item'), 'Mining Rewards');
-      expect(await choose('Previous Sidebar Item'), 'Vault');
+      expect(await choose('Previous Sidebar Item'), 'Team');
     });
 
     testOnMac('View → Refresh (⇧⌘R) reads the wallet again from the network, once', (tester) async {
@@ -868,13 +875,13 @@ void main() {
           ('Create Multisig…', true),
           ('Manage Multisigs…', true),
           ('Main', true),
-          ('Team', true),
           ('Vault', true),
+          ('Team', true),
         ],
       );
       expect(
         tester.widget<MenuItemButton>(find.widgetWithText(MenuItemButton, 'Team')).shortcut,
-        _isShortcut(LogicalKeyboardKey.digit2, control: true),
+        _isShortcut(LogicalKeyboardKey.digit3, control: true),
       );
     });
 
@@ -979,14 +986,14 @@ void main() {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       await press(tester, LogicalKeyboardKey.digit3);
-      expect(_selected(tester), 'Vault');
+      expect(_selected(tester), 'Team');
 
       await press(tester, LogicalKeyboardKey.digit2);
-      expect(_selected(tester), 'Team');
+      expect(_selected(tester), 'Vault');
 
       await press(tester, LogicalKeyboardKey.digit4);
       await press(tester, LogicalKeyboardKey.digit9);
-      expect(_selected(tester), 'Team');
+      expect(_selected(tester), 'Vault');
 
       await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
       await tester.pumpAndSettle();
@@ -1006,7 +1013,7 @@ void main() {
       expect(_selected(tester), 'Main');
 
       await next(tester);
-      expect(_selected(tester), 'Team');
+      expect(_selected(tester), 'Vault');
     });
 
     testOnWindowsAndLinux('Ctrl+Tab no longer walks the sidebar', (tester) async {
@@ -1047,7 +1054,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.digit3);
       await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
       await tester.pumpAndSettle();
-      expect(_selected(tester), 'Vault');
+      expect(_selected(tester), 'Team');
     });
 
     for (final (key, name, title) in [
@@ -1238,6 +1245,7 @@ void main() {
           activeAccount: const RegularAccount(mainAccount),
           multisigs: [_strayTeam],
           openWallets: const {0, 1},
+          multisigsOpen: true,
         );
         await pumpShell(tester, overrides: withVault(settings));
 
@@ -1291,6 +1299,7 @@ void main() {
           activeAccount: const RegularAccount(mainAccount),
           multisigs: [_strayTeam],
           openWallets: const {0, 1},
+          multisigsOpen: true,
         );
         await pumpShell(tester, overrides: withVault(settings));
 

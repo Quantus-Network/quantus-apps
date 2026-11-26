@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
@@ -200,6 +201,22 @@ void main() {
       expect(_sheet, findsNothing);
       final creating = _container(tester).read(pendingMultisigCreationsProvider);
       expect(creating.map((event) => event.multisigAddress), [_threeSigners]);
+    });
+
+    testOnMac('the creation handed over opens the multisigs in the sidebar, where it shows as being created', (
+      tester,
+    ) async {
+      final harness = await _pump(tester);
+      await _toShow(tester);
+
+      await _signOnColdWallet(tester, harness.camera);
+
+      expect(_container(tester).read(multisigsOpenProvider), isTrue);
+      final row = find.descendant(
+        of: find.byType(Sidebar),
+        matching: find.ancestor(of: find.text('Multisig 1'), matching: find.byType(SidebarRow)),
+      );
+      expect(find.descendant(of: row, matching: find.text('Creating')), findsOneWidget);
     });
 
     testOnMac('a hand-over that fails is said, the camera reads again, and nothing is left being created', (

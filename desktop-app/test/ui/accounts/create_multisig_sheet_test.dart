@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
@@ -728,6 +729,34 @@ void main() {
       await tester.pump();
 
       expect(find.descendant(of: row, matching: find.byType(TerminalSpinner)), findsOneWidget);
+    });
+
+    testOnMac('creating opens the multisigs, where it shows after the saved ones', (tester) async {
+      await _pump(tester, saved: [_draft('qzSaved', name: 'Zeta')]);
+      await _create(tester);
+
+      expect(_container(tester).read(multisigsOpenProvider), isTrue);
+      double top(String name) => tester.getTopLeft(_sidebarRow(name)).dy;
+      expect(tester.getTopLeft(_inSidebar(find.text('MULTISIGS'))).dy, lessThan(top('Zeta')));
+      expect(top('Zeta'), lessThan(top('Multisig 1')));
+    });
+
+    testOnMac('one whose creator is no longer here still shows under the multisigs', (tester) async {
+      _storeCreating([_draft('qzCreating', creator: 'qzGone')]);
+      await _pump(tester, prepare: (device) => device.storage.bools[KeptOpenMultisigsNotifier.settingsKey] = true);
+
+      final row = _sidebarRow('Multisig 1');
+      expect(find.descendant(of: row, matching: find.text('Creating')), findsOneWidget);
+      expect(tester.getTopLeft(_inSidebar(find.text('MULTISIGS'))).dy, lessThan(tester.getTopLeft(row).dy));
+    });
+
+    testOnMac('the multisigs\' count, while they are closed, includes those being created', (tester) async {
+      _storeCreating([_draft('qzCreating', name: 'Multisig 2')]);
+      await _pump(tester, saved: [_draft('qzSaved')]);
+
+      final heading = find.ancestor(of: _inSidebar(find.text('MULTISIGS')), matching: find.byType(Row)).first;
+      expect(find.descendant(of: heading, matching: find.text('2')), findsOneWidget);
+      expect(_inSidebar(find.text('Multisig 2')), findsNothing);
     });
 
     testOnMac('it cannot be selected in any way', (tester) async {

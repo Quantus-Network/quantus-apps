@@ -33,15 +33,26 @@ List<ContextMenuItem?> addAccountMenuItems(
     },
     if (wallets.isNotEmpty) null,
     ContextMenuItem(l10n.desktopMenuImportWallet, onSelected: () => unawaited(manager.openImportWallet())),
-    if (offersColdWallets)
-      ContextMenuItem(l10n.desktopMenuConnectColdWallet, onSelected: () => unawaited(manager.openConnectColdWallet())),
-    if (offersMultisigs) ...[
-      null,
-      if (canCreateMultisig)
-        ContextMenuItem(l10n.desktopMenuCreateMultisig, onSelected: () => unawaited(manager.openCreateMultisig()))
-      else
-        ContextMenuItem.disabled(l10n.desktopMenuCreateMultisig),
-      ContextMenuItem(l10n.desktopMenuManageMultisigs, onSelected: () => unawaited(manager.openManageMultisigs())),
-    ],
+    if (offersColdWallets) connectColdWalletMenuItem(l10n, manager),
+    if (offersMultisigs) ...[null, ...multisigMenuItems(l10n, manager, canCreateMultisig: canCreateMultisig)],
   ];
 }
+
+/// Connect Cold Wallet…, as the Add Account menu and a cold wallet's heading
+/// offer it.
+ContextMenuItem connectColdWalletMenuItem(AppLocalizations l10n, AccountManager manager) =>
+    ContextMenuItem(l10n.desktopMenuConnectColdWallet, onSelected: () => unawaited(manager.openConnectColdWallet()));
+
+/// Create Multisig…, disabled unless [canCreateMultisig], and Manage
+/// Multisigs…, as the Add Account menu and the multisigs' heading offer them.
+List<ContextMenuItem> multisigMenuItems(
+  AppLocalizations l10n,
+  AccountManager manager, {
+  required bool canCreateMultisig,
+}) => [
+  if (canCreateMultisig)
+    ContextMenuItem(l10n.desktopMenuCreateMultisig, onSelected: () => unawaited(manager.openCreateMultisig()))
+  else
+    ContextMenuItem.disabled(l10n.desktopMenuCreateMultisig),
+  ContextMenuItem(l10n.desktopMenuManageMultisigs, onSelected: () => unawaited(manager.openManageMultisigs())),
+];

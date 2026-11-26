@@ -9,9 +9,10 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
-/// The wallet the active account is in: a multisig is in the wallet of the
-/// account that owns it. Null while they load, and for a multisig in no
-/// wallet here.
+/// The wallet the active account is in, where New Account adds one: a
+/// multisig is in the wallet of the account that owns it, though the sidebar
+/// lists it under the multisigs ([activeRowWalletIndexProvider]). Null while
+/// they load, and for a multisig in no wallet here.
 final activeWalletIndexProvider = Provider<int?>((ref) {
   final activeId = ref.watch(activeAccountProvider).value?.account.accountId;
   final accounts = ref.watch(accountsProvider).value;
@@ -20,6 +21,18 @@ final activeWalletIndexProvider = Provider<int?>((ref) {
   final wallets = groupWallets(accounts: accounts, multisigs: multisigs).wallets;
   return wallets.where((wallet) => wallet.contains(activeId)).firstOrNull?.walletIndex;
 });
+
+/// Whether the active account is a multisig, whose row is under the
+/// multisigs' heading. False while it loads.
+final activeIsMultisigProvider = Provider<bool>(
+  (ref) => ref.watch(activeAccountProvider).value is MultisigDisplayAccount,
+);
+
+/// The wallet whose heading holds the active account's row: none for a
+/// multisig, which sits under the multisigs' heading, and none while they load.
+final activeRowWalletIndexProvider = Provider<int?>(
+  (ref) => ref.watch(activeIsMultisigProvider) ? null : ref.watch(activeWalletIndexProvider),
+);
 
 /// The wallets left open in the sidebar, kept for the next start. The active
 /// account's wallet shows open whether or not it is among them
@@ -52,7 +65,7 @@ class KeptOpenWalletsNotifier extends Notifier<Set<int>> {
   /// Opens the wallet at [walletIndex], or closes it. The active account's
   /// wallet stays open, so it is always clear which wallet that account is in.
   void toggle(int walletIndex) {
-    if (ref.read(activeWalletIndexProvider) == walletIndex) return;
+    if (ref.read(activeRowWalletIndexProvider) == walletIndex) return;
     _set(state.contains(walletIndex) ? state.difference({walletIndex}) : {...state, walletIndex});
   }
 
@@ -85,24 +98,81 @@ class KeptOpenWalletsNotifier extends Notifier<Set<int>> {
   }
 }
 
-/// The wallets showing open in the sidebar: those left open, and the active
-/// account's.
+/// The wallets showing open in the sidebar: those left open, and the one
+/// holding the active account's row.
 final openWalletsProvider = Provider<Set<int>>((ref) {
-  final active = ref.watch(activeWalletIndexProvider);
+  final active = ref.watch(activeRowWalletIndexProvider);
   return {...ref.watch(keptOpenWalletsProvider), ?active};
 });
 
+/// Whether the multisigs were left open in the sidebar, kept for the next
+/// start. They show open while one of them is the active account whether or
+/// not they were ([multisigsOpenProvider]).
+final keptOpenMultisigsProvider = NotifierProvider<KeptOpenMultisigsNotifier, bool>(KeptOpenMultisigsNotifier.new);
+
+class KeptOpenMultisigsNotifier extends Notifier<bool> {
+  /// Where it is kept between runs, as a flag.
+  static const settingsKey = 'desktop_multisigs_open';
+
+  @override
+  bool build() {
+    final saved = ref.watch(settingsServiceProvider).getValue(settingsKey);
+    if (saved == null || saved is bool) return saved == true;
+    // A preference of the window's, not the wallet's: they start closed, as
+    // on a first run, and the stray value is reported.
+    ref.read(telemetryProvider).sendError('The saved open multisigs are unreadable', error: saved);
+    return false;
+  }
+
+  /// Opens the multisigs, or closes them. While one of them is the active
+  /// account they stay open, so it is always clear where that account is.
+  void toggle() {
+    if (ref.read(activeIsMultisigProvider)) return;
+    _set(!state);
+  }
+
+  /// Keeps the multisigs open: once a multisig stops being the active
+  /// account, so the rows around the one clicked do not move, and once one
+  /// is added or being created, so it shows.
+  void keepOpen() {
+    if (!state) _set(true);
+  }
+
+  void _set(bool open) {
+    state = open;
+    unawaited(_save());
+  }
+
+  /// A failure is reported: they stay as they are until the app quits.
+  Future<void> _save() async {
+    final telemetry = ref.read(telemetryProvider);
+    try {
+      await ref.read(settingsServiceProvider).setBool(settingsKey, state);
+    } catch (e) {
+      quantusPrint('Saving the open multisigs failed: $e');
+      telemetry.sendError('Saving the open multisigs failed', error: e);
+    }
+  }
+}
+
+/// Whether the multisigs show open in the sidebar: left open, or holding the
+/// active account.
+final multisigsOpenProvider = Provider<bool>(
+  (ref) => ref.watch(keptOpenMultisigsProvider) || ref.watch(activeIsMultisigProvider),
+);
+
 /// The accounts with a row showing in the sidebar, top to bottom: those of the
-/// open wallets, then the multisigs in no wallet here.
+/// open wallets, then the multisigs while they are open.
 final visibleSidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
   final accounts = ref.watch(accountsProvider).value;
   final multisigs = ref.watch(multisigAccountsProvider).value;
   if (accounts == null || multisigs == null) return const [];
   final open = ref.watch(openWalletsProvider);
-  final grouping = groupWallets(accounts: accounts, multisigs: multisigs);
+  final groups = groupSidebar(accounts: accounts, multisigs: multisigs);
   return [
-    for (final wallet in grouping.wallets)
+    for (final wallet in groups.wallets)
       if (open.contains(wallet.walletIndex)) ...walletAccountsInOrder(wallet),
-    for (final multisig in grouping.standaloneMultisigs) MultisigDisplayAccount(multisig),
+    if (ref.watch(multisigsOpenProvider))
+      for (final multisig in groups.multisigs) MultisigDisplayAccount(multisig),
   ];
 });

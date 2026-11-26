@@ -295,9 +295,143 @@ void main() {
     semantics.dispose();
   });
 
-  testOnMac('a multisig in no wallet here always shows', (tester) async {
-    await _pump(tester, multisigs: [orphanMultisig]);
+  testOnMac('the multisigs sit closed under their own heading with their count; a click opens them, and closes them', (
+    tester,
+  ) async {
+    await _pump(tester, multisigs: [teamMultisig, orphanMultisig]);
 
+    expect(_row('Team'), findsNothing);
+    expect(_row('Orphan'), findsNothing);
+    expect(_chevron('MULTISIGS', CupertinoIcons.chevron_right), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.ancestor(of: _text('MULTISIGS'), matching: find.byType(Row)).first,
+        matching: find.text('2'),
+      ),
+      findsOneWidget,
+    );
+
+    await _click(tester, 'MULTISIGS');
     expect(_row('Orphan'), findsOneWidget);
+    expect(_row('Team'), findsOneWidget);
+    expect(_chevron('MULTISIGS', CupertinoIcons.chevron_down), findsOneWidget);
+
+    await _click(tester, 'MULTISIGS');
+    expect(_row('Team'), findsNothing);
+  });
+
+  testOnMac('a wallet\'s count leaves out the multisigs its accounts are members of', (tester) async {
+    await _pump(
+      tester,
+      multisigs: [
+        MultisigAccount(
+          name: 'Desk',
+          accountId: 'qzDesk',
+          signers: const ['qzTrading', 'qzOther'],
+          threshold: 2,
+          nonce: BigInt.zero,
+          myMemberAccountId: 'qzTrading',
+        ),
+      ],
+    );
+
+    expect(
+      find.descendant(
+        of: find.ancestor(of: _text('WALLET 2'), matching: find.byType(Row)).first,
+        matching: find.text('2'),
+      ),
+      findsOneWidget,
+    );
+    await _click(tester, 'WALLET 2');
+    expect(_row('Desk'), findsNothing, reason: 'it is under MULTISIGS');
+  });
+
+  testOnMac('a multisig being active holds its group open with no chevron; its member\'s wallet can close', (
+    tester,
+  ) async {
+    await _pump(tester, multisigs: [teamMultisig]);
+
+    await _choose(tester, 'Account', 'Team');
+
+    expect(_selected(tester), 'Team');
+    expect(_chevron('MULTISIGS', CupertinoIcons.chevron_down), findsNothing);
+    expect(_chevron('MULTISIGS', CupertinoIcons.chevron_right), findsNothing);
+    await _click(tester, 'MULTISIGS');
+    expect(_row('Team'), findsOneWidget);
+
+    expect(_chevron('WALLET 1', CupertinoIcons.chevron_down), findsOneWidget, reason: 'kept open when left');
+    await _click(tester, 'WALLET 1');
+    expect(_row('Main'), findsNothing);
+  });
+
+  testOnMac('Next and Previous Sidebar Item step through the multisigs after the wallets while they are open', (
+    tester,
+  ) async {
+    await _pump(tester, multisigs: [teamMultisig, orphanMultisig]);
+
+    await _choose(tester, 'View', 'Previous Sidebar Item');
+    expect(_selected(tester), 'Mining Rewards', reason: 'the multisigs are closed');
+
+    await _click(tester, 'MULTISIGS');
+    await _choose(tester, 'View', 'Previous Sidebar Item');
+    expect(_selected(tester), 'Team');
+    await _choose(tester, 'View', 'Previous Sidebar Item');
+    expect(_selected(tester), 'Orphan');
+    await _choose(tester, 'View', 'Previous Sidebar Item');
+    expect(_selected(tester), 'Encrypted Account');
+  });
+
+  testOnMac('the multisigs take the ⌘ numbers after the wallets\' accounts', (tester) async {
+    await _pump(tester, multisigs: [teamMultisig]);
+    SingleActivator? shortcutOf(String name) =>
+        _itemsOf(tester, 'Account').singleWhere((item) => item.label == name).shortcut as SingleActivator?;
+
+    expect(shortcutOf('Main')?.trigger, LogicalKeyboardKey.digit1);
+    expect(shortcutOf('Savings')?.trigger, LogicalKeyboardKey.digit2);
+    expect(shortcutOf('Vault')?.trigger, LogicalKeyboardKey.digit8);
+    expect(shortcutOf('Team')?.trigger, LogicalKeyboardKey.digit9);
+  });
+
+  testOnMac('the multisigs\' heading takes the keyboard\'s focus; Space and Return open and close it', (tester) async {
+    await _pump(tester, multisigs: [teamMultisig]);
+    final node = Focus.of(tester.element(_text('MULTISIGS')));
+    expect(node.canRequestFocus, isTrue);
+    expect(node.skipTraversal, isFalse);
+
+    node.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.space);
+    await tester.pumpAndSettle();
+    expect(_row('Team'), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(_row('Team'), findsNothing);
+  });
+
+  testOnMac('a screen reader hears the multisigs\' heading, whether it is open, and how many a closed one holds', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await _pump(tester, multisigs: [teamMultisig, orphanMultisig]);
+
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Multisigs')),
+      isSemantics(
+        label: 'Multisigs',
+        value: '2 accounts',
+        isButton: true,
+        hasExpandedState: true,
+        isExpanded: false,
+        hasTapAction: true,
+      ),
+    );
+
+    await _click(tester, 'MULTISIGS');
+    expect(
+      tester.getSemantics(find.bySemanticsLabel('Multisigs')),
+      isSemantics(label: 'Multisigs', isButton: true, hasExpandedState: true, isExpanded: true),
+    );
+    semantics.dispose();
   });
 }

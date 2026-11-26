@@ -18,7 +18,6 @@ import 'package:wallet_core/send/send_flow.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/account_actions.dart';
 import 'package:wallet_core/utils/account_utils.dart';
-import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// Whether the sidebar is shown. The View menu hides and shows it.
 final sidebarVisibleProvider = NotifierProvider<SidebarVisibilityNotifier, bool>(SidebarVisibilityNotifier.new);
@@ -201,7 +200,9 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
     if (!ref.mounted || _isUnderSheet) return;
     // Before the switch, so the wallet being left never closes under the
     // rows around the one clicked.
-    if (ref.read(activeWalletIndexProvider) case final wallet?) {
+    if (ref.read(activeIsMultisigProvider)) {
+      ref.read(keptOpenMultisigsProvider.notifier).keepOpen();
+    } else if (ref.read(activeRowWalletIndexProvider) case final wallet?) {
       ref.read(keptOpenWalletsProvider.notifier).keepOpen(wallet);
     }
     try {
@@ -242,7 +243,7 @@ final sidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
   final accounts = ref.watch(accountsProvider).value;
   final multisigs = ref.watch(multisigAccountsProvider).value;
   if (accounts == null || multisigs == null) return const [];
-  return accountsInSidebarOrder(groupWallets(accounts: accounts, multisigs: multisigs));
+  return accountsInSidebarOrder(groupSidebar(accounts: accounts, multisigs: multisigs));
 });
 
 /// The account that would create a new multisig, sign for it and pay: the
