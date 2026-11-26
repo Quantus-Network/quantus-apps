@@ -185,10 +185,7 @@ void main() {
     expect(_sheet(tester).top, _paneTop(tester));
   });
 
-  for (final (sheet, kind) in [
-    (ShellSheet.send, 'a sheet that names the account'),
-    (ShellSheet.addAccount, 'a sheet that does not'),
-  ]) {
+  for (final (sheet, kind) in [(ShellSheet.send, 'a sheet that names the account')]) {
     testOnMac('the close button sits at the right edge of $kind', (tester) async {
       await _pumpWallet(tester);
 

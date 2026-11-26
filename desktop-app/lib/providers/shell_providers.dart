@@ -1,18 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/proposal_action_providers.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
 import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_flow.dart';
 import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/utils/account_actions.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
 
 /// Whether the sidebar is shown. The View menu hides and shows it.
@@ -178,9 +183,14 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
   Future<void> showAccount(DisplayAccount account) =>
       ref.read(shellNavigationProvider.notifier).run(() => _show(account));
 
+  /// Makes [account] the active account and selects it, from a navigation
+  /// step already running: [showAccount] would wait behind the steps asked
+  /// for after it. A failure is reported as [showAccount]'s is.
+  Future<void> showInStep(DisplayAccount account) => _show(account);
+
   /// Selects the row [rows] down from the one selected when the navigation
   /// asked for before has finished ([shellNavigationProvider]), going round
-  /// at the ends. The rows are the accounts, then Mining Rewards.
+  /// at the ends. The rows are the accounts showing, then Mining Rewards.
   Future<void> move(int rows) => ref.read(shellNavigationProvider.notifier).run(() => _move(rows));
 
   /// Whether a sheet opened since this switch was asked for: a sheet is for
@@ -189,6 +199,11 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   Future<void> _show(DisplayAccount account) async {
     if (!ref.mounted || _isUnderSheet) return;
+    // Before the switch, so the wallet being left never closes under the
+    // rows around the one clicked.
+    if (ref.read(activeWalletIndexProvider) case final wallet?) {
+      ref.read(keptOpenWalletsProvider.notifier).keepOpen(wallet);
+    }
     try {
       await ref.read(activeAccountProvider.notifier).switchActiveAccount(account);
     } catch (e) {
@@ -205,7 +220,7 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 
   Future<void> _move(int rows) async {
     if (!ref.mounted || _isUnderSheet) return;
-    final accounts = ref.read(sidebarAccountsProvider);
+    final accounts = ref.read(visibleSidebarAccountsProvider);
     final activeId = ref.read(activeAccountProvider).value?.account.accountId;
     final selected = state == SidebarSelection.miningRewards
         ? accounts.length
@@ -228,6 +243,28 @@ final sidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
   final multisigs = ref.watch(multisigAccountsProvider).value;
   if (accounts == null || multisigs == null) return const [];
   return accountsInSidebarOrder(groupWallets(accounts: accounts, multisigs: multisigs));
+});
+
+/// The account that would create a new multisig, sign for it and pay: the
+/// active account, where its key signs in this app. Null on an Encrypted,
+/// Keystone or multisig account, and until the saved multisigs are known,
+/// which a new one must not collide with.
+final multisigCreatorProvider = Provider<Account?>((ref) {
+  if (!ref.watch(multisigAccountsProvider).hasValue) return null;
+  return switch (ref.watch(activeAccountProvider).value) {
+    RegularAccount(:final account) when account.signsLocally => account,
+    _ => null,
+  };
+});
+
+/// The multisigs being created, as they will be once the chain has them.
+final creatingMultisigsProvider = Provider<List<MultisigAccount>>((ref) {
+  final creating = ref.watch(pendingMultisigCreationsProvider);
+  final records = ref.read(pendingMultisigCreationsProvider.notifier);
+  return [
+    for (final event in creating)
+      if (records.recordFor(event.multisigAddress) case final record?) record.draft,
+  ];
 });
 
 /// The sheet over the window, or null when there is none.
@@ -256,18 +293,30 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       return;
     }
     if (sheet == ShellSheet.send || sheet == ShellSheet.propose) _beginSend();
+    // A swap starts from this sheet, so where swaps are allowed is asked
+    // again as it opens: the answer in hand may be from another place.
+    if (sheet == ShellSheet.swap) unawaited(ref.read(remoteConfigProvider.notifier).syncConfig());
     state = sheet;
   }
 
   /// Whether the active account offers [sheet]; a sheet that does not act
   /// on an account always is.
   bool _isOffered(ShellSheet sheet) {
+    if (sheet == ShellSheet.createMultisig) return ref.read(multisigCreatorProvider) != null;
+    if (sheet == ShellSheet.connectColdWallet) return ref.read(remoteConfigProvider).enableKeystoneHardwareWallet;
+    if (sheet == ShellSheet.proposalAction) return ref.read(proposalActionTargetProvider) != null;
     final kind = switch (sheet) {
       ShellSheet.receive => AccountActionKind.receive,
       ShellSheet.send => AccountActionKind.send,
       ShellSheet.propose => AccountActionKind.propose,
       ShellSheet.swap => AccountActionKind.swap,
-      ShellSheet.addAccount || ShellSheet.settings || ShellSheet.accountInfo => null,
+      ShellSheet.settings ||
+      ShellSheet.accountInfo ||
+      ShellSheet.importWallet ||
+      ShellSheet.connectColdWallet ||
+      ShellSheet.createMultisig ||
+      ShellSheet.manageMultisigs ||
+      ShellSheet.proposalAction => null,
     };
     if (kind == null) return true;
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);
@@ -298,11 +347,7 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final canSend = sendStrategyFor(active, accounts: ref.watch(accountsProvider).value ?? const []) != null;
   bool sends(AccountActionKind kind) => kind == AccountActionKind.send || kind == AccountActionKind.propose;
   return [
-    for (final action in accountActions(
-      active,
-      swapAvailable: ref.watch(remoteConfigProvider).swapAvailable,
-      hasActiveSwap: ref.watch(activeSwapProvider) != null,
-    ))
+    for (final action in accountActions(active, swapAvailable: ref.watch(remoteConfigProvider).swapAvailable))
       if (sends(action.kind) && !canSend) AccountAction(action.kind, isEnabled: false) else action,
   ];
 });
@@ -310,13 +355,19 @@ final activeAccountActionsProvider = Provider<List<AccountAction>>((ref) {
 /// The account actions as the menus and their shortcuts offer them. While
 /// navigation asked for earlier is still to finish, the account it ends on
 /// is not known yet, so Receive, Send and Propose are offered whatever the
-/// active account allows, and checked against the account they open on
-/// ([ShellSheetNotifier.open]). The toolbar shows what the active account
-/// offers ([activeAccountActionsProvider]).
+/// active account allows, and Swap too where swaps are offered; each is
+/// checked against the account it opens on ([ShellSheetNotifier.open]). The
+/// toolbar shows what the active account offers
+/// ([activeAccountActionsProvider]).
 final menuAccountActionsProvider = Provider<List<AccountAction>>((ref) {
   final actions = ref.watch(activeAccountActionsProvider);
   if (!ref.watch(shellNavigationProvider)) return actions;
-  const whatever = [AccountActionKind.receive, AccountActionKind.send, AccountActionKind.propose];
+  final whatever = [
+    AccountActionKind.receive,
+    AccountActionKind.send,
+    AccountActionKind.propose,
+    if (ref.watch(remoteConfigProvider).swapAvailable) AccountActionKind.swap,
+  ];
   return [
     for (final kind in whatever) AccountAction(kind),
     for (final action in actions)

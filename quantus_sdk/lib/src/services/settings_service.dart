@@ -11,6 +11,17 @@ import 'package:quantus_sdk/src/services/hd_wallet_service.dart';
 import 'package:quantus_sdk/src/utils/print.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// An account was stored, but making it the active account failed.
+class AccountNotActivatedException implements Exception {
+  const AccountNotActivatedException(this.cause);
+
+  /// Why storing the active account failed.
+  final Object cause;
+
+  @override
+  String toString() => 'AccountNotActivatedException: $cause';
+}
+
 class SettingsService {
   static final SettingsService _instance = SettingsService._internal();
   factory SettingsService() => _instance;
@@ -34,7 +45,8 @@ class SettingsService {
   static const String _currencyFlippedKey = 'currency_flipped';
   static const String _selectedFiatCurrencyKey = 'selected_fiat_currency';
   static const String _selectedAppLocaleKey = 'selected_app_locale';
-  static const String _activeSwapKey = 'active_swap_v1';
+  static const String _activeSwapsKey = 'active_swaps_v1';
+  static const String _legacyActiveSwapKey = 'active_swap_v1';
 
   // referral status
   static const String hasCheckedReferralKey = 'referral_check';
@@ -50,6 +62,15 @@ class SettingsService {
   Future<void> initialize() async {
     _prefs = await SharedPreferences.getInstance();
     _keychainMigrated = _prefs.getBool(_migratedKeychainKey) == true;
+    await _migrateActiveSwap();
+  }
+
+  /// Moves the one swap an earlier version kept in its own slot into the list.
+  Future<void> _migrateActiveSwap() async {
+    final json = _prefs.getString(_legacyActiveSwapKey);
+    if (json == null) return;
+    await saveActiveSwap(ActiveSwap.fromJson(jsonDecode(json) as Map<String, dynamic>));
+    await _prefs.remove(_legacyActiveSwapKey);
   }
 
   Future<void> _ensureKeychainMigrated() async {
@@ -100,11 +121,28 @@ class SettingsService {
     return [];
   }
 
+  /// Stores [accounts] as the account list. Throws when it cannot be
+  /// stored, and the list is then what it was before.
   Future<void> saveAccounts(List<Account> accounts) async {
-    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
-    await _prefs.setString(_accountsKey, jsonEncode(jsonData));
+    final previous = _prefs.getString(_accountsKey);
+    try {
+      if (!await _writeAccounts(accounts)) throw Exception('Could not save $_accountsKey');
+    } catch (_) {
+      await _putBack(_accountsKey, previous);
+      rethrow;
+    }
   }
 
+  Future<bool> _writeAccounts(List<Account> accounts) {
+    final List<Map<String, dynamic>> jsonData = accounts.map((a) => a.toJson()).toList();
+    return _prefs.setString(_accountsKey, jsonEncode(jsonData));
+  }
+
+  /// Stores [account], and makes it active when it is the first one.
+  ///
+  /// Throws when the account cannot be stored, and the list is then what it
+  /// was before. Throws [AccountNotActivatedException] when it was stored but
+  /// could not be made active.
   Future<void> addAccount(Account account) async {
     final accounts = await getAccounts();
     // Check for duplicates by derivation slot or accountId before adding
@@ -117,20 +155,32 @@ class SettingsService {
       await saveAccounts(accounts);
       if (accounts.length == 1) {
         // make sure that active account is always a valid account
-        await setActiveAccount(RegularAccount(account));
+        try {
+          await setActiveAccount(RegularAccount(account));
+        } catch (e) {
+          throw AccountNotActivatedException(e);
+        }
       }
     } else {
       throw Exception('Account already exists');
     }
   }
 
+  /// Stores [account] in place of the stored account with its id. Throws
+  /// when it cannot be stored, and the accounts are then what they were.
   Future<void> updateAccount(Account account) async {
     final accounts = await getAccounts();
     final index = accounts.indexWhere((a) => a.accountId == account.accountId);
     if (index != -1) {
+      final previous = _prefs.getString(_accountsKey);
       accounts[index] = account;
       await saveAccounts(accounts);
-      await _syncActiveDisplayAccount(RegularAccount(account));
+      try {
+        await _syncActiveDisplayAccount(RegularAccount(account));
+      } catch (_) {
+        await _putBack(_accountsKey, previous);
+        rethrow;
+      }
     }
   }
 
@@ -145,18 +195,53 @@ class SettingsService {
     }
   }
 
+  /// Removes [account], making another active if it was. When it was its
+  /// wallet's last account, as a hardware wallet's can be, the wallet's
+  /// settings go too: the next wallet added takes its index. Throws when the
+  /// change cannot be stored, and the accounts and settings are then what
+  /// they were.
   Future<void> removeAccount(Account account) async {
     final accounts = await getAccounts();
     if (accounts.length == 1) {
       throw Exception('Cant remove last account!');
     }
-    if (account.accountId == await _getActiveAccountId()) {
-      final replacement = _preferNonEncrypted(accounts.where((a) => a.accountId != account.accountId));
-      await setActiveAccount(RegularAccount(replacement));
+    final previousActive = _prefs.getString(_activeDisplayAccountKey);
+    final remaining = accounts.where((a) => a.accountId != account.accountId).toList();
+    final walletIndex = account.walletIndex;
+    final settingsKeys = remaining.any((a) => a.walletIndex == walletIndex)
+        ? const <String>[]
+        : [_pendingAccountScanKey(walletIndex), ..._walletSettingsKeys(walletIndex)];
+    final previousSettings = {for (final key in settingsKeys) key: _prefs.get(key)};
+    try {
+      // First, as in [removeWallet]: a pending account scan adds accounts.
+      for (final key in settingsKeys) {
+        if (!await _prefs.remove(key)) throw Exception('Could not remove $key');
+      }
+      if (account.accountId == await _getActiveAccountId()) {
+        await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
+      }
+      try {
+        await saveAccounts(remaining);
+      } catch (_) {
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
+      }
+    } catch (_) {
+      for (final MapEntry(:key, :value) in previousSettings.entries) {
+        await _putBack(key, value);
+      }
+      rethrow;
     }
-    accounts.removeWhere((a) => a.accountId == account.accountId);
-    await saveAccounts(accounts);
   }
+
+  /// The settings a wallet keeps besides its accounts, mnemonic and pending
+  /// account scan.
+  List<String> _walletSettingsKeys(int walletIndex) => [
+    _walletOriginKey(walletIndex),
+    _recoveryPhraseViewedKey(walletIndex),
+    _walletNameKey(walletIndex),
+    _airdropClaimKey(walletIndex),
+  ];
 
   /// Picks a replacement active account, avoiding encrypted (wormhole)
   /// accounts unless they are the only option.
@@ -166,6 +251,12 @@ class SettingsService {
   /// Removes an entire wallet: drops all of its accounts and deletes its
   /// mnemonic from secure storage. The primary wallet (index 0) cannot be
   /// removed.
+  ///
+  /// Throws when its account scan cannot be stopped, its accounts dropped,
+  /// its settings cleared or its mnemonic deleted, and the wallet is then kept
+  /// whole: its accounts, mnemonic and settings, and the active account, are
+  /// what they were. The mnemonic goes last, as the one step that cannot be
+  /// put back.
   Future<void> removeWallet(int walletIndex) async {
     if (walletIndex == 0) {
       throw Exception('Cant remove the primary wallet!');
@@ -178,18 +269,45 @@ class SettingsService {
     if (remaining.isEmpty) {
       throw Exception('Cant remove last wallet!');
     }
-    await _prefs.remove(_pendingAccountScanKey(walletIndex));
-    final activeId = await _getActiveAccountId();
-    final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
-    if (activeRemoved) {
-      await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
+    final previousAccounts = _prefs.getString(_accountsKey);
+    final previousActive = _prefs.getString(_activeDisplayAccountKey);
+    final scanKey = _pendingAccountScanKey(walletIndex);
+    final settingsKeys = _walletSettingsKeys(walletIndex);
+    final previousScan = _prefs.get(scanKey);
+    final previousSettings = {for (final key in settingsKeys) key: _prefs.get(key)};
+    // The wallet's account scan adds accounts only while it is pending, so it
+    // is stopped first, before any step that waits, and is pending again only
+    // if the removal is undone.
+    try {
+      if (!await _prefs.remove(scanKey)) throw Exception('Could not remove $scanKey');
+      final activeId = await _getActiveAccountId();
+      final activeRemoved = accounts.any((a) => a.walletIndex == walletIndex && a.accountId == activeId);
+      if (activeRemoved) {
+        await setActiveAccount(RegularAccount(_preferNonEncrypted(remaining)));
+      }
+      try {
+        await saveAccounts(remaining);
+      } catch (_) {
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
+      }
+      try {
+        for (final key in settingsKeys) {
+          if (!await _prefs.remove(key)) throw Exception('Could not remove $key');
+        }
+        await deleteMnemonic(walletIndex);
+      } catch (_) {
+        for (final MapEntry(:key, :value) in previousSettings.entries) {
+          await _putBack(key, value);
+        }
+        await _putBack(_accountsKey, previousAccounts);
+        await _putBack(_activeDisplayAccountKey, previousActive);
+        rethrow;
+      }
+    } catch (_) {
+      await _putBack(scanKey, previousScan);
+      rethrow;
     }
-    await saveAccounts(remaining);
-    await deleteMnemonic(walletIndex);
-    await _prefs.remove(_walletOriginKey(walletIndex));
-    await _prefs.remove(_recoveryPhraseViewedKey(walletIndex));
-    await _prefs.remove(_walletNameKey(walletIndex));
-    await _prefs.remove(_airdropClaimKey(walletIndex));
   }
 
   /// Stores [account] as the active account. Throws when it cannot be
@@ -216,11 +334,13 @@ class SettingsService {
   }
 
   /// Makes [key] hold [value] again, or nothing when it held nothing, after
-  /// a write to it failed. SharedPreferences answers from memory, and its
-  /// memory keeps a value the system did not store. Whether this write is
-  /// stored is not checked, nor whether it fails as the first one did:
-  /// memory holds [value] after it either way, what failed before was never
-  /// stored, and the failure to report is the first one's.
+  /// a write to it failed, or a later step of the same change did.
+  /// SharedPreferences answers from memory, and its memory keeps a value the
+  /// system did not store. Whether this write is stored is not checked, nor
+  /// whether it fails as the first one did: memory holds [value] after it
+  /// either way, and the failure to report is the first one's. After a
+  /// failed write, what failed was never stored; after a later step failed,
+  /// a put-back that is not stored leaves the earlier write on the disk.
   Future<void> _putBack(String key, Object? value) async {
     final Future<bool> Function() write = switch (value) {
       null => () => _prefs.remove(key),
@@ -327,11 +447,23 @@ class SettingsService {
     return decoded.map((e) => MultisigAccount.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// Stores [accounts] as the multisig list. Throws when it cannot be
+  /// stored, and the list is then what it was before.
   Future<void> _saveMultisigAccounts(List<MultisigAccount> accounts) async {
+    final previous = _prefs.getString(_multisigAccountsKey);
     final jsonData = accounts.map((a) => a.toJson()).toList();
-    await _prefs.setString(_multisigAccountsKey, jsonEncode(jsonData));
+    try {
+      if (!await _prefs.setString(_multisigAccountsKey, jsonEncode(jsonData))) {
+        throw Exception('Could not save $_multisigAccountsKey');
+      }
+    } catch (_) {
+      await _putBack(_multisigAccountsKey, previous);
+      rethrow;
+    }
   }
 
+  /// Stores [account]. Throws when it cannot be stored, and the multisigs
+  /// are then what they were.
   Future<void> addMultisigAccount(MultisigAccount account) async {
     final accounts = await getMultisigAccounts();
     if (accounts.any((a) => a.accountId == account.accountId)) {
@@ -341,29 +473,46 @@ class SettingsService {
     await _saveMultisigAccounts(accounts);
   }
 
+  /// Stores [account] in place of the stored multisig with its id. Throws
+  /// when it cannot be stored, and the multisigs are then what they were.
   Future<void> updateMultisigAccount(MultisigAccount account) async {
     final accounts = await getMultisigAccounts();
     final index = accounts.indexWhere((a) => a.accountId == account.accountId);
     if (index != -1) {
+      final previous = _prefs.getString(_multisigAccountsKey);
       accounts[index] = account;
       await _saveMultisigAccounts(accounts);
-      await _syncActiveDisplayAccount(MultisigDisplayAccount(account));
+      try {
+        await _syncActiveDisplayAccount(MultisigDisplayAccount(account));
+      } catch (_) {
+        await _putBack(_multisigAccountsKey, previous);
+        rethrow;
+      }
     }
   }
 
+  /// Removes the multisig [accountId], making another account active if it
+  /// was. Throws when the change cannot be stored, and the multisigs and the
+  /// active account are then what they were.
   Future<void> removeMultisigAccount(String accountId) async {
     final accounts = await getMultisigAccounts();
     final filtered = accounts.where((a) => a.accountId != accountId).toList();
     if (filtered.length == accounts.length) {
       throw Exception('Multisig not found');
     }
-    await _saveMultisigAccounts(filtered);
+    final previousActive = _prefs.getString(_activeDisplayAccountKey);
     final active = await getActiveAccount();
     if (active is MultisigDisplayAccount && active.account.accountId == accountId) {
       final regulars = await getAccounts();
       if (regulars.isNotEmpty) {
         await setActiveAccount(RegularAccount(regulars.first));
       }
+    }
+    try {
+      await _saveMultisigAccounts(filtered);
+    } catch (_) {
+      await _putBack(_activeDisplayAccountKey, previousActive);
+      rethrow;
     }
   }
 
@@ -495,19 +644,33 @@ class SettingsService {
     return _prefs.getString(_selectedAppLocaleKey);
   }
 
-  // Active Swap: the one swap the app follows until the user puts it away
-  Future<void> setActiveSwap(ActiveSwap swap) async {
-    await _prefs.setString(_activeSwapKey, jsonEncode(swap.toJson()));
+  // Active swaps: the swaps the app follows until the user puts each away
+
+  /// The followed swaps, in order of starting.
+  List<ActiveSwap> getActiveSwaps() {
+    final json = _prefs.getString(_activeSwapsKey);
+    if (json == null) return [];
+    return [for (final item in jsonDecode(json) as List<dynamic>) ActiveSwap.fromJson(item as Map<String, dynamic>)];
   }
 
-  Future<void> clearActiveSwap() async {
-    await _prefs.remove(_activeSwapKey);
+  /// Keeps [swap]: in place of the followed swap with its id, else after the others.
+  Future<void> saveActiveSwap(ActiveSwap swap) {
+    final swaps = getActiveSwaps();
+    final at = swaps.indexWhere((s) => s.id == swap.id);
+    if (at < 0) {
+      swaps.add(swap);
+    } else {
+      swaps[at] = swap;
+    }
+    return _writeActiveSwaps(swaps);
   }
 
-  ActiveSwap? getActiveSwap() {
-    final json = _prefs.getString(_activeSwapKey);
-    return json == null ? null : ActiveSwap.fromJson(jsonDecode(json) as Map<String, dynamic>);
-  }
+  Future<void> removeActiveSwap(String id) => _writeActiveSwaps(getActiveSwaps().where((s) => s.id != id).toList());
+
+  Future<void> clearActiveSwaps() => _prefs.remove(_activeSwapsKey);
+
+  Future<void> _writeActiveSwaps(List<ActiveSwap> swaps) =>
+      _prefs.setString(_activeSwapsKey, jsonEncode([for (final s in swaps) s.toJson()]));
 
   // --- Primitive Accessors for General Use ---
 

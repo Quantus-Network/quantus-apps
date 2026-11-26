@@ -114,7 +114,6 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> w
               subtitle: 'Before approving here, make sure your phone shows exactly this:',
             ),
             const SizedBox(height: 24),
-            if (!parsed.specMatchesBundled) ...[_specDriftBanner(parsed.extensions), const SizedBox(height: 16)],
             ReviewCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -136,6 +135,10 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> w
             ),
             const SizedBox(height: 24),
             _advancedSection(context, parsed),
+            if (!parsed.specMatchesBundled) ...[
+              const SizedBox(height: 8),
+              Text(_runtimeNote(parsed.extensions), style: text.caption.copyWith(color: colors.textMuted)),
+            ],
             if (signError != null) ...[
               const SizedBox(height: 16),
               Text(
@@ -238,20 +241,9 @@ class _SignTransactionScreenState extends ConsumerState<SignTransactionScreen> w
     ];
   }
 
-  /// A warning only: a signer who verified the transaction another way must
-  /// still be able to sign it.
-  Widget _specDriftBanner(SignedExtensions ext) {
-    return QuantusBanner(
-      tone: BannerTone.ember,
-      label: 'Built for a different runtime',
-      message:
-          'This payload targets spec ${ext.specVersion} / tx version ${ext.transactionVersion}, but this '
-          'wallet decodes spec ${AppConstants.bundledSpecVersion} / tx version '
-          '${AppConstants.bundledTransactionVersion}. Across runtime versions the same index can mean a '
-          'different call, so the parameters below may be mislabelled. Update the cold wallet before signing '
-          'anything you cannot verify another way.',
-    );
-  }
+  String _runtimeNote(SignedExtensions ext) =>
+      'Runtime spec ${ext.specVersion} / tx ${ext.transactionVersion}; this wallet knows spec '
+      '${AppConstants.bundledSpecVersion} / tx ${AppConstants.bundledTransactionVersion}. Update it when you can.';
 
   Future<void> _showSheet({required String title, required Widget child}) {
     return BottomSheetContainer.show<void>(

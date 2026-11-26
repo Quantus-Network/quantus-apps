@@ -26,6 +26,10 @@ abstract interface class NotificationPlugin {
 
   /// Shows a notification now. One shown with the same [id] replaces it.
   Future<void> show({required int id, required String title, required String body, required String payload});
+
+  /// Removes every notification of the app the system still shows. Throws on
+  /// Windows and Linux when the notifications have not been started.
+  Future<void> cancelAll();
 }
 
 /// The system's notifications through flutter_local_notifications.
@@ -78,6 +82,9 @@ class SystemNotificationPlugin implements NotificationPlugin {
   Future<void> show({required int id, required String title, required String body, required String payload}) {
     return _plugin.show(id: id, title: title, body: body, payload: payload);
   }
+
+  @override
+  Future<void> cancelAll() => _plugin.cancelAll();
 }
 
 final notificationPluginProvider = Provider<NotificationPlugin>((ref) => SystemNotificationPlugin());

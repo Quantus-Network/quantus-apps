@@ -306,17 +306,17 @@ class DebugPayloads {
 
   static Uint8List _payload(RuntimeCall call) => payloadForCall(call.encode());
 
-  /// Appends the signed extensions the runtime expects, using the spec and
-  /// transaction versions this build's metadata was generated from — so these
-  /// payloads do not trip the spec-drift warning.
-  static Uint8List payloadForCall(List<int> callBytes) {
+  /// Appends the signed extensions the runtime expects, by default with the spec
+  /// and transaction versions this build's metadata was generated from — so
+  /// these payloads do not show the runtime note.
+  static Uint8List payloadForCall(List<int> callBytes, {int specVersion = AppConstants.bundledSpecVersion}) {
     final out = ByteOutput();
     out.write(callBytes);
     out.write(const [0x55, 0x01]); // mortal era: period 64, phase 21
     CompactCodec.codec.encodeTo(0, out); // nonce
     CompactBigIntCodec.codec.encodeTo(BigInt.zero, out); // tip
     out.pushByte(0); // CheckMetadataHash mode: disabled
-    U32Codec.codec.encodeTo(AppConstants.bundledSpecVersion, out);
+    U32Codec.codec.encodeTo(specVersion, out);
     U32Codec.codec.encodeTo(AppConstants.bundledTransactionVersion, out);
     out.write(hex.decode(_planckGenesisHex));
     out.write(List.filled(32, 0x11)); // block hash (not validated by the signer)

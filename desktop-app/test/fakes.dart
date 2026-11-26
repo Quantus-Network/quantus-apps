@@ -2,25 +2,34 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/providers/keystone_signing_providers.dart';
+import 'package:quantus_desktop_wallet/services/background_window.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
+import 'package:quantus_desktop_wallet/services/mac_push.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:wallet_core/services/logout_service.dart';
@@ -28,6 +37,8 @@ import 'package:wallet_core/services/remote_config_service.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
+import 'services/fake_background_window.dart';
+import 'services/fake_mac_push.dart';
 import 'services/fake_notification_plugin.dart';
 
 /// The stored settings the shell reads, without the device's storage. A
@@ -38,12 +49,22 @@ class FakeSettingsService extends Fake implements SettingsService {
     this.multisigs = const [],
     this.walletNames = const {},
     Map<int, String>? mnemonics,
-  }) : mnemonics = mnemonics ?? {0: 'a stored recovery phrase'};
+    Set<int> openWallets = const {},
+  }) : mnemonics = mnemonics ?? {0: 'a stored recovery phrase'} {
+    if (openWallets.isNotEmpty) strings[KeptOpenWalletsNotifier.settingsKey] = openWallets.join(',');
+  }
 
   DisplayAccount? activeAccount;
   final List<MultisigAccount> multisigs;
   final Map<int, String> walletNames;
   final Map<int, String> mnemonics;
+
+  /// The swaps being followed, as the device keeps them.
+  List<ActiveSwap> activeSwaps = [];
+
+  /// The one swap the desktop follows at a time, as the device keeps it.
+  ActiveSwap? get activeSwap => activeSwaps.singleOrNull;
+  set activeSwap(ActiveSwap? swap) => activeSwaps = [?swap];
 
   /// The flags kept under plain keys. The boot intro counts as seen already,
   /// so it plays only in the tests that are about it.
@@ -52,8 +73,17 @@ class FakeSettingsService extends Fake implements SettingsService {
   @override
   bool? getBool(String key) => bools[key];
 
+  /// Why the next [setBool] fails, once.
+  Object? failNextBoolWrite;
+
   @override
-  Future<void> setBool(String key, bool value) async => bools[key] = value;
+  Future<void> setBool(String key, bool value) async {
+    if (failNextBoolWrite case final error?) {
+      failNextBoolWrite = null;
+      throw error;
+    }
+    bools[key] = value;
+  }
 
   /// The text kept under plain keys.
   final Map<String, String> strings = {};
@@ -122,10 +152,23 @@ class FakeSettingsService extends Fake implements SettingsService {
   String? getWalletName(int walletIndex) => walletNames[walletIndex];
 
   @override
-  ActiveSwap? getActiveSwap() => null;
+  List<ActiveSwap> getActiveSwaps() => [...activeSwaps];
 
   @override
-  Future<void> clearActiveSwap() async {}
+  Future<void> saveActiveSwap(ActiveSwap swap) async {
+    final at = activeSwaps.indexWhere((s) => s.id == swap.id);
+    if (at < 0) {
+      activeSwaps.add(swap);
+    } else {
+      activeSwaps[at] = swap;
+    }
+  }
+
+  @override
+  Future<void> removeActiveSwap(String id) async => activeSwaps.removeWhere((s) => s.id == id);
+
+  @override
+  Future<void> clearActiveSwaps() async => activeSwaps.clear();
 
   @override
   Future<void> clearSelectedAppLocale() async => locale = null;
@@ -153,7 +196,7 @@ class FakeAccountsService extends Fake implements AccountsService {
 /// Stored settings on a slow disk: each write of the active account waits
 /// until the test lets it finish with [finishWrites].
 class SlowSettingsService extends FakeSettingsService {
-  SlowSettingsService({super.activeAccount, super.multisigs});
+  SlowSettingsService({super.activeAccount, super.multisigs, super.openWallets});
 
   final List<Completer<void>> _writes = [];
 
@@ -207,6 +250,19 @@ class FakeWalletStorage extends FakeSettingsService {
   /// When set, the check for a wallet fails with this.
   Object? hasWalletError;
 
+  /// When set, reading a recovery phrase waits for this first.
+  Future<void>? mnemonicGate;
+
+  /// How many times a recovery phrase was read.
+  int mnemonicReads = 0;
+
+  @override
+  Future<String?> getMnemonic(int walletIndex) async {
+    mnemonicReads++;
+    if (mnemonicGate case final gate?) await gate;
+    return super.getMnemonic(walletIndex);
+  }
+
   /// How many times the device was asked whether it has a wallet.
   int hasWalletChecks = 0;
 
@@ -216,8 +272,24 @@ class FakeWalletStorage extends FakeSettingsService {
   /// When set, deriving a wallet's encrypted account waits for this first.
   Future<void>? encryptedAccountsGate;
 
+  /// When set, adding an account waits for this first.
+  Future<void>? addAccountGate;
+
   @override
   Future<List<Account>> getAccounts() async => List.of(accounts);
+
+  @override
+  Future<int> getNextFreeAccountIndex(int walletIndex, {DilithiumScheme? scheme}) async {
+    final used = {
+      for (final account in accounts)
+        if (account.walletIndex == walletIndex) account.index,
+    };
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return index;
+  }
 
   @override
   Future<bool> getHasWallet() async {
@@ -227,8 +299,22 @@ class FakeWalletStorage extends FakeSettingsService {
     return accounts.isNotEmpty;
   }
 
+  /// When set, adding an account fails with this, and nothing is added.
+  Object? addAccountError;
+
+  /// When set, storing the active account fails with this.
+  Object? activeWriteError;
+
+  @override
+  Future<void> setActiveAccount(DisplayAccount account) async {
+    if (activeWriteError case final error?) throw error;
+    activeAccount = account;
+  }
+
   @override
   Future<void> addAccount(Account account) async {
+    await addAccountGate;
+    if (addAccountError case final error?) throw error;
     if (accounts.any((a) => a.accountId == account.accountId)) throw Exception('Account already exists');
     accounts.add(account);
     if (accounts.length == 1) activeAccount = RegularAccount(account);
@@ -299,6 +385,8 @@ class FakeWalletStorage extends FakeSettingsService {
     accounts
       ..clear()
       ..addAll(remaining);
+    // A wallet goes with its last account, as a hardware wallet's can.
+    if (!remaining.any((a) => a.walletIndex == account.walletIndex)) names.remove(account.walletIndex);
   }
 
   @override
@@ -344,6 +432,17 @@ class FakeWalletStorage extends FakeSettingsService {
   @override
   Future<List<MultisigAccount>> getMultisigAccounts() async => List.of(multisigStore);
 
+  /// When set, adding or removing a multisig waits for this first.
+  Completer<void>? multisigWriteGate;
+
+  @override
+  Future<void> addMultisigAccount(MultisigAccount account) async {
+    await multisigWriteGate?.future;
+    _checkWrite();
+    if (multisigStore.any((m) => m.accountId == account.accountId)) throw Exception('Multisig already added');
+    multisigStore.add(account);
+  }
+
   @override
   Future<void> updateMultisigAccount(MultisigAccount account) async {
     _checkWrite();
@@ -354,6 +453,7 @@ class FakeWalletStorage extends FakeSettingsService {
 
   @override
   Future<void> removeMultisigAccount(String accountId) async {
+    await multisigWriteGate?.future;
     _checkWrite();
     multisigStore.removeWhere((m) => m.accountId == accountId);
     if (activeAccount?.account.accountId == accountId) activeAccount = RegularAccount(accounts.first);
@@ -379,6 +479,29 @@ class _StoredAccountsService extends Fake implements AccountsService {
 
   @override
   Future<void> addAccount(Account newAccount) => storage.addAccount(newAccount);
+
+  /// The wallet's next free account, as the real service derives it from the
+  /// wallet's phrase.
+  @override
+  Future<Account> createNewAccount({required int walletIndex}) async {
+    if (await storage.getMnemonic(walletIndex) == null) {
+      throw Exception('Mnemonic not found. Cannot create new account.');
+    }
+    final used = {
+      for (final account in storage.accounts)
+        if (account.walletIndex == walletIndex && account.accountType != AccountType.encrypted) account.index,
+    };
+    var index = 0;
+    while (used.contains(index)) {
+      index++;
+    }
+    return Account(
+      walletIndex: walletIndex,
+      index: index,
+      name: 'Account ${storage.accounts.length + 1}',
+      accountId: 'qzNew$walletIndex-$index',
+    );
+  }
 
   @override
   Future<void> removeAccount(Account account) => storage.removeAccount(account);
@@ -451,7 +574,46 @@ class _FakeSubstrateService extends Fake implements SubstrateService {
     chain.quotes.add(chain.describe(call));
     return ExtrinsicFeeData(fee: await chain.fee(), blockHash: '0x', blockNumber: 1);
   }
+
+  @override
+  Future<BigInt> queryBalance(String address) async => device!.balance;
+
+  @override
+  Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) {
+    final transfer = chain.describe(call);
+    chain.signRequests.add(transfer);
+    return chain.unsigned(transfer);
+  }
+
+  @override
+  Future<int> getCurrentBlockNumber() => chain.currentBlock();
 }
+
+/// A transaction as a cold wallet is handed it, built at [blockNumber] and
+/// alive for [eraPeriod] blocks: by default ten blocks before the chain's
+/// usual latest, 1250000, so it ends at 1250054.
+UnsignedTransactionData fakeUnsignedTransaction({int blockNumber = 1249990, int eraPeriod = 64}) =>
+    UnsignedTransactionData(
+      payloadToSign: QuantusSigningPayload(
+        method: Uint8List(0),
+        specVersion: 1,
+        transactionVersion: 1,
+        genesisHash: '0x00',
+        blockHash: '0x00',
+        blockNumber: blockNumber,
+        eraPeriod: eraPeriod,
+        nonce: 0,
+        tip: 0,
+      ),
+      signer: Uint8List(32),
+      registry: Object(),
+    );
+
+/// The frames of a cold wallet's signature, [total] of them, as the fake
+/// collector reads them: `ur:quantus-signature/<index>-<total>/`.
+List<String> fakeSignatureFrames(int total) => [
+  for (var index = 1; index <= total; index++) 'ur:quantus-signature/$index-$total/part$index',
+];
 
 /// A transfer as Send builds it: who is paid and how much. An [amount] of
 /// null is a transfer of everything the account has.
@@ -480,9 +642,77 @@ class FakeSendChain {
   /// amount and fee it was recorded with.
   final transfers = <({String from, SendCall call, BigInt amount, BigInt fee})>[];
 
+  /// What building the request a cold wallet signs answers, by the transfer;
+  /// it may throw.
+  Future<UnsignedTransactionData> Function(SendCall transfer) unsigned = (_) async => fakeUnsignedTransaction();
+
+  /// Every transfer a request for a cold wallet was built for, in order.
+  final signRequests = <SendCall>[];
+
+  /// The frames of the request a cold wallet scans: here one, naming the
+  /// account and the block the transaction was built at.
+  static List<String> requestFrames(Account account, UnsignedTransactionData unsigned) => [
+    'UR:QUANTUS-SIGN-REQUEST/${account.accountId}/${unsigned.payloadToSign.blockNumber}',
+  ];
+
+  /// What a cold wallet's signature frames decode to: by default a
+  /// signature with its public key of ML-DSA-87's length.
+  Uint8List signature = Uint8List(DilithiumScheme.mlDsa87.signatureWithPublicKeyBytes);
+
+  /// When set, decoding a signature's frames fails with it.
+  Object? signatureDecodeError;
+
+  /// Every transfer a cold wallet signed that was handed over: the account
+  /// it left, who is paid, how much, its fee, the transaction signed and the
+  /// signature.
+  final signedTransfers =
+      <
+        ({
+          String from,
+          String recipient,
+          BigInt amount,
+          BigInt fee,
+          UnsignedTransactionData unsigned,
+          Uint8List signature,
+        })
+      >[];
+
+  /// When set, handing a signed transfer over waits for it.
+  Completer<void>? holdSignedSubmit;
+
+  /// Collects the frames of [fakeSignatureFrames] without Rust.
+  UrScanAccumulator signatureCollector() => UrScanAccumulator(
+    isAcceptable: (part) => part.startsWith('ur:quantus-signature/'),
+    isComplete: (parts) {
+      final total = urSequenceFor(parts.first)!.total;
+      return {for (final part in parts) urSequenceFor(part)!.index}.length == total;
+    },
+    decode: (_) => signatureDecodeError == null ? signature : throw signatureDecodeError!,
+    maxParts: 256,
+  );
+
   /// The transfers the indexer holds, by the hash of the transaction each was
   /// sent in.
   final indexedTransfers = <String, TransactionEvent>{};
+
+  /// When set, reading a transfer by its hash fails with this.
+  Object? transferLookupError;
+
+  /// The hashes of the transfers read, in order.
+  final transferLookups = <String>[];
+
+  /// The proposals the indexer holds as created, by the hash of the
+  /// transaction each was created in.
+  final indexedProposals = <String, MultisigProposalCreatedEvent>{};
+
+  /// When set, looking a proposal up by its hash fails with this.
+  Object? proposalLookupError;
+
+  /// When set, looking a proposal up by its hash waits for it.
+  Completer<void>? holdProposalLookup;
+
+  /// When set, a search of the indexer by transaction hash waits for it.
+  Completer<void>? holdHashSearch;
 
   /// What proposing a transfer costs the member who proposes, as the mocks
   /// drew it: the usual fee, half a token of deposit and a tenth for the
@@ -503,6 +733,26 @@ class FakeSendChain {
   /// Every proposal handed over: the multisig it is for, the member who
   /// signed it, and what it proposes.
   final proposals = <({String multisig, String signer, String recipient, BigInt amount, int expiryBlock})>[];
+
+  /// The call a proposal stores on chain, as reading it answers; it may
+  /// throw. A sample transfer unless told otherwise.
+  Future<List<int>> Function(int proposalId) proposalCall = (_) async => corpusCall('Balances.transfer_allow_death');
+
+  /// What pricing an approval, execution or cancellation answers; it may
+  /// throw.
+  Future<BigInt> Function() actionFee = () async => usualFee;
+
+  /// Every approval, execution or cancellation priced, in order: the action,
+  /// the account that signs it, and the call it was priced with.
+  final actionQuotes = <(String action, String signer, List<int>? callBytes)>[];
+
+  /// What handing an approval, execution or cancellation over answers, the
+  /// transaction's hash; it may throw.
+  Future<String> Function() submitAction = () async => '0xaction';
+
+  /// Every approval, execution or cancellation handed over: the action, the
+  /// account that signed it, its fee and the call it carried.
+  final actions = <(String action, String signer, BigInt? fee, List<int>? callBytes)>[];
 
   /// When the chain is said to reach any block.
   DateTime blockTime = DateTime(2026, 11, 20, 22, 14);
@@ -536,16 +786,64 @@ class FakeSendChain {
   /// When set, every read of history waits for it.
   Completer<void>? holdHistory;
 
+  /// The pages of history whose reads wait for their completer.
+  final holdHistoryPages = <int, Completer<void>>{};
+
   /// When set, a read of history fails with this.
   Object? historyError;
 
   /// The pages of history read, by their number, in order.
   final historyReads = <int>[];
 
+  /// What the indexer answers when asked for the multisigs an account signs
+  /// for, and how many times it was asked.
+  Future<List<MultisigAccount>> Function() discoverMultisigs = () async => const [];
+  int discoverReads = 0;
+
+  /// The address a new multisig of [signerCount] signers needing [threshold]
+  /// approvals gets at [nonce].
+  static String newMultisigAddress(int signerCount, int threshold, BigInt nonce) =>
+      'qzNew${signerCount}of$threshold#$nonce';
+
+  /// What working out a new multisig's address answers; it may throw.
+  Future<MultisigCreationParams> Function(List<String> signers, int threshold) resolveMultisig =
+      (signers, threshold) async => MultisigCreationParams(
+        nonce: BigInt.zero,
+        address: newMultisigAddress(signers.length, threshold, BigInt.zero),
+      );
+
+  /// The addresses set aside each time a new multisig's address was worked
+  /// out.
+  final reservedMultisigReads = <Set<String>>[];
+
+  /// The multisigs the indexer holds.
+  final indexedMultisigs = <String>{};
+
+  /// What handing a new multisig over answers; it may throw.
+  Future<Uint8List> Function() submitMultisig = () async => Uint8List.fromList(const [1, 2, 3]);
+
+  /// Every new multisig handed over.
+  final createdMultisigs = <({String creator, List<String> signers, int threshold, BigInt? nonce})>[];
+
   /// A multisig's open proposals, and its past ones, as the indexer gives
   /// them.
   List<MultisigProposal> openProposals = const [];
   List<MultisigProposal> pastProposals = const [];
+
+  /// When set, a read of open proposals waits for it.
+  Completer<void>? holdOpenProposals;
+
+  /// The proposals the chain stores, by id, as a check of one reads them.
+  final proposalsById = <int, MultisigProposal>{};
+
+  /// Executions the indexer has, by the hash they were sent in.
+  final indexedExecutions = <String, MultisigProposalExecutedEvent>{};
+
+  /// Approvals the indexer has, by the hash they were sent in.
+  final indexedApprovals = <String, MultisigProposalApprovedEvent>{};
+
+  /// Cancellations the indexer has, by the hash they were sent in.
+  final indexedCancellations = <String, MultisigProposalCancelledEvent>{};
 
   /// The multisigs whose open proposals were read, in order.
   final openProposalReads = <String>[];
@@ -554,6 +852,33 @@ class FakeSendChain {
   /// indexer gives it, and the accounts asked about each time.
   List<ReversibleTransferEvent> stillScheduled = const [];
   final stillScheduledReads = <List<String>>[];
+
+  /// What each account received, oldest first, as the indexer holds it.
+  final received = <String, List<TransactionEvent>>{};
+
+  /// The indexer now holds [event] as received by the account [accountId].
+  void receive(String accountId, TransactionEvent event) => received.putIfAbsent(accountId, () => []).add(event);
+
+  /// The accounts asked what they received, each time, in order.
+  final receivedReads = <List<String>>[];
+
+  /// When set, a read of what accounts received fails with this; and waits
+  /// for [holdReceived], when that is set.
+  Object? receivedError;
+  Completer<void>? holdReceived;
+
+  /// What happened to each multisig's proposals, oldest first, as the indexer
+  /// holds it.
+  final proposalActivity = <String, List<MultisigProposalActivity>>{};
+
+  /// The multisigs asked what happened to their proposals, each time, in
+  /// order.
+  final proposalActivityReads = <List<String>>[];
+
+  /// When set, a read of what happened to proposals fails with this; and
+  /// waits for [holdProposalActivity], when that is set.
+  Object? proposalActivityError;
+  Completer<void>? holdProposalActivity;
 
   /// When set, a read of past proposals waits for it; and fails with
   /// [pastProposalsError], when that is set.
@@ -569,6 +894,8 @@ class FakeSendChain {
     if (substrate) substrateServiceProvider.overrideWithValue(_FakeSubstrateService(this)),
     balancesServiceProvider.overrideWithValue(_FakeBalancesService(this)),
     transactionSubmissionServiceProvider.overrideWithValue(_FakeTransactionSubmissionService(this)),
+    keystoneSignRequestFramesProvider.overrideWithValue(requestFrames),
+    signatureCollectorFactoryProvider.overrideWithValue(signatureCollector),
     recentAddressesServiceProvider.overrideWithValue(_FakeRecentAddressesService(this)),
     multisigServiceProvider.overrideWithValue(_FakeMultisigService(this)),
     chainHistoryServiceProvider.overrideWithValue(_FakeChainHistoryService(this)),
@@ -581,6 +908,78 @@ class _FakeMultisigService extends Fake implements MultisigService {
   _FakeMultisigService(this.chain);
 
   final FakeSendChain chain;
+
+  /// A cursor counts, under every kind, how many of the multisig's records
+  /// were read.
+  @override
+  Future<Map<String, MultisigProposalActivitySince>> fetchProposalActivitySince(
+    List<MultisigAccount> multisigs,
+    Map<String, MultisigProposalActivityCursor> cursors,
+  ) async {
+    chain.proposalActivityReads.add([for (final msig in multisigs) msig.accountId]);
+    await chain.holdProposalActivity?.future;
+    if (chain.proposalActivityError case final error?) throw error;
+    return {
+      for (final msig in multisigs)
+        msig.accountId: MultisigProposalActivitySince(
+          activity: switch (cursors[msig.accountId]) {
+            null => const [],
+            final cursor => [...?chain.proposalActivity[msig.accountId]?.skip(int.parse(cursor.values.first.id))],
+          },
+          cursor: {
+            for (final kind in MultisigProposalActivityKind.values)
+              kind: AccountEventCursor(timestamp: '', id: '${chain.proposalActivity[msig.accountId]?.length ?? 0}'),
+          },
+        ),
+    };
+  }
+
+  @override
+  Future<List<MultisigAccount>> discoverForUser(List<String> myAccountIds) {
+    chain.discoverReads++;
+    return chain.discoverMultisigs();
+  }
+
+  @override
+  Future<MultisigCreationParams> resolveMultisigCreationParams({
+    required List<String> signers,
+    required int threshold,
+    Set<String> reservedAddresses = const {},
+    BigInt? startNonce,
+    Future<bool> Function(String address)? isAddressTaken,
+    Future<String> Function({required List<String> signers, required int threshold, required BigInt nonce})?
+    predictAddress,
+    int maxAttempts = 64,
+  }) {
+    chain.reservedMultisigReads.add(reservedAddresses);
+    return chain.resolveMultisig(signers, threshold);
+  }
+
+  @override
+  Future<String> predictMultisigAddress({required List<String> signers, required int threshold, BigInt? nonce}) async =>
+      FakeSendChain.newMultisigAddress(signers.length, threshold, nonce ?? BigInt.zero);
+
+  @override
+  Future<bool> isMultisigIndexed(String address) async => chain.indexedMultisigs.contains(address);
+
+  @override
+  Multisig buildCreateMultisigCall({required List<String> signers, required int threshold, required BigInt nonce}) {
+    final call = const multisig_pallet.Txs().createMultisig(signers: const [], threshold: threshold, nonce: nonce);
+    chain._calls[call] = (recipient: 'a new multisig', amount: null);
+    return call;
+  }
+
+  @override
+  Future<Uint8List> submitCreateMultisigExtrinsic({
+    required Account creator,
+    required List<String> signers,
+    required int threshold,
+    BigInt? nonce,
+  }) async {
+    final hash = await chain.submitMultisig();
+    chain.createdMultisigs.add((creator: creator.accountId, signers: signers, threshold: threshold, nonce: nonce));
+    return hash;
+  }
 
   @override
   Future<ProposeFeeBreakdown> estimateProposeFeeBreakdown({
@@ -600,11 +999,44 @@ class _FakeMultisigService extends Fake implements MultisigService {
   }
 
   @override
+  Future<List<int>> fetchProposalCallBytes({required MultisigAccount msig, required int proposalId}) =>
+      chain.proposalCall(proposalId);
+
+  Future<BigInt> _actionFee(String action, Account signer, List<int>? callBytes) {
+    chain.actionQuotes.add((action, signer.accountId, callBytes));
+    return chain.actionFee();
+  }
+
+  @override
+  Future<BigInt> estimateApproveFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    List<int>? callBytes,
+  }) => _actionFee('approve', signer, callBytes);
+
+  @override
+  Future<BigInt> estimateExecuteFee({
+    required MultisigAccount msig,
+    required Account signer,
+    required int proposalId,
+    List<int>? callBytes,
+  }) => _actionFee('execute', signer, callBytes);
+
+  @override
+  Future<BigInt> estimateCancelFee({required MultisigAccount msig, required Account signer, required int proposalId}) =>
+      _actionFee('cancel', signer, null);
+
+  @override
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
+
+  @override
+  Future<MultisigProposal?> getProposal(MultisigAccount msig, int id) async => chain.proposalsById[id];
 
   @override
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
     chain.openProposalReads.add(msig.accountId);
+    await chain.holdOpenProposals?.future;
     return chain.openProposals;
   }
 
@@ -624,8 +1056,31 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   final FakeSendChain chain;
 
   @override
-  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async =>
-      chain.indexedTransfers[extrinsicHash];
+  Future<MultisigProposalExecutedEvent?> searchExecutedByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedExecutions[extrinsicHash];
+
+  @override
+  Future<MultisigProposalApprovedEvent?> searchSignerApprovedByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedApprovals[extrinsicHash];
+
+  @override
+  Future<MultisigProposalCancelledEvent?> searchCancelledByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedCancellations[extrinsicHash];
+
+  @override
+  Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {
+    await chain.holdHashSearch?.future;
+    chain.transferLookups.add(extrinsicHash);
+    if (chain.transferLookupError case final error?) throw error;
+    return chain.indexedTransfers[extrinsicHash];
+  }
+
+  @override
+  Future<MultisigProposalCreatedEvent?> searchProposalCreatedByExtrinsicHash({required String extrinsicHash}) async {
+    await chain.holdProposalLookup?.future;
+    if (chain.proposalLookupError case final error?) throw error;
+    return chain.indexedProposals[extrinsicHash];
+  }
 
   @override
   Future<SortedTransactionsList> fetchAllTransactionTypes({
@@ -638,6 +1093,7 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
     final page = otherAfter == null ? 0 : int.parse(otherAfter.id);
     chain.historyReads.add(page);
     await chain.holdHistory?.future;
+    await chain.holdHistoryPages[page]?.future;
     if (chain.historyError case final error?) throw error;
     if (chain.failingHistoryPages.contains(page)) throw StateError('page $page could not be read');
     final pages = chain.historyPages;
@@ -657,6 +1113,21 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   Future<List<ReversibleTransferEvent>> fetchStillScheduledTransfers({required List<String> accountIds}) async {
     chain.stillScheduledReads.add(accountIds);
     return chain.stillScheduled;
+  }
+
+  /// A cursor counts how many of the account's rows were read.
+  @override
+  Future<Map<String, IncomingSince>> fetchIncomingSince(Map<String, AccountEventCursor?> after) async {
+    chain.receivedReads.add(after.keys.toList());
+    await chain.holdReceived?.future;
+    if (chain.receivedError case final error?) throw error;
+    return {
+      for (final MapEntry(key: account, value: cursor) in after.entries)
+        account: IncomingSince(
+          received: cursor == null ? const [] : [...?chain.received[account]?.skip(int.parse(cursor.id))],
+          cursor: AccountEventCursor(timestamp: '', id: '${chain.received[account]?.length ?? 0}'),
+        ),
+    };
   }
 }
 
@@ -705,6 +1176,29 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
   }
 
   @override
+  Future<String> submitExternallySignedTransfer({
+    required Account account,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+    required int blockHeight,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) async {
+    await chain.holdSignedSubmit?.future;
+    final hash = await chain.submit();
+    chain.signedTransfers.add((
+      from: account.accountId,
+      recipient: targetAddress,
+      amount: amount,
+      fee: fee,
+      unsigned: unsignedData,
+      signature: signatureWithPublicKey,
+    ));
+    return hash;
+  }
+
+  @override
   Future<String> proposeTransfer({
     required MultisigAccount msig,
     required Account signer,
@@ -723,6 +1217,38 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
     ));
     return hash;
   }
+
+  Future<String> _action(String action, Account signer, BigInt? fee, List<int>? callBytes) async {
+    final hash = await chain.submitAction();
+    chain.actions.add((action, signer.accountId, fee, callBytes));
+    return hash;
+  }
+
+  @override
+  Future<String> approveProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    List<int>? callBytes,
+    BigInt? fee,
+  }) => _action('approve', signer, fee, callBytes);
+
+  @override
+  Future<String> executeProposal({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    List<int>? callBytes,
+    BigInt? fee,
+  }) => _action('execute', signer, fee, callBytes);
+
+  @override
+  Future<String> cancelProposal({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    BigInt? fee,
+  }) => _action('cancel', proposer, fee, null);
 }
 
 class _FakeRecentAddressesService extends Fake implements RecentAddressesService {
@@ -771,8 +1297,14 @@ class FakeWalletDevice {
   /// The chain as Send reaches it.
   final chain = FakeSendChain();
 
+  /// 1Click as a followed swap asks it.
+  final swaps = FakeSwapService();
+
   /// What every transparent account holds.
   BigInt balance = oneToken;
+
+  /// What the app is told it may offer.
+  RemoteConfigModel remoteConfig = RemoteConfigModel.defaults;
 
   /// The deposits, in tokens, an Encrypted account can spend, and the tokens
   /// of change still on their way back to it. With no deposits it holds one
@@ -813,22 +1345,30 @@ class FakeWalletDevice {
 
   List<Override> get overrides => [
     settingsServiceProvider.overrideWithValue(storage),
+    swapServiceProvider.overrideWithValue(swaps),
+    // No logo is fetched: the marks are their letters.
+    swapTokenIconServiceProvider.overrideWithValue(FakeSwapTokenIcons()),
     accountsServiceProvider.overrideWithValue(_StoredAccountsService(storage)),
     hdWalletServiceProvider.overrideWithValue(_FakeHdWalletService()),
     substrateServiceProvider.overrideWithValue(_FakeSubstrateService(chain, device: this)),
     ...chain.overrides(substrate: false),
     accountDiscoveryServiceProvider.overrideWithValue(_FakeAccountDiscoveryService(this)),
     if (!realLogout) logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
-    remoteConfigProvider.overrideWith(
-      (ref) => RemoteConfigNotifier(FakeRemoteConfigService(RemoteConfigModel.defaults)),
-    ),
+    remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(FakeRemoteConfigService(remoteConfig))),
     balanceProviderFamily.overrideWith((ref, accountId) => balance),
     encryptedBalanceProvider.overrideWith(
       (ref, walletIndex) =>
           AsyncValue.data(encryptedDeposits.isEmpty ? oneToken : _encryptedState(walletIndex).balance),
     ),
-    encryptedStateProvider.overrideWith((ref, walletIndex) => _encryptedState(walletIndex)),
+    encryptedStateProvider.overrideWith((ref, walletIndex) {
+      final held = holdEncryptedState;
+      if (held == null) return _encryptedState(walletIndex);
+      return held.future.then((_) => _encryptedState(walletIndex));
+    }),
   ];
+
+  /// When set, reading an Encrypted account waits for it.
+  Completer<void>? holdEncryptedState;
 
   EncryptedAccountState _encryptedState(int walletIndex) => EncryptedAccountState(
     accountId: 'qzEncrypted$walletIndex',
@@ -1011,17 +1551,27 @@ class FakeRemoteConfigService extends RemoteConfigService {
 
   final RemoteConfigModel config;
 
+  /// What the server answers when asked; nothing new until a test says so.
+  RemoteConfigModel? remote;
+
+  /// How often the server was asked.
+  int reads = 0;
+
   @override
   RemoteConfigModel readLocalConfig() => config;
 
   @override
-  Future<RemoteConfigModel?> readRemoteConfig() async => null;
+  Future<RemoteConfigModel?> readRemoteConfig() async {
+    reads++;
+    return remote;
+  }
 
   @override
   Future<void> cacheConfig(Object json) async {}
 }
 
-const _swapsNotOffered = RemoteConfigModel(
+/// The flags where swaps are not allowed.
+const swapsNotOffered = RemoteConfigModel(
   enableTestButtons: false,
   enableKeystoneHardwareWallet: true,
   enableHighSecurity: false,
@@ -1037,7 +1587,9 @@ const _swapsNotOffered = RemoteConfigModel(
 /// A balance missing from [balances] or [encryptedBalances] fails to load.
 /// [loadAccounts] and [balanceOf] replace the plain lists for tests that need
 /// a load to hang or fail. The system's approval is [approval], or one that
-/// approves; Send reaches the chain through [chain].
+/// approves; Send reaches the chain through [chain]. Where swaps are allowed
+/// is read from [remoteConfig], or as [swapAvailable] says. 1Click is [swaps],
+/// or what [swapsOf] builds, for a test that has the service rebuilt.
 List<Override> shellOverrides({
   List<Account> accounts = const [],
   Future<List<Account>> Function()? loadAccounts,
@@ -1053,8 +1605,18 @@ List<Override> shellOverrides({
   Set<String> ownEncryptedAddresses = const {},
   FakeOneClickService? oneClick,
   FakeEncryptedSendController? proving,
+  FakeSwapService? swaps,
+  FakeSwapService Function(Ref ref)? swapsOf,
+  FakeRemoteConfigService? remoteConfig,
+  Completer<void>? Function()? holdEncryptedState,
 }) {
   return [
+    if (swapsOf != null)
+      swapServiceProvider.overrideWith(swapsOf)
+    else
+      swapServiceProvider.overrideWithValue(swaps ?? FakeSwapService()),
+    // No logo is fetched: the marks are their letters.
+    swapTokenIconServiceProvider.overrideWithValue(FakeSwapTokenIcons()),
     systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
     ...(chain ?? FakeSendChain()).overrides(),
     if (depositAddress != null || encryptedStates.isNotEmpty)
@@ -1075,13 +1637,19 @@ List<Override> shellOverrides({
         return state;
       })
     else
-      // Read for the Encrypted account's activity: it has none.
-      encryptedStateProvider.overrideWith((ref, walletIndex) => emptyEncryptedState(walletIndex)),
+      // Read for the Encrypted account's activity: it has none. A read waits
+      // for what [holdEncryptedState] answers at the time, when it is set.
+      encryptedStateProvider.overrideWith((ref, walletIndex) {
+        final held = holdEncryptedState?.call();
+        if (held == null) return emptyEncryptedState(walletIndex);
+        return held.future.then((_) => emptyEncryptedState(walletIndex));
+      }),
     settingsServiceProvider.overrideWithValue(settings ?? FakeSettingsService()),
     accountsServiceProvider.overrideWithValue(FakeAccountsService(loadAccounts ?? () async => accounts)),
     remoteConfigProvider.overrideWith(
-      (ref) =>
-          RemoteConfigNotifier(FakeRemoteConfigService(swapAvailable ? RemoteConfigModel.defaults : _swapsNotOffered)),
+      (ref) => RemoteConfigNotifier(
+        remoteConfig ?? FakeRemoteConfigService(swapAvailable ? RemoteConfigModel.defaults : swapsNotOffered),
+      ),
     ),
     balanceProviderFamily.overrideWith((ref, accountId) {
       if (balanceOf != null) return balanceOf(accountId);
@@ -1097,6 +1665,282 @@ List<Override> shellOverrides({
       return AsyncValue.data(balance);
     }),
   ];
+}
+
+/// 1Click as far as the app asks it: what it lists, what a swap would cost,
+/// a live order for one, and how a followed swap is doing.
+class FakeSwapService extends Fake implements SwapService {
+  /// What the next status poll answers for the order it is asked about; it
+  /// may throw. The order as it stands until a test says otherwise.
+  Future<SwapOrder> Function(SwapOrder order) status = (order) async => order;
+
+  /// How often the status was asked for.
+  int polls = 0;
+
+  @override
+  Future<SwapOrder> getSwapStatus(SwapOrder order) {
+    polls++;
+    return status(order);
+  }
+
+  /// What 1Click lists, QTC first; listing may throw.
+  Future<List<SwapToken>> Function() tokens = () async => const [
+    listedQtc,
+    usdcOnArbitrum,
+    usdcOnEthereum,
+    usdtOnEthereum,
+    wNear,
+  ];
+
+  /// QTC as 1Click lists it; null while it does not, or lists it unpriced.
+  SwapToken? listedQuantus = listedQtc;
+
+  /// How often the listing was asked for, and how often afresh.
+  int tokenLoads = 0;
+  int freshTokenLoads = 0;
+
+  @override
+  Future<List<SwapToken>> getFromTokens({bool forceRefresh = false}) {
+    tokenLoads++;
+    if (forceRefresh) freshTokenLoads++;
+    return tokens();
+  }
+
+  @override
+  Future<SwapToken?> getListedQuantusToken() async => listedQuantus;
+
+  /// What a dry quote answers for the swap asked about; it may throw. One at
+  /// listed prices, with nothing taken, until a test says otherwise.
+  Future<SwapQuote> Function(SwapQuoteRequest request) quote = (request) async => fakeQuoteFor(request);
+
+  /// Every swap a dry quote was asked for, in order.
+  final quoteRequests = <SwapQuoteRequest>[];
+
+  @override
+  Future<SwapQuote> getQuote({
+    required SwapToken from,
+    required SwapToken to,
+    required BigInt amount,
+    required String refundAddress,
+    required String recipient,
+    SwapType swapType = SwapType.exactInput,
+    int slippageBps = SwapService.defaultSlippageBps,
+    bool dry = true,
+  }) {
+    final request = (
+      from: from,
+      to: to,
+      amount: amount,
+      swapType: swapType,
+      refundAddress: refundAddress,
+      recipient: recipient,
+      slippageBps: slippageBps,
+    );
+    quoteRequests.add(request);
+    return quote(request);
+  }
+
+  /// What taking a live order for a reviewed quote answers; it may throw.
+  /// The quote as reviewed, awaiting its deposit, until a test says otherwise.
+  Future<SwapOrder> Function(SwapQuote reviewed) create = (reviewed) async =>
+      SwapOrder(quote: reviewed, status: SwapStatus.pendingDeposit);
+
+  /// Every quote a live order was taken for, in order.
+  final created = <SwapQuote>[];
+
+  @override
+  Future<SwapOrder> createSwap(SwapQuote quote) {
+    created.add(quote);
+    return create(quote);
+  }
+
+  /// The addresses saved for each network, most recent first.
+  final saved = <String, List<String>>{};
+
+  /// When set, reading the saved addresses, saving one or removing one fails
+  /// with it.
+  Object? savedReadError;
+  Object? saveError;
+  Object? removeError;
+
+  @override
+  Future<List<String>> getSavedAddresses(String network) async {
+    if (savedReadError case final error?) throw error;
+    return [...?saved[network]];
+  }
+
+  @override
+  Future<void> saveAddress(String network, String address) async {
+    if (saveError case final error?) throw error;
+    saved[network] = [address, ...?saved[network]?.where((a) => a != address)];
+  }
+
+  /// When set, a removal waits for it before it answers.
+  Completer<void>? removeHold;
+
+  @override
+  Future<void> removeSavedAddress(String network, String address) async {
+    await removeHold?.future;
+    if (removeError case final error?) throw error;
+    saved[network] = [...?saved[network]?.where((a) => a != address)];
+  }
+
+  /// Every deposit 1Click was told of: the order and the transaction's hash.
+  final deposits = <({SwapOrder order, String hash})>[];
+
+  @override
+  Future<void> submitDeposit(SwapOrder order, String txHash) async => deposits.add((order: order, hash: txHash));
+}
+
+/// Where 1Click takes the QTC of a swap out of it: an address on Quantus.
+const swapQuantusDepositAddress = 'qzSwapDeposit';
+
+/// A dry quote for [request] at listed prices, nothing taken by fees: its
+/// deposit goes within twenty minutes to [swapQuantusDepositAddress] when QTC
+/// is paid, else to [swapDepositAddress] on the other chain.
+SwapQuote fakeQuoteFor(SwapQuoteRequest request, {BigInt? withdrawFee, int feeBps = 0, DateTime? deadline}) {
+  final exactOutput = request.swapType == SwapType.exactOutput;
+  final amountIn = exactOutput ? swapEstimateOut(request.amount, request.to, request.from) : request.amount;
+  final amountOut = exactOutput ? request.amount : swapEstimateOut(request.amount, request.from, request.to);
+  final kept = BigInt.from(10000 - request.slippageBps);
+  final all = BigInt.from(10000);
+  return SwapQuote(
+    fromToken: request.from,
+    toToken: request.to,
+    swapType: request.swapType,
+    amountIn: exactOutput ? amountIn * all ~/ kept : amountIn,
+    minAmountIn: amountIn,
+    amountOut: amountOut,
+    minAmountOut: exactOutput ? amountOut : amountOut * kept ~/ all,
+    amountInUsd: swapUsdValue(amountIn, request.from),
+    amountOutUsd: swapUsdValue(amountOut, request.to),
+    slippageBps: request.slippageBps,
+    refundAddress: request.refundAddress,
+    recipient: request.recipient,
+    deadline: deadline ?? clock.now().add(const Duration(minutes: 20)),
+    timeEstimate: const Duration(minutes: 3),
+    correlationId: 'c',
+    signature: 's',
+    depositAddress: request.from.isQuantus ? swapQuantusDepositAddress : swapDepositAddress,
+    withdrawFee: withdrawFee,
+    feeBps: feeBps,
+  );
+}
+
+/// Token and chain logos that are never there, so nothing is fetched.
+class FakeSwapTokenIcons extends Fake implements SwapTokenIconService {
+  @override
+  Future<SwapTokenIcon?> iconFor(SwapToken token) async => null;
+
+  @override
+  Future<SwapTokenIcon?> imageAt(String url) async => null;
+}
+
+const usdcOnArbitrum = SwapToken(
+  assetId: 'nep141:arb-usdc.omft.near',
+  symbol: 'USDC',
+  network: 'ARB',
+  decimals: 6,
+  usdPrice: 1,
+);
+const usdcOnEthereum = SwapToken(
+  assetId: 'nep141:eth-usdc.omft.near',
+  symbol: 'USDC',
+  network: 'ETH',
+  decimals: 6,
+  usdPrice: 1,
+);
+const usdtOnEthereum = SwapToken(
+  assetId: 'nep141:eth-usdt.omft.near',
+  symbol: 'USDT',
+  network: 'ETH',
+  decimals: 6,
+  usdPrice: 1,
+);
+const wNear = SwapToken(assetId: 'nep141:wrap.near', symbol: 'wNEAR', network: 'NEAR', decimals: 24, usdPrice: 2.5);
+const listedQtc = SwapToken(
+  assetId: 'nep141:qtc.omft.near',
+  symbol: 'QTC',
+  network: SwapToken.quantusNetwork,
+  decimals: AppConstants.decimals,
+  usdPrice: 0.4188,
+  isQuantus: true,
+);
+const swapRecipient = '0x3EC8b9CD4a7e21F05c6D8B93aE7f12C4d6A1509f';
+const swapDepositAddress = '0x8F41c2B7e9A05d36C1f4E8a27B90d5C3e6F7A214';
+const swapDepositTx = '0x7f3c9a1e5b2d48c6a0f19e3b7d5c2a8e4f6b1d9c3a7e5f2b8d4c6a1e9f3b7d50';
+
+/// A live quote: 250 QTC out of [account] for 104.37 USDC on Arbitrum at
+/// [swapRecipient], or, the other way, 100 USDC from outside for 236.9 QTC
+/// into it, refunded at [swapRecipient]. Its deposit goes to
+/// [depositAddress] by [deadline], twenty minutes from now unless said.
+SwapQuote fakeSwapQuote({
+  bool swapOut = true,
+  Account account = mainAccount,
+  DateTime? deadline,
+  String depositAddress = swapDepositAddress,
+  String? depositMemo,
+}) => SwapQuote(
+  fromToken: swapOut ? listedQtc : usdcOnArbitrum,
+  toToken: swapOut ? usdcOnArbitrum : listedQtc,
+  amountIn: swapOut ? oneToken * BigInt.from(250) : BigInt.from(100000000),
+  minAmountIn: swapOut ? oneToken * BigInt.from(250) : BigInt.from(100000000),
+  amountOut: swapOut ? BigInt.from(104370000) : oneToken * BigInt.from(2369) ~/ BigInt.from(10),
+  minAmountOut: swapOut ? BigInt.from(103330000) : oneToken * BigInt.from(2345) ~/ BigInt.from(10),
+  amountInUsd: 104.7,
+  amountOutUsd: 104.37,
+  slippageBps: 100,
+  refundAddress: swapOut ? account.accountId : swapRecipient,
+  recipient: swapOut ? swapRecipient : account.accountId,
+  deadline: deadline ?? clock.now().add(const Duration(minutes: 20)),
+  timeEstimate: const Duration(minutes: 3),
+  correlationId: 'c',
+  signature: 's',
+  depositAddress: depositAddress,
+  depositMemo: depositMemo,
+);
+
+/// A swap as it is followed, started [age] ago from [account]: the app sent
+/// a swap out's deposit, a swap in waits for one made by hand, [depositSent]
+/// once that was marked sent. Swaps followed together each need a
+/// [depositAddress] of their own: it is what tells them apart.
+ActiveSwap fakeActiveSwap({
+  bool swapOut = true,
+  SwapStatus status = SwapStatus.knownDepositTx,
+  Account account = mainAccount,
+  Duration age = const Duration(minutes: 3, seconds: 7),
+  DateTime? deadline,
+  String depositAddress = swapDepositAddress,
+  String? depositMemo,
+  bool depositSent = false,
+  BigInt? amountOut,
+  String? refundReason,
+  String? pollError,
+}) {
+  final now = clock.now();
+  return ActiveSwap(
+    order: SwapOrder(
+      quote: fakeSwapQuote(
+        swapOut: swapOut,
+        account: account,
+        deadline: deadline,
+        depositAddress: depositAddress,
+        depositMemo: depositMemo,
+      ),
+      status: status,
+      amountOut: amountOut,
+      refundReason: refundReason,
+    ),
+    accountId: account.accountId,
+    accountName: account.name,
+    startedAt: now.subtract(age),
+    settledAt: status.isFinal ? now : null,
+    depositByHand: !swapOut,
+    depositSent: depositSent,
+    depositTxHash: swapOut ? swapDepositTx : null,
+    depositFee: swapOut ? FakeSendChain.usualFee : null,
+    pollError: pollError,
+  );
 }
 
 /// Looks checkphrases up with [lookup] for the rest of the test, in place
@@ -1246,6 +2090,7 @@ Future<void> pumpShell(
   bool realPolling = false,
   FakeNetwork? network,
   FakeNotificationPlugin? notifications,
+  FakeBackgroundWindow? backgroundWindow,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -1265,6 +2110,10 @@ Future<void> pumpShell(
         loginPasswordProvider.overrideWithValue(loginPassword ?? FakeLoginPassword()),
         ...liveDataOverrides(polling: polling, network: network, realPolling: realPolling),
         notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
+        // Never the Mac's own push service: a build not signed to receive
+        // pushes, which registers nothing.
+        macPushProvider.overrideWithValue(FakeMacPush(environmentOfBuild: null)),
+        backgroundWindowProvider.overrideWithValue(backgroundWindow ?? FakeBackgroundWindow()),
       ],
     ),
   );
@@ -1340,3 +2189,11 @@ EncryptedAccountState emptyEncryptedState(int walletIndex) => EncryptedAccountSt
   nextIndex: 0,
   nextChangeIndex: 0,
 );
+
+/// The bytes of a real runtime call from quantus_sdk's sample calls, by its
+/// name there (e.g. `ReversibleTransfers.set_high_security`), as a
+/// proposal's `callRaw` carries them.
+Uint8List corpusCall(String name) {
+  final hex = callCorpus[name] ?? (throw ArgumentError.value(name, 'name', 'not a sample call'));
+  return Uint8List.fromList([for (var i = 0; i < hex.length; i += 2) int.parse(hex.substring(i, i + 2), radix: 16)]);
+}

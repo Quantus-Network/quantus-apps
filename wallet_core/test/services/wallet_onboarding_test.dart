@@ -233,5 +233,84 @@ void main() {
       expect(bed.pushRegistration.registeredAddresses, [root.accountId]);
       expect(bed.pushRegistration.deviceRegistrations, 0);
     });
+
+    group('a phrase already in a wallet', () {
+      Future<void> expectRefused(WidgetTester tester, WalletTestBed bed, String mnemonic) async {
+        final accountsBefore = List.of(bed.settings.accounts);
+        final mnemonicsBefore = Map.of(bed.settings.mnemonics);
+        final ref = await pumpRef(tester, overrides: bed.overrides);
+
+        await expectLater(
+          importSoftwareWallet(ref, mnemonic: mnemonic, walletIndex: 1, onScanFailed: _neverAsked),
+          throwsA(
+            isA<InvalidRecoveryPhraseException>().having(
+              (e) => e.message,
+              'message',
+              'This wallet is already in the app',
+            ),
+          ),
+        );
+
+        expect(bed.settings.mnemonics, mnemonicsBefore);
+        expect(bed.settings.accounts, accountsBefore);
+        expect(bed.settings.pendingScans, isEmpty);
+        expect(bed.discovery.calls, 0);
+      }
+
+      testWidgets('is refused with a clear message, and nothing is stored', (tester) async {
+        final bed = WalletTestBed();
+        bed.settings.mnemonics[0] = _twelveWords;
+        await bed.settings.addAccount(_found(0));
+
+        await expectRefused(tester, bed, _twelveWords);
+      });
+
+      testWidgets('is still refused once that wallet\'s first account was disconnected', (tester) async {
+        final bed = WalletTestBed();
+        bed.settings.mnemonics[0] = _twelveWords;
+        await bed.settings.addAccount(_found(1));
+
+        await expectRefused(tester, bed, _twelveWords);
+      });
+
+      testWidgets('counts as the same with extra spaces', (tester) async {
+        final bed = WalletTestBed();
+        bed.settings.mnemonics[0] = _twelveWords;
+        await bed.settings.addAccount(_found(0));
+
+        await expectRefused(tester, bed, '  ${_twelveWords.replaceAll(' ', '   ')}\n');
+      });
+    });
+
+    group('when saving the first account fails', () {
+      testWidgets('leaves no phrase and no pending scan behind', (tester) async {
+        final bed = WalletTestBed();
+        bed.settings.addAccountError = StateError('disk full');
+        final ref = await pumpRef(tester, overrides: bed.overrides);
+
+        await expectLater(
+          importSoftwareWallet(ref, mnemonic: _twelveWords, walletIndex: 0, onScanFailed: _neverAsked),
+          throwsStateError,
+        );
+
+        expect(bed.settings.mnemonics, isEmpty);
+        expect(bed.settings.pendingScans, isEmpty);
+      });
+
+      testWidgets('puts back a phrase the slot already held', (tester) async {
+        final bed = WalletTestBed();
+        bed.settings.mnemonics[1] = _twentyFourWords;
+        bed.settings.addAccountError = StateError('disk full');
+        final ref = await pumpRef(tester, overrides: bed.overrides);
+
+        await expectLater(
+          importSoftwareWallet(ref, mnemonic: _twelveWords, walletIndex: 1, onScanFailed: _neverAsked),
+          throwsStateError,
+        );
+
+        expect(bed.settings.mnemonics, {1: _twentyFourWords});
+        expect(bed.settings.pendingScans, isEmpty);
+      });
+    });
   });
 }

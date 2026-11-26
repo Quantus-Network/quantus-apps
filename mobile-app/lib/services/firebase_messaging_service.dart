@@ -189,13 +189,8 @@ class FirebaseMessagingService implements PushRegistration {
   }
 
   /// Builds an in-app notification from a foreground FCM message and shows it.
-  Future<void> _showForegroundNotification(RemoteMessage message) async {
-    final notification = await _remoteMessageToNotificationData(message);
-    if (notification == null) return;
-
-    final notifier = _ref.read(notificationProvider.notifier);
-    notifier.addNotification(notification);
-  }
+  Future<void> _showForegroundNotification(RemoteMessage message) =>
+      addResolvedNotification(_ref.read, () => _remoteMessageToNotificationData(message));
 
   void _setupBackgroundMessageListener() {
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);

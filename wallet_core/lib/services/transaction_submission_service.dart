@@ -13,18 +13,22 @@ import 'package:wallet_core/providers/pending_multisig_cancellations_provider.da
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/multisig_approval_polling_service.dart';
 import 'package:wallet_core/services/multisig_cancellation_polling_service.dart';
 import 'package:wallet_core/services/multisig_execution_polling_service.dart';
 import 'package:wallet_core/services/multisig_proposal_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 class TransactionSubmissionService {
   final Ref _ref;
-  final PendingTransactionPollingService _poller;
 
-  TransactionSubmissionService(this._ref) : _poller = PendingTransactionPollingService(_ref);
+  TransactionSubmissionService(this._ref);
+
+  /// The shared poller, which a wallet reset stops.
+  PendingTransactionPollingService get _poller => _ref.read(pendingTransactionPollingServiceProvider);
 
   /// Signs first so the pending record carries the extrinsic's own block
   /// number (the poller's search floor), then broadcasts the signed bytes.
@@ -35,8 +39,11 @@ class TransactionSubmissionService {
     required BigInt amount,
     required BigInt fee,
   }) async {
-    final substrate = SubstrateService();
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
+    final substrate = _ref.read(substrateServiceProvider);
     final signed = await substrate.getExtrinsicPayload(account, call);
+    if (!session.isCurrent(ticket)) throw StateError('The wallet was reset while this transfer was being signed');
     final pendingTx = createPendingTransaction(
       from: account.accountId,
       to: targetAddress,
@@ -222,6 +229,8 @@ class TransactionSubmissionService {
       palletFee: feeBreakdown.creationFee,
     );
 
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     addPendingMultisigProposal(_ref, pending);
     _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
@@ -229,6 +238,13 @@ class TransactionSubmissionService {
       final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusPrint('[Propose] submitted: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would ever remove it.
+      if (!session.stillCurrent(ticket, dropping: 'tracking proposal $extrinsicHash')) {
+        removePendingMultisigProposal(_ref, pending.id);
+        return extrinsicHash;
+      }
 
       updatePendingMultisigProposal(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated = findPendingMultisigProposal(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
@@ -254,16 +270,21 @@ class TransactionSubmissionService {
   /// [callBytes] should be the bytes the confirmation sheet already read from
   /// chain storage, so the fee estimate and the submitted extrinsic cover the
   /// same call; omitting them makes the service fetch them itself.
-  Future<void> approveProposal({
+  ///
+  /// [fee] is the estimate the approver was shown: its row holds it back from
+  /// what the approver can spend until the approval is indexed.
+  Future<String> approveProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
+    BigInt? fee,
   }) async {
-    await _submitAndTrackApproval(
+    return _submitAndTrackApproval(
       msig: msig,
       proposal: proposal,
       approverId: signer.accountId,
+      fee: fee,
       telemetryEvent: 'multisig_approve',
       submit: () {
         final service = _ref.read(multisigServiceProvider);
@@ -284,13 +305,17 @@ class TransactionSubmissionService {
     required MultisigProposal proposal,
     required UnsignedTransactionData unsignedData,
     required Uint8List signatureWithPublicKey,
+    BigInt? fee,
   }) async {
     return _submitAndTrackApproval(
       msig: msig,
       proposal: proposal,
       approverId: signer.accountId,
+      fee: fee,
       telemetryEvent: 'multisig_approve_hardware',
-      submit: () => SubstrateService().submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
+      submit: () => _ref
+          .read(substrateServiceProvider)
+          .submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
     );
   }
 
@@ -298,15 +323,19 @@ class TransactionSubmissionService {
     required MultisigAccount msig,
     required MultisigProposal proposal,
     required String approverId,
+    required BigInt? fee,
     required String telemetryEvent,
     required Future<Uint8List> Function() submit,
   }) async {
-    final pending = PendingMultisigApprovalEvent.create(
-      multisigAddress: msig.accountId,
-      proposalId: proposal.id,
+    final pending = PendingMultisigApprovalEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
       approverId: approverId,
+      fee: fee,
     );
 
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     addPendingMultisigApproval(_ref, pending);
     _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
@@ -314,6 +343,13 @@ class TransactionSubmissionService {
       final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
       quantusPrint('[Approve] submitted: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would ever remove it.
+      if (!session.stillCurrent(ticket, dropping: 'tracking approval $extrinsicHash')) {
+        removePendingMultisigApproval(_ref, pending.id);
+        return extrinsicHash;
+      }
 
       updatePendingMultisigApproval(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated = findPendingMultisigApproval(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
@@ -331,53 +367,23 @@ class TransactionSubmissionService {
   /// Awaits acceptance of the extrinsic by the chain before completing;
   /// indexer polling then continues in the background. Rethrows on submission
   /// failure so callers can surface the error.
-  Future<void> executeProposal({
+  Future<String> executeProposal({
     required MultisigAccount msig,
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
     BigInt? fee,
   }) async {
-    final pending = PendingMultisigExecutionEvent.fromProposal(
+    return _submitAndTrackExecution(
       msig: msig,
       proposal: proposal,
       executorId: signer.accountId,
       fee: fee,
+      telemetryEvent: 'multisig_execute',
+      submit: () => _ref
+          .read(multisigServiceProvider)
+          .submitExecuteExtrinsic(msig: msig, signer: signer, proposalId: proposal.id, callBytes: callBytes),
     );
-
-    addPendingMultisigExecution(_ref, pending);
-
-    _ref.read(telemetryProvider).sendEvent('multisig_execute');
-
-    await _submitExecute(msig: msig, signer: signer, proposalId: proposal.id, callBytes: callBytes, pending: pending);
-  }
-
-  Future<void> _submitExecute({
-    required MultisigAccount msig,
-    required Account signer,
-    required int proposalId,
-    required PendingMultisigExecutionEvent pending,
-    List<int>? callBytes,
-  }) async {
-    try {
-      final service = _ref.read(multisigServiceProvider);
-      final hashBytes = await service.submitExecuteExtrinsic(
-        msig: msig,
-        signer: signer,
-        proposalId: proposalId,
-        callBytes: callBytes,
-      );
-      final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusPrint('[Execute] submitted: $extrinsicHash');
-
-      updatePendingMultisigExecution(_ref, pending.id, extrinsicHash: extrinsicHash);
-      final updated = findPendingMultisigExecution(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
-      _ref.read(multisigExecutionPollingServiceProvider).startPolling(msig, updated);
-    } catch (e, stackTrace) {
-      quantusPrint('[Execute] submit failed: $e\n$stackTrace');
-      removePendingMultisigExecution(_ref, pending.id);
-      rethrow;
-    }
   }
 
   /// Executes a proposal using a signature produced off-device (Keystone).
@@ -388,31 +394,57 @@ class TransactionSubmissionService {
     required UnsignedTransactionData unsignedData,
     required Uint8List signatureWithPublicKey,
     BigInt? fee,
-  }) async {
-    final pending = PendingMultisigExecutionEvent.fromProposal(
+  }) {
+    return _submitAndTrackExecution(
       msig: msig,
       proposal: proposal,
       executorId: signer.accountId,
       fee: fee,
+      telemetryEvent: 'multisig_execute_hardware',
+      submit: () => _ref
+          .read(substrateServiceProvider)
+          .submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
+    );
+  }
+
+  Future<String> _submitAndTrackExecution({
+    required MultisigAccount msig,
+    required MultisigProposal proposal,
+    required String executorId,
+    required BigInt? fee,
+    required String telemetryEvent,
+    required Future<Uint8List> Function() submit,
+  }) async {
+    final pending = PendingMultisigExecutionEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
+      executorId: executorId,
+      fee: fee,
     );
 
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     addPendingMultisigExecution(_ref, pending);
-    _ref.read(telemetryProvider).sendEvent('multisig_execute_hardware');
+    _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
     try {
-      final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
-        unsignedData,
-        signatureWithPublicKey,
-      );
+      final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusPrint('[Execute] hardware submitted: $extrinsicHash');
+      quantusPrint('[Execute] submitted: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would ever remove it.
+      if (!session.stillCurrent(ticket, dropping: 'tracking execution $extrinsicHash')) {
+        removePendingMultisigExecution(_ref, pending.id);
+        return extrinsicHash;
+      }
 
       updatePendingMultisigExecution(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated = findPendingMultisigExecution(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
       _ref.read(multisigExecutionPollingServiceProvider).startPolling(msig, updated);
       return extrinsicHash;
     } catch (e, stackTrace) {
-      quantusPrint('[Execute] hardware submit failed: $e\n$stackTrace');
+      quantusPrint('[Execute] submit failed: $e\n$stackTrace');
       removePendingMultisigExecution(_ref, pending.id);
       rethrow;
     }
@@ -423,47 +455,22 @@ class TransactionSubmissionService {
   /// Awaits acceptance of the extrinsic by the chain before completing;
   /// indexer polling then continues in the background. Rethrows on submission
   /// failure so callers can surface the error.
-  Future<void> cancelProposal({
+  Future<String> cancelProposal({
     required MultisigAccount msig,
     required Account proposer,
     required MultisigProposal proposal,
     BigInt? fee,
   }) async {
-    final pending = PendingMultisigCancellationEvent.fromProposal(
+    return _submitAndTrackCancellation(
       msig: msig,
       proposal: proposal,
       proposerId: proposer.accountId,
       fee: fee,
+      telemetryEvent: 'multisig_cancel',
+      submit: () => _ref
+          .read(multisigServiceProvider)
+          .submitCancelExtrinsic(msig: msig, signer: proposer, proposalId: proposal.id),
     );
-
-    addPendingMultisigCancellation(_ref, pending);
-
-    _ref.read(telemetryProvider).sendEvent('multisig_cancel');
-
-    await _submitCancel(msig: msig, proposer: proposer, proposalId: proposal.id, pending: pending);
-  }
-
-  Future<void> _submitCancel({
-    required MultisigAccount msig,
-    required Account proposer,
-    required int proposalId,
-    required PendingMultisigCancellationEvent pending,
-  }) async {
-    try {
-      final service = _ref.read(multisigServiceProvider);
-      final hashBytes = await service.submitCancelExtrinsic(msig: msig, signer: proposer, proposalId: proposalId);
-      final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusPrint('[Cancel] submitted: $extrinsicHash');
-
-      updatePendingMultisigCancellation(_ref, pending.id, extrinsicHash: extrinsicHash);
-      final updated =
-          findPendingMultisigCancellation(_ref, pending.id) ?? pending.copyWith(extrinsicHash: extrinsicHash);
-      _ref.read(multisigCancellationPollingServiceProvider).startPolling(msig, updated);
-    } catch (e, stackTrace) {
-      quantusPrint('[Cancel] submit failed: $e\n$stackTrace');
-      removePendingMultisigCancellation(_ref, pending.id);
-      rethrow;
-    }
   }
 
   /// Cancels a proposal using a signature produced off-device (Keystone).
@@ -474,24 +481,50 @@ class TransactionSubmissionService {
     required UnsignedTransactionData unsignedData,
     required Uint8List signatureWithPublicKey,
     BigInt? fee,
-  }) async {
-    final pending = PendingMultisigCancellationEvent.fromProposal(
+  }) {
+    return _submitAndTrackCancellation(
       msig: msig,
       proposal: proposal,
       proposerId: proposer.accountId,
       fee: fee,
+      telemetryEvent: 'multisig_cancel_hardware',
+      submit: () => _ref
+          .read(substrateServiceProvider)
+          .submitExtrinsicWithExternalSignature(unsignedData, signatureWithPublicKey),
+    );
+  }
+
+  Future<String> _submitAndTrackCancellation({
+    required MultisigAccount msig,
+    required MultisigProposal proposal,
+    required String proposerId,
+    required BigInt? fee,
+    required String telemetryEvent,
+    required Future<Uint8List> Function() submit,
+  }) async {
+    final pending = PendingMultisigCancellationEvent.fromProposal(
+      msig: msig,
+      proposal: proposal,
+      proposerId: proposerId,
+      fee: fee,
     );
 
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     addPendingMultisigCancellation(_ref, pending);
-    _ref.read(telemetryProvider).sendEvent('multisig_cancel_hardware');
+    _ref.read(telemetryProvider).sendEvent(telemetryEvent);
 
     try {
-      final hashBytes = await SubstrateService().submitExtrinsicWithExternalSignature(
-        unsignedData,
-        signatureWithPublicKey,
-      );
+      final hashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(hashBytes)}';
-      quantusPrint('[Cancel] hardware submitted: $extrinsicHash');
+      quantusPrint('[Cancel] submitted: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would ever remove it.
+      if (!session.stillCurrent(ticket, dropping: 'tracking cancellation $extrinsicHash')) {
+        removePendingMultisigCancellation(_ref, pending.id);
+        return extrinsicHash;
+      }
 
       updatePendingMultisigCancellation(_ref, pending.id, extrinsicHash: extrinsicHash);
       final updated =
@@ -499,7 +532,7 @@ class TransactionSubmissionService {
       _ref.read(multisigCancellationPollingServiceProvider).startPolling(msig, updated);
       return extrinsicHash;
     } catch (e, stackTrace) {
-      quantusPrint('[Cancel] hardware submit failed: $e\n$stackTrace');
+      quantusPrint('[Cancel] submit failed: $e\n$stackTrace');
       removePendingMultisigCancellation(_ref, pending.id);
       rethrow;
     }
@@ -542,12 +575,21 @@ class TransactionSubmissionService {
     Future<Uint8List> Function() submit,
     PendingTransactionEvent pendingTx,
   ) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     try {
       quantusPrint('Submitting transaction: ${pendingTx.id}');
 
       final extrinsicHashBytes = await submit();
       final extrinsicHash = '0x${hex.encode(extrinsicHashBytes)}';
       quantusPrint('submission hash: $extrinsicHash');
+
+      // It went out for a wallet a reset has wiped or is wiping. Its row goes
+      // too: after a wipe that failed, nothing else would remove it in time.
+      if (!session.stillCurrent(ticket, dropping: 'tracking send $extrinsicHash')) {
+        _ref.read(pendingTransactionsProvider.notifier).remove(pendingTx.id);
+        return extrinsicHash;
+      }
 
       _ref
           .read(pendingTransactionsProvider.notifier)
@@ -579,16 +621,7 @@ class TransactionSubmissionService {
       },
     );
   }
-
-  void dispose() => _poller.dispose();
 }
 
 // Provider for the service
-final transactionSubmissionServiceProvider = Provider<TransactionSubmissionService>((ref) {
-  final service = TransactionSubmissionService(ref);
-
-  // Clean up when provider is disposed
-  ref.onDispose(() => service.dispose());
-
-  return service;
-});
+final transactionSubmissionServiceProvider = Provider<TransactionSubmissionService>(TransactionSubmissionService.new);

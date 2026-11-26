@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
@@ -32,6 +34,9 @@ class TerminalLine extends StatelessWidget {
   /// What a busy line with no status says where nothing may turn.
   static const busyStill = '...';
 
+  /// The space between the name, its leaders and what stands at the end.
+  static const double _gap = 8;
+
   final String name;
   final String? status;
   final Color? statusColor;
@@ -55,25 +60,50 @@ class TerminalLine extends StatelessWidget {
       excludeSemantics: true,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 14),
-        child: Row(
-          children: [
-            Text('> ${name.toUpperCase()}', style: style),
-            const SizedBox(width: 8),
-            Expanded(
-              child: status == null && !isTurning
-                  ? const SizedBox.shrink()
-                  // Dot leaders up to the status, as many as fit.
-                  : Text(
-                      '.' * 200,
-                      maxLines: 1,
-                      softWrap: false,
-                      overflow: TextOverflow.clip,
-                      style: style.copyWith(color: colors.textMuted2.useOpacity(0.5)),
-                    ),
-            ),
-            if (status != null) ...[const SizedBox(width: 8), Text(status, style: statusStyle)],
-            if (isTurning) ...[const SizedBox(width: 8), TerminalSpinner(style: statusStyle)],
-          ],
+        // The name gives way to what stands at the line's end: too long for
+        // the room that leaves, it is cut short.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final ends = [?status, if (isTurning) busyFaces.first];
+            final painter = TextPainter(
+              text: TextSpan(text: ends.join(), style: statusStyle),
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context),
+            )..layout();
+            // Each end is set off by a gap, as the leaders are from the name.
+            final room = constraints.maxWidth - painter.width - _gap * (ends.length + 1);
+            painter.dispose();
+
+            return Row(
+              children: [
+                ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: math.max(0, room)),
+                  child: Text(
+                    '> ${name.toUpperCase()}',
+                    maxLines: 1,
+                    softWrap: false,
+                    overflow: TextOverflow.ellipsis,
+                    style: style,
+                  ),
+                ),
+                const SizedBox(width: _gap),
+                Expanded(
+                  child: status == null && !isTurning
+                      ? const SizedBox.shrink()
+                      // Dot leaders up to the status, as many as fit.
+                      : Text(
+                          '.' * 200,
+                          maxLines: 1,
+                          softWrap: false,
+                          overflow: TextOverflow.clip,
+                          style: style.copyWith(color: colors.textMuted2.useOpacity(0.5)),
+                        ),
+                ),
+                if (status != null) ...[const SizedBox(width: _gap), Text(status, style: statusStyle)],
+                if (isTurning) ...[const SizedBox(width: _gap), TerminalSpinner(style: statusStyle)],
+              ],
+            );
+          },
         ),
       ),
     );
@@ -115,4 +145,30 @@ class _TerminalSpinnerState extends State<TerminalSpinner> with SingleTickerProv
     animation: _face,
     builder: (context, _) => Text(TerminalLine.busyFaces[_face.value], style: widget.style),
   );
+}
+
+/// What is happening during a wait, with the terminal's spinner unless the
+/// system asks for less motion.
+class TerminalBusyLine extends StatelessWidget {
+  const TerminalBusyLine({super.key, required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = context.themeTextV3.dataAddress.copyWith(color: context.colorsV3.textMuted);
+
+    return Semantics(
+      liveRegion: true,
+      label: label,
+      excludeSemantics: true,
+      child: Row(
+        spacing: 8,
+        children: [
+          if (!MediaQuery.disableAnimationsOf(context)) TerminalSpinner(style: style),
+          Flexible(child: Text(label, style: style)),
+        ],
+      ),
+    );
+  }
 }

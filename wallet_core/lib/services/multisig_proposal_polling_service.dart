@@ -8,6 +8,7 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/extrinsic_indexer_polling_service.dart';
 import 'package:wallet_core/services/multisig_proposal_reconciliation.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 
 typedef MultisigProposalPollingService = ExtrinsicIndexerPollingService<PendingMultisigProposalEvent, MultisigAccount>;
@@ -16,10 +17,17 @@ Future<bool> _confirmIndexedProposal(Ref ref, MultisigAccount msig, PendingMulti
   final hash = pending.extrinsicHash;
   if (hash == null) return false;
 
+  final session = ref.read(walletSessionProvider);
+  final ticket = session.ticket;
   final historyService = ref.read(chainHistoryServiceProvider);
   final indexed = await historyService.searchProposalCreatedByExtrinsicHash(extrinsicHash: hash);
   if (indexed == null) return false;
+  if (!await session.survivesReset(ticket, dropping: 'confirming proposal ${pending.id}')) return true;
 
+  // Known by its id before its pending row goes, so what showed the row can
+  // follow it to the proposal.
+  final created = indexed.proposal;
+  if (created != null) ref.read(multisigCreatedProposalsProvider.notifier).record(hash, created.entityId);
   removePendingMultisigProposal(ref, pending.id);
   ref.read(multisigProposalConfirmationsProvider.notifier).settle(hash, SendConfirmation.confirmed);
   await reconcileIndexedProposalCreation(ref, msig, indexed);

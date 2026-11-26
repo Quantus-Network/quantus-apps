@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 import 'package:wallet_core/utils/tx_filter_family_provider.dart';
 
 class PendingTransactionPollingService {
   final Ref _ref;
   final Map<String, Timer> _timers = {};
+  final Set<String> _inFlight = {};
   static const _searchInterval = Duration(seconds: 5);
 
   /// How long a send is watched for. Not found by then, it is removed
@@ -60,7 +62,11 @@ class PendingTransactionPollingService {
   }
 
   Future<void> _search(PendingTransactionEvent pendingTx, {void Function(TransactionEvent result)? onFound}) async {
+    if (!_inFlight.add(pendingTx.id)) return;
+
     try {
+      final session = _ref.read(walletSessionProvider);
+      final ticket = session.ticket;
       final historyService = _ref.read(chainHistoryServiceProvider);
       final hash = pendingTx.extrinsicHash;
       final TransactionEvent? result;
@@ -81,6 +87,9 @@ class PendingTransactionPollingService {
         );
       }
 
+      if (!_ref.mounted) return;
+      if (!session.stillCurrent(ticket, dropping: 'the search for ${pendingTx.id}')) return;
+
       if (result != null) {
         quantusPrint('[PendingTxPoller] Found matching tx for ${pendingTx.id} at block ${result.blockNumber}');
         stopPolling(pendingTx.id);
@@ -100,6 +109,8 @@ class PendingTransactionPollingService {
       }
     } catch (e) {
       quantusPrint('[PendingTxPoller] Search error for ${pendingTx.id}: $e');
+    } finally {
+      _inFlight.remove(pendingTx.id);
     }
   }
 

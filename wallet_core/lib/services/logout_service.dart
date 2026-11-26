@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/mining_rewards_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
+import 'package:wallet_core/providers/notification_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
@@ -14,6 +16,7 @@ import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/multisig_approval_polling_service.dart';
 import 'package:wallet_core/services/multisig_cancellation_polling_service.dart';
 import 'package:wallet_core/services/multisig_creation_polling_service.dart';
@@ -22,6 +25,8 @@ import 'package:wallet_core/services/multisig_proposal_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/services/push_registration.dart';
+import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 final logoutServiceProvider = Provider<LogoutService>((ref) => LogoutService(ref));
 
@@ -32,17 +37,40 @@ class LogoutService {
   /// Wipes the wallet and every piece of session state. Where to go next is
   /// the caller's decision.
   Future<void> logout() async {
+    // First: what answers during the wipe would write into cleared storage.
+    // The pollers keep running until it succeeds, so a failed wipe loses none.
+    final session = _ref.read(walletSessionProvider)..beginReset();
+    try {
+      await _wipe();
+    } catch (_) {
+      session.cancelReset();
+      rethrow;
+    }
+    try {
+      await _clearSessionState();
+    } finally {
+      session.finishReset();
+    }
+  }
+
+  Future<void> _wipe() async {
     if (_ref.read(remoteConfigProvider).enableRemoteNotifications) {
       _ref.read(pushRegistrationProvider).unregister();
     }
 
     // Before the wipe: a status answer still in flight must not write the
     // old wallet's swap back, and nothing of it may reach the next session.
-    await _ref.read(activeSwapProvider.notifier).clear();
+    await _ref.read(activeSwapsProvider.notifier).clearAll();
     await _ref.read(substrateServiceProvider).logout();
+  }
+
+  Future<void> _clearSessionState() async {
     // The wipe removed the saved choice; the live one must not outlast it.
     _ref.invalidate(notificationConfigProvider);
     _stopPollers();
+    // After the pollers, which could add another. Left in place, the old
+    // wallet's list would be saved back with the next notification.
+    _ref.invalidate(notificationProvider);
     _ref.read(pendingTransactionsProvider.notifier).clear();
     await _ref.read(pendingMultisigCreationsProvider.notifier).clear();
     _ref.read(pendingMultisigProposalsProvider.notifier).clear();
@@ -64,8 +92,23 @@ class LogoutService {
     _ref.read(multisigAccountsProvider.notifier).reset();
     _ref.invalidate(discoveredMultisigsProvider);
     _ref.read(keystoneSignCacheProvider.notifier).reset();
+    // After everything above: this waits on the platform, and a failed locale
+    // or currency reset below must not leave the old notifications showing.
+    await _cancelSystemNotifications();
     await _ref.read(selectedAppLocaleProvider.notifier).reset();
     await _ref.read(selectedFiatCurrencyProvider.notifier).reset();
+  }
+
+  /// Cancels what the system still holds of the old wallet. A failure is
+  /// reported and does not stop the reset: the wallet is already wiped, and
+  /// the rest of its session state must still go.
+  Future<void> _cancelSystemNotifications() async {
+    try {
+      await _ref.read(localNotificationsProvider).cancelAll();
+    } catch (e) {
+      quantusPrint('Cancelling the system notifications failed: $e');
+      _ref.read(telemetryProvider).sendError('logout_cancel_notifications_failed', error: e);
+    }
   }
 
   /// Stops indexer pollers so their timers cannot leak into the next session.

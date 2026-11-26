@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -8,13 +7,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/models/notification_status.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
-import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/notification_click_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
-import 'package:quantus_desktop_wallet/services/window_chrome.dart';
+import 'package:quantus_desktop_wallet/utils/notification_id.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
-import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/services/local_notifications.dart';
 import 'package:wallet_core/services/telemetry.dart';
@@ -114,52 +112,22 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
 
   bool get _hasAnswer => state is NotificationsAllowed || state is NotificationsDenied;
 
-  /// The account a click asked for, until the wallet's accounts and its
-  /// active account have loaded, as at launch.
-  String? _clickedAccountId;
-  final _untilLoaded = <ProviderSubscription<Object?>>[];
-
-  /// Opens what a clicked notification was about: the window comes to the
-  /// front, on the account the notification named when it is still there.
-  void _open(String? payload) {
-    unawaited(const WindowChrome().bringToFront());
-    final String accountId;
-    try {
-      accountId = (jsonDecode(payload!) as Map<String, dynamic>)['accountId'] as String;
-    } catch (e) {
-      quantusPrint('A clicked notification could not be read: $e');
-      ref.read(telemetryProvider).sendError('desktop_notification_click_unreadable', error: e);
-      return;
-    }
-    _clickedAccountId = accountId;
-    if (_openClickedAccount() || _untilLoaded.isNotEmpty) return;
-    _untilLoaded
-      ..add(ref.listen(sidebarAccountsProvider, (_, _) => _openClickedAccount()))
-      ..add(ref.listen(activeAccountProvider, (_, _) => _openClickedAccount()));
-  }
-
-  /// Selects the clicked account once the accounts and the active account
-  /// have loaded: before that, restoring the saved active account would undo
-  /// it. Returns whether the click is done with.
-  bool _openClickedAccount() {
-    final accountId = _clickedAccountId;
-    if (accountId == null) return true;
-    final accounts = ref.read(sidebarAccountsProvider);
-    if (accounts.isEmpty || !ref.read(activeAccountProvider).hasValue) return false;
-    _clickedAccountId = null;
-    for (final subscription in _untilLoaded) {
-      subscription.close();
-    }
-    _untilLoaded.clear();
-    final account = accounts.where((display) => display.account.accountId == accountId).firstOrNull;
-    if (account != null) unawaited(ref.read(sidebarSelectionProvider.notifier).showAccount(account));
-    return true;
-  }
+  void _open(String? payload) => ref.read(notificationClickProvider).open(payload);
 
   void _unavailable(Object error) {
     quantusPrint('Desktop notifications are unavailable: $error');
     ref.read(telemetryProvider).sendError('desktop_notifications_unavailable', error: error);
     state = NotificationsUnavailable(error is StateError ? error.message : '$error');
+  }
+
+  /// Removes what the system still shows of a wallet that was wiped, and drops
+  /// a click still waiting for its accounts. Nothing can be asked of a system
+  /// whose notifications have not started or are unavailable.
+  @override
+  Future<void> cancelAll() async {
+    ref.read(notificationClickProvider).drop();
+    if (state is NotificationsStarting || state is NotificationsUnavailable) return;
+    await ref.read(notificationPluginProvider).cancelAll();
   }
 
   /// Shows [notification] now. Callers check [state] first: showing one the
@@ -176,11 +144,10 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     await ref
         .read(notificationPluginProvider)
         .show(
-          // The plugins take a 32-bit id.
-          id: notification.id.hashCode & 0x7fffffff,
+          id: notificationSystemId(notification.id),
           title: notification.title,
           body: notification.message,
-          payload: jsonEncode({'accountId': notification.accountId}),
+          payload: notificationClickPayload(notification),
         );
   }
 }

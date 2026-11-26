@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/ui/components/inline_name_field.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
@@ -96,6 +97,10 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
 
   @override
   Widget build(BuildContext context) {
+    // A window that comes back must not show the phrase without asking again.
+    ref.listen<bool>(windowClosedProvider, (_, isClosed) {
+      if (isClosed && (_step == _Step.phraseCaution || _step == _Step.phraseWords)) _go(_Step.info);
+    });
     final l10n = ref.watch(l10nProvider);
     final id = _target.accountId;
     final accounts = ref.watch(accountsProvider).value;

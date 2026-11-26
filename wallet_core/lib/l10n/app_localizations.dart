@@ -98,17 +98,41 @@ abstract class AppLocalizations {
   /// **'Wallet Error'**
   String get walletInitErrorTitle;
 
-  /// Message for the error dialog when the wallet is not found
+  /// Message for the error dialog when the wallet's recovery phrase cannot be read at start
   ///
   /// In en, this message translates to:
-  /// **'Unable to find secret phrase. Please restore your wallet.'**
+  /// **'Unable to read your recovery phrase from this device.'**
   String get walletInitErrorMessage;
 
-  /// Label for the button on the error dialog when the wallet is not found
+  /// Phone: on the error sheet when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
   ///
   /// In en, this message translates to:
-  /// **'OK'**
-  String get walletInitErrorButtonLabel;
+  /// **'Remove Wallet'**
+  String get walletInitErrorRemoveWallet;
+
+  /// Desktop: on the error dialog when the recovery phrase cannot be read, the button that asks to remove every wallet from the device
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Wallet…'**
+  String get desktopWalletInitErrorRemoveWallet;
+
+  /// Title of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all wallets from this device?'**
+  String get walletInitErrorRemoveTitle;
+
+  /// Body of the confirmation before removing every wallet, asked from the error dialog when the recovery phrase cannot be read
+  ///
+  /// In en, this message translates to:
+  /// **'This cannot be undone.'**
+  String get walletInitErrorRemoveBody;
+
+  /// The button that removes every wallet from the device, on the confirmation asked from the error dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get walletInitErrorRemoveConfirm;
 
   /// Text for the text on the lock screen when using device biometrics to unlock
   ///
@@ -632,6 +656,12 @@ abstract class AppLocalizations {
   /// **'Multisig creation is taking longer than expected. Check the chain or try again.'**
   String get multisigCreateTimeoutToast;
 
+  /// Toast when a multisig is confirmed on chain but storing it on this device fails; the next start adds it
+  ///
+  /// In en, this message translates to:
+  /// **'Your multisig was created, but it could not be saved on this device. Restart the app to add it.'**
+  String get multisigCreateNotSavedToast;
+
   /// Local auth prompt when submitting create multisig
   ///
   /// In en, this message translates to:
@@ -805,6 +835,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.'**
   String get multisigProposalCallUnavailable;
+
+  /// Proposal detail: the open proposals could not be read again, so its actions are held back
+  ///
+  /// In en, this message translates to:
+  /// **'Could not check where this proposal stands now, so nothing can be done with it here. Try again when you are back online.'**
+  String get multisigProposalStateUnreadNote;
 
   /// Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval
   ///
@@ -1051,6 +1087,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This proposal can no longer be approved.'**
   String get multisigApproveUnavailableNote;
+
+  /// Note under a proposal's actions when it is past its expiry block, so it can no longer be approved, executed or cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'This proposal has expired.'**
+  String get multisigProposalExpiredNote;
+
+  /// Note under a proposal's actions when no signer of its multisig is an account in this wallet
+  ///
+  /// In en, this message translates to:
+  /// **'None of this multisig\'s signers is in this wallet.'**
+  String get multisigNoSignerHereNote;
+
+  /// Note under a proposal's actions when Cancel is unavailable because an approval from this device is still on its way to the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel waits until the approval sent from this device is confirmed.'**
+  String get multisigCancelWaitsNote;
 
   /// Trailing label on proposal row while approval is pending
   ///
@@ -2000,6 +2054,12 @@ abstract class AppLocalizations {
   /// **'ACTION'**
   String get keystoneSignActionLabel;
 
+  /// In place of the amount on the cold wallet signing screens for a maximum send: the cold wallet shows these words, since the transfer carries no amount
+  ///
+  /// In en, this message translates to:
+  /// **'Entire transferable balance'**
+  String get keystoneSignEntireBalance;
+
   /// Section label above the transaction details on the Keystone sign screen
   ///
   /// In en, this message translates to:
@@ -2443,6 +2503,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancelling proposal'**
   String get activityDetailTitleCancelling;
+
+  /// Detail sheet title while the approver's approval of a multisig proposal is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Approving proposal'**
+  String get activityDetailTitleApproving;
 
   /// Detail sheet title while a multisig proposal execution is confirming on-chain
   ///
@@ -2954,12 +3020,6 @@ abstract class AppLocalizations {
   /// **'Help & Support'**
   String get settingsHelpScreenTitle;
 
-  /// Email support row title
-  ///
-  /// In en, this message translates to:
-  /// **'Email Support'**
-  String get settingsHelpEmail;
-
   /// Telegram row title
   ///
   /// In en, this message translates to:
@@ -3349,6 +3409,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Confirm swap'**
   String get swapReviewConfirm;
+
+  /// Home activity row state for a followed swap that is overdue
+  ///
+  /// In en, this message translates to:
+  /// **'Not finished in time'**
+  String get swapActivityOverdue;
+
+  /// Toast on Review Swap when as many swaps as can be followed are already running
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} swaps can run at once. Wait for one to finish.'**
+  String swapTooManyFollowed(int count);
 
   /// Title of the home activity row for the swap with 1Click; the step it is on is the subtitle
   ///
@@ -4526,11 +4598,11 @@ abstract class AppLocalizations {
   /// **'Account'**
   String get desktopMenuAccount;
 
-  /// Desktop Account menu item that opens the add account sheet
+  /// Desktop: the item that adds a Transparent account to a wallet, at once, with its name ready to be typed over; in the Account menu and the sidebar's Add Account menu
   ///
   /// In en, this message translates to:
-  /// **'Add Account…'**
-  String get desktopMenuAddAccount;
+  /// **'New Account'**
+  String get desktopMenuNewAccount;
 
   /// Desktop menu bar: View menu title
   ///
@@ -5228,6 +5300,174 @@ abstract class AppLocalizations {
   /// **'Waiting for the network to create the proposal.'**
   String get desktopProposeWaiting;
 
+  /// Desktop proposal panel: where an open proposal stands once it has all the approvals it needs and waits to be executed; drawn in small capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get desktopProposalApproved;
+
+  /// Desktop proposal panel: where an open proposal stands once it is past its expiry block, drawn in small capitals; also the label of the row that says when it expired, in place of "Expires"
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get desktopProposalExpired;
+
+  /// Desktop proposal panel: the sentence under "Invalid proposal" for a proposal whose call this wallet cannot decode
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.'**
+  String get desktopProposalUnreadable;
+
+  /// Desktop proposal action review: the caps line over the proposal being approved
+  ///
+  /// In en, this message translates to:
+  /// **'Approving'**
+  String get desktopProposalApproving;
+
+  /// Desktop proposal action review: the caps line over the proposal being executed
+  ///
+  /// In en, this message translates to:
+  /// **'Executing'**
+  String get desktopProposalExecuting;
+
+  /// Desktop proposal action review: the caps line over the proposal being cancelled
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling'**
+  String get desktopProposalCancelling;
+
+  /// Desktop proposal action review: the row naming the account of this wallet that signs, or the choice of them
+  ///
+  /// In en, this message translates to:
+  /// **'Signs as'**
+  String get desktopProposalSignsAs;
+
+  /// Desktop proposal action receipt: the row naming the account that signed
+  ///
+  /// In en, this message translates to:
+  /// **'Signed as'**
+  String get desktopProposalSignedAs;
+
+  /// Desktop proposal cancel review: the row with the proposal deposit that cancelling returns
+  ///
+  /// In en, this message translates to:
+  /// **'Deposit refunded'**
+  String get desktopProposalDepositRefunded;
+
+  /// Desktop proposal approve review: the approval count before and after this approval, each as desktopProposeCountOf
+  ///
+  /// In en, this message translates to:
+  /// **'{before} → {after}'**
+  String desktopProposalApprovalsChange(String before, String after);
+
+  /// Desktop proposal panel: why Approve is unavailable when the only account that could approve is a Keystone
+  ///
+  /// In en, this message translates to:
+  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Approve on your phone.'**
+  String desktopProposalKeystoneApprove(String name);
+
+  /// Desktop proposal panel: why Execute is unavailable when the member that executes is a Keystone
+  ///
+  /// In en, this message translates to:
+  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Execute on your phone.'**
+  String desktopProposalKeystoneExecute(String name);
+
+  /// Desktop proposal panel: why Cancel Proposal is unavailable when the proposer is a Keystone
+  ///
+  /// In en, this message translates to:
+  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.'**
+  String desktopProposalKeystoneCancel(String name);
+
+  /// Desktop proposal action receipt headline while the approval is confirmed; what is the amount or the call's name
+  ///
+  /// In en, this message translates to:
+  /// **'Approving {what}'**
+  String desktopProposalApprovingTitle(String what);
+
+  /// Desktop proposal action receipt headline once the approval is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'{what} approved'**
+  String desktopProposalApprovedTitle(String what);
+
+  /// Desktop proposal action receipt headline while the execution is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Executing {what}'**
+  String desktopProposalExecutingTitle(String what);
+
+  /// Desktop proposal action receipt headline once the proposal was executed, by this wallet or another signer
+  ///
+  /// In en, this message translates to:
+  /// **'{what} executed'**
+  String desktopProposalExecutedTitle(String what);
+
+  /// Desktop proposal action receipt headline while the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling {what}'**
+  String desktopProposalCancellingTitle(String what);
+
+  /// Desktop proposal action receipt headline once the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cancelled'**
+  String get desktopProposalCancelledTitle;
+
+  /// Desktop proposal action receipt: while the approval is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to record your approval.'**
+  String get desktopProposalApprovalWaiting;
+
+  /// Desktop proposal action receipt: while the execution is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to record your execution.'**
+  String get desktopProposalExecutionWaiting;
+
+  /// Desktop proposal action receipt: while the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the network to record your cancellation.'**
+  String get desktopProposalCancellationWaiting;
+
+  /// Desktop proposal action receipt: an approval that brought the proposal to its threshold
+  ///
+  /// In en, this message translates to:
+  /// **'It has every approval it needs, and can be executed.'**
+  String get desktopProposalReadyToExecute;
+
+  /// Desktop proposal action receipt: an approval after which the proposal still needs more
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more approval needed.} other{{count} more approvals needed.}}'**
+  String desktopProposalApprovalsNeeded(int count);
+
+  /// Desktop proposal action receipt: once this wallet's execution is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'The proposal has run.'**
+  String get desktopProposalExecutedDone;
+
+  /// Desktop proposal action receipt: once the cancellation is confirmed
+  ///
+  /// In en, this message translates to:
+  /// **'Your deposit is refunded.'**
+  String get desktopProposalCancelledDone;
+
+  /// Desktop proposal action receipt status: the proposal was executed, but not by this wallet's transaction
+  ///
+  /// In en, this message translates to:
+  /// **'Executed by another signer'**
+  String get desktopProposalExecutedByAnother;
+
+  /// Desktop proposal action receipt: under 'Executed by another signer'
+  ///
+  /// In en, this message translates to:
+  /// **'Another signer executed this proposal first, so your transaction did not go through. Its network fee was still paid.'**
+  String get desktopProposalExecutedByAnotherBody;
+
   /// Desktop footer: the network the wallet is on, beside a dot that is green while online
   ///
   /// In en, this message translates to:
@@ -5720,6 +5960,36 @@ abstract class AppLocalizations {
   /// **'From {account}'**
   String desktopNotificationSentBody(String account);
 
+  /// Desktop notification title: a transfer from outside the wallet arrived in one of its accounts; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Received {amount}'**
+  String desktopNotificationReceivedTitle(String amount);
+
+  /// Desktop notification body: the account the received transfer arrived in
+  ///
+  /// In en, this message translates to:
+  /// **'In {account}'**
+  String desktopNotificationReceivedBody(String account);
+
+  /// Desktop notification body: what a swap that ended or came short was about, as its row says it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} for {foreignAmount} on {network}'**
+  String desktopNotificationSwapBody(String amount, String foreignAmount, String network);
+
+  /// Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming {amount}'**
+  String desktopNotificationIncomingTitle(String amount);
+
+  /// Desktop notification body: the account the scheduled reversible transfer will arrive in
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled to arrive in {account}'**
+  String desktopNotificationIncomingBody(String account);
+
   /// Desktop notification title: a send from this computer was not seen on the chain within the time the wallet watches for it
   ///
   /// In en, this message translates to:
@@ -5756,6 +6026,54 @@ abstract class AppLocalizations {
   /// **'Send {amount} from {multisig}'**
   String desktopNotificationProposalCreatedBody(String amount, String multisig);
 
+  /// Desktop notification title: another signer proposed something in a multisig of the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'New proposal'**
+  String get desktopNotificationProposalNewTitle;
+
+  /// Desktop notification title: another signer approved a proposal that still needs more approvals; count is the approvals it has now, threshold how many it needs
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal signed: {count} of {threshold}'**
+  String desktopNotificationProposalSignedTitle(int count, int threshold);
+
+  /// Desktop notification title: another signer gave the approval a proposal still needed, so it can now be executed
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal ready to execute'**
+  String get desktopNotificationProposalReadyTitle;
+
+  /// Desktop notification title: another signer executed a proposal and what it proposed went through
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal executed'**
+  String get desktopNotificationProposalExecutedTitle;
+
+  /// Desktop notification title: another signer executed a proposal and what it proposed failed on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal execution failed'**
+  String get desktopNotificationProposalFailedTitle;
+
+  /// Desktop notification title: another signer cancelled a proposal
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal cancelled'**
+  String get desktopNotificationProposalCancelledTitle;
+
+  /// Desktop notification title: another signer removed a proposal that had expired
+  ///
+  /// In en, this message translates to:
+  /// **'Proposal removed'**
+  String get desktopNotificationProposalRemovedTitle;
+
+  /// Desktop notification body for a proposal that is not a transfer: the multisig it is in
+  ///
+  /// In en, this message translates to:
+  /// **'In {multisig}'**
+  String desktopNotificationProposalOtherBody(String multisig);
+
   /// Desktop notification title: a multisig proposal made on this computer was not seen on the chain in time
   ///
   /// In en, this message translates to:
@@ -5767,6 +6085,474 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'The proposal to send {amount} from {multisig} wasn’t seen on the chain in time.'**
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig);
+
+  /// Desktop sidebar, read by screen readers: how many accounts a closed wallet holds, as the number on its heading says
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 account} other{{count} accounts}}'**
+  String desktopWalletAccountCount(int count);
+
+  /// Import: the recovery phrase typed is that of a wallet already in the app; nothing was stored
+  ///
+  /// In en, this message translates to:
+  /// **'This wallet is already in the app'**
+  String get importWalletAlreadyAdded;
+
+  /// Desktop: the item that opens the Import Wallet sheet, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Import Wallet…'**
+  String get desktopMenuImportWallet;
+
+  /// Desktop Import Wallet sheet: a line with a spinner while the wallet is saved and its accounts are found on the chain
+  ///
+  /// In en, this message translates to:
+  /// **'Finding this wallet\'s accounts'**
+  String get desktopImportFinding;
+
+  /// Desktop Import Wallet sheet: under the phrase when saving the wallet failed; the phrase stays to try again
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t import the wallet'**
+  String get desktopImportFailed;
+
+  /// Desktop: a short note by the account name in the top bar after importing a wallet with the sidebar hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet imported'**
+  String get desktopImportDone;
+
+  /// Desktop: menu item in Add Account and the Account menu; opens the list that adds and removes multisigs
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs…'**
+  String get desktopMenuManageMultisigs;
+
+  /// Desktop Manage Multisigs sheet: its title
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Multisigs'**
+  String get desktopManageMultisigsTitle;
+
+  /// Desktop Manage Multisigs sheet: the sentence under the title
+  ///
+  /// In en, this message translates to:
+  /// **'Multisigs on chain where one of your accounts is a signer. Switching one off removes it from this app only.'**
+  String get desktopManageMultisigsLead;
+
+  /// Desktop Manage Multisigs sheet: a moving line while the chain is read
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your multisigs on chain'**
+  String get desktopManageMultisigsFinding;
+
+  /// Desktop Manage Multisigs sheet: a row's detail line, e.g. '2 of 3 · you sign as Savings'
+  ///
+  /// In en, this message translates to:
+  /// **'{approvals} · you sign as {name}'**
+  String desktopManageMultisigsSignsAs(String approvals, String name);
+
+  /// Desktop: menu item in Add Account and the Account menu; opens the form that creates a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Create Multisig…'**
+  String get desktopMenuCreateMultisig;
+
+  /// Desktop Create Multisig sheet: label of the list of signers
+  ///
+  /// In en, this message translates to:
+  /// **'Signers'**
+  String get desktopCreateMultisigSigners;
+
+  /// Desktop Create Multisig form: label of the choice of how many signers must approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals needed'**
+  String get desktopCreateMultisigApprovalsNeeded;
+
+  /// Desktop Create Multisig review: label of how many signers must approve
+  ///
+  /// In en, this message translates to:
+  /// **'Approvals'**
+  String get desktopCreateMultisigApprovals;
+
+  /// Desktop Create Multisig review: how many signers must approve, e.g. '2 of 3 signers'
+  ///
+  /// In en, this message translates to:
+  /// **'{count} of {total} signers'**
+  String desktopCreateMultisigApprovalsValue(int count, int total);
+
+  /// Desktop Create Multisig review: label of the address the new multisig will have
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get desktopCreateMultisigAddress;
+
+  /// Desktop Create Multisig review: label of the account that signs and pays for the creation
+  ///
+  /// In en, this message translates to:
+  /// **'Paid by'**
+  String get desktopCreateMultisigPaidBy;
+
+  /// Desktop Create Multisig review: label of the chain's fixed fee for creating a multisig
+  ///
+  /// In en, this message translates to:
+  /// **'Creation fee'**
+  String get desktopCreateMultisigCreationFee;
+
+  /// Desktop Create Multisig form: what a screen reader and the tooltip call the cross on a signer's row
+  ///
+  /// In en, this message translates to:
+  /// **'Remove signer'**
+  String get desktopCreateMultisigRemoveSigner;
+
+  /// Desktop Create Multisig form: the new multisig's address could not be worked out
+  ///
+  /// In en, this message translates to:
+  /// **'Could not work out the new address: {error}'**
+  String desktopCreateMultisigPreviewFailed(String error);
+
+  /// Desktop Create Multisig: the account that pays does not hold enough for the fees
+  ///
+  /// In en, this message translates to:
+  /// **'{name} can’t cover what this costs'**
+  String desktopCreateMultisigCantAfford(String name);
+
+  /// Desktop Create Multisig review: the system's approval was declined, so nothing was submitted
+  ///
+  /// In en, this message translates to:
+  /// **'Creating this multisig needs your approval'**
+  String get desktopCreateMultisigDeclined;
+
+  /// Desktop Create Multisig: the check or the submission failed
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create this multisig: {error}'**
+  String desktopCreateMultisigFailed(String error);
+
+  /// Desktop: short note on the active account's sidebar row when a multisig being created was not confirmed in time
+  ///
+  /// In en, this message translates to:
+  /// **'Multisig not confirmed'**
+  String get desktopCreateMultisigTimedOut;
+
+  /// Desktop: the item that opens the Connect Cold Wallet sheet, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Cold Wallet…'**
+  String get desktopMenuConnectColdWallet;
+
+  /// Desktop Connect Cold Wallet sheet: its title when the app already has a cold wallet, which the account scanned is added to
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cold Wallet Account'**
+  String get desktopColdWalletAddAccountTitle;
+
+  /// Desktop Connect Cold Wallet sheet: the last step, after showing the account QR code on the device
+  ///
+  /// In en, this message translates to:
+  /// **'Hold it up to this camera'**
+  String get desktopColdWalletStepHold;
+
+  /// Desktop Connect Cold Wallet sheet: a line with a spinner while the camera is on
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for a QR code'**
+  String get desktopColdWalletLooking;
+
+  /// Desktop Connect Cold Wallet sheet: the camera read a QR code that is not an address
+  ///
+  /// In en, this message translates to:
+  /// **'That QR code isn\'t an account address.'**
+  String get desktopColdWalletNotAddress;
+
+  /// Desktop Connect Cold Wallet sheet: the address read is already an account or multisig here
+  ///
+  /// In en, this message translates to:
+  /// **'That account is already in this app.'**
+  String get desktopColdWalletAlreadyAdded;
+
+  /// Desktop Connect Cold Wallet sheet: the step showing the address read, before it is added
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm Address'**
+  String get desktopColdWalletConfirmTitle;
+
+  /// Desktop Connect Cold Wallet sheet: above the address read
+  ///
+  /// In en, this message translates to:
+  /// **'Check that this matches the address on your cold wallet.'**
+  String get desktopColdWalletConfirmBody;
+
+  /// Desktop Connect Cold Wallet sheet: forgets the address read and turns the camera back on
+  ///
+  /// In en, this message translates to:
+  /// **'Scan Again'**
+  String get desktopColdWalletScanAgain;
+
+  /// Desktop Connect Cold Wallet sheet: adds the address read as a cold wallet account
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get desktopColdWalletConnect;
+
+  /// Desktop Connect Cold Wallet sheet: saving the account failed; the address stays to try again
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t connect this cold wallet'**
+  String get desktopColdWalletSaveFailed;
+
+  /// Desktop camera: this computer has no camera
+  ///
+  /// In en, this message translates to:
+  /// **'No camera found'**
+  String get desktopCameraNoneTitle;
+
+  /// Desktop camera: what to do when there is no camera
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a camera to this computer, then try again.'**
+  String get desktopCameraNoneBody;
+
+  /// Desktop camera: the system refused this app the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off'**
+  String get desktopCameraPermissionTitle;
+
+  /// Desktop camera, macOS: where to allow the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Quantus Wallet under Privacy & Security, Camera.'**
+  String get desktopCameraPermissionMac;
+
+  /// Desktop camera, Windows: where to allow the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera access under Privacy & security, Camera.'**
+  String get desktopCameraPermissionWindows;
+
+  /// Desktop camera, Linux: what to check when the camera is refused
+  ///
+  /// In en, this message translates to:
+  /// **'Check that your user is allowed to use the camera.'**
+  String get desktopCameraPermissionLinux;
+
+  /// Desktop camera: opens the system's camera privacy settings
+  ///
+  /// In en, this message translates to:
+  /// **'Open System Settings'**
+  String get desktopCameraOpenSettings;
+
+  /// Desktop camera: another app holds the camera
+  ///
+  /// In en, this message translates to:
+  /// **'The camera is in use'**
+  String get desktopCameraBusyTitle;
+
+  /// Desktop camera: what to do when another app holds the camera
+  ///
+  /// In en, this message translates to:
+  /// **'Close the other app using it, then try again.'**
+  String get desktopCameraBusyBody;
+
+  /// Desktop camera: the camera offers no picture format the app reads
+  ///
+  /// In en, this message translates to:
+  /// **'This camera can\'t be used'**
+  String get desktopCameraUnsupportedTitle;
+
+  /// Desktop camera: why the camera cannot be used
+  ///
+  /// In en, this message translates to:
+  /// **'It offers no picture format this app can read.'**
+  String get desktopCameraUnsupportedBody;
+
+  /// Desktop camera, Windows N: the system lacks its media components
+  ///
+  /// In en, this message translates to:
+  /// **'Camera support is missing'**
+  String get desktopCameraMediaTitle;
+
+  /// Desktop camera, Windows N: what to install
+  ///
+  /// In en, this message translates to:
+  /// **'Install the Media Feature Pack for Windows, then try again.'**
+  String get desktopCameraMediaBody;
+
+  /// Desktop camera: it was working and stopped, as when unplugged
+  ///
+  /// In en, this message translates to:
+  /// **'The camera stopped'**
+  String get desktopCameraStoppedTitle;
+
+  /// Desktop camera: what to do after it stopped
+  ///
+  /// In en, this message translates to:
+  /// **'Check that it\'s connected, then try again.'**
+  String get desktopCameraStoppedBody;
+
+  /// Desktop camera: any other failure
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t use the camera'**
+  String get desktopCameraFailedTitle;
+
+  /// Desktop camera: any other failure, what to do
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong with the camera. Try again.'**
+  String get desktopCameraFailedBody;
+
+  /// Discord support row title
+  ///
+  /// In en, this message translates to:
+  /// **'Discord'**
+  String get settingsHelpDiscord;
+
+  /// Error toast when the entered swap address could not be saved for future swaps
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save the address.'**
+  String get swapSaveAddressFailed;
+
+  /// Warning against impostors, shown wherever the app sends someone to the support Discord
+  ///
+  /// In en, this message translates to:
+  /// **'Support will never DM you first or ask for your recovery phrase.'**
+  String get commonSupportScamWarning;
+
+  /// Desktop notification body: an Encrypted send that failed part way, which cannot tell whether some of its batches had already paid; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} from {account} didn’t finish sending. Part of it may have gone through.'**
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account);
+
+  /// Desktop swap: the status of a swap whose deposit, made from outside the app, has not been sent yet
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting deposit'**
+  String get desktopSwapAwaitingDeposit;
+
+  /// Desktop swap row: what a swap awaiting its deposit is waiting for
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for your deposit'**
+  String get desktopSwapWaitingForDeposit;
+
+  /// Desktop swap: the time by which a deposit must be sent, after its status
+  ///
+  /// In en, this message translates to:
+  /// **'until {time}'**
+  String desktopSwapUntil(String time);
+
+  /// Desktop swap row: label before what the swap is for
+  ///
+  /// In en, this message translates to:
+  /// **'For'**
+  String get desktopSwapFor;
+
+  /// Desktop swap: an amount with its token symbol and the network the token is on
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} on {network}'**
+  String desktopSwapAmountOnNetwork(String amount, String network);
+
+  /// Desktop swap panel: what the amount in the headline is swapped for; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'for {amount} on {network}'**
+  String desktopSwapForAmountOnNetwork(String amount, String network);
+
+  /// Desktop swap panel: heading over the address a swap pays out at
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient on {network}'**
+  String desktopSwapRecipientOn(String network);
+
+  /// Desktop swap: who a swap pays out to, as the last step names it (Sending USDC to the recipient)
+  ///
+  /// In en, this message translates to:
+  /// **'the recipient'**
+  String get desktopSwapTheRecipient;
+
+  /// Desktop swap panel: headline of a swap awaiting its deposit; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Send {amount}'**
+  String desktopSwapSendAmount(String amount);
+
+  /// Desktop swap panel: button that drops a swap whose deposit was not sent
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Swap'**
+  String get desktopSwapCancel;
+
+  /// Desktop swap panel: opens the deposit's transaction in the explorer
+  ///
+  /// In en, this message translates to:
+  /// **'View Deposit'**
+  String get desktopSwapViewDeposit;
+
+  /// Desktop swap panel: headline of a completed swap; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} received'**
+  String desktopSwapReceived(String amount);
+
+  /// Desktop swap panel: line under a completed swap's headline; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'Your swap of {amount} is complete.'**
+  String desktopSwapCompleteBody(String amount);
+
+  /// Desktop swap: attribution to NEAR Intents
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by NEAR Intents'**
+  String get desktopSwapPoweredByNearIntents;
+
+  /// Desktop swap sheet: label of the address field for a swap out of QTC; network is the chain the token is paid out on
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient address on {network}'**
+  String desktopSwapRecipientAddressOn(String network);
+
+  /// Desktop swap sheet: label of the address field for a swap into QTC, and of that address on the review; network is the chain a refund returns on
+  ///
+  /// In en, this message translates to:
+  /// **'Refund address on {network}'**
+  String desktopSwapRefundAddressOn(String network);
+
+  /// Desktop swap sheet: checkbox that puts in the most QTC the account can swap
+  ///
+  /// In en, this message translates to:
+  /// **'Swap the maximum amount'**
+  String get desktopSwapMaximum;
+
+  /// Desktop swap sheet: who pays and the most they can put in; amount includes the token symbol
+  ///
+  /// In en, this message translates to:
+  /// **'{account} · {amount} available'**
+  String desktopSwapAccountAvailable(String account, String amount);
+
+  /// Desktop swap sheet: shown while the list of tokens is fetched
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tokens'**
+  String get desktopSwapLoadingTokens;
+
+  /// Desktop swap sheet: context menu item on a saved address that forgets it
+  ///
+  /// In en, this message translates to:
+  /// **'Remove Saved Address'**
+  String get desktopSwapRemoveSavedAddress;
+
+  /// Desktop swap sheet: shown when the saved addresses could not be read, saved to or removed from
+  ///
+  /// In en, this message translates to:
+  /// **'Saved addresses are unavailable: {error}'**
+  String desktopSwapSavedAddressesUnavailable(String error);
 
   /// Desktop Settings, Notifications row: macOS is not letting the app show notifications
   ///
@@ -5791,6 +6577,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unavailable: {reason}'**
   String desktopNotificationUnavailable(String reason);
+
+  /// Desktop menu bar icon's menu: shows the app's window again
+  ///
+  /// In en, this message translates to:
+  /// **'Open {appName}'**
+  String desktopStatusItemOpen(String appName);
+
+  /// Desktop menu bar icon's menu: quits the app
+  ///
+  /// In en, this message translates to:
+  /// **'Quit {appName}'**
+  String desktopStatusItemQuit(String appName);
+
+  /// Desktop menu bar icon's text while a swap is in progress: the step the swap is on out of how many it has, e.g. Swap 2/4. Keep it short: it sits in the menu bar
+  ///
+  /// In en, this message translates to:
+  /// **'Swap {step}/{count}'**
+  String desktopStatusItemSwap(int step, int count);
+
+  /// Desktop menu bar icon's text while several swaps are in progress: the step the newest swap is on out of how many it has, and how many more swaps are in progress, e.g. Swap 3/4 +1. Keep it short: it sits in the menu bar
+  ///
+  /// In en, this message translates to:
+  /// **'Swap {step}/{count} +{more}'**
+  String desktopStatusItemSwapAndMore(int step, int count, int more);
+
+  /// Desktop menu bar icon's menu: a swap in progress, which opens it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} for {foreignAmount} on {network}'**
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network);
+
+  /// Desktop dialog when the person quits while a send or multisig action is still under way: its title
+  ///
+  /// In en, this message translates to:
+  /// **'A Transaction Is Still Under Way'**
+  String get desktopQuitPendingTitle;
+
+  /// Desktop dialog when the person quits with work under way: what quitting now risks and what the app can do instead
+  ///
+  /// In en, this message translates to:
+  /// **'Quitting now could leave it unfinished. The wallet can finish first, then quit on its own.'**
+  String get desktopQuitPendingBody;
+
+  /// Desktop dialog when quitting with work under way: hides the window, finishes the work, then quits
+  ///
+  /// In en, this message translates to:
+  /// **'Finish, Then Quit'**
+  String get desktopQuitFinishFirst;
+
+  /// Desktop dialog when quitting with work under way: quits at once, even though work is under way
+  ///
+  /// In en, this message translates to:
+  /// **'Quit Now'**
+  String get desktopQuitNow;
+
+  /// Desktop signing with a cold wallet: the step strip's first step, where the request QR code is shown
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get desktopKeystoneStepShow;
+
+  /// Desktop signing with a cold wallet: the step strip's second step, where the person checks the cold wallet's screen and scans its signature
+  ///
+  /// In en, this message translates to:
+  /// **'Check and scan back'**
+  String get desktopKeystoneStepCheckAndScan;
+
+  /// Desktop signing with a cold wallet: heading over what to do on the cold wallet while the request QR code is shown
+  ///
+  /// In en, this message translates to:
+  /// **'On your cold wallet'**
+  String get desktopKeystoneOnColdWallet;
+
+  /// Desktop signing with a cold wallet: first thing to do on the cold wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Open your cold wallet and choose Scan.'**
+  String get desktopKeystoneShowStepScan;
+
+  /// Desktop signing with a cold wallet: second thing to do on the cold wallet, pointing it at the QR code on the computer's screen
+  ///
+  /// In en, this message translates to:
+  /// **'Hold it up to this QR code until it shows the transaction.'**
+  String get desktopKeystoneShowStepHold;
+
+  /// Desktop signing with a cold wallet: last step before pressing Continue on the computer
+  ///
+  /// In en, this message translates to:
+  /// **'Then continue here.'**
+  String get desktopKeystoneShowStepContinue;
+
+  /// Desktop signing with a cold wallet: heading over the details the cold wallet's screen must show
+  ///
+  /// In en, this message translates to:
+  /// **'Check your cold wallet\'s screen'**
+  String get desktopKeystoneCheckTitle;
+
+  /// Desktop signing with a cold wallet: under the heading, before the amount and address to compare
+  ///
+  /// In en, this message translates to:
+  /// **'Approve there only if it shows exactly this.'**
+  String get desktopKeystoneCheckBody;
+
+  /// Desktop signing with a cold wallet: heading over the steps for scanning the signature back
+  ///
+  /// In en, this message translates to:
+  /// **'Then'**
+  String get desktopKeystoneThen;
+
+  /// Desktop signing with a cold wallet: after approving on the cold wallet, show its signature QR code to the computer's camera
+  ///
+  /// In en, this message translates to:
+  /// **'Hold its signature QR code up to this computer\'s camera.'**
+  String get desktopKeystoneScanStepHold;
+
+  /// Desktop signing with a cold wallet: the signature QR code is animated, so it must stay in view until every frame is read
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it there until every part has arrived.'**
+  String get desktopKeystoneScanStepKeep;
+
+  /// Desktop guide after the cold wallet showed different details: second step's title (the computer may be compromised)
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t retry from this computer.'**
+  String get desktopKeystoneRejectStep2Title;
+
+  /// Desktop guide after the cold wallet showed different details: third step's body
+  ///
+  /// In en, this message translates to:
+  /// **'Keys never left the device. Move to a trusted computer before sending again.'**
+  String get desktopKeystoneRejectStep3Body;
+
+  /// Desktop guide after the cold wallet showed different details: second step's body (the computer may be compromised)
+  ///
+  /// In en, this message translates to:
+  /// **'If it\'s compromised, retrying gives the attacker another chance.'**
+  String get desktopKeystoneRejectStep2Body;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

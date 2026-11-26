@@ -12,6 +12,7 @@ import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/account_utils.dart';
+import 'package:wallet_core/utils/multisig_form.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:wallet_core/services/multisig_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
@@ -69,20 +70,18 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     return accounts.isNotEmpty ? accounts.first : null;
   }
 
-  List<String> get _allSigners {
-    final creatorId = _creator?.accountId;
-    if (creatorId == null) return List<String>.from(_additionalSigners);
-    return [creatorId, ..._additionalSigners];
-  }
+  List<String> get _allSigners => multisigSigners(_creator?.accountId, _additionalSigners);
 
-  bool get _hasMinimumSigners => _allSigners.length >= 2;
+  bool get _hasMinimumSigners => _allSigners.length >= minMultisigSigners;
 
-  bool get _isDisabled =>
-      _accountName.text.trim().isEmpty ||
-      !_hasMinimumSigners ||
-      _creator == null ||
-      _isLoading ||
-      (_hasMinimumSigners && (_isPredictingAddress || _resolvedNonce == null));
+  bool get _isDisabled => !canCreateMultisig(
+    name: _accountName.text,
+    signers: _allSigners,
+    hasPayer: _creator != null,
+    nonce: _resolvedNonce,
+    isPreviewing: _isPredictingAddress,
+    isSubmitting: _isLoading,
+  );
 
   void _onSignerFieldChanged() {
     setState(() {
@@ -97,18 +96,20 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     final substrate = ref.read(substrateServiceProvider);
     final address = _signerAddressController.text.trim();
 
-    if (!substrate.isValidSS58Address(address)) {
-      setState(() => _signerFieldError = l10n.multisigCreateInvalidSigner);
-      return;
-    }
-    if (address == _creator?.accountId || _additionalSigners.contains(address)) {
-      setState(() => _signerFieldError = l10n.multisigCreateDuplicateSigner);
-      return;
-    }
-    // A multisig has no key and cannot sign, so a multisig listing it as a
-    // signer could never execute from this wallet.
-    if (_reservedAddresses().contains(address)) {
-      setState(() => _signerFieldError = l10n.multisigCreateSignerIsMultisig);
+    final problem = newSignerProblem(
+      address,
+      isValidAddress: substrate.isValidSS58Address,
+      signers: _allSigners,
+      reserved: _reservedAddresses(),
+    );
+    if (problem != null) {
+      setState(
+        () => _signerFieldError = switch (problem) {
+          SignerProblem.invalid => l10n.multisigCreateInvalidSigner,
+          SignerProblem.duplicate => l10n.multisigCreateDuplicateSigner,
+          SignerProblem.isMultisig => l10n.multisigCreateSignerIsMultisig,
+        },
+      );
       return;
     }
 
@@ -138,11 +139,10 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
     _refreshPredictedAddress();
   }
 
-  Set<String> _reservedAddresses() {
-    final saved = ref.read(multisigAccountsProvider).value?.map((a) => a.accountId) ?? const [];
-    final pending = ref.read(pendingMultisigCreationsProvider).map((e) => e.multisigAddress);
-    return {...saved, ...pending};
-  }
+  Set<String> _reservedAddresses() => reservedMultisigAddresses(
+    saved: ref.read(multisigAccountsProvider).value ?? const [],
+    creating: ref.read(pendingMultisigCreationsProvider),
+  );
 
   Future<void> _refreshPredictedAddress() async {
     if (!_hasMinimumSigners) {

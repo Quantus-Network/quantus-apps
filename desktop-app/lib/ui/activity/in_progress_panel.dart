@@ -4,11 +4,13 @@ import 'package:quantus_desktop_wallet/ui/activity/activity_entry.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_panel.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_row_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 
-/// What of the open account is still under way, in the phone's order: a
-/// panel as tall as its rows, up to [maxHeight], then scrolling. Scrolled
+/// What of the open account is still under way, in the phone's order, the
+/// swaps from it first, as the phone pins them: a panel as tall as its rows,
+/// up to [maxHeight], then scrolling. Scrolled
 /// near its end, it asks for the next page, as Activity does: what is
 /// scheduled comes a page at a time with what is settled.
 class InProgressPanel extends ConsumerStatefulWidget {
@@ -16,12 +18,16 @@ class InProgressPanel extends ConsumerStatefulWidget {
     super.key,
     required this.transactions,
     required this.maxHeight,
+    this.swaps = const [],
     this.isFocused = false,
     this.rowsHaveKeys = true,
   });
 
   final List<TransactionEvent> transactions;
   final double maxHeight;
+
+  /// The swaps followed from this account, newest first.
+  final List<ActiveSwap> swaps;
 
   /// Whether the keys are in this panel, and whether they are in the lists.
   final bool isFocused;
@@ -58,6 +64,8 @@ class _InProgressPanelState extends ConsumerState<InProgressPanel> {
               shrinkWrap: true,
               padding: const EdgeInsets.all(8),
               children: [
+                for (final swap in widget.swaps)
+                  SwapEntry(key: ValueKey(swap.id), swap: swap, form: form, hasFocus: widget.rowsHaveKeys),
                 for (final tx in widget.transactions)
                   ActivityEntry(key: ValueKey(tx.id), tx: tx, form: form, hasFocus: widget.rowsHaveKeys),
               ],

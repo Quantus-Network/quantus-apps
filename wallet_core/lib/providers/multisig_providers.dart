@@ -4,6 +4,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 final multisigServiceProvider = Provider<MultisigService>((ref) => MultisigService());
 
@@ -15,22 +16,32 @@ class MultisigAccountsNotifier extends StateNotifier<AsyncValue<List<MultisigAcc
     _load();
   }
 
+  /// A list replaced while it loads answers no one: the one that replaced it
+  /// loads for itself.
   Future<void> _load() async {
     try {
       final accounts = await _settingsService.getMultisigAccounts();
+      if (!mounted) return;
       state = AsyncValue.data(accounts);
     } catch (e, st) {
+      if (!mounted) return;
       quantusPrint('multisig accounts load error: $e $st');
       state = AsyncValue.error(e, st);
     }
   }
 
-  Future<void> add(MultisigAccount account) async {
+  /// Adds [account]. False if a reset wiped the wallet while it was being added.
+  Future<bool> add(MultisigAccount account) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     await _settingsService.addMultisigAccount(account);
+    if (!await session.survivesReset(ticket, dropping: 'registering ${account.accountId}')) return false;
     await registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId);
+    if (!await session.survivesReset(ticket, dropping: 'adding ${account.accountId}')) return false;
 
     final current = state.value ?? [];
     state = AsyncValue.data([...current, account]);
+    return true;
   }
 
   Future<void> updateName(MultisigAccount account, String name) async {
@@ -114,6 +125,34 @@ void invalidateMultisigProposals(Ref ref, MultisigAccount msig) {
   ref.invalidate(multisigOpenProposalsProvider(msig));
   ref.invalidate(multisigPastProposalsProvider(msig));
   ref.invalidate(multisigCurrentBlockProvider);
+}
+
+/// As [invalidateMultisigProposals], and waits until the open and the past
+/// proposals are read again: what stands for an action under way goes only
+/// once the lists show what it did, or that action is offered again in
+/// between. A proposal it ended leaves the open list and is found among the
+/// past only once those are in. A read that fails is logged, and the list
+/// says so itself.
+Future<void> rereadMultisigProposals(Ref ref, MultisigAccount msig) async {
+  final lists = {'open': multisigOpenProposalsProvider(msig), 'past': multisigPastProposalsProvider(msig)};
+  invalidateMultisigProposals(ref, msig);
+  // Kept while they are read, though nothing may be watching them.
+  final kept = [for (final list in lists.values) ref.listen(list, (_, _) {})];
+  try {
+    await Future.wait([
+      for (final MapEntry(key: name, value: list) in lists.entries)
+        ref
+            .read(list.future)
+            .then<void>(
+              (_) {},
+              onError: (Object e) => quantusPrint('[Multisig] $name proposals of ${msig.accountId} not read again: $e'),
+            ),
+    ]);
+  } finally {
+    for (final subscription in kept) {
+      subscription.close();
+    }
+  }
 }
 
 /// Current best block number, used to derive proposal expiry.

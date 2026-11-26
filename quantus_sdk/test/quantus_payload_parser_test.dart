@@ -212,7 +212,7 @@ void main() {
 
         expect(parsed.extensions.specVersion, 999);
         expect(parsed.specMatchesBundled, isFalse);
-        // Still fully decoded: the signer warns rather than hiding the call.
+        // Still fully decoded: the signer notes it rather than hiding the call.
         expect(parsed.call.call, 'transfer_allow_death');
       });
 

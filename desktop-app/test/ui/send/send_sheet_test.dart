@@ -18,6 +18,7 @@ import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
 import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/account_actions.dart';
@@ -226,10 +227,11 @@ void main() {
       expect(tester.widget<ToolbarAction>(_toolbarSend()).onPressed, isNotNull);
     });
 
-    testOnMac('Send is dimmed on an account that signs on a hardware wallet', (tester) async {
+    testOnMac('Send can be used on an account that signs on a cold wallet', (tester) async {
       await pumpOn(tester, vaultAccount);
 
-      expect(sendAction(tester).isEnabled, isFalse);
+      expect(sendAction(tester).isEnabled, isTrue);
+      expect(tester.widget<ToolbarAction>(_toolbarSend()).onPressed, isNotNull);
     });
   });
 
@@ -824,6 +826,45 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(chain.transfers, hasLength(1));
+      expect(find.byKey(SendSheet.doneKey), findsOneWidget);
+    });
+
+    // The wallet lists a send as pending before it is broadcast, so what the
+    // account can spend drops below the amount while it goes out.
+    testOnMac('while a send goes out, nothing is said beside the buttons, though its pending amount leaves too '
+        'little; then the receipt', (tester) async {
+      final broadcast = Completer<String>();
+      final chain = FakeSendChain();
+      chain.submit = () {
+        ProviderScope.containerOf(tester.element(find.byType(ShellSheetView)))
+            .read(pendingTransactionsProvider.notifier)
+            .add(
+              PendingTransactionEvent(
+                tempId: 'pending-send',
+                from: 'qzMain',
+                to: 'qzPayee',
+                amount: _qtc(1000),
+                fee: FakeSendChain.usualFee,
+                timestamp: DateTime(2026),
+                blockNumber: 0,
+              ),
+            );
+        return broadcast.future;
+      };
+      await _openSend(tester, chain: chain);
+      await _toReview(tester, amount: '1000');
+      expect(_inSheet(find.textContaining('More than')), findsNothing);
+
+      await tester.tap(find.byKey(SendSheet.sendKey));
+      await tester.pump();
+      await tester.pump();
+
+      expect(_button(tester, SendSheet.sendKey).isLoading, isTrue);
+      expect(_inSheet(find.textContaining('More than')), findsNothing);
+
+      broadcast.complete('0xhash');
+      await tester.pumpAndSettle();
+
       expect(find.byKey(SendSheet.doneKey), findsOneWidget);
     });
 

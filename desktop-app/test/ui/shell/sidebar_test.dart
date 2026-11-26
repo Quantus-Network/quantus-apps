@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart' show Rect, Size;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
+import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
@@ -33,7 +34,7 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: _allAccounts,
-        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), openWallets: const {1, 2}),
         balances: oneTokenEach,
         encryptedBalances: {0: oneToken},
       ),
@@ -73,7 +74,7 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, tradingAccount],
-        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount), openWallets: const {2}),
         balances: oneTokenEach,
       ),
     );
@@ -90,7 +91,11 @@ void main() {
     final balance = oneToken * BigInt.from(3) ~/ BigInt.from(2);
     await pumpShell(
       tester,
-      overrides: shellOverrides(accounts: const [mainAccount], balances: {'qzMain': balance}),
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: {'qzMain': balance},
+      ),
     );
 
     final container = ProviderScope.containerOf(tester.element(find.byType(Sidebar)));
@@ -106,14 +111,24 @@ void main() {
     final never = Completer<BigInt>();
     await pumpShell(
       tester,
-      overrides: shellOverrides(accounts: const [mainAccount], balanceOf: (_) => never.future),
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balanceOf: (_) => never.future,
+      ),
     );
 
     expect(find.descendant(of: _row('Main'), matching: find.text('Loading...')), findsOneWidget);
   });
 
   testOnMac('a row says the balance is unavailable when it fails to load', (tester) async {
-    await pumpShell(tester, overrides: shellOverrides(accounts: const [mainAccount]));
+    await pumpShell(
+      tester,
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+      ),
+    );
 
     expect(find.descendant(of: _row('Main'), matching: find.text('Balance unavailable')), findsOneWidget);
   });
@@ -125,7 +140,11 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, vaultAccount],
-        settings: FakeSettingsService(multisigs: [orphanMultisig, teamMultisig]),
+        settings: FakeSettingsService(
+          activeAccount: const RegularAccount(mainAccount),
+          multisigs: [orphanMultisig, teamMultisig],
+          openWallets: const {1},
+        ),
         balances: oneTokenEach,
       ),
     );
@@ -183,7 +202,11 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, encryptedAccount, vaultAccount],
-        settings: FakeSettingsService(multisigs: [teamMultisig]),
+        settings: FakeSettingsService(
+          activeAccount: const RegularAccount(mainAccount),
+          multisigs: [teamMultisig],
+          openWallets: const {1},
+        ),
         balances: oneTokenEach,
         encryptedBalances: {0: oneToken},
       ),
@@ -226,6 +249,7 @@ void main() {
       tester,
       overrides: shellOverrides(
         accounts: const [mainAccount, encryptedAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
         balances: oneTokenEach,
         encryptedBalances: {0: balance},
       ),
@@ -269,7 +293,7 @@ void main() {
     expect(_isSelected(tester, 'Mining Rewards'), isFalse);
   });
 
-  testOnMac('Add Account sits at the bottom and opens the Add Account sheet', (tester) async {
+  testOnMac('Add Account sits at the bottom and opens its menu', (tester) async {
     await pumpShell(
       tester,
       overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
@@ -280,7 +304,8 @@ void main() {
     await tester.tap(_inSidebar(find.text('Add Account')));
     await tester.pumpAndSettle();
 
-    expect(find.descendant(of: find.byType(ShellSheetView), matching: find.text('Add Account')), findsOneWidget);
+    expect(find.byKey(ContextMenuRegion.menuKey), findsOneWidget);
+    expect(find.byType(ShellSheetView), findsNothing);
   });
 
   testOnMac('Settings sits in the foot right above Add Account, on its edge, and opens the Settings sheet', (

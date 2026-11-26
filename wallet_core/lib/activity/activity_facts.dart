@@ -206,6 +206,7 @@ BigInt? _paid(BigInt? fee) => fee == null || fee == BigInt.zero ? null : fee;
     MultisigProposalApprovedEvent(:final fee) => (_paid(fee), none),
     MultisigProposalExecutedEvent(:final fee) => (_paid(fee), none),
     MultisigProposalCancelledEvent(:final fee) => (_paid(fee), none),
+    PendingMultisigApprovalEvent(:final fee) => (_paid(fee), leaving),
     PendingMultisigExecutionEvent(:final fee) => (_paid(fee), leaving),
     PendingMultisigCancellationEvent(:final fee) => (_paid(fee), leaving),
     _ => (tx.amount, isActivitySend(tx, accountId: accountId) ? none : ActivityHighlight.arriving),
@@ -295,6 +296,13 @@ List<ActivityFact> _factsOf(TransactionEvent tx, String accountId, AppLocalizati
             tx.approvalsOfSignersLabel(l10n.multisigApprovalsOf) ?? '${tx.approvalsCount}',
           ),
         ],
+      );
+    case PendingMultisigApprovalEvent():
+      return proposalStep(
+        multisig: tx.multisigAddress,
+        recipient: tx.recipient,
+        fee: tx.fee ?? BigInt.zero,
+        isInBlock: false,
       );
     case PendingMultisigExecutionEvent():
       return proposalStep(

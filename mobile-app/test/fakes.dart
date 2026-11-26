@@ -29,9 +29,9 @@ class FakeSettingsService extends Fake implements SettingsService {
   DisplayAccount? activeAccount;
   List<MultisigAccount> multisigs;
   bool hasWallet = true;
-  ActiveSwap? activeSwap;
+  List<ActiveSwap> activeSwaps;
 
-  FakeSettingsService({this.activeAccount, this.multisigs = const [], this.activeSwap});
+  FakeSettingsService({this.activeAccount, this.multisigs = const [], this.activeSwaps = const []});
 
   @override
   Future<bool> getHasWallet() async => hasWallet;
@@ -81,13 +81,22 @@ class FakeSettingsService extends Fake implements SettingsService {
   String? getString(String key) => null;
 
   @override
-  ActiveSwap? getActiveSwap() => activeSwap;
+  List<ActiveSwap> getActiveSwaps() => activeSwaps;
 
   @override
-  Future<void> setActiveSwap(ActiveSwap swap) async => activeSwap = swap;
+  Future<void> saveActiveSwap(ActiveSwap swap) async {
+    final known = activeSwaps.any((s) => s.id == swap.id);
+    activeSwaps = known ? [for (final s in activeSwaps) s.id == swap.id ? swap : s] : [...activeSwaps, swap];
+  }
 
   @override
-  Future<void> clearActiveSwap() async => activeSwap = null;
+  Future<void> removeActiveSwap(String id) async => activeSwaps = [
+    for (final s in activeSwaps)
+      if (s.id != id) s,
+  ];
+
+  @override
+  Future<void> clearActiveSwaps() async => activeSwaps = const [];
 }
 
 /// The platform auth plugin without a platform: answers [authenticateResult],
@@ -313,6 +322,20 @@ List<MethodCall> recordTelemetry() {
   return calls;
 }
 
+/// Stands in for url_launcher's platform channel, and collects each link the
+/// app opens.
+List<String> recordOpenedUrls() {
+  const channel = MethodChannel('plugins.flutter.io/url_launcher');
+  final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  final opened = <String>[];
+  messenger.setMockMethodCallHandler(channel, (call) async {
+    if (call.method == 'launch') opened.add((call.arguments as Map<Object?, Object?>)['url']! as String);
+    return true;
+  });
+  addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  return opened;
+}
+
 /// Records every push registration call instead of reaching the push backend.
 class FakePushRegistration implements PushRegistration {
   final calls = <String>[];
@@ -341,6 +364,9 @@ class FakeLocalNotifications implements LocalNotifications {
 
   @override
   Future<void> showOrScheduleNotification(NotificationData notification) async => shown.add(notification);
+
+  @override
+  Future<void> cancelAll() async {}
 }
 
 /// Collects event and error names instead of sending them.

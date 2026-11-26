@@ -26,6 +26,25 @@ class MainFlutterWindow: NSWindow {
   /// until its mouse-up.
   private var isHeaderPressInFlutter = false
 
+  /// Whether the app is listening, which it says by sending the menu bar
+  /// icon's labels. Until then there is no one to ask, and closing the window
+  /// quits the app.
+  private var isAppListening = false
+
+  /// Whether the window is to leave the screen once it is out of full screen.
+  private var hidesAfterFullScreen = false
+
+  /// Whether the window is off the screen with the app still running.
+  private(set) var isHiddenForWork = false
+
+  private lazy var statusItem = BackgroundStatusItem(
+    onOpen: { [weak self] in self?.bringToFront() },
+    onOpenSwap: { [weak self] swap in self?.openSwap(swap) })
+
+  /// Held while something is under way that App Nap would make the app late
+  /// for. The computer may still go to sleep.
+  private var stayAwakeActivity: NSObjectProtocol?
+
   override func awakeFromNib() {
     let flutterViewController = FlutterViewController()
     self.flutterViewController = flutterViewController
@@ -56,6 +75,42 @@ class MainFlutterWindow: NSWindow {
       case "bringToFront":
         self?.bringToFront()
         result(nil)
+      case "setStatusItemLabels":
+        guard let arguments = call.arguments as? [String: Any],
+          let openLabel = arguments["openLabel"] as? String,
+          let quitLabel = arguments["quitLabel"] as? String
+        else {
+          result(
+            FlutterError(
+              code: "arguments", message: "setStatusItemLabels needs openLabel and quitLabel", details: nil))
+          return
+        }
+        self?.isAppListening = true
+        self?.statusItem.setLabels(openLabel: openLabel, quitLabel: quitLabel)
+        result(nil)
+      case "setStatusItemSwaps":
+        guard let arguments = call.arguments as? [String: Any],
+          let swaps = MainFlutterWindow.statusItemSwaps(from: arguments["swaps"])
+        else {
+          result(
+            FlutterError(
+              code: "arguments",
+              message: "setStatusItemSwaps needs swaps, each with swapId, accountId, label, steps and current",
+              details: nil))
+          return
+        }
+        self?.statusItem.setSwaps(title: arguments["title"] as? String, swaps: swaps)
+        result(nil)
+      case "hideWindow":
+        self?.hideKeepingAppRunning()
+        result(nil)
+      case "setStayAwake":
+        guard let arguments = call.arguments as? [String: Any], let isAwake = arguments["isAwake"] as? Bool else {
+          result(FlutterError(code: "arguments", message: "setStayAwake needs isAwake", details: nil))
+          return
+        }
+        self?.setStayAwake(isAwake)
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -65,6 +120,10 @@ class MainFlutterWindow: NSWindow {
     SensitiveClipboard.shared.register(with: flutterViewController.engine.binaryMessenger)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
+
+    // After the plugins: it takes the notification center from the
+    // notifications plugin, which claims it as it is registered.
+    PushNotifications.shared.install(with: flutterViewController.engine.binaryMessenger)
 
     // The system lays the title bar out again on these events and puts the
     // traffic lights back where a standard title bar has them.
@@ -77,6 +136,9 @@ class MainFlutterWindow: NSWindow {
       NotificationCenter.default.addObserver(
         self, selector: #selector(layoutTrafficLights), name: name, object: self)
     }
+    NotificationCenter.default.addObserver(
+      self, selector: #selector(finishHidingAfterFullScreen), name: NSWindow.didExitFullScreenNotification,
+      object: self)
 
     super.awakeFromNib()
 
@@ -130,9 +192,101 @@ class MainFlutterWindow: NSWindow {
     }
   }
 
-  /// Shows the window in front of the other apps' windows, minimized or
-  /// hidden as it may be: a notification was clicked.
-  private func bringToFront() {
+  /// The close button. The app says whether work is under way: if so it first
+  /// takes off the screen what must not be there when the window returns, and
+  /// the window hides. Otherwise, or if the app cannot answer, the window
+  /// closes for real, which quits the app.
+  override func performClose(_ sender: Any?) {
+    guard isAppListening, let windowChannel else {
+      super.performClose(sender)
+      return
+    }
+    windowChannel.invokeMethod("windowWillClose", arguments: nil) { [weak self] answer in
+      guard let self else { return }
+      if answer as? Bool == true {
+        self.hideKeepingAppRunning()
+        return
+      }
+      if answer is FlutterError || (answer as? NSObject) === FlutterMethodNotImplemented {
+        NSLog("MainFlutterWindow: the app did not answer the close, so it quits: \(String(describing: answer))")
+      }
+      self.closeAndQuit(sender)
+    }
+  }
+
+  private func closeAndQuit(_ sender: Any?) {
+    super.performClose(sender)
+  }
+
+  /// The swaps of a `setStatusItemSwaps` call, or nil if one is not as the
+  /// app sends it.
+  private static func statusItemSwaps(from value: Any?) -> [BackgroundStatusItem.Swap]? {
+    guard let entries = value as? [[String: Any]] else { return nil }
+    var swaps: [BackgroundStatusItem.Swap] = []
+    for entry in entries {
+      guard let swapId = entry["swapId"] as? String,
+        let accountId = entry["accountId"] as? String,
+        let label = entry["label"] as? String,
+        let steps = entry["steps"] as? [String],
+        let current = entry["current"] as? Int
+      else { return nil }
+      swaps.append(
+        BackgroundStatusItem.Swap(swapId: swapId, accountId: accountId, label: label, steps: steps, current: current))
+    }
+    return swaps
+  }
+
+  /// A swap picked from the menu bar icon's menu: the app brings the window
+  /// back and opens it.
+  private func openSwap(_ swap: BackgroundStatusItem.Swap) {
+    guard let windowChannel else {
+      NSLog("MainFlutterWindow: a swap was picked before the app could be told")
+      return
+    }
+    windowChannel.invokeMethod("openSwap", arguments: ["swapId": swap.swapId, "accountId": swap.accountId]) { answer in
+      if answer is FlutterError || (answer as? NSObject) === FlutterMethodNotImplemented {
+        NSLog("MainFlutterWindow: the app did not open the swap picked: \(String(describing: answer))")
+      }
+    }
+  }
+
+  /// Takes the window off the screen, the app still running. A window in
+  /// full screen comes out of it first, or its empty space would stay.
+  private func hideKeepingAppRunning() {
+    isHiddenForWork = true
+    statusItem.setHiddenForWork(true)
+    if self.styleMask.contains(.fullScreen) {
+      hidesAfterFullScreen = true
+      self.toggleFullScreen(nil)
+      return
+    }
+    self.orderOut(nil)
+  }
+
+  @objc private func finishHidingAfterFullScreen() {
+    guard hidesAfterFullScreen else { return }
+    hidesAfterFullScreen = false
+    self.orderOut(nil)
+  }
+
+  private func setStayAwake(_ isAwake: Bool) {
+    if isAwake {
+      guard stayAwakeActivity == nil else { return }
+      stayAwakeActivity = ProcessInfo.processInfo.beginActivity(
+        options: .userInitiatedAllowingIdleSystemSleep, reason: "Watching a transaction on the chain")
+    } else if let activity = stayAwakeActivity {
+      ProcessInfo.processInfo.endActivity(activity)
+      stayAwakeActivity = nil
+    }
+  }
+
+  /// Shows the window in front of the other apps' windows, minimized, hidden
+  /// or closed as it may be: a notification, the Dock icon or the menu bar
+  /// icon was clicked.
+  func bringToFront() {
+    isHiddenForWork = false
+    hidesAfterFullScreen = false
+    statusItem.setHiddenForWork(false)
     NSApp.unhide(nil)
     if self.isMiniaturized {
       self.deminiaturize(nil)
@@ -143,6 +297,7 @@ class MainFlutterWindow: NSWindow {
     } else {
       NSApp.activate(ignoringOtherApps: true)
     }
+    windowChannel?.invokeMethod("windowDidOpen", arguments: nil)
   }
 
   /// Moves the window with the mouse press the app's header just received.

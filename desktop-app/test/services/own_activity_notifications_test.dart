@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:clock/clock.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
@@ -19,6 +21,7 @@ import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 import '../fakes.dart';
 import 'fake_notification_plugin.dart';
@@ -56,20 +59,22 @@ TransferEvent _indexedSend(BigInt amount) => TransferEvent(
 
 /// The chain, its indexer holding Main's send to Bob as having moved
 /// [sentAmount], or not holding it when that is null.
-FakeSendChain _chain({required BigInt? sentAmount}) {
-  final chain = FakeSendChain();
+FakeSendChain _chain({required BigInt? sentAmount, Completer<void>? holdAmountLookup}) {
+  final chain = FakeSendChain()..holdHashSearch = holdAmountLookup;
   if (sentAmount != null) chain.indexedTransfers[_sendHash] = _indexedSend(sentAmount);
   return chain;
 }
 
 /// A wallet of Main and Savings, with the Team multisig, whose notifications
 /// are started on [platform] in the language [locale]. The indexer holds
-/// Main's send to Bob as having moved [sentAmount], 12.5 unless said.
+/// Main's send to Bob as having moved [sentAmount], 12.5 unless said; reading
+/// it waits for [holdAmountLookup] when that is set.
 Future<({ProviderContainer container, FakeNotificationPlugin notifications, _RecordingTelemetry telemetry})> _open({
   TargetPlatform platform = TargetPlatform.windows,
   String locale = 'en',
   BigInt? sentAmount,
   bool indexed = true,
+  Completer<void>? holdAmountLookup,
 }) async {
   debugDefaultTargetPlatformOverride = platform;
   addTearDown(() => debugDefaultTargetPlatformOverride = null);
@@ -82,7 +87,7 @@ Future<({ProviderContainer container, FakeNotificationPlugin notifications, _Rec
       ...shellOverrides(
         accounts: const [mainAccount, savingsAccount],
         settings: settings,
-        chain: _chain(sentAmount: indexed ? sentAmount ?? _amount : null),
+        chain: _chain(sentAmount: indexed ? sentAmount ?? _amount : null, holdAmountLookup: holdAmountLookup),
       ),
       notificationPluginProvider.overrideWithValue(notifications),
       telemetryProvider.overrideWithValue(telemetry),
@@ -175,6 +180,18 @@ void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
   group('a Transparent send from this computer', () {
+    test('confirmed while the window is closed still notifies', () async {
+      final (:container, :notifications, telemetry: _) = await _open(platform: TargetPlatform.macOS);
+      await container.read(desktopLocalNotificationsProvider.notifier).requestPermission();
+      _broadcast(container);
+      container.read(windowClosedProvider.notifier).set(true);
+
+      _found(container);
+      await _settleDown();
+
+      expect(_shown(notifications), [('Sent 12.5 QTC', 'From Main')]);
+    });
+
     test('that the chain confirms notifies that it was sent, with the amount and the account it came from', () async {
       final (:container, :notifications, telemetry: _) = await _open();
 
@@ -188,7 +205,10 @@ void main() {
       await _settleDown();
 
       expect(_shown(notifications), [('Sent 12.5 QTC', 'From Main')]);
-      expect(jsonDecode(notifications.shown.single.payload), {'accountId': mainAccount.accountId});
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': mainAccount.accountId,
+        'extrinsicHash': _sendHash,
+      });
     });
 
     test('sent as Max notifies the amount the chain moved, not the estimate it was recorded with', () async {
@@ -227,6 +247,10 @@ void main() {
           '12.5 QTC from Main wasn’t seen on the chain in time. It may have failed, or only be late.',
         ),
       ]);
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': mainAccount.accountId,
+        'extrinsicHash': _sendHash,
+      });
     });
 
     test('that is marked failed notifies that it failed', () async {
@@ -238,6 +262,10 @@ void main() {
       await _settleDown();
 
       expect(_shown(notifications), [('Send failed', '12.5 QTC from Main was not sent.')]);
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': mainAccount.accountId,
+        'extrinsicHash': _sendHash,
+      });
     });
 
     test('whose broadcast failed notifies nothing: the send sheet says so', () async {
@@ -258,6 +286,51 @@ void main() {
       await _settleDown();
 
       expect(notifications.shown, isEmpty);
+    });
+
+    group('whose amount is read as a wallet reset starts', () {
+      /// Found, and its amount being read as the wipe starts.
+      Future<
+        ({
+          ProviderContainer container,
+          FakeNotificationPlugin notifications,
+          WalletSession session,
+          Completer<void> lookup,
+        })
+      >
+      readingDuringTheWipe() async {
+        final lookup = Completer<void>();
+        final (:container, :notifications, telemetry: _) = await _open(holdAmountLookup: lookup);
+        _broadcast(container);
+        _found(container);
+        await _settleDown();
+        final session = container.read(walletSessionProvider)..beginReset();
+        lookup.complete();
+        await _settleDown();
+        return (container: container, notifications: notifications, session: session, lookup: lookup);
+      }
+
+      test('notifies nothing when the reset goes through', () async {
+        final (:container, :notifications, :session, lookup: _) = await readingDuringTheWipe();
+        expect(notifications.shown, isEmpty);
+
+        session.finishReset();
+        await _settleDown();
+
+        expect(notifications.shown, isEmpty);
+        expect(container.read(workHoldsProvider), isEmpty);
+      });
+
+      test('notifies once the wipe has failed', () async {
+        final (:container, :notifications, :session, lookup: _) = await readingDuringTheWipe();
+        expect(notifications.shown, isEmpty);
+
+        session.cancelReset();
+        await _settleDown();
+
+        expect(_shown(notifications), [('Sent 12.5 QTC', 'From Main')]);
+        expect(container.read(workHoldsProvider), isEmpty);
+      });
     });
 
     test('still watched for when the wallet is wiped notifies nothing about it', () async {
@@ -284,7 +357,10 @@ void main() {
       await _settleDown();
 
       expect(_shown(notifications), [('Proposal created', 'Send 12.5 QTC from Team')]);
-      expect(jsonDecode(notifications.shown.single.payload), {'accountId': teamMultisig.accountId});
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': teamMultisig.accountId,
+        'extrinsicHash': _proposalHash,
+      });
     });
 
     test('not seen in time notifies that it was not confirmed', () async {
@@ -297,6 +373,10 @@ void main() {
       expect(_shown(notifications), [
         ('Proposal not confirmed', 'The proposal to send 12.5 QTC from Team wasn’t seen on the chain in time.'),
       ]);
+      expect(jsonDecode(notifications.shown.single.payload), {
+        'accountId': teamMultisig.accountId,
+        'extrinsicHash': _proposalHash,
+      });
     });
   });
 

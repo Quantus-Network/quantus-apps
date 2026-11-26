@@ -1,6 +1,9 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -8,6 +11,7 @@ import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/shown_balances_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/global_history_polling_service.dart';
 
 import '../../fakes.dart';
@@ -36,6 +40,19 @@ Future<void> _window(WidgetTester tester, AppLifecycleState state) async {
 
 ProviderContainer _container(WidgetTester tester) =>
     ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+
+/// The Encrypted account's state, counting each time it is loaded.
+class _CountedStates extends MapView<int, EncryptedAccountState> {
+  _CountedStates(super.map);
+
+  int reads = 0;
+
+  @override
+  EncryptedAccountState? operator [](Object? key) {
+    reads++;
+    return super[key];
+  }
+}
 
 void main() {
   testOnMac('opening the wallet sets the polling going, and asks nothing more of it', (tester) async {
@@ -176,6 +193,89 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+  });
+
+  group('with the window closed', () {
+    void setClosed(WidgetTester tester, bool isClosed) =>
+        _container(tester).read(windowClosedProvider.notifier).set(isClosed);
+
+    testOnMac('no poll reloads the active Encrypted account, which would read its recovery phrase', (tester) async {
+      final states = _CountedStates({
+        0: encryptedHolding(const [1250]),
+      });
+      await pumpShell(
+        tester,
+        realPolling: true,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, encryptedAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(encryptedAccount)),
+          balances: oneTokenEach,
+          encryptedBalances: {0: oneToken},
+          encryptedStates: states,
+        ),
+      );
+      final watching = _container(tester).listen(encryptedStateProvider(0), (_, _) {});
+      addTearDown(watching.close);
+
+      var before = states.reads;
+      await tester.pump(GlobalHistoryPollingService.pollInterval);
+      await tester.pumpAndSettle();
+      expect(states.reads, greaterThan(before), reason: 'an open window is polled, so this test can see a reload');
+
+      setClosed(tester, true);
+      await tester.pump();
+      before = states.reads;
+      await tester.pump(GlobalHistoryPollingService.pollInterval * 3);
+      await tester.pumpAndSettle();
+
+      expect(states.reads, before);
+    });
+
+    testOnMac('the polling pauses, and on reopening resumes and catches up', (tester) async {
+      final polling = FakeHistoryPollingManager();
+      await _openWallet(tester, polling: polling);
+
+      setClosed(tester, true);
+      await tester.pumpAndSettle();
+      expect(polling.calls, ['pause']);
+
+      setClosed(tester, false);
+      await tester.pumpAndSettle();
+      expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+    });
+
+    testOnMac('the network coming back does not resume it', (tester) async {
+      final polling = FakeHistoryPollingManager();
+      final network = FakeNetwork();
+      await _openWallet(tester, polling: polling, network: network);
+      setClosed(tester, true);
+      await tester.pumpAndSettle();
+
+      network.goOffline();
+      await tester.pumpAndSettle();
+      network.goOnline();
+      await tester.pumpAndSettle();
+
+      expect(polling.calls, ['pause']);
+    });
+
+    testOnMac('reopening while offline stays paused until the network is back', (tester) async {
+      final polling = FakeHistoryPollingManager();
+      final network = FakeNetwork();
+      await _openWallet(tester, polling: polling, network: network);
+      setClosed(tester, true);
+      await tester.pumpAndSettle();
+      network.goOffline();
+      await tester.pumpAndSettle();
+
+      setClosed(tester, false);
+      await tester.pumpAndSettle();
+      expect(polling.calls, ['pause']);
+
+      network.goOnline();
+      await tester.pumpAndSettle();
+      expect(polling.calls, ['pause', 'resume', 'silentRefresh']);
+    });
   });
 
   testOnMac('a wallet wiped while its polling is paused leaves the polling unpaused for the next one', (tester) async {

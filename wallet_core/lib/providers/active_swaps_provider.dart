@@ -1,0 +1,279 @@
+import 'dart:async';
+
+import 'package:clock/clock.dart';
+import 'package:collection/collection.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
+import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/telemetry.dart';
+
+/// The swaps being followed, in order of starting, kept on the device so
+/// they survive a restart and polled through 1Click's status endpoint until
+/// each settles. One poll loop serves them all: every interval each
+/// unsettled swap is polled in turn, and an answer merges into that swap as
+/// it is by then. A poll that fails is recorded on its swap and tried again
+/// at the next interval; the error leaves it once a poll succeeds. Polls
+/// pause while the app is in the background, unless it polls there
+/// ([swapsPollInBackgroundProvider]): on Android the swap card's foreground
+/// service keeps the process alive so the polls keep the lock-screen card
+/// current. An interval polls the swaps that were not
+/// overdue as it began: one that turns overdue meanwhile is polled that last
+/// time, so what settled just before is learned of, and on no interval
+/// after, whatever else still runs. An overdue swap is polled once when the
+/// app starts, once on each return to the foreground, and when a refresh is
+/// asked for.
+final activeSwapsProvider = NotifierProvider<ActiveSwapsNotifier, List<ActiveSwap>>(ActiveSwapsNotifier.new);
+
+/// Whether a swap still waiting for its deposit by hand is kept when the app
+/// starts. Not where the swap is only paid from a deposit screen that went
+/// with the last run; an app that lists such a swap among the rest says so
+/// here.
+final keepsUnpaidSwapsProvider = Provider<bool>((_) => false);
+
+/// Whether the swaps are still polled while the app is in the background: on
+/// Android, where the swap card's foreground service keeps the process alive,
+/// and in an app that keeps running out of sight to tell how a swap ended.
+final swapsPollInBackgroundProvider = Provider<bool>((_) => defaultTargetPlatform == TargetPlatform.android);
+
+/// The followed swap with [id], or null once it was put away.
+final activeSwapProvider = Provider.family<ActiveSwap?, String>(
+  (ref, id) => ref.watch(activeSwapsProvider.select((swaps) => swaps.firstWhereOrNull((s) => s.id == id))),
+);
+
+/// Whether as many swaps as can be followed are running, so that no other
+/// can start until one of them settles or is put away. A confirmation under
+/// way is not counted here: it is refused as it begins, when the slots are
+/// all taken ([ActiveSwapsNotifier.full]).
+final swapsAtLimitProvider = Provider<bool>(
+  (ref) => ref.watch(
+    activeSwapsProvider.select((swaps) => swaps.where((s) => !s.isFinal).length >= ActiveSwapsNotifier.maxFollowed),
+  ),
+);
+
+class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
+  /// The most swaps followed at once: starting another drops the oldest
+  /// settled one, and the review refuses when none is settled.
+  static const maxFollowed = 10;
+
+  Timer? _timer;
+  Future<void>? _inFlight;
+
+  /// The ids of the swaps the poll in flight is limited to, as an
+  /// interval's is; null when it polls every unsettled swap.
+  Set<String>? _inFlightOnly;
+  final _tickets = <Object>{};
+
+  bool get _pollsInBackground => ref.read(swapsPollInBackgroundProvider);
+
+  /// The swaps kept on the device, less any still waiting for its deposit by
+  /// hand: the deposit screen that pays it went with the last run, so such a
+  /// swap is dropped here as it is when that screen is left. An app that
+  /// keeps unpaid swaps ([keepsUnpaidSwapsProvider]) follows them still.
+  @override
+  List<ActiveSwap> build() {
+    ref.onDispose(() => _timer?.cancel());
+    ref.listen(appInForegroundProvider, (_, foreground) {
+      if (foreground) {
+        unawaited(refresh());
+      } else if (!_pollsInBackground) {
+        _timer?.cancel();
+      }
+    });
+    final settings = ref.watch(settingsServiceProvider);
+    final keepsUnpaid = ref.watch(keepsUnpaidSwapsProvider);
+    final swaps = <ActiveSwap>[];
+    for (final swap in settings.getActiveSwaps()) {
+      if (swap.awaitingDeposit && !keepsUnpaid) {
+        unawaited(
+          settings.removeActiveSwap(swap.id).catchError((Object e) => quantusPrint('Unpaid swap drop failed: $e')),
+        );
+      } else {
+        swaps.add(swap);
+      }
+    }
+    final now = clock.now();
+    if (swaps.any((s) => _polled(s) && s.overdue(now))) {
+      _timer = Timer(Duration.zero, refresh);
+    } else {
+      _schedule(swaps);
+    }
+    return swaps;
+  }
+
+  /// Whether no more swaps can start until one settles: as many as can be
+  /// followed are running or have a confirmation under way on a ticket.
+  bool get full => state.where((s) => !s.isFinal).length + _tickets.length >= maxFollowed;
+
+  /// Taken as a confirmation begins, holding a slot until [start] spends the
+  /// ticket or [release] gives it back: [start] follows a swap on it only
+  /// while the ticket stands, and a logout voids every ticket, so a deposit
+  /// that lands after the wallet logged out is not followed.
+  Object ticket() {
+    final ticket = Object();
+    _tickets.add(ticket);
+    return ticket;
+  }
+
+  /// Frees the slot of a [ticket] no swap starts on; one spent is left alone.
+  void release(Object ticket) => _tickets.remove(ticket);
+
+  /// Follows [swap], in place of a followed swap with its id; not when
+  /// [ticket] has lapsed. Beyond [maxFollowed] the oldest settled swap goes.
+  bool start(ActiveSwap swap, {Object? ticket}) {
+    if (ticket != null && !_tickets.remove(ticket)) {
+      quantusPrint('Swap deposit to ${swap.order.depositAddress} landed after the wallet logged out, not followed');
+      return false;
+    }
+    final settled = state.firstWhereOrNull((s) => s.isFinal);
+    if (state.length >= maxFollowed && settled != null) unawaited(remove(settled.id));
+    _set(swap);
+    _schedule(state);
+    final fake = swap.simulated || ref.read(swapHarnessServiceProvider) != null;
+    if (!fake) ref.read(telemetryProvider).sendEvent('swap_started', parameters: _telemetryOf(swap.order.quote));
+    return true;
+  }
+
+  /// What telemetry learns of a swap: the pair, the foreign token's rate per
+  /// QTC and a coarse size, never an address or an exact amount.
+  Map<String, String> _telemetryOf(SwapQuote quote) {
+    final foreign = quote.fromToken.isQuantus ? quote.toToken : quote.fromToken;
+    return {
+      'from': quote.fromToken.symbol,
+      'from_network': quote.fromToken.network,
+      'to': quote.toToken.symbol,
+      'to_network': quote.toToken.network,
+      'size_usd': _sizeBucket(quote.amountInUsd),
+      'rate': ref
+          .read(numberFormattingServiceProvider)
+          .formatWireAmount(swapQuoteRate(quote), decimals: foreign.decimals),
+    };
+  }
+
+  /// Puts the swap with [id] away. Once it has settled it is done with;
+  /// before that the user stops following it, and it settles on its own.
+  Future<void> remove(String id) {
+    state = [
+      for (final s in state)
+        if (s.id != id) s,
+    ];
+    _schedule(state);
+    return ref.read(settingsServiceProvider).removeActiveSwap(id);
+  }
+
+  /// Forgets every swap and voids every ticket, at logout.
+  Future<void> clearAll() {
+    _tickets.clear();
+    _timer?.cancel();
+    state = const [];
+    return ref.read(settingsServiceProvider).clearActiveSwaps();
+  }
+
+  /// Records that the user has sent the deposit of the swap with [id] by
+  /// hand; the swap is then followed as a sent one.
+  void markDepositSent(String id) {
+    final swap = _find(id);
+    if (swap == null) throw StateError('No followed swap $id to mark sent');
+    _set(swap.withDepositSent());
+  }
+
+  /// Polls every unsettled swap now instead of at the next interval, the
+  /// overdue ones too, or joins the poll in flight.
+  Future<void> refresh() => _poll();
+
+  /// Polls the unsettled swaps, all of them or [only] those with these ids,
+  /// or joins the poll in flight. Where that one is limited, as an
+  /// interval's is, a poll of all polls the swaps it leaves out once it
+  /// ends.
+  Future<void> _poll({Set<String>? only}) {
+    _timer?.cancel();
+    final inFlight = _inFlight;
+    final inFlightOnly = _inFlightOnly;
+    if (inFlight != null && (inFlightOnly == null || only != null)) return inFlight;
+    late final Future<void> poll;
+    final polling = inFlight == null || inFlightOnly == null
+        ? _pollAll((swap) => only == null || only.contains(swap.id))
+        : inFlight.then((_) => _pollAll((swap) => !inFlightOnly.contains(swap.id)));
+    poll = polling.whenComplete(() {
+      if (identical(_inFlight, poll)) _inFlight = null;
+    });
+    _inFlightOnly = only;
+    return _inFlight = poll;
+  }
+
+  ActiveSwap? _find(String id) => state.firstWhereOrNull((s) => s.id == id);
+
+  void _set(ActiveSwap swap) {
+    final known = _find(swap.id) != null;
+    state = known ? [for (final s in state) s.id == swap.id ? swap : s] : [...state, swap];
+    if (swap.simulated) return;
+    unawaited(
+      ref
+          .read(settingsServiceProvider)
+          .saveActiveSwap(swap)
+          .catchError((Object e) => quantusPrint('Active swap save failed: $e')),
+    );
+  }
+
+  static bool _polled(ActiveSwap swap) => !swap.simulated && !swap.isFinal;
+
+  void _schedule(List<ActiveSwap> swaps) {
+    _timer?.cancel();
+    final now = clock.now();
+    // The interval is theirs: a swap overdue by now has had its last one.
+    final current = {
+      for (final swap in swaps)
+        if (_polled(swap) && !swap.overdue(now)) swap.id,
+    };
+    if (current.isEmpty) return;
+    if (!_pollsInBackground && !ref.read(appInForegroundProvider)) return;
+    _timer = Timer(SwapService.statusPollInterval, () => unawaited(_poll(only: current)));
+  }
+
+  /// Polls in turn each unsettled swap [polls] holds for, and merges the
+  /// answer into the swap as it is by then, so a deposit marked sent while
+  /// the request was out stays sent; a swap put away meanwhile is left
+  /// alone.
+  Future<void> _pollAll(bool Function(ActiveSwap swap) polls) async {
+    for (final swap in state.where((s) => _polled(s) && polls(s)).toList()) {
+      try {
+        final order = await ref.read(swapServiceProvider).getSwapStatus(swap.order);
+        _merge(swap.id, (latest) => latest.withOrder(order, now: clock.now()));
+      } catch (e) {
+        quantusPrint('Swap status poll failed: $e');
+        _merge(swap.id, (latest) => latest.withPollError(describeSwapError(ref.read(l10nProvider), e)));
+      }
+    }
+    _schedule(state);
+  }
+
+  void _merge(String id, ActiveSwap Function(ActiveSwap latest) update) {
+    final latest = _find(id);
+    if (latest != null) _set(update(latest));
+  }
+}
+
+/// The band a swap worth [usd] falls in.
+String _sizeBucket(double usd) => switch (usd) {
+  < 100 => '<100',
+  < 1000 => '<1000',
+  < 10000 => '<10000',
+  _ => '10000+',
+};
+
+/// The time, once a second while any followed swap is still running, so
+/// the clocks on the swaps advance; once otherwise.
+final swapClockProvider = StreamProvider.autoDispose<DateTime>((ref) {
+  final running = ref.watch(activeSwapsProvider.select((swaps) => swaps.any((s) => s.settledAt == null)));
+  final controller = StreamController<DateTime>();
+  ref.onDispose(controller.close);
+  controller.add(clock.now());
+  if (running) {
+    final timer = Timer.periodic(const Duration(seconds: 1), (_) => controller.add(clock.now()));
+    ref.onDispose(timer.cancel);
+  }
+  return controller.stream;
+});

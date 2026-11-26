@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/utils/recipient_rememberer.dart';
 
 /// Where an encrypted send operation currently stands.
 enum EncryptedSendPhase {
@@ -44,9 +45,10 @@ class EncryptedSendState {
   final BigInt submittedRecipientToken;
 
   /// The hash of each transaction the send handed to the chain, in the order
-  /// they went: all of them once it succeeded, those before the stop when it
-  /// was cancelled part way. A send draws on its inputs in batches, one
-  /// transaction each.
+  /// they went, each from the moment the chain took it: all of them once it
+  /// succeeded, those before the stop when it was cancelled or failed part
+  /// way. A send draws on its inputs in batches, one transaction each, and
+  /// proves the next after handing over the one before.
   final List<String> txHashes;
 
   EncryptedSendState({
@@ -121,6 +123,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
     final walletIndex = account.walletIndex;
     final service = ref.read(encryptedAccountServiceProvider(walletIndex));
     _service = service;
+    final rememberRecipient = recipientRememberer(ref.read);
 
     try {
       // The plan pays exactly its own amountToken — refuse to prove a plan
@@ -147,6 +150,10 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
         recipientAddress: recipientAddress,
         circuitBinsDir: circuitDir,
         isCancelled: () => _stopRequested,
+        onTransactionSubmitted: (txHash) {
+          if (!ref.mounted) return;
+          state = state.copyWith(txHashes: [...state.txHashes, txHash]);
+        },
         onProgress: (progress) {
           if (!ref.mounted) return;
           state = state.copyWith(
@@ -169,11 +176,7 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
         return;
       }
 
-      unawaited(
-        RecentAddressesService()
-            .addAddress(recipientAddress)
-            .catchError((Object e) => quantusPrint('Failed to save recent address: $e')),
-      );
+      rememberRecipient(recipientAddress);
       state = state.copyWith(phase: EncryptedSendPhase.succeeded, txHashes: result.txHashes);
     } on ClaimCancelled {
       // Nothing was submitted.

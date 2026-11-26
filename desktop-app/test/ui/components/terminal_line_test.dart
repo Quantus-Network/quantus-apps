@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -128,6 +129,50 @@ void main() {
 
       expect(find.bySemanticsLabel('Preparing'), findsOneWidget);
     });
+  });
+
+  testWidgets('a name too long for its room is cut short, its status still whole at the end', (tester) async {
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) => MaterialApp(
+          theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
+          home: const Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 240,
+                child: TerminalLine(name: 'Sending wrapped ether to the recipient far away', status: '[OK]'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull, reason: 'nothing overflows');
+    final line = tester.getRect(find.byType(TerminalLine));
+    final status = tester.getRect(find.text('[OK]'));
+    final name = tester.getRect(find.textContaining('> SENDING'));
+    expect(status.right, line.right);
+    expect(name.right, lessThanOrEqualTo(status.left));
+
+    // In room enough, the name is whole, as ever.
+    await tester.pumpWidget(
+      Builder(
+        builder: (context) => MaterialApp(
+          theme: AppTheme.darkTheme(context, text: const AppTextThemeV3.desktop()),
+          home: const Scaffold(
+            body: Center(
+              child: SizedBox(
+                width: 600,
+                child: TerminalLine(name: 'Preparing', status: '[OK]'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    final whole = tester.renderObject<RenderParagraph>(find.text('> PREPARING'));
+    expect(whole.didExceedMaxLines, isFalse);
   });
 
   testWidgets('a screen reader gets the name as it is written, with the status', (tester) async {

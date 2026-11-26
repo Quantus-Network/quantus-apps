@@ -5,6 +5,7 @@ class CombinedTransactionsList {
   final List<PendingTransactionEvent> pendingTransactions;
   final List<PendingMultisigCreationEvent> pendingMultisigCreations;
   final List<PendingMultisigProposalEvent> pendingMultisigProposals;
+  final List<PendingMultisigApprovalEvent> pendingMultisigApprovals;
   final List<PendingMultisigExecutionEvent> pendingMultisigExecutions;
   final List<PendingMultisigCancellationEvent> pendingMultisigCancellations;
   final List<ReversibleTransferEvent> scheduledReversibleTransfers;
@@ -15,6 +16,7 @@ class CombinedTransactionsList {
     required this.pendingTransactions,
     required this.pendingMultisigCreations,
     required this.pendingMultisigProposals,
+    required this.pendingMultisigApprovals,
     required this.pendingMultisigExecutions,
     required this.pendingMultisigCancellations,
     required this.scheduledReversibleTransfers,
@@ -26,6 +28,7 @@ class CombinedTransactionsList {
     List<PendingTransactionEvent>? pendingTransactions,
     List<PendingMultisigCreationEvent>? pendingMultisigCreations,
     List<PendingMultisigProposalEvent>? pendingMultisigProposals,
+    List<PendingMultisigApprovalEvent>? pendingMultisigApprovals,
     List<PendingMultisigExecutionEvent>? pendingMultisigExecutions,
     List<PendingMultisigCancellationEvent>? pendingMultisigCancellations,
     List<ReversibleTransferEvent>? scheduledReversibleTransfers,
@@ -36,6 +39,7 @@ class CombinedTransactionsList {
       pendingTransactions: pendingTransactions ?? this.pendingTransactions,
       pendingMultisigCreations: pendingMultisigCreations ?? this.pendingMultisigCreations,
       pendingMultisigProposals: pendingMultisigProposals ?? this.pendingMultisigProposals,
+      pendingMultisigApprovals: pendingMultisigApprovals ?? this.pendingMultisigApprovals,
       pendingMultisigExecutions: pendingMultisigExecutions ?? this.pendingMultisigExecutions,
       pendingMultisigCancellations: pendingMultisigCancellations ?? this.pendingMultisigCancellations,
       scheduledReversibleTransfers: scheduledReversibleTransfers ?? this.scheduledReversibleTransfers,
@@ -48,6 +52,7 @@ class CombinedTransactionsList {
     pendingTransactions: [],
     pendingMultisigCreations: [],
     pendingMultisigProposals: [],
+    pendingMultisigApprovals: [],
     pendingMultisigExecutions: [],
     pendingMultisigCancellations: [],
     scheduledReversibleTransfers: [],

@@ -2,11 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/global_toast_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/multisig_action_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/extrinsic_indexer_polling_service.dart';
 import 'package:wallet_core/services/multisig_cancellation_reconciliation.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/utils/polling_refresh_scope.dart';
 
 typedef MultisigCancellationPollingService =
@@ -20,6 +22,8 @@ Future<bool> _confirmIndexedCancellation(
   final hash = pending.extrinsicHash;
   if (hash == null) return false;
 
+  final session = ref.read(walletSessionProvider);
+  final ticket = session.ticket;
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
   if (proposal == null || proposal.status != MultisigProposalStatus.cancelled) return false;
@@ -27,8 +31,12 @@ Future<bool> _confirmIndexedCancellation(
   final historyService = ref.read(chainHistoryServiceProvider);
   final indexed = await historyService.searchCancelledByExtrinsicHash(extrinsicHash: hash);
   if (indexed == null) return false;
+  if (!await session.survivesReset(ticket, dropping: 'confirming cancellation ${pending.id}')) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: 'confirming cancellation ${pending.id}')) return true;
   removePendingMultisigCancellation(ref, pending.id);
+  _settle(ref, hash, MultisigActionConfirmation.confirmed);
   await reconcileIndexedCancellation(ref, msig, indexed);
   return true;
 }
@@ -40,19 +48,27 @@ Future<bool> _tryResolveCancellationTimeout(
   MultisigAccount msig,
   PendingMultisigCancellationEvent pending,
 ) async {
+  final session = ref.read(walletSessionProvider);
+  final ticket = session.ticket;
+  final dropping = 'resolving cancellation ${pending.id}';
   final multisigService = ref.read(multisigServiceProvider);
   final proposal = await multisigService.getProposal(msig, pending.proposalId);
   if (proposal == null || proposal.status != MultisigProposalStatus.cancelled) {
     return false;
   }
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
   removePendingMultisigCancellation(ref, pending.id);
-  invalidateMultisigProposals(ref, msig);
 
+  // Only the proposer cancels, so the proposal being cancelled is this one.
   final hash = pending.extrinsicHash;
+  if (hash != null) _settle(ref, hash, MultisigActionConfirmation.confirmed);
   if (hash != null) {
     try {
       final indexed = await ref.read(chainHistoryServiceProvider).searchCancelledByExtrinsicHash(extrinsicHash: hash);
+      if (!await session.survivesReset(ticket, dropping: dropping)) return true;
       if (indexed != null) {
         await reconcileIndexedCancellation(ref, msig, indexed);
         return true;
@@ -61,10 +77,21 @@ Future<bool> _tryResolveCancellationTimeout(
       quantusPrint('[MultisigCancellationPoller] soft timeout reconcile error: $e');
     }
   }
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
   invalidateAccountBalances(ref, {pending.proposerId, msig.accountId});
   return true;
 }
+
+/// Stops watching for a cancellation the indexer never showed.
+void _giveUpOnCancellation(Ref ref, String id) {
+  final hash = findPendingMultisigCancellation(ref, id)?.extrinsicHash;
+  if (hash != null) _settle(ref, hash, MultisigActionConfirmation.unconfirmed);
+  removePendingMultisigCancellation(ref, id);
+}
+
+void _settle(Ref ref, String hash, MultisigActionConfirmation outcome) =>
+    ref.read(multisigActionConfirmationsProvider.notifier).settle(hash, outcome);
 
 final multisigCancellationPollingServiceProvider = Provider<MultisigCancellationPollingService>((ref) {
   final service = ExtrinsicIndexerPollingService<PendingMultisigCancellationEvent, MultisigAccount>(
@@ -74,7 +101,7 @@ final multisigCancellationPollingServiceProvider = Provider<MultisigCancellation
       getId: (pending) => pending.id,
       getExtrinsicHash: (pending) => pending.extrinsicHash,
       isStillPending: (ref, id) => findPendingMultisigCancellation(ref, id) != null,
-      removePending: removePendingMultisigCancellation,
+      removePending: _giveUpOnCancellation,
       showTimeoutToast: (ref) {
         ref.read(globalToastProvider.notifier).showError(ref.read(l10nProvider).multisigCancelTimeoutToast);
       },

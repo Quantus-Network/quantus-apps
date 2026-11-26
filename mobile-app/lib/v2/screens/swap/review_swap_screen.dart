@@ -1,20 +1,16 @@
-import 'dart:async';
-
-import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
-import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/swap_preflight.dart';
-import 'package:wallet_core/providers/active_swap_provider.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:resonance_network_wallet/v2/components/scaffold_base.dart';
-import 'package:wallet_core/send/regular_send_strategy.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_progress_screen.dart';
-import 'package:resonance_network_wallet/v2/screens/swap/swap_deposit_fee_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
+import 'package:wallet_core/swap/swap_confirmation.dart';
+import 'package:wallet_core/swap/swap_review.dart';
 import 'package:resonance_network_wallet/v2/screens/swap/swap_summary.dart';
 
 /// Shows a dry quote's terms. Confirming takes a live quote; when it
@@ -34,12 +30,8 @@ class ReviewSwapScreen extends ConsumerStatefulWidget {
 
 class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
   late SwapQuote _quote = widget.quote;
-  SwapOrder? _order;
+  late final _confirmation = SwapConfirmation(account: widget.account);
   bool _confirming = false;
-
-  /// Bumped when the swap service is rebuilt; a confirmation that started
-  /// under an older one stops where it is.
-  int _generation = 0;
 
   bool get _swapOut => _quote.fromToken.isQuantus;
 
@@ -47,154 +39,59 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
 
   (Account, BigInt) get _feeKey => (widget.account, _quote.amountIn);
 
+  /// Confirms the terms on screen, and says how it went: the swap's progress
+  /// takes the review's place, live terms that are worse replace the ones
+  /// shown, and what stopped it otherwise is said.
   Future<void> _confirm() async {
     final l10n = ref.read(l10nProvider);
-    final generation = _generation;
     setState(() => _confirming = true);
     try {
-      final order = await _liveOrder(l10n, generation);
-      if (order == null || !mounted) return;
-      final fee = _sendsDeposit(ref.read(swapPreflightProvider))
-          ? ref.read(swapDepositFeeProvider(_feeKey)).requireValue
-          : null;
-      final swaps = ref.read(activeSwapProvider.notifier);
-      final ticket = swaps.ticket;
-      final txHash = fee != null ? await _sendDeposit(order, fee, l10n, generation) : null;
-      if (fee != null && txHash == null) return;
-      // The deposit is out, so the swap is followed even if the screen is gone,
-      // unless the wallet logged out or moved on meanwhile.
-      final followed = swaps.start(
-        ActiveSwap(
-          order: order,
-          accountId: widget.account.accountId,
-          accountName: widget.account.name,
-          startedAt: clock.now(),
-          depositByHand: fee == null,
-          depositTxHash: txHash,
-          depositFee: fee,
-        ),
-        ticket: ticket,
-      );
-      if (!followed || !mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          settings: const RouteSettings(name: SwapProgressScreen.routeName),
-          builder: (_) => SwapProgressScreen(account: widget.account),
-        ),
-        (route) => route.isFirst,
-      );
+      final outcome = await _confirmation.confirm(ref, _quote, isActive: () => mounted);
+      if (!mounted) return;
+      switch (outcome) {
+        case SwapConfirmed(:final swap):
+          Navigator.pushAndRemoveUntil(
+            context,
+            SwapProgressScreen.route(swap.id, account: widget.account),
+            (route) => route.isFirst,
+          );
+        case SwapTooManyFollowed():
+          context.showErrorToaster(message: l10n.swapTooManyFollowed(ActiveSwapsNotifier.maxFollowed));
+        case SwapConfirmDropped():
+          break;
+        case SwapTermsChanged(:final quote):
+          setState(() => _quote = quote);
+          context.showWarningToaster(message: l10n.swapReviewPriceMoved);
+        case SwapListingChanged():
+          context.showErrorToaster(message: l10n.swapReviewListingChanged);
+        case SwapNotAllowed():
+          context.showErrorToaster(message: l10n.swapDisabledTitle);
+        case SwapQuoteRefused(:final message):
+          context.showErrorToaster(message: l10n.swapQuoteError(message));
+        case SwapApprovalRequired():
+          context.showErrorToaster(message: l10n.sendReviewAuthRequired);
+        case SwapDepositFailed():
+          context.showErrorToaster(message: l10n.sendReviewSubmitFailed);
+      }
     } finally {
       if (mounted) setState(() => _confirming = false);
     }
   }
 
-  /// A live order at least as good as the terms on screen, or null when the
-  /// terms on screen changed. A live order is kept until close to its deadline,
-  /// so a retry reuses its deposit address, unless the service was rebuilt
-  /// meanwhile: the fresh service then checks the quote's QTC token itself,
-  /// and an answer the old service was still owed is discarded.
-  Future<SwapOrder?> _liveOrder(AppLocalizations l10n, int generation) async {
-    final kept = _order;
-    if (kept != null && kept.quote.deadline.isAfter(clock.now().add(SwapService.minimumDepositLead))) return kept;
-    try {
-      final order = await ref.read(swapServiceProvider).createSwap(_quote);
-      if (await _stale(generation, l10n)) return null;
-      _order = order;
-      final live = order.quote;
-      if (live.minAmountOut >= _quote.minAmountOut && live.amountIn <= _quote.amountIn) return order;
-      if (mounted) {
-        setState(() => _quote = order.quote);
-        context.showWarningToaster(message: l10n.swapReviewPriceMoved);
-      }
-    } catch (e) {
-      quantusPrint('Swap create failed: $e');
-      if (mounted) context.showErrorToaster(message: l10n.swapQuoteError(describeSwapError(l10n, e)));
-    }
-    return null;
-  }
-
-  /// Whether a confirmation started under [generation] may go on: nothing was
-  /// rebuilt since, and the location, once any refresh in flight has answered,
-  /// still allows swaps.
-  Future<bool> _proceeds(int generation) async {
-    if (!mounted) return false;
-    await ref.read(remoteConfigProvider.notifier).settled;
-    return mounted && generation == _generation && ref.read(remoteConfigProvider).swapAvailable;
-  }
-
-  /// The opposite of [_proceeds], saying why on screen.
-  Future<bool> _stale(int generation, AppLocalizations l10n) async {
-    if (await _proceeds(generation)) return false;
-    if (mounted) {
-      final available = ref.read(remoteConfigProvider).swapAvailable;
-      context.showErrorToaster(message: available ? l10n.swapReviewListingChanged : l10n.swapDisabledTitle);
-    }
-    return true;
-  }
-
-  /// Sends the quoted QTC into the deposit address; null when nothing was sent.
-  /// Once the user has authenticated the location is checked afresh, since the
-  /// prompt can hide a move elsewhere; the deposit goes out only on an
-  /// allowance that postdates it.
-  Future<String?> _sendDeposit(SwapOrder order, BigInt fee, AppLocalizations l10n, int generation) async {
-    if (await _stale(generation, l10n)) return null;
-    try {
-      final service = ref.read(swapServiceProvider);
-      final hash = await RegularSendStrategy(account: widget.account).submitLocal(
-        ref,
-        recipient: order.depositAddress,
-        amount: order.quote.amountIn,
-        networkFee: fee,
-        proceed: () async {
-          if (!mounted) return false;
-          await ref.read(remoteConfigProvider.notifier).syncConfig();
-          return _proceeds(generation);
-        },
-      );
-      if (hash == null) {
-        final stale = await _stale(generation, l10n);
-        if (!stale && mounted) context.showErrorToaster(message: l10n.sendReviewAuthRequired);
-        return null;
-      }
-      unawaited(
-        service.submitDeposit(order, hash).catchError((Object e) => quantusPrint('Swap deposit submit failed: $e')),
-      );
-      return hash;
-    } catch (e) {
-      quantusPrint('Swap deposit transfer failed: $e');
-      if (mounted) context.showErrorToaster(message: l10n.sendReviewSubmitFailed);
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    ref.listen(swapServiceProvider, (_, _) {
-      _generation++;
-      _order = null;
-    });
+    ref.listen(swapServiceProvider, (_, _) => _confirmation.serviceRebuilt());
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final fmt = ref.watch(numberFormattingServiceProvider);
     final quote = _quote;
     final from = quote.fromToken;
-    final to = quote.toToken;
-    final quantus = from.isQuantus ? from : to;
-    final foreign = from.isQuantus ? to : from;
-    final exactOutput = quote.swapType == SwapType.exactOutput;
-    String amount(BigInt value, SwapToken token) => formatSwapAmount(l10n, fmt, value, token);
-    Widget row(String label, String value, {bool mono = false}) =>
-        SwapDetailRow(label: label, value: value, monoLabel: true, monoValue: mono);
-
     final sendsDeposit = _sendsDeposit(ref.watch(swapPreflightProvider));
     final fee = sendsDeposit ? ref.watch(swapDepositFeeProvider(_feeKey)) : null;
     final spendable = sendsDeposit ? ref.watch(effectiveBalanceProviderFamily(widget.account.accountId)).value : null;
-    final feeValue = fee?.value;
-    final insufficient = feeValue != null && spendable != null && quote.amountIn > swapMaxIn(spendable, feeValue);
     final available = ref.watch(remoteConfigProvider.select((c) => c.swapAvailable));
-    final blocked = !available || sendsDeposit && (feeValue == null || spendable == null || insufficient);
+    final review = swapReviewOf(l10n, fmt, quote, available: available, fee: fee, spendable: spendable);
 
     return ScaffoldBase(
       appBar: V2AppBar(title: l10n.swapReviewTitle),
@@ -205,44 +102,25 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
             const SizedBox(height: 24),
             SwapAmountsCard(quote: quote, payLabel: l10n.swapYouPay, receiveLabel: l10n.swapYouReceive),
             const SizedBox(height: 32),
-            row(
-              l10n.swapRate,
-              l10n.swapRateLabel(
-                quantus.symbol,
-                fmt.formatAmount(swapQuoteRate(quote), decimals: foreign.decimals),
-                foreign.symbol,
-              ),
-            ),
-            SwapQuoteFeeRows(quote: quote),
-            if (_swapOut)
-              row(l10n.swapReviewRecipient, AddressFormattingService.formatAddress(quote.recipient), mono: true)
-            else
-              row(l10n.swapRefundTo, AddressFormattingService.formatAddress(quote.refundAddress), mono: true),
-            if (fee != null)
-              row(
-                l10n.swapReviewNetworkFee,
-                fee.hasError ? l10n.swapReviewFeeUnavailable : (feeValue == null ? '…' : amount(feeValue, from)),
-              ),
-            row(
-              l10n.swapReviewSlippage,
-              l10n.swapReviewSlippageValue(
-                exactOutput
-                    ? amount(quote.amountIn - quote.minAmountIn, from)
-                    : amount(quote.amountOut - quote.minAmountOut, to),
-                slippagePercentLabel(quote.slippageBps),
-              ),
-            ),
-            row(l10n.swapReviewGuaranteedMinimum, amount(quote.minAmountOut, to)),
-            if (quote.refundFee > BigInt.zero) row(l10n.swapReviewRefundFee, amount(quote.refundFee, from)),
-            if (exactOutput) ...[
+            for (final row in review.rows)
+              switch (row) {
+                SwapRowText(:final label, :final value) => SwapDetailRow(label: label, value: value, monoLabel: true),
+                SwapRowAddress(:final label, :final address) => SwapDetailRow(
+                  label: label,
+                  value: AddressFormattingService.formatAddress(address),
+                  monoLabel: true,
+                  monoValue: true,
+                ),
+              },
+            if (review.unusedRefunded) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewUnusedRefunded, style: text.caption.copyWith(color: colors.textMuted)),
             ],
-            if (fee != null && fee.hasError) ...[
+            if (review.feeFailed) ...[
               const SizedBox(height: 16),
               SwapFeeFailedRow(onRetry: () => ref.invalidate(swapDepositFeeProvider(_feeKey))),
             ],
-            if (insufficient) ...[
+            if (review.insufficient) ...[
               const SizedBox(height: 16),
               Text(l10n.swapReviewInsufficient(from.symbol), style: text.caption.copyWith(color: colors.semanticEmber)),
             ],
@@ -261,7 +139,7 @@ class _ReviewSwapScreenState extends ConsumerState<ReviewSwapScreen> {
               label: _swapOut ? l10n.swapReviewConfirm : l10n.swapContinue,
               onTap: _confirm,
               isLoading: _confirming,
-              isDisabled: blocked,
+              isDisabled: review.blocked,
             ),
             const SizedBox(height: 4),
             QuantusButton.simple(

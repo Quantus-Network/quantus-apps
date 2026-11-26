@@ -97,6 +97,59 @@ void main() {
     expect(container.read(pendingMultisigProposalsProvider), isEmpty);
   });
 
+  testWidgets('a proposal once created is known by its id, before the pending row goes', (tester) async {
+    broadcast();
+    String? createdWhenPendingWent;
+    container.listen(pendingMultisigProposalsProvider, (_, next) {
+      if (next.isEmpty) createdWhenPendingWent = container.read(multisigCreatedProposalIdProvider(hash));
+    });
+
+    indexer.created = MultisigProposalCreatedEvent(
+      id: 'event-1',
+      proposerId: member.accountId,
+      multisigAddress: msig.accountId,
+      recipient: pending.recipient,
+      amount: pending.amount,
+      palletFee: BigInt.zero,
+      deposit: BigInt.zero,
+      timestamp: DateTime.utc(2026),
+      blockNumber: 7,
+      blockHash: '0xblock',
+      extrinsicHash: hash,
+      proposal: MultisigProposal(
+        entityId: 'proposal-entity-1',
+        id: 4,
+        multisigAddress: msig.accountId,
+        proposer: member.accountId,
+        createdAt: DateTime.utc(2026),
+        updatedAt: DateTime.utc(2026),
+        pallet: 'Balances',
+        call: 'transfer_allow_death',
+        recipient: pending.recipient,
+        amount: pending.amount,
+        expiryBlock: 1000,
+        approvals: [member.accountId],
+        deposit: BigInt.zero,
+        status: MultisigProposalStatus.active,
+        threshold: 2,
+        signerCount: 2,
+      ),
+    );
+    await tester.pump(const Duration(seconds: 12));
+
+    expect(container.read(pendingMultisigProposalsProvider), isEmpty);
+    expect(container.read(multisigCreatedProposalIdProvider(hash)), 'proposal-entity-1');
+    expect(createdWhenPendingWent, 'proposal-entity-1');
+  });
+
+  testWidgets('a proposal the wallet gave up on has no id', (tester) async {
+    broadcast();
+    await tester.pump(const Duration(minutes: 5, seconds: 10));
+
+    expect(confirmation(), SendConfirmation.unconfirmed);
+    expect(container.read(multisigCreatedProposalIdProvider(hash)), isNull);
+  });
+
   testWidgets('what became of one proposal says nothing of another', (tester) async {
     broadcast();
     await tester.pump(const Duration(minutes: 5, seconds: 10));

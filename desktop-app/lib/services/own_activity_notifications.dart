@@ -1,27 +1,48 @@
-import 'dart:async';
-
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_desktop_wallet/models/notification_status.dart';
-import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
+import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
+import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
+import 'package:quantus_desktop_wallet/services/notification_delivery.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
-import 'package:wallet_core/providers/notification_config_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_strategy.dart';
+import 'package:wallet_core/services/extrinsic_indexer_polling_service.dart';
 import 'package:wallet_core/services/pending_transaction_polling_service.dart';
 import 'package:wallet_core/services/telemetry.dart';
+import 'package:wallet_core/services/wallet_session.dart';
+
+/// An Encrypted send handed to the node: one transaction for each batch of
+/// its inputs.
+class _EncryptedSend {
+  _EncryptedSend({required this.account, required this.amount, required List<String> hashes})
+    : lastHash = hashes.last,
+      unseen = {...hashes};
+
+  final Account account;
+  final BigInt amount;
+
+  /// What the account's history knows the send by.
+  final String lastHash;
+
+  /// The transactions the chain has not shown yet.
+  final Set<String> unseen;
+
+  bool readFailureReported = false;
+}
 
 /// Notifies what this computer itself did, once the chain has had its say: a
-/// Transparent send confirmed, failed or not seen in time, and a proposal
-/// made here created or not seen in time.
+/// Transparent or Encrypted send confirmed, failed or not seen in time, and a
+/// proposal made here created or not seen in time.
 ///
 /// What happens elsewhere (funds received, what other signers do) is for
 /// remote notifications.
@@ -33,9 +54,43 @@ class OwnActivityNotifications {
       multisigProposalConfirmationsProvider,
       (previous, settled) => _onSettled(previous ?? const {}, settled),
     );
+    _ref.listen(walletPresenceProvider, (_, presence) {
+      if (presence.value != WalletPresence.none) return;
+      _stopWatchingEncryptedSends();
+      _encryptedSendHashes.clear();
+    });
+    _ref.onDispose(() => _encryptedSendWatch.dispose());
   }
 
   final Ref _ref;
+
+  NotificationDelivery get _delivery => _ref.read(notificationDeliveryProvider);
+
+  /// The Encrypted sends handed to the node and not yet seen on the chain, by
+  /// the hash of the last transaction of each.
+  final _encryptedSends = <String, _EncryptedSend>{};
+
+  /// The transactions of the Encrypted sends this computer handed to the node.
+  final _encryptedSendHashes = <String>{};
+
+  /// Whether [hash] is a transaction of an Encrypted send this computer
+  /// handed to the node: what it paid an account of the wallet is the
+  /// person's own send, not something received.
+  bool isEncryptedSendFromHere(String hash) => _encryptedSendHashes.contains(hash);
+
+  late final _encryptedSendWatch = ExtrinsicIndexerPollingService<_EncryptedSend, void>(
+    _ref,
+    ExtrinsicIndexerPollingConfig(
+      logPrefix: '[EncryptedSendNotification]',
+      getId: (send) => send.lastHash,
+      getExtrinsicHash: (send) => send.lastHash,
+      isStillPending: (_, id) => _encryptedSends.containsKey(id),
+      removePending: (_, id) => _giveUpOnEncryptedSend(id),
+      // The notification says so.
+      showTimeoutToast: (_) {},
+      confirmIfIndexed: (_, _, send) => _confirmEncryptedSend(send),
+    ),
+  );
 
   /// The broadcast sends being watched, by id, with when each was broadcast.
   final _sends = <String, ({PendingTransactionEvent send, DateTime broadcastAt})>{};
@@ -54,7 +109,7 @@ class OwnActivityNotifications {
           _sends[send.id] = (send: send, broadcastAt: now);
         case TransactionState.inHistory when watched != null:
           _sends.remove(send.id);
-          unawaited(_notifySent(send));
+          _delivery.holdWhile(_notifySent(send));
         case TransactionState.failed when watched != null:
           _sends.remove(send.id);
           // The amount it was recorded with: what it set out to send.
@@ -87,6 +142,8 @@ class OwnActivityNotifications {
   /// is recorded with an estimate, as the chain sizes it at inclusion, and
   /// its record is not corrected when it is found.
   Future<void> _notifySent(PendingTransactionEvent send) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
     final TransactionEvent? indexed;
     try {
       final hash = send.extrinsicHash;
@@ -101,12 +158,152 @@ class OwnActivityNotifications {
       _ref.read(telemetryProvider).sendError('desktop_notification_sent_amount_unread', error: e);
       return;
     }
+    if (!await session.survivesReset(ticket, dropping: 'notifying the send ${send.id}')) return;
     _notifySend(
       send,
       amount: indexed.amount,
       title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
       body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
     );
+  }
+
+  /// Takes in the transactions an Encrypted send has handed to the chain so
+  /// far, from the sheet that runs it. A send of several batches pays with
+  /// the first while it still proves the next, and one that fails later has
+  /// paid them all the same: what they pay one of the wallet's own accounts
+  /// is this send, never something received.
+  void onEncryptedSendSubmitted(Iterable<String> hashes) => _encryptedSendHashes.addAll(hashes);
+
+  /// Takes in how an Encrypted send's proving ended, from the sheet that runs
+  /// it: listening to the proving from here would keep it alive after the
+  /// sheet has gone.
+  ///
+  /// A send handed over is only in the node's pool, so it is notified once
+  /// the chain holds every one of its transactions. One the person cancelled
+  /// is not notified: the sheet in front of them says what became of it.
+  void onEncryptedSendEnded({required Account account, required BigInt amount, required EncryptedSendState send}) {
+    onEncryptedSendSubmitted(send.txHashes);
+    switch (send.phase) {
+      case EncryptedSendPhase.succeeded:
+        if (send.txHashes.isEmpty) {
+          final error = StateError('An Encrypted send was handed over with no transaction');
+          quantusPrint('Not notifying: $error');
+          _ref.read(telemetryProvider).sendError('desktop_notification_encrypted_send_no_hash', error: error);
+          return;
+        }
+        final watched = _EncryptedSend(account: account, amount: amount, hashes: send.txHashes);
+        _encryptedSends[watched.lastHash] = watched;
+        // Work under way until its notification is on its way.
+        _ref.read(workHoldsProvider.notifier).hold(watched);
+        _encryptedSendWatch.startPolling(null, watched);
+      case EncryptedSendPhase.failed:
+        // Some of its batches may have paid before it failed; only the
+        // error's text says.
+        _notifyFrom(
+          account.accountId,
+          id: 'encrypted_${clock.now().microsecondsSinceEpoch}',
+          extrinsicHash: null,
+          amount: amount,
+          title: (l10n, _) => l10n.desktopNotificationSendFailedTitle,
+          body: (l10n, amount, account) => l10n.desktopNotificationEncryptedSendFailedBody(amount, account),
+        );
+      case EncryptedSendPhase.planStale:
+        _notifyFrom(
+          account.accountId,
+          id: 'encrypted_${clock.now().microsecondsSinceEpoch}',
+          extrinsicHash: null,
+          amount: amount,
+          title: (l10n, _) => l10n.desktopNotificationSendFailedTitle,
+          body: (l10n, amount, account) => l10n.desktopNotificationSendFailedBody(amount, account),
+        );
+      case EncryptedSendPhase.idle ||
+          EncryptedSendPhase.running ||
+          EncryptedSendPhase.canceling ||
+          EncryptedSendPhase.cancelled:
+        break;
+    }
+  }
+
+  /// Whether the chain holds all of [send] by now, in which case it is
+  /// notified. Answers true too for a send no longer watched.
+  Future<bool> _confirmEncryptedSend(_EncryptedSend send) async {
+    final session = _ref.read(walletSessionProvider);
+    final ticket = session.ticket;
+    final history = _ref.read(chainHistoryServiceProvider);
+    try {
+      for (final hash in send.unseen.toList()) {
+        if (!_encryptedSends.containsKey(send.lastHash)) return true;
+        if (await history.searchByExtrinsicHash(extrinsicHash: hash, isReversible: false) == null) return false;
+        send.unseen.remove(hash);
+      }
+    } catch (e) {
+      quantusPrint('Reading an Encrypted send from the indexer failed: $e');
+      if (!send.readFailureReported && _ref.mounted) {
+        send.readFailureReported = true;
+        _ref.read(telemetryProvider).sendError('desktop_notification_encrypted_send_unread', error: e);
+      }
+      return false;
+    }
+    if (!await session.survivesReset(ticket, dropping: 'the Encrypted send ${send.lastHash}')) return true;
+    if (_encryptedSends.remove(send.lastHash) == null || !_ref.mounted) return true;
+    try {
+      await _reloadEncryptedState(send.account.walletIndex);
+      if (!await session.survivesReset(ticket, dropping: 'notifying the Encrypted send ${send.lastHash}')) return true;
+      if (!_ref.mounted) return true;
+      _notifyFrom(
+        send.account.accountId,
+        id: send.lastHash,
+        extrinsicHash: send.lastHash,
+        amount: send.amount,
+        title: (l10n, amount) => l10n.desktopNotificationSentTitle(amount),
+        body: (l10n, _, account) => l10n.desktopNotificationSentBody(account),
+      );
+    } finally {
+      _releaseEncryptedSend(send);
+    }
+    return true;
+  }
+
+  void _releaseEncryptedSend(_EncryptedSend send) {
+    if (_ref.mounted) _ref.read(workHoldsProvider.notifier).release(send);
+  }
+
+  /// Reads the account's state again, for a click on the notification to find
+  /// the send in its history. A read that fails does not undo the send.
+  Future<void> _reloadEncryptedState(int walletIndex) async {
+    final state = encryptedStateProvider(walletIndex);
+    _ref.invalidate(state);
+    try {
+      await _ref.read(state.future);
+    } catch (e) {
+      quantusPrint('Reading the Encrypted account after its send failed: $e');
+      if (_ref.mounted) {
+        _ref.read(telemetryProvider).sendError('desktop_notification_encrypted_reload_failed', error: e);
+      }
+    }
+  }
+
+  void _giveUpOnEncryptedSend(String id) {
+    final send = _encryptedSends.remove(id);
+    if (send == null) return;
+    try {
+      _notifyFrom(
+        send.account.accountId,
+        id: send.lastHash,
+        extrinsicHash: send.lastHash,
+        amount: send.amount,
+        title: (l10n, _) => l10n.desktopNotificationSendNotConfirmedTitle,
+        body: (l10n, amount, account) => l10n.desktopNotificationSendNotConfirmedBody(amount, account),
+      );
+    } finally {
+      _releaseEncryptedSend(send);
+    }
+  }
+
+  void _stopWatchingEncryptedSends() {
+    _encryptedSendWatch.stopAll();
+    _encryptedSends.values.forEach(_releaseEncryptedSend);
+    _encryptedSends.clear();
   }
 
   void _onProposals(List<PendingMultisigProposalEvent> proposals) {
@@ -134,22 +331,24 @@ class OwnActivityNotifications {
         continue;
       }
       final l10n = _ref.read(l10nProvider);
-      final amount = _amountText(proposal.amount);
+      final amount = _delivery.amountText(proposal.amount);
       switch (outcome) {
         case SendConfirmation.confirmed:
-          _show(
+          _delivery.show(
             id: 'proposal_created_$hash',
             accountId: multisig.accountId,
             accountName: multisig.name,
+            extrinsicHash: hash,
             intent: NotificationIntent.others,
             title: l10n.desktopNotificationProposalCreatedTitle,
             body: l10n.desktopNotificationProposalCreatedBody(amount, multisig.name),
           );
         case SendConfirmation.unconfirmed:
-          _show(
+          _delivery.show(
             id: 'proposal_not_confirmed_$hash',
             accountId: multisig.accountId,
             accountName: multisig.name,
+            extrinsicHash: hash,
             intent: NotificationIntent.others,
             title: l10n.desktopNotificationProposalNotConfirmedTitle,
             body: l10n.desktopNotificationProposalNotConfirmedBody(amount, multisig.name),
@@ -166,67 +365,35 @@ class OwnActivityNotifications {
     required BigInt amount,
     required String Function(AppLocalizations l10n, String amount) title,
     required String Function(AppLocalizations l10n, String amount, String account) body,
+  }) =>
+      _notifyFrom(send.from, id: send.id, extrinsicHash: send.extrinsicHash, amount: amount, title: title, body: body);
+
+  /// Notifies about the send [id] from the account [from], when that account
+  /// is still in the wallet.
+  void _notifyFrom(
+    String from, {
+    required String id,
+    required String? extrinsicHash,
+    required BigInt amount,
+    required String Function(AppLocalizations l10n, String amount) title,
+    required String Function(AppLocalizations l10n, String amount, String account) body,
   }) {
-    final account = _ref.read(accountsProvider).value?.where((a) => a.accountId == send.from).firstOrNull;
+    final account = _ref.read(accountsProvider).value?.where((a) => a.accountId == from).firstOrNull;
     if (account == null) {
-      quantusPrint('Not notifying about a send from an account no longer in the wallet: ${send.id}');
+      quantusPrint('Not notifying about a send from an account no longer in the wallet: $id');
       return;
     }
     final l10n = _ref.read(l10nProvider);
-    final amountText = _amountText(amount);
-    _show(
-      id: 'send_${send.id}',
+    final amountText = _delivery.amountText(amount);
+    _delivery.show(
+      id: 'send_$id',
       accountId: account.accountId,
       accountName: account.name,
+      extrinsicHash: extrinsicHash,
       intent: NotificationIntent.sentTokens,
       title: title(l10n, amountText),
       body: body(l10n, amountText, account.name),
     );
-  }
-
-  String _amountText(BigInt amount) {
-    final formatted = _ref.read(numberFormattingServiceProvider).formatBalance(amount, smartDecimals: 4);
-    return _ref.read(l10nProvider).commonAmountBalance(formatted, AppConstants.tokenSymbol);
-  }
-
-  /// Shows a notification when the person wants it and the system allows it.
-  void _show({
-    required String id,
-    required String accountId,
-    required String accountName,
-    required NotificationIntent intent,
-    required String title,
-    required String body,
-  }) {
-    final config = _ref.read(notificationConfigProvider);
-    if (!config.enabled || !config.isIntentEnabled(intent)) return;
-    final status = _ref.read(desktopLocalNotificationsProvider);
-    if (status is! NotificationsAllowed) {
-      quantusPrint('Not notifying "$title": notifications are ${status.runtimeType}');
-      return;
-    }
-    final notification = NotificationData(
-      id: id,
-      accountId: accountId,
-      type: NotificationType.info,
-      intent: intent,
-      source: NotificationSource.local,
-      title: title,
-      message: body,
-      accountName: accountName,
-      timestamp: clock.now(),
-      persistent: false,
-    );
-    unawaited(_showNow(notification));
-  }
-
-  Future<void> _showNow(NotificationData notification) async {
-    try {
-      await _ref.read(desktopLocalNotificationsProvider.notifier).showOrScheduleNotification(notification);
-    } catch (e) {
-      quantusPrint('Showing a notification failed: $e');
-      _ref.read(telemetryProvider).sendError('desktop_notification_show_failed', error: e);
-    }
   }
 }
 

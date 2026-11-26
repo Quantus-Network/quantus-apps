@@ -21,6 +21,9 @@ class FakeNotificationPlugin implements NotificationPlugin {
   /// not answered yet does.
   Completer<bool>? heldAnswer;
 
+  /// Keeps starting from finishing until completed, as a slow system does.
+  Completer<void>? heldStart;
+
   /// What reading the permission throws, when it fails.
   Object? permissionCheckError;
   var permissionChecks = 0;
@@ -32,11 +35,15 @@ class FakeNotificationPlugin implements NotificationPlugin {
   final initializations = <InitializationSettings>[];
   var permissionRequests = 0;
   final shown = <ShownNotification>[];
+
+  /// Keeps a notification from being handed over until completed.
+  Completer<void>? heldShow;
   void Function(String? payload)? _onClick;
 
   @override
   Future<void> initialize(InitializationSettings settings, {required void Function(String? payload) onClick}) async {
     initializations.add(settings);
+    await heldStart?.future;
     final error = startError;
     if (error != null) throw error;
     _onClick = onClick;
@@ -67,6 +74,19 @@ class FakeNotificationPlugin implements NotificationPlugin {
   @override
   Future<void> show({required int id, required String title, required String body, required String payload}) async {
     shown.add((id: id, title: title, body: body, payload: payload));
+    await heldShow?.future;
+  }
+
+  var cancelAllCalls = 0;
+
+  /// What removing the notifications throws, when it fails.
+  Object? cancelAllError;
+
+  @override
+  Future<void> cancelAll() async {
+    cancelAllCalls++;
+    final error = cancelAllError;
+    if (error != null) throw error;
   }
 
   /// Clicks a notification with [payload], as the person would.

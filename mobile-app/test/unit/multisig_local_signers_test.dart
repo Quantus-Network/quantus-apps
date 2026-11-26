@@ -82,9 +82,27 @@ void main() {
   group('pendingApproverIdsForProposal', () {
     test('collects pending approvers for the proposal among local signers', () {
       final pending = [
-        PendingMultisigApprovalEvent.create(multisigAddress: 'msig-1', proposalId: 1, approverId: 'signer-a'),
-        PendingMultisigApprovalEvent.create(multisigAddress: 'msig-1', proposalId: 1, approverId: 'other'),
-        PendingMultisigApprovalEvent.create(multisigAddress: 'msig-1', proposalId: 2, approverId: 'signer-b'),
+        PendingMultisigApprovalEvent.create(
+          multisigAddress: 'msig-1',
+          proposalId: 1,
+          approverId: 'signer-a',
+          recipient: 'recipient',
+          amount: BigInt.one,
+        ),
+        PendingMultisigApprovalEvent.create(
+          multisigAddress: 'msig-1',
+          proposalId: 1,
+          approverId: 'other',
+          recipient: 'recipient',
+          amount: BigInt.one,
+        ),
+        PendingMultisigApprovalEvent.create(
+          multisigAddress: 'msig-1',
+          proposalId: 2,
+          approverId: 'signer-b',
+          recipient: 'recipient',
+          amount: BigInt.one,
+        ),
       ];
 
       final ids = pendingApproverIdsForProposal(pending, 'msig-1', 1, const ['signer-a', 'signer-b']);

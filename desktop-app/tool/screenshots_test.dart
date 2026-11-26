@@ -21,29 +21,46 @@ import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
+import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
+import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
+import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_action_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/activity/proposal_actions.dart';
+import 'package:wallet_core/providers/multisig_action_confirmations_provider.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_row_view.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
+import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/send_fee_notifier.dart';
 import 'package:wallet_core/send/send_strategy.dart';
@@ -190,6 +207,19 @@ void main() {
     for (var i = 0; i < 240; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
+  });
+
+  _scene('missing_phrase', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _encrypted], mnemonic: null), reduceMotion: true);
+    await tester.pump(const Duration(milliseconds: 500));
+  });
+
+  _scene('missing_phrase_remove', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _encrypted], mnemonic: null), reduceMotion: true);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(find.text('Remove Wallet…'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
   });
 
   _scene('import_wallet', (tester) async {
@@ -496,6 +526,18 @@ void main() {
     });
   }
 
+  _scene('connect_cold_wallet_add', (tester) async {
+    await _openConnectColdWallet(tester);
+  });
+
+  _scene('connect_cold_wallet_add_confirm', (tester) async {
+    await _readColdWalletAddress(tester, await _openConnectColdWallet(tester));
+  });
+
+  _scene('connect_cold_wallet_first_confirm', (tester) async {
+    await _readColdWalletAddress(tester, await _openConnectColdWallet(tester, withColdWallet: false));
+  });
+
   _scene('account_info', (tester) async {
     await _openInfo(tester, _savings);
   });
@@ -522,6 +564,103 @@ void main() {
     await tester.tap(field);
     await tester.enterText(field, 'Rainy day');
     await tester.pump();
+  });
+
+  _scene('add_account_menu', (tester) async {
+    await _openAccounts(tester);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_opened', (tester) async {
+    await _openAccounts(tester);
+    await ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(accountManagerProvider).openImportWallet();
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_phrase', (tester) async {
+    await _openImport(tester, phrase: _newPhrase);
+  });
+
+  _scene('import_wallet_finding', (tester) async {
+    await _openImport(tester, phrase: _newPhrase, scan: () => Completer<List<Account>>().future);
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+    await tester.tap(_importButton);
+    await tester.pump();
+    await tester.pump();
+    // Into the spinner's second face.
+    await tester.pump(TerminalLine.busyTurn * 1.5);
+  });
+
+  _scene('import_wallet_already_added', (tester) async {
+    await _openImport(tester, phrase: _phrase);
+    await tester.tap(_importButton);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('import_wallet_name_it', (tester) async {
+    await _openImport(tester, phrase: _newPhrase);
+    await tester.tap(_importButton);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('manage_multisigs', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => [_foundMultisig(0), _foundMultisig(1)]);
+  });
+
+  _scene('manage_multisigs_failed', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => throw StateError('the indexer is unreachable'));
+  });
+
+  _scene('manage_multisigs_many_smallest_window', (tester) async {
+    await _openManageMultisigs(tester, discover: () async => [for (var i = 0; i < 9; i++) _foundMultisig(i)]);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+  });
+
+  _scene('create_multisig_signer_error', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(1));
+    await _typeMultisigSigner(tester, _root.accountId);
+    await tester.tap(find.byKey(CreateMultisigSheet.addSignerKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_many_smallest_window', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_review', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+    await tester.tap(find.byKey(CreateMultisigSheet.reviewKey));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('create_multisig_creating', (tester) async {
+    await _openCreateMultisig(tester, signers: _multisigSigners.take(2));
+    await tester.tap(find.byKey(CreateMultisigSheet.reviewKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(CreateMultisigSheet.createKey));
+    await tester.pumpAndSettle();
+    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures();
+    await tester.pump();
+    await tester.pump(TerminalLine.busyTurn);
+  });
+
+  _scene('create_multisig_unavailable_menu', (tester) async {
+    await _openAccounts(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    await container.read(activeAccountProvider.notifier).switchActiveAccount(const RegularAccount(_encrypted));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Add Account'));
+    await tester.pumpAndSettle();
   });
 
   _scene('account_disconnect', (tester) async {
@@ -573,6 +712,40 @@ void main() {
   _scene('wallet_menu', (tester) async {
     await _openAccounts(tester);
     await _rightClickInSidebar(tester, 'WALLET 2');
+  });
+
+  _scene('wallets_closed', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+  });
+
+  _scene('wallets_one_opened', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('WALLET 2')));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('add_account_menu', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('add_account_submenu', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New Account'));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('account_created', (tester) async {
+    await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New Account'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byKey(ContextMenuRegion.submenuKey), matching: find.text('Wallet 2')));
+    await tester.pumpAndSettle();
   });
 
   _scene('account_rename_inline', (tester) async {
@@ -705,6 +878,8 @@ void main() {
   }, platform: TargetPlatform.windows);
 
   _activityScenes();
+  _swapScenes();
+  _swapSheetScenes();
 }
 
 /// Opens Settings › Keyboard Shortcuts.
@@ -787,21 +962,157 @@ Future<void> _openInfo(WidgetTester tester, BaseAccount account, {int moreWallet
   await tester.pumpAndSettle();
 }
 
+/// A camera that shows a dark picture and reads what it is handed.
+class _HandedScanSource implements QrScanSource {
+  final _reads = StreamController<String>.broadcast(sync: true);
+
+  @override
+  Stream<String> get reads => _reads.stream;
+
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Widget buildPreview() => const ColoredBox(color: Color(0xFF15161A));
+
+  @override
+  Future<void> dispose() async {}
+
+  void read(String text) => _reads.add(text);
+}
+
+/// Opens Connect Cold Wallet over the accounts, with Vault's cold wallet in
+/// the app unless [withColdWallet] is false.
+Future<_HandedScanSource> _openConnectColdWallet(WidgetTester tester, {bool withColdWallet = true}) async {
+  final source = _HandedScanSource();
+  await _openAccounts(
+    tester,
+    withColdWallet: withColdWallet,
+    overrides: [qrScanSourceFactoryProvider.overrideWithValue(() => source)],
+  );
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openConnectColdWallet();
+  await tester.pumpAndSettle();
+  return source;
+}
+
+/// The camera reads an address three times, which opens Confirm Address.
+Future<void> _readColdWalletAddress(WidgetTester tester, _HandedScanSource source) async {
+  for (var read = 0; read < 3; read++) {
+    source.read('qzR8vNc2LpX6tKw9HsYd4QmB7fJa3UeZo1Gi5WnTk2xVb');
+    await tester.pump();
+  }
+  await tester.pumpAndSettle();
+}
+
+/// A phrase no wallet in the scenes holds.
+final _newPhrase = ['zebra', ...List.filled(22, 'abandon'), 'art'].join(' ');
+
+Finder get _importField => find.descendant(of: find.byType(ShellSheetView), matching: find.byType(EditableText));
+
+Finder get _importButton =>
+    find.descendant(of: find.byType(ShellSheetView), matching: find.widgetWithText(QuantusButton, 'Import Wallet'));
+
+/// Opens the Import Wallet sheet with [phrase] typed in it.
+Future<void> _openImport(WidgetTester tester, {required String phrase, Future<List<Account>> Function()? scan}) async {
+  await _openAccounts(tester, scan: scan);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openImportWallet();
+  await tester.pumpAndSettle();
+  await tester.enterText(_importField, phrase);
+  await tester.pump();
+}
+
+/// A multisig the chain reports for one of the wallet's accounts.
+MultisigAccount _foundMultisig(int index) => MultisigAccount(
+  name: 'Multisig ${index + 1}',
+  accountId: 'qzL9sRd4YpV2nKx8TcW5mHq7JbGa3ZeUo6FiBt1NwE8kP$index',
+  signers: [index.isEven ? _root.accountId : _trading.accountId, 'qzOtherSigner$index', 'qzThirdSigner$index'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: index.isEven ? _root.accountId : _trading.accountId,
+);
+
+Future<void> _openManageMultisigs(
+  WidgetTester tester, {
+  required Future<List<MultisigAccount>> Function() discover,
+}) async {
+  await _openAccounts(tester, discoverMultisigs: discover);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openManageMultisigs();
+  await tester.pumpAndSettle();
+}
+
+/// Signers of a real address's length, for Create Multisig.
+const _multisigSigners = [
+  'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+  'qzH3tYc6MpW9kLn2XsVb8QrJd5FaZe7UoGi1Tn4BwK6mRe',
+  'qzF5kVn2QxT9mLc7WbR3yHs6JdPa8ZeUo1GiNt4EwK2rXv',
+  'qzL9sRd4YpV2nKx8TcW5mHq7JbGa3ZeUo6FiBt1NwE8kPy',
+  'qzM4bKw7ZtR2nHc9VxQ5sLd8JfGa3YeUo6TiPn1EwB7kSu',
+];
+
+Future<void> _typeMultisigSigner(WidgetTester tester, String address) async {
+  await tester.enterText(
+    find.descendant(of: find.byKey(CreateMultisigSheet.signerFieldKey), matching: find.byType(EditableText)),
+    address,
+  );
+  await tester.pump();
+}
+
+/// Opens Create Multisig on the first account, with [signers] added.
+Future<void> _openCreateMultisig(WidgetTester tester, {required Iterable<String> signers}) async {
+  await _openAccounts(tester);
+  await ProviderScope.containerOf(
+    tester.element(find.byType(DesktopShell)),
+  ).read(accountManagerProvider).openCreateMultisig();
+  await tester.pumpAndSettle();
+  for (final signer in signers) {
+    await _typeMultisigSigner(tester, signer);
+    await tester.tap(find.byKey(CreateMultisigSheet.addSignerKey));
+    await tester.pumpAndSettle();
+  }
+}
+
 /// Opens the window of a wallet with every kind of account. Its clipboard
 /// takes whatever is copied.
-Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0}) async {
+Future<void> _openAccounts(
+  WidgetTester tester, {
+  int moreWallets = 0,
+  bool walletsLeftOpen = true,
+  bool withColdWallet = true,
+  Future<List<Account>> Function()? scan,
+  Future<List<MultisigAccount>> Function()? discoverMultisigs,
+  List<Override> overrides = const [],
+}) async {
   final messenger = tester.binding.defaultBinaryMessenger;
   messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async => null);
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
+  if (scan != null) device.scan = scan;
+  if (discoverMultisigs != null) device.chain.discoverMultisigs = discoverMultisigs;
   device.storage.accounts.addAll([
-    _cold,
+    if (withColdWallet) _cold,
     _trading,
     for (var i = 0; i < moreWallets; i++)
       Account(walletIndex: 3 + i, index: 0, name: 'Spare ${i + 1}', accountId: 'qzSpare$i'),
   ]);
   device.storage.mnemonics[2] = _phrase;
   device.storage.multisigStore.add(_infoTeam);
+  if (walletsLeftOpen) {
+    device.storage.strings[KeptOpenWalletsNotifier.settingsKey] = [
+      0,
+      1,
+      2,
+      for (var i = 0; i < moreWallets; i++) 3 + i,
+    ].join(',');
+  }
   await _open(
     tester,
     device,
@@ -814,6 +1125,7 @@ Future<void> _openAccounts(WidgetTester tester, {int moreWallets = 0}) async {
           innerHash: () async => '0x7c3f9a1e5b2d8c4f6a0e9b3d7f1c5a8e2b6d0f4a9c3e7b1d5f8a2c6e0b4d9f3a',
         ),
       ),
+      ...overrides,
     ],
   );
   useFakeCheckphrases((address) async => 'Harbor-Velvet-Signal-Mirror-Canyon');
@@ -1140,6 +1452,23 @@ void _activityScenes() {
     await _openActivity(tester);
   });
 
+  // An approval of a Team proposal on its way, in Account 1's In progress,
+  // opened.
+  _scene('activity_approving_open', (tester) async {
+    final container = await _openActivity(tester);
+    final approving = PendingMultisigApprovalEvent.create(
+      multisigAddress: _activityTeam,
+      proposalId: 7,
+      approverId: _root.accountId,
+      recipient: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+      amount: oneToken * BigInt.from(120),
+      fee: FakeSendChain.usualFee,
+    ).copyWith(extrinsicHash: '0x2b7e4c9a1d3f5e8b0a6c2d4f7e9b1a3c5d8f0e2a4c6b8d1f3e5a7c9b2d4f6a8e');
+    container.read(pendingMultisigApprovalsProvider.notifier).add(approving);
+    await tester.pumpAndSettle();
+    await _openActivityRow(tester, approving.id);
+  });
+
   // The pointer resting on Savings, one of the wallet's own accounts, in its
   // row: its address shows.
   _scene('activity_own_account_address', (tester) async {
@@ -1286,18 +1615,28 @@ void _activityScenes() {
   // A multisig's proposal open; in the smallest window too, with the sidebar
   // and the panel at the right made their widest, where they give way and
   // the lists are the narrowest they get.
-  Future<void> openTeamProposal(WidgetTester tester, {Size? window}) async {
+  Future<void> openTeamProposal(
+    WidgetTester tester, {
+    Size? window,
+    List<MultisigProposal> calls = const [],
+    String openId = 'proposal-1',
+    int? block,
+    String thirdSigner = 'qzOther',
+    Future<BigInt> Function()? actionFee,
+  }) async {
     useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
     final team = MultisigAccount(
       name: 'Team',
       accountId: _activityTeam,
-      signers: [_root.accountId, 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr', 'qzOther'],
+      signers: [_root.accountId, 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr', thirdSigner],
       threshold: 2,
       nonce: BigInt.zero,
       myMemberAccountId: _root.accountId,
     );
     final chain = FakeSendChain()
+      ..currentBlock = (() async => block ?? 1250000)
       ..openProposals = [
+        ...calls,
         proposal(
           1,
           tokens: 250,
@@ -1329,6 +1668,7 @@ void _activityScenes() {
           status: MultisigProposalStatus.cancelled,
         ),
       ];
+    if (actionFee != null) chain.actionFee = actionFee;
     await _openWith(tester, [
       ...shellOverrides(
         accounts: const [_root, _second],
@@ -1348,10 +1688,583 @@ void _activityScenes() {
       tester.view.physicalSize = window * _pixelRatio;
       await tester.pumpAndSettle();
     }
-    await tester.tap(find.byType(OpenProposalRowView).first);
+    await tester.tap(find.byWidgetPredicate((widget) => widget is OpenProposalRowView && widget.id == openId));
     await tester.pumpAndSettle();
   }
 
+  // A proposal whose call is the sample call [name]: one that moves nothing,
+  // or one this wallet cannot read.
+  MultisigProposal callProposal(int id, String name) => MultisigProposal(
+    entityId: 'proposal-$id',
+    id: id,
+    multisigAddress: _activityTeam,
+    proposer: _root.accountId,
+    createdAt: _activityNow.subtract(const Duration(hours: 1)),
+    updatedAt: _activityNow.subtract(const Duration(hours: 1)),
+    pallet: name.split('.').first,
+    call: name.split('.').last,
+    recipient: '',
+    amount: BigInt.zero,
+    callRaw: corpusCall(name),
+    expiryBlock: 1284220,
+    approvals: [_root.accountId],
+    deposit: oneToken,
+    burnedPalletFee: oneToken ~/ BigInt.from(10),
+    networkFee: BigInt.from(1240000000),
+    status: MultisigProposalStatus.active,
+    threshold: 2,
+    signerCount: 3,
+  );
+  final calls = [callProposal(5, 'ReversibleTransfers.set_high_security'), callProposal(6, 'System.remark')];
+
   _scene('activity_multisig', openTeamProposal);
+  _scene('activity_multisig_call', (tester) => openTeamProposal(tester, calls: calls, openId: 'proposal-5'));
+  _scene(
+    'activity_multisig_call_smallest_window',
+    (tester) => openTeamProposal(tester, window: const Size(960, 640), calls: calls, openId: 'proposal-5'),
+  );
+  _scene('activity_multisig_invalid', (tester) => openTeamProposal(tester, calls: calls, openId: 'proposal-6'));
+  // The chain past the open proposals' expiry block.
+  _scene('activity_multisig_expired', (tester) => openTeamProposal(tester, block: 1300000));
   _scene('activity_multisig_smallest_window', (tester) => openTeamProposal(tester, window: const Size(960, 640)));
+
+  // Approving, executing and cancelling: the chain stores the sample
+  // transfer, so the panel and the sheet say the same amount and recipient.
+  final stored = MultisigProposal.decodeProposalCall(corpusCall('Balances.transfer_allow_death'));
+  final sent = stored.summary as TransferSummary;
+  MultisigProposal storedTransfer(int id, {required List<String> approvals, String? proposer, bool ready = false}) =>
+      MultisigProposal(
+        entityId: 'proposal-$id',
+        id: id,
+        multisigAddress: _activityTeam,
+        proposer: proposer ?? 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr',
+        createdAt: _activityNow.subtract(const Duration(minutes: 30)),
+        updatedAt: _activityNow.subtract(const Duration(minutes: 30)),
+        pallet: 'Balances',
+        call: 'transfer_allow_death',
+        recipient: sent.recipient!,
+        amount: sent.amount,
+        callRaw: corpusCall('Balances.transfer_allow_death'),
+        expiryBlock: 1284220,
+        approvals: approvals,
+        deposit: oneToken,
+        burnedPalletFee: oneToken ~/ BigInt.from(10),
+        status: ready ? MultisigProposalStatus.approved : MultisigProposalStatus.active,
+        threshold: 2,
+        signerCount: 3,
+      );
+  final toApprove = storedTransfer(7, approvals: ['qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr']);
+  final toExecute = storedTransfer(
+    8,
+    approvals: [_root.accountId, 'qzS7gNe2WvK9tLc4YhRb8DxPa3QmFu6ZoJi1Tn5kVw2sEr'],
+    proposer: _root.accountId,
+    ready: true,
+  );
+  ProviderContainer container(WidgetTester tester) =>
+      ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+  Future<void> press(WidgetTester tester, Key key) async {
+    await tester.tap(find.byKey(key));
+    await tester.pumpAndSettle();
+  }
+
+  // Confirms the sheet: its receipt's spinner turns while it waits, so the
+  // frames are pumped, not settled.
+  Future<void> confirm(WidgetTester tester) async {
+    await tester.tap(find.byKey(ProposalActionSheet.confirmKey));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  _scene('proposal_actions_panel', (tester) => openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8'));
+  // A proposal this wallet is still sending, open as its pending transaction.
+  _scene('activity_multisig_proposing_open', (tester) async {
+    await openTeamProposal(tester);
+    final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+    final pending = PendingMultisigProposalEvent.create(
+      msig: container.read(activeAccountProvider).requireValue!.account as MultisigAccount,
+      proposerId: _root.accountId,
+      recipient: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+      amount: oneToken * BigInt.from(120),
+      expiryBlock: 1300000,
+      fee: oneToken ~/ BigInt.from(100),
+      deposit: oneToken,
+      palletFee: oneToken ~/ BigInt.from(10),
+    ).copyWith(extrinsicHash: '0x8f3a51c0d27be94f6a1d3e5c7b9082f4e6d1a3c5b7e9f0a2c4d6e8b1a3c5d7e9');
+    container.read(pendingMultisigProposalsProvider.notifier).add(pending);
+    await tester.pump();
+    await tester.tap(find.byWidgetPredicate((widget) => widget is OpenProposalRowView && widget.id == pending.id));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
+  _scene('proposal_action_approve', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7');
+    await press(tester, ProposalActionsBar.primaryKey);
+  });
+  _scene('proposal_action_choose_signer', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7', thirdSigner: _second.accountId);
+    await press(tester, ProposalActionsBar.primaryKey);
+  });
+  // The fee not priced yet: it turns where it will stand, the rest in place.
+  _scene('proposal_action_pricing', (tester) async {
+    await openTeamProposal(
+      tester,
+      calls: [toApprove],
+      openId: 'proposal-7',
+      thirdSigner: _second.accountId,
+      actionFee: () => Completer<BigInt>().future,
+    );
+    await tester.tap(find.byKey(ProposalActionsBar.primaryKey));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
+  // Another signer chosen: the fee before stands, turning beside it, until
+  // this one's is priced; Approve waits for it.
+  _scene('proposal_action_repricing', (tester) async {
+    var priced = true;
+    await openTeamProposal(
+      tester,
+      calls: [toApprove],
+      openId: 'proposal-7',
+      thirdSigner: _second.accountId,
+      actionFee: () async => priced ? FakeSendChain.usualFee : Completer<BigInt>().future,
+    );
+    await press(tester, ProposalActionsBar.primaryKey);
+    priced = false;
+    await tester.tap(find.byKey(ProposalActionSheet.signerKey(_second.accountId)));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
+  _scene('proposal_action_cancel', (tester) async {
+    await openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8');
+    await press(tester, ProposalActionsBar.cancelKey);
+  });
+  _scene('proposal_action_confirming', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7');
+    await press(tester, ProposalActionsBar.primaryKey);
+    await confirm(tester);
+  });
+  _scene('proposal_action_approved', (tester) async {
+    await openTeamProposal(tester, calls: [toApprove], openId: 'proposal-7');
+    await press(tester, ProposalActionsBar.primaryKey);
+    await confirm(tester);
+    container(
+      tester,
+    ).read(multisigActionConfirmationsProvider.notifier).settle('0xaction', MultisigActionConfirmation.confirmed);
+    await tester.pump();
+  });
+  _scene('proposal_action_executed_by_another', (tester) async {
+    await openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8');
+    await press(tester, ProposalActionsBar.primaryKey);
+    await confirm(tester);
+    container(tester)
+        .read(multisigActionConfirmationsProvider.notifier)
+        .settle('0xaction', MultisigActionConfirmation.executedByAnother);
+    await tester.pump();
+  });
+}
+
+/// Opens Account 1 following [swap], the newest, after the [earlier] ones if
+/// any, with some settled activity under it; [swap] is the one opened.
+Future<void> _openFollowing(
+  WidgetTester tester,
+  ActiveSwap Function() swap, {
+  List<ActiveSwap> Function()? earlier,
+  bool opened = true,
+  bool reduceMotion = true,
+}) async {
+  useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+  final device = _activityDevice();
+  device.storage.activeSwaps = [...?earlier?.call(), swap()];
+  await _open(tester, device, reduceMotion: reduceMotion);
+  if (reduceMotion) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump(const Duration(milliseconds: 600));
+  }
+  if (!opened) return;
+  await tester.tap(find.byType(SwapRowView).first);
+  if (reduceMotion) {
+    await tester.pumpAndSettle();
+  } else {
+    // Far enough into the spinner's turn for it to show.
+    await tester.pump(const Duration(milliseconds: 350));
+  }
+}
+
+void _swapScenes() {
+  // The spinners turn here, as they do in the app.
+  _scene('swap_running', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), reduceMotion: false);
+  });
+
+  _scene('swap_running_row', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), opened: false);
+  });
+
+  _scene('swap_running_in', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.processing, depositSent: true, account: _root),
+    );
+  });
+
+  _scene('swap_status_unavailable', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(account: _root, pollError: 'Connection closed before full header was received'),
+    );
+  });
+
+  _scene('swap_overdue', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(
+        account: _root,
+        status: SwapStatus.processing,
+        age: const Duration(minutes: 41, seconds: 12),
+        deadline: DateTime.now().subtract(ActiveSwap.finishGrace + const Duration(minutes: 1)),
+      ),
+    );
+  });
+
+  _scene('swap_stop_tracking', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root));
+    final stop = find.widgetWithText(ToolbarAction, lookupAppLocalizations(const Locale('en')).swapStopTracking);
+    await tester.ensureVisible(stop);
+    await tester.tap(stop);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_deposit', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: _root),
+    );
+  });
+
+  _scene('swap_deposit_memo', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: _root, depositMemo: '7741902'),
+    );
+  });
+
+  _scene('swap_complete', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(account: _root, status: SwapStatus.success, age: const Duration(minutes: 4, seconds: 12)),
+    );
+  });
+
+  _scene('swap_refunded', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(account: _root, status: SwapStatus.refunded, refundReason: 'PARTIAL_DEPOSIT'),
+    );
+  });
+
+  _scene('swap_failed', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root, status: SwapStatus.failed));
+  });
+
+  _scene('swap_expired', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(
+        swapOut: false,
+        status: SwapStatus.pendingDeposit,
+        account: _root,
+        deadline: DateTime.now().subtract(const Duration(minutes: 1)),
+      ),
+    );
+  });
+
+  // Several followed at once, one of each ending and one awaiting its
+  // deposit under the newest, which runs.
+  List<ActiveSwap> earlier() => [
+    fakeActiveSwap(
+      account: _root,
+      status: SwapStatus.refunded,
+      refundReason: 'PARTIAL_DEPOSIT',
+      depositAddress: '0x1111111111111111111111111111111111111111',
+    ),
+    fakeActiveSwap(
+      account: _root,
+      status: SwapStatus.success,
+      age: const Duration(minutes: 4, seconds: 12),
+      depositAddress: '0x2222222222222222222222222222222222222222',
+    ),
+    fakeActiveSwap(
+      swapOut: false,
+      status: SwapStatus.pendingDeposit,
+      account: _root,
+      depositAddress: '0x3333333333333333333333333333333333333333',
+    ),
+  ];
+
+  _scene('swap_several', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), earlier: earlier);
+  });
+
+  _scene('swap_several_smallest_window', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), earlier: earlier, opened: false);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(SwapRowView).first);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_smallest_window', (tester) async {
+    await _openFollowing(tester, () => fakeActiveSwap(account: _root), opened: false);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(SwapRowView));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_deposit_smallest_window', (tester) async {
+    await _openFollowing(
+      tester,
+      () => fakeActiveSwap(swapOut: false, status: SwapStatus.pendingDeposit, account: _root),
+      opened: false,
+    );
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(SwapRowView));
+    await tester.pumpAndSettle();
+  });
+}
+
+/// Opens the Swap sheet on a wallet that holds 1,250 QTC, in [window] when
+/// it is not the usual one. [prepare] sets 1Click and the chain up first.
+Future<FakeWalletDevice> _openSwapSheet(
+  WidgetTester tester, {
+  void Function(FakeWalletDevice device)? prepare,
+  Size? window,
+}) async {
+  useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+  final device = _activityDevice();
+  // As the mocks drew a quote: a fee taken from the payment, and one for
+  // paying out.
+  device.swaps.quote = (request) async => fakeQuoteFor(request, withdrawFee: BigInt.from(20000), feeBps: 30);
+  prepare?.call(device);
+  await _open(
+    tester,
+    device,
+    reduceMotion: true,
+    overrides: [systemApprovalProvider.overrideWithValue(FakeUserApproval())],
+  );
+  await tester.pumpAndSettle();
+  if (window != null) {
+    tester.view.physicalSize = window * _pixelRatio;
+    await tester.pumpAndSettle();
+  }
+  await tester.tap(
+    find.descendant(
+      of: find.byType(AccountToolbar),
+      matching: find.widgetWithText(ToolbarAction, lookupAppLocalizations(const Locale('en')).homeSwap),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return device;
+}
+
+/// Fills the form in: [amount], and [address] when there is one, and lets
+/// its quote come in.
+Future<void> _fillSwap(WidgetTester tester, {String amount = '250', String? address = swapRecipient}) async {
+  await tester.enterText(find.byKey(SwapSheet.amountFieldKey), amount);
+  if (address != null) await tester.enterText(find.byKey(SwapSheet.addressFieldKey), address);
+  // The form asks for its quote once it has been drawn with what was typed,
+  // and has then rested.
+  await tester.pump();
+  await tester.pump(swapFormQuoteDebounce);
+  await tester.pumpAndSettle();
+}
+
+Future<void> _pressSwap(WidgetTester tester, Key key) async {
+  await tester.ensureVisible(find.byKey(key));
+  await tester.tap(find.byKey(key));
+  await tester.pumpAndSettle();
+}
+
+void _swapSheetScenes() {
+  _scene('swap_sheet_empty', (tester) async {
+    await _openSwapSheet(tester);
+  });
+
+  _scene('swap_sheet_estimate', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester, address: null);
+  });
+
+  _scene('swap_sheet_quoted', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+  });
+
+  _scene('swap_sheet_exact_output', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.otherAmountKey);
+    await _fillSwap(tester, amount: '100');
+  });
+
+  _scene('swap_sheet_in', (tester) async {
+    await _openSwapSheet(tester);
+    await _pressSwap(tester, SwapSheet.flipKey);
+    await _fillSwap(tester, amount: '100');
+  });
+
+  _scene('swap_sheet_max', (tester) async {
+    await _openSwapSheet(tester);
+    await tester.enterText(find.byKey(SwapSheet.addressFieldKey), swapRecipient);
+    await _pressSwap(tester, SwapSheet.maxKey);
+    await tester.pump();
+    await tester.pump(swapFormQuoteDebounce);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_insufficient', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester, amount: '2500');
+  });
+
+  _scene('swap_sheet_quote_failed', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) =>
+          device.swaps.quote = (_) async =>
+              throw const SwapApiException(400, 'Amount is too low for bridge, try at least 12.5 QTC'),
+    );
+    await _fillSwap(tester, amount: '2');
+  });
+
+  _scene('swap_sheet_fee_failed', (tester) async {
+    await _openSwapSheet(tester, prepare: (device) => device.chain.fee = () async => throw StateError('offline'));
+  });
+
+  _scene('swap_sheet_tokens', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.tokenButtonKey);
+    await tester.enterText(find.byKey(SwapSheet.tokenSearchKey), 'us');
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_slippage_custom', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.slippageKey);
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(PopUpButton.menuKey),
+        matching: find.text(lookupAppLocalizations(const Locale('en')).swapSlippageCustom),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(SwapSheet.customSlippageKey), '99.5');
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_saved', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) => device.swaps.saved['ARB'] = const [
+        swapRecipient,
+        '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
+        '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B',
+      ],
+    );
+    await tester.enterText(find.byKey(SwapSheet.amountFieldKey), '250');
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_save_address', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await tester.tap(find.descendant(of: find.byKey(SwapSheet.saveAddressKey), matching: find.byType(Checkbox)));
+    await tester.pumpAndSettle();
+  });
+
+  _scene('swap_sheet_save_failed', (tester) async {
+    await _openSwapSheet(tester, prepare: (device) => device.swaps.saveError = StateError('The disk is full'));
+    await _fillSwap(tester);
+    await tester.tap(find.descendant(of: find.byKey(SwapSheet.saveAddressKey), matching: find.byType(Checkbox)));
+    await tester.pumpAndSettle();
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
+
+  _scene('swap_sheet_unavailable', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) => device.swaps.tokens = () async => throw const SwapApiException(503, 'down'),
+    );
+  });
+
+  _scene('swap_sheet_disabled', (tester) async {
+    await _openSwapSheet(tester, prepare: (device) => device.swaps.listedQuantus = null);
+  });
+
+  // As many swaps running as can be followed.
+  void followsAllItCan(FakeWalletDevice device) => device.storage.activeSwaps = [
+    for (var i = 0; i < ActiveSwapsNotifier.maxFollowed; i++)
+      fakeActiveSwap(account: _root, depositAddress: '0x${i.toString() * 40}'),
+  ];
+
+  _scene('swap_sheet_limit', (tester) async {
+    await _openSwapSheet(tester, prepare: followsAllItCan);
+  });
+
+  _scene('swap_sheet_limit_smallest_window', (tester) async {
+    await _openSwapSheet(tester, prepare: followsAllItCan, window: const Size(960, 640));
+  });
+
+  _scene('swap_sheet_review', (tester) async {
+    await _openSwapSheet(tester);
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
+
+  _scene('swap_sheet_review_in', (tester) async {
+    await _openSwapSheet(tester);
+    await _pressSwap(tester, SwapSheet.flipKey);
+    await _fillSwap(tester, amount: '100');
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
+
+  _scene('swap_sheet_review_price_moved', (tester) async {
+    await _openSwapSheet(
+      tester,
+      prepare: (device) => device.swaps.create = (reviewed) async => SwapOrder(
+        quote: fakeQuoteFor((
+          from: reviewed.fromToken,
+          to: reviewed.toToken,
+          amount: reviewed.amountIn * BigInt.from(98) ~/ BigInt.from(100),
+          swapType: reviewed.swapType,
+          refundAddress: reviewed.refundAddress,
+          recipient: reviewed.recipient,
+          slippageBps: reviewed.slippageBps,
+        ), feeBps: 30),
+        status: SwapStatus.pendingDeposit,
+      ),
+    );
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.reviewKey);
+    await _pressSwap(tester, SwapSheet.confirmKey);
+  });
+
+  _scene('swap_sheet_smallest_window', (tester) async {
+    await _openSwapSheet(tester, window: const Size(960, 640));
+    await _fillSwap(tester);
+  });
+
+  _scene('swap_sheet_review_smallest_window', (tester) async {
+    await _openSwapSheet(tester, window: const Size(960, 640));
+    await _fillSwap(tester);
+    await _pressSwap(tester, SwapSheet.reviewKey);
+  });
 }

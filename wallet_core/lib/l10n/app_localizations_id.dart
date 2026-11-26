@@ -12,10 +12,22 @@ class AppLocalizationsId extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Bermasalah';
 
   @override
-  String get walletInitErrorMessage => 'Gagal mencari secret phrase. Coba pulihkan wallet anda.';
+  String get walletInitErrorMessage => 'Tidak dapat membaca recovery phrase Anda dari perangkat ini.';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
+  String get walletInitErrorRemoveWallet => 'Hapus Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Hapus Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Hapus semua wallet dari perangkat ini?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'Ini tidak dapat dibatalkan.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Hapus';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Gunakan biometrik untuk mengakses wallet';
@@ -304,6 +316,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Pembuatan multisig membutuhkan waktu lebih lama. Periksa chain atau coba lagi.';
 
   @override
+  String get multisigCreateNotSavedToast =>
+      'Multisig Anda telah dibuat, tetapi tidak dapat disimpan di perangkat ini. Mulai ulang aplikasi untuk menambahkannya.';
+
+  @override
   String get multisigCreateAuthReason => 'Autentikasi untuk membuat multisig ini';
 
   @override
@@ -403,6 +419,10 @@ class AppLocalizationsId extends AppLocalizations {
   @override
   String get multisigProposalCallUnavailable =>
       'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
+
+  @override
+  String get multisigProposalStateUnreadNote =>
+      'Tidak dapat memeriksa keadaan usulan ini sekarang, jadi belum ada yang bisa dilakukan di sini. Coba lagi setelah Anda kembali online.';
 
   @override
   String get multisigProposalInvalid => 'Proposal tidak valid';
@@ -539,6 +559,16 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get multisigApproveUnavailableNote => 'Proposal ini tidak dapat disetujui lagi.';
+
+  @override
+  String get multisigProposalExpiredNote => 'Proposal ini sudah kedaluwarsa.';
+
+  @override
+  String get multisigNoSignerHereNote => 'Tidak ada penanda tangan multisig ini di dompet ini.';
+
+  @override
+  String get multisigCancelWaitsNote =>
+      'Pembatalan menunggu hingga persetujuan yang dikirim dari perangkat ini terkonfirmasi.';
 
   @override
   String get activityTxApproving => 'Menyetujui…';
@@ -903,35 +933,35 @@ class AppLocalizationsId extends AppLocalizations {
   String get innerHashLoadError => 'Gagal memuat inner hash';
 
   @override
-  String get addKeystoneAppBarTitle => 'Add Cold Wallet';
+  String get addKeystoneAppBarTitle => 'Tambah Cold Wallet';
 
   @override
   String get addKeystoneIntroTitle => 'Cold Wallet';
 
   @override
   String get addKeystoneIntroSubtitle =>
-      'An air-gapped wallet that talks to this app only through QR codes. Keys never leave the device.';
+      'Dompet air-gapped yang terhubung ke aplikasi ini hanya melalui kode QR. Kunci tidak pernah meninggalkan perangkat.';
 
   @override
-  String get addKeystoneConnectButton => 'Connect Cold Wallet';
+  String get addKeystoneConnectButton => 'Hubungkan Cold Wallet';
 
   @override
-  String get addKeystoneConnectTitle => 'Connect Cold Wallet';
+  String get addKeystoneConnectTitle => 'Hubungkan Cold Wallet';
 
   @override
-  String get addKeystoneConnectSubtitle => 'Scan your device\'s QR code to connect.';
+  String get addKeystoneConnectSubtitle => 'Pindai kode QR perangkat Anda untuk menghubungkan.';
 
   @override
-  String get addKeystoneOnYourKeystone => 'ON YOUR COLD WALLET';
+  String get addKeystoneOnYourKeystone => 'DI COLD WALLET ANDA';
 
   @override
-  String get addKeystoneStepUnlock => 'Unlock your cold wallet';
+  String get addKeystoneStepUnlock => 'Buka kunci cold wallet Anda';
 
   @override
-  String get addKeystoneStepSelectQuantus => 'Show your account QR code';
+  String get addKeystoneStepSelectQuantus => 'Tampilkan kode QR akun Anda';
 
   @override
-  String get addKeystoneReadyToScan => 'Ready to Scan';
+  String get addKeystoneReadyToScan => 'Siap Memindai';
 
   @override
   String get invalidAddress => 'Alamat tidak valid';
@@ -1035,57 +1065,60 @@ class AppLocalizationsId extends AppLocalizations {
   String get sendTxSubmittedDone => 'Selesai';
 
   @override
-  String get keystoneSignScreenTitle => 'Sign with Cold Wallet';
+  String get keystoneSignScreenTitle => 'Tanda Tangani dengan Cold Wallet';
 
   @override
   String keystoneSignStep(int current, int total) {
-    return 'STEP $current/$total';
+    return 'LANGKAH $current/$total';
   }
 
   @override
   String get keystoneSignTitle => 'Pindai dengan cold wallet Anda';
 
   @override
-  String get keystoneSignInstruction => 'Open your cold wallet and scan this QR code to load the transaction.';
+  String get keystoneSignInstruction => 'Buka cold wallet Anda dan pindai kode QR ini untuk memuat transaksi.';
 
   @override
-  String get keystoneSignActionLabel => 'ACTION';
+  String get keystoneSignActionLabel => 'TINDAKAN';
 
   @override
-  String get keystoneSignYouAreSigning => 'YOU ARE SIGNING';
+  String get keystoneSignEntireBalance => 'Seluruh saldo yang dapat ditransfer';
 
   @override
-  String get keystoneSignNext => 'Continue to Sign';
+  String get keystoneSignYouAreSigning => 'ANDA MENANDATANGANI';
 
   @override
-  String get keystoneSignCancel => 'Cancel Transaction';
+  String get keystoneSignNext => 'Lanjut ke Tanda Tangan';
+
+  @override
+  String get keystoneSignCancel => 'Batalkan Transaksi';
 
   @override
   String get keystoneSignError => 'Gagal menyiapkan transaksi. Silakan coba lagi.';
 
   @override
-  String get keystoneVerifyTitle => 'Check your Cold Wallet Screen';
+  String get keystoneVerifyTitle => 'Periksa Layar Cold Wallet Anda';
 
   @override
   String get keystoneVerifyInstruction =>
-      'Before approving on your cold wallet, make sure its screen shows exactly this:';
+      'Sebelum menyetujui di cold wallet Anda, pastikan layarnya menampilkan persis ini:';
 
   @override
   String get keystoneVerifyWarning =>
-      'If the amount or address on your cold wallet screen is different from what\'s shown here, reject the transaction on your device.';
+      'Jika jumlah atau alamat di layar cold wallet Anda berbeda dari yang ditampilkan di sini, tolak transaksi di perangkat Anda.';
 
   @override
-  String get keystoneVerifyMismatch => 'It doesn\'t match';
+  String get keystoneVerifyMismatch => 'Tidak cocok';
 
   @override
-  String get keystoneScanTitle => 'Scan the signature';
+  String get keystoneScanTitle => 'Pindai tanda tangan';
 
   @override
   String get keystoneScanInstruction =>
-      'Your cold wallet is now showing an animated QR. Hold your phone up to it, this takes a moment.';
+      'Cold wallet Anda sekarang menampilkan QR animasi. Arahkan ponsel Anda ke sana, ini memerlukan beberapa saat.';
 
   @override
-  String get keystoneScanReceiving => 'RECEIVING SIGNATURE';
+  String get keystoneScanReceiving => 'MENERIMA TANDA TANGAN';
 
   @override
   String get keystoneScanSubmitting => 'Mengirim transaksi...';
@@ -1098,28 +1131,30 @@ class AppLocalizationsId extends AppLocalizations {
       'Transaksi kedaluwarsa sebelum sempat dikirim. Kembali dan pindai kode QR baru dengan perangkat Anda.';
 
   @override
-  String get keystoneRejectTitle => 'Don\'t approve this transaction';
+  String get keystoneRejectTitle => 'Jangan setujui transaksi ini';
 
   @override
-  String get keystoneRejectStep1Title => 'Reject the transaction on your cold wallet.';
+  String get keystoneRejectStep1Title => 'Tolak transaksi di cold wallet Anda.';
 
   @override
-  String get keystoneRejectStep1Body => 'Nothing is signed or sent until you approve there.';
+  String get keystoneRejectStep1Body => 'Tidak ada yang ditandatangani atau dikirim sampai Anda menyetujuinya di sana.';
 
   @override
-  String get keystoneRejectStep2Title => 'Don\'t retry from this phone.';
+  String get keystoneRejectStep2Title => 'Jangan coba lagi dari ponsel ini.';
 
   @override
-  String get keystoneRejectStep2Body => 'If it\'s compromised, retrying gives the attacker another chance.';
+  String get keystoneRejectStep2Body =>
+      'Jika ponsel ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.';
 
   @override
-  String get keystoneRejectStep3Title => 'Your funds are safe on the cold wallet.';
+  String get keystoneRejectStep3Title => 'Dana Anda aman di cold wallet.';
 
   @override
-  String get keystoneRejectStep3Body => 'Keys never left the device. Move to a trusted phone before sending again.';
+  String get keystoneRejectStep3Body =>
+      'Kunci tidak pernah meninggalkan perangkat. Pindah ke ponsel tepercaya sebelum mengirim lagi.';
 
   @override
-  String get keystoneRejectConfirm => 'I rejected it on the cold wallet';
+  String get keystoneRejectConfirm => 'Saya sudah menolaknya di cold wallet';
 
   @override
   String get sendLogicCantSelfTransfer => 'Tidak Bisa Transfer ke Diri Sendiri';
@@ -1288,6 +1323,9 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get activityDetailTitleCancelling => 'Membatalkan proposal';
+
+  @override
+  String get activityDetailTitleApproving => 'Menyetujui proposal';
 
   @override
   String get activityDetailTitleExecuting => 'Mengeksekusi proposal';
@@ -1562,9 +1600,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsHelpScreenTitle => 'Bantuan & Dukungan';
 
   @override
-  String get settingsHelpEmail => 'Dukungan Email';
-
-  @override
   String get settingsHelpTelegram => 'Telegram';
 
   @override
@@ -1787,6 +1822,14 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get swapReviewConfirm => 'Konfirmasi swap';
+
+  @override
+  String get swapActivityOverdue => 'Belum selesai tepat waktu';
+
+  @override
+  String swapTooManyFollowed(int count) {
+    return 'Paling banyak $count swap berjalan sekaligus. Tunggu salah satunya selesai.';
+  }
 
   @override
   String swapActivityAmounts(String amountIn, String amountOut) {
@@ -2473,7 +2516,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopMenuAccount => 'Akun';
 
   @override
-  String get desktopMenuAddAccount => 'Tambah Akun…';
+  String get desktopMenuNewAccount => 'Akun Baru';
 
   @override
   String get desktopMenuView => 'Tampilan';
@@ -2868,6 +2911,114 @@ class AppLocalizationsId extends AppLocalizations {
   String get desktopProposeWaiting => 'Menunggu jaringan membuat proposal.';
 
   @override
+  String get desktopProposalApproved => 'Disetujui';
+
+  @override
+  String get desktopProposalExpired => 'Telah kedaluwarsa';
+
+  @override
+  String get desktopProposalUnreadable =>
+      'Dompet ini tidak dapat membaca apa yang akan dilakukan proposal ini, jadi proposal ini tidak dapat disetujui atau dijalankan di sini.';
+
+  @override
+  String get desktopProposalApproving => 'Menyetujui';
+
+  @override
+  String get desktopProposalExecuting => 'Menjalankan';
+
+  @override
+  String get desktopProposalCancelling => 'Membatalkan';
+
+  @override
+  String get desktopProposalSignsAs => 'Menandatangani sebagai';
+
+  @override
+  String get desktopProposalSignedAs => 'Ditandatangani sebagai';
+
+  @override
+  String get desktopProposalDepositRefunded => 'Deposit dikembalikan';
+
+  @override
+  String desktopProposalApprovalsChange(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String desktopProposalKeystoneApprove(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Setujui di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalKeystoneExecute(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Jalankan di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalKeystoneCancel(String name) {
+    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Batalkan di ponsel Anda.';
+  }
+
+  @override
+  String desktopProposalApprovingTitle(String what) {
+    return 'Menyetujui $what';
+  }
+
+  @override
+  String desktopProposalApprovedTitle(String what) {
+    return '$what disetujui';
+  }
+
+  @override
+  String desktopProposalExecutingTitle(String what) {
+    return 'Menjalankan $what';
+  }
+
+  @override
+  String desktopProposalExecutedTitle(String what) {
+    return '$what dijalankan';
+  }
+
+  @override
+  String desktopProposalCancellingTitle(String what) {
+    return 'Membatalkan $what';
+  }
+
+  @override
+  String get desktopProposalCancelledTitle => 'Proposal dibatalkan';
+
+  @override
+  String get desktopProposalApprovalWaiting => 'Menunggu jaringan mencatat persetujuan Anda.';
+
+  @override
+  String get desktopProposalExecutionWaiting => 'Menunggu jaringan mencatat eksekusi Anda.';
+
+  @override
+  String get desktopProposalCancellationWaiting => 'Menunggu jaringan mencatat pembatalan Anda.';
+
+  @override
+  String get desktopProposalReadyToExecute =>
+      'Proposal ini telah mendapat semua persetujuan yang diperlukan, dan dapat dijalankan.';
+
+  @override
+  String desktopProposalApprovalsNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: 'Perlu $count persetujuan lagi.');
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopProposalExecutedDone => 'Proposal telah dijalankan.';
+
+  @override
+  String get desktopProposalCancelledDone => 'Deposit Anda telah dikembalikan.';
+
+  @override
+  String get desktopProposalExecutedByAnother => 'Dijalankan oleh penanda tangan lain';
+
+  @override
+  String get desktopProposalExecutedByAnotherBody =>
+      'Penanda tangan lain menjalankan proposal ini lebih dulu, jadi transaksi Anda tidak berhasil. Biaya jaringannya tetap dibayar.';
+
+  @override
   String get desktopFooterMainnet => 'Mainnet';
 
   @override
@@ -3171,6 +3322,31 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationReceivedTitle(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String desktopNotificationReceivedBody(String account) {
+    return 'Di $account';
+  }
+
+  @override
+  String desktopNotificationSwapBody(String amount, String foreignAmount, String network) {
+    return '$amount untuk $foreignAmount di $network';
+  }
+
+  @override
+  String desktopNotificationIncomingTitle(String amount) {
+    return '$amount akan masuk';
+  }
+
+  @override
+  String desktopNotificationIncomingBody(String account) {
+    return 'Dijadwalkan masuk ke $account';
+  }
+
+  @override
   String get desktopNotificationSendNotConfirmedTitle => 'Pengiriman belum terkonfirmasi';
 
   @override
@@ -3195,11 +3371,312 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
+  String get desktopNotificationProposalNewTitle => 'Proposal baru';
+
+  @override
+  String desktopNotificationProposalSignedTitle(int count, int threshold) {
+    return 'Proposal ditandatangani: $count dari $threshold';
+  }
+
+  @override
+  String get desktopNotificationProposalReadyTitle => 'Proposal siap dieksekusi';
+
+  @override
+  String get desktopNotificationProposalExecutedTitle => 'Proposal dieksekusi';
+
+  @override
+  String get desktopNotificationProposalFailedTitle => 'Eksekusi proposal gagal';
+
+  @override
+  String get desktopNotificationProposalCancelledTitle => 'Proposal dibatalkan';
+
+  @override
+  String get desktopNotificationProposalRemovedTitle => 'Proposal dihapus';
+
+  @override
+  String desktopNotificationProposalOtherBody(String multisig) {
+    return 'Di $multisig';
+  }
+
+  @override
   String get desktopNotificationProposalNotConfirmedTitle => 'Proposal belum terkonfirmasi';
 
   @override
   String desktopNotificationProposalNotConfirmedBody(String amount, String multisig) {
     return 'Proposal untuk mengirim $amount dari $multisig tidak terlihat di rantai tepat waktu.';
+  }
+
+  @override
+  String desktopWalletAccountCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(count, locale: localeName, other: '$count akun');
+    return '$_temp0';
+  }
+
+  @override
+  String get importWalletAlreadyAdded => 'Dompet ini sudah ada di aplikasi';
+
+  @override
+  String get desktopMenuImportWallet => 'Impor Dompet…';
+
+  @override
+  String get desktopImportFinding => 'Mencari akun dompet ini';
+
+  @override
+  String get desktopImportFailed => 'Tidak dapat mengimpor dompet';
+
+  @override
+  String get desktopImportDone => 'Dompet diimpor';
+
+  @override
+  String get desktopMenuManageMultisigs => 'Kelola Multisig…';
+
+  @override
+  String get desktopManageMultisigsTitle => 'Kelola Multisig';
+
+  @override
+  String get desktopManageMultisigsLead =>
+      'Multisig di chain dengan salah satu akun Anda sebagai penanda tangan. Mematikannya hanya menghapusnya dari aplikasi ini.';
+
+  @override
+  String get desktopManageMultisigsFinding => 'Mencari multisig Anda di chain';
+
+  @override
+  String desktopManageMultisigsSignsAs(String approvals, String name) {
+    return '$approvals · Anda menandatangani sebagai $name';
+  }
+
+  @override
+  String get desktopMenuCreateMultisig => 'Buat Multisig…';
+
+  @override
+  String get desktopCreateMultisigSigners => 'Penanda tangan';
+
+  @override
+  String get desktopCreateMultisigApprovalsNeeded => 'Persetujuan diperlukan';
+
+  @override
+  String get desktopCreateMultisigApprovals => 'Persetujuan';
+
+  @override
+  String desktopCreateMultisigApprovalsValue(int count, int total) {
+    return '$count dari $total penanda tangan';
+  }
+
+  @override
+  String get desktopCreateMultisigAddress => 'Alamat';
+
+  @override
+  String get desktopCreateMultisigPaidBy => 'Dibayar oleh';
+
+  @override
+  String get desktopCreateMultisigCreationFee => 'Biaya pembuatan';
+
+  @override
+  String get desktopCreateMultisigRemoveSigner => 'Hapus penanda tangan';
+
+  @override
+  String desktopCreateMultisigPreviewFailed(String error) {
+    return 'Tidak dapat menentukan alamat baru: $error';
+  }
+
+  @override
+  String desktopCreateMultisigCantAfford(String name) {
+    return '$name tidak dapat menutup biayanya';
+  }
+
+  @override
+  String get desktopCreateMultisigDeclined => 'Membuat multisig ini memerlukan persetujuan Anda';
+
+  @override
+  String desktopCreateMultisigFailed(String error) {
+    return 'Tidak dapat membuat multisig ini: $error';
+  }
+
+  @override
+  String get desktopCreateMultisigTimedOut => 'Multisig belum terkonfirmasi';
+
+  @override
+  String get desktopMenuConnectColdWallet => 'Hubungkan Cold Wallet…';
+
+  @override
+  String get desktopColdWalletAddAccountTitle => 'Tambah Akun Cold Wallet';
+
+  @override
+  String get desktopColdWalletStepHold => 'Arahkan ke kamera ini';
+
+  @override
+  String get desktopColdWalletLooking => 'Mencari kode QR';
+
+  @override
+  String get desktopColdWalletNotAddress => 'Kode QR itu bukan alamat akun.';
+
+  @override
+  String get desktopColdWalletAlreadyAdded => 'Akun itu sudah ada di aplikasi ini.';
+
+  @override
+  String get desktopColdWalletConfirmTitle => 'Konfirmasi Alamat';
+
+  @override
+  String get desktopColdWalletConfirmBody => 'Pastikan ini sama dengan alamat di cold wallet Anda.';
+
+  @override
+  String get desktopColdWalletScanAgain => 'Pindai Lagi';
+
+  @override
+  String get desktopColdWalletConnect => 'Hubungkan';
+
+  @override
+  String get desktopColdWalletSaveFailed => 'Tidak dapat menghubungkan cold wallet ini';
+
+  @override
+  String get desktopCameraNoneTitle => 'Kamera tidak ditemukan';
+
+  @override
+  String get desktopCameraNoneBody => 'Hubungkan kamera ke komputer ini, lalu coba lagi.';
+
+  @override
+  String get desktopCameraPermissionTitle => 'Akses kamera nonaktif';
+
+  @override
+  String get desktopCameraPermissionMac => 'Izinkan Quantus Wallet di Privasi & Keamanan, Kamera.';
+
+  @override
+  String get desktopCameraPermissionWindows => 'Izinkan akses kamera di Privasi & keamanan, Kamera.';
+
+  @override
+  String get desktopCameraPermissionLinux => 'Pastikan pengguna Anda diizinkan memakai kamera.';
+
+  @override
+  String get desktopCameraOpenSettings => 'Buka Pengaturan Sistem';
+
+  @override
+  String get desktopCameraBusyTitle => 'Kamera sedang digunakan';
+
+  @override
+  String get desktopCameraBusyBody => 'Tutup aplikasi lain yang memakainya, lalu coba lagi.';
+
+  @override
+  String get desktopCameraUnsupportedTitle => 'Kamera ini tidak dapat digunakan';
+
+  @override
+  String get desktopCameraUnsupportedBody => 'Kamera ini tidak menyediakan format gambar yang dapat dibaca aplikasi.';
+
+  @override
+  String get desktopCameraMediaTitle => 'Dukungan kamera tidak tersedia';
+
+  @override
+  String get desktopCameraMediaBody => 'Pasang Media Feature Pack untuk Windows, lalu coba lagi.';
+
+  @override
+  String get desktopCameraStoppedTitle => 'Kamera berhenti';
+
+  @override
+  String get desktopCameraStoppedBody => 'Pastikan kamera terhubung, lalu coba lagi.';
+
+  @override
+  String get desktopCameraFailedTitle => 'Tidak dapat menggunakan kamera';
+
+  @override
+  String get desktopCameraFailedBody => 'Terjadi masalah pada kamera. Coba lagi.';
+
+  @override
+  String get settingsHelpDiscord => 'Discord';
+
+  @override
+  String get swapSaveAddressFailed => 'Tidak dapat menyimpan alamat.';
+
+  @override
+  String get commonSupportScamWarning =>
+      'Tim dukungan tidak akan pernah mengirim DM lebih dulu atau meminta recovery phrase Anda.';
+
+  @override
+  String desktopNotificationEncryptedSendFailedBody(String amount, String account) {
+    return '$amount dari $account tidak selesai terkirim. Sebagian mungkin sudah terkirim.';
+  }
+
+  @override
+  String get desktopSwapAwaitingDeposit => 'Menunggu deposit';
+
+  @override
+  String get desktopSwapWaitingForDeposit => 'Menunggu deposit Anda';
+
+  @override
+  String desktopSwapUntil(String time) {
+    return 'hingga $time';
+  }
+
+  @override
+  String get desktopSwapFor => 'Untuk';
+
+  @override
+  String desktopSwapAmountOnNetwork(String amount, String network) {
+    return '$amount di $network';
+  }
+
+  @override
+  String desktopSwapForAmountOnNetwork(String amount, String network) {
+    return 'untuk $amount di $network';
+  }
+
+  @override
+  String desktopSwapRecipientOn(String network) {
+    return 'Penerima di $network';
+  }
+
+  @override
+  String get desktopSwapTheRecipient => 'penerima';
+
+  @override
+  String desktopSwapSendAmount(String amount) {
+    return 'Kirim $amount';
+  }
+
+  @override
+  String get desktopSwapCancel => 'Batalkan Swap';
+
+  @override
+  String get desktopSwapViewDeposit => 'Lihat Deposit';
+
+  @override
+  String desktopSwapReceived(String amount) {
+    return '$amount diterima';
+  }
+
+  @override
+  String desktopSwapCompleteBody(String amount) {
+    return 'Swap $amount Anda selesai.';
+  }
+
+  @override
+  String get desktopSwapPoweredByNearIntents => 'Didukung oleh NEAR Intents';
+
+  @override
+  String desktopSwapRecipientAddressOn(String network) {
+    return 'Alamat penerima di $network';
+  }
+
+  @override
+  String desktopSwapRefundAddressOn(String network) {
+    return 'Alamat refund di $network';
+  }
+
+  @override
+  String get desktopSwapMaximum => 'Swap jumlah maksimum';
+
+  @override
+  String desktopSwapAccountAvailable(String account, String amount) {
+    return '$account · $amount tersedia';
+  }
+
+  @override
+  String get desktopSwapLoadingTokens => 'Memuat token';
+
+  @override
+  String get desktopSwapRemoveSavedAddress => 'Hapus Alamat Tersimpan';
+
+  @override
+  String desktopSwapSavedAddressesUnavailable(String error) {
+    return 'Alamat tersimpan tidak tersedia: $error';
   }
 
   @override
@@ -3215,4 +3692,86 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopNotificationUnavailable(String reason) {
     return 'Tidak tersedia: $reason';
   }
+
+  @override
+  String desktopStatusItemOpen(String appName) {
+    return 'Buka $appName';
+  }
+
+  @override
+  String desktopStatusItemQuit(String appName) {
+    return 'Keluar dari $appName';
+  }
+
+  @override
+  String desktopStatusItemSwap(int step, int count) {
+    return 'Tukar $step/$count';
+  }
+
+  @override
+  String desktopStatusItemSwapAndMore(int step, int count, int more) {
+    return 'Tukar $step/$count +$more';
+  }
+
+  @override
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network) {
+    return '$amount untuk $foreignAmount di $network';
+  }
+
+  @override
+  String get desktopQuitPendingTitle => 'Transaksi Masih Berjalan';
+
+  @override
+  String get desktopQuitPendingBody =>
+      'Keluar sekarang dapat membuat transaksi tidak selesai. Dompet dapat menyelesaikannya dulu, lalu keluar dengan sendirinya.';
+
+  @override
+  String get desktopQuitFinishFirst => 'Selesaikan, Lalu Keluar';
+
+  @override
+  String get desktopQuitNow => 'Keluar Sekarang';
+
+  @override
+  String get desktopKeystoneStepShow => 'Tampilkan';
+
+  @override
+  String get desktopKeystoneStepCheckAndScan => 'Periksa dan pindai kembali';
+
+  @override
+  String get desktopKeystoneOnColdWallet => 'Di cold wallet Anda';
+
+  @override
+  String get desktopKeystoneShowStepScan => 'Buka cold wallet Anda dan pilih Pindai.';
+
+  @override
+  String get desktopKeystoneShowStepHold => 'Arahkan ke kode QR ini sampai transaksinya muncul.';
+
+  @override
+  String get desktopKeystoneShowStepContinue => 'Lalu lanjutkan di sini.';
+
+  @override
+  String get desktopKeystoneCheckTitle => 'Periksa layar cold wallet Anda';
+
+  @override
+  String get desktopKeystoneCheckBody => 'Setujui di sana hanya jika layarnya menampilkan persis ini.';
+
+  @override
+  String get desktopKeystoneThen => 'Lalu';
+
+  @override
+  String get desktopKeystoneScanStepHold => 'Arahkan kode QR tanda tangannya ke kamera komputer ini.';
+
+  @override
+  String get desktopKeystoneScanStepKeep => 'Tahan di sana sampai semua bagian diterima.';
+
+  @override
+  String get desktopKeystoneRejectStep2Title => 'Jangan coba lagi dari komputer ini.';
+
+  @override
+  String get desktopKeystoneRejectStep3Body =>
+      'Kunci tidak pernah meninggalkan perangkat. Pindah ke komputer tepercaya sebelum mengirim lagi.';
+
+  @override
+  String get desktopKeystoneRejectStep2Body =>
+      'Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.';
 }

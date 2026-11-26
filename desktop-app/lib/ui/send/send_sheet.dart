@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
+import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
@@ -17,6 +19,7 @@ import 'package:quantus_desktop_wallet/ui/components/notice_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_form_parts.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
@@ -34,10 +37,12 @@ import 'package:wallet_core/send/send_screen_logic.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/send/wormhole_steps.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
 
-/// The steps of the Send sheet. Only a private send has the proving.
-enum _Step { form, review, proving, receipt }
+/// The steps of the Send sheet. Only a private send has the proving, and only
+/// a send from a cold wallet the signing.
+enum _Step { form, review, proving, signing, receipt }
 
 /// The Send sheet: a form for who is paid and how much, a review of the send
 /// before the system is asked to approve it, and a receipt once it has been
@@ -101,6 +106,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// send, which the account it leaves pays.
   late final Account? _signer;
 
+  /// The send is signed on a cold wallet, not approved on this computer.
+  late final bool _signsOnColdWallet;
+
+  /// The cold wallet's signing of the send, on the signing step.
+  SendNeedsHardwareSignature? _signing;
+
   final _address = TextEditingController();
   final _amountText = TextEditingController();
   final _addressFocus = FocusNode();
@@ -163,6 +174,22 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// created it.
   ProviderListenable<SendConfirmation>? _confirmation;
 
+  /// Where this sheet's send counts as work under way, from the press of Send
+  /// until it was handed over or came to nothing. Set and cleared where that
+  /// happens, not in a build: a closed window draws no frames.
+  WorkHoldsNotifier? _workHold;
+
+  void _holdWork() {
+    final holds = ref.read(workHoldsProvider.notifier);
+    holds.hold(this);
+    _workHold = holds;
+  }
+
+  void _releaseWork() {
+    _workHold?.release(this);
+    _workHold = null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -175,6 +202,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     _account = active.account;
     _strategy = strategy;
     _signer = sendSigner(strategy, accounts);
+    _signsOnColdWallet = switch (active) {
+      RegularAccount(:final account) => account.signsWithHardware,
+      _ => false,
+    };
     _address.addListener(_onAddressChanged);
     _addressFocus.requestFocus();
     unawaited(_loadRecents());
@@ -182,6 +213,9 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   @override
   void dispose() {
+    // After this frame: no provider may change while the tree is being built.
+    final hold = _workHold;
+    if (hold != null) scheduleMicrotask(() => hold.release(this));
     _blockSubscription?.cancel();
     _address.dispose();
     _amountText.dispose();
@@ -393,6 +427,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   Future<void> _send(SendReview review, List<SendReviewRow> rows) async {
     if (_isSending || review.confirmBlocked) return;
+    _holdWork();
     setState(() {
       _isSending = true;
       _error = null;
@@ -417,6 +452,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
     switch (outcome) {
       case SendSubmitted(:final terminal, :final confirmation):
+        _releaseWork();
         setState(() {
           _isSending = false;
           _submitted = terminal;
@@ -425,6 +461,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           _step = _Step.receipt;
         });
       case SendFailed(:final message):
+        _releaseWork();
         setState(() {
           _isSending = false;
           _error = message;
@@ -432,7 +469,16 @@ class _SendSheetState extends ConsumerState<SendSheet> {
       case SendNeedsProving(:final account, :final plan, :final amount, :final terminal):
         // The proving lives as long as something listens to it: from here
         // on the sheet does, and moves on once every proof is handed over.
-        ref.listenManual(encryptedSendControllerProvider, (_, next) {
+        ref.listenManual(encryptedSendControllerProvider, (previous, next) {
+          if (!listEquals(previous?.txHashes, next.txHashes)) {
+            ref.read(ownActivityNotificationsProvider).onEncryptedSendSubmitted(next.txHashes);
+          }
+          if (previous?.phase != next.phase) {
+            ref
+                .read(ownActivityNotificationsProvider)
+                .onEncryptedSendEnded(account: account, amount: amount, send: next);
+          }
+          if (!_isUnderWay(next)) _releaseWork();
           if (next.phase == EncryptedSendPhase.succeeded && _step == _Step.proving) {
             setState(() => _step = _Step.receipt);
           }
@@ -449,14 +495,36 @@ class _SendSheetState extends ConsumerState<SendSheet> {
               .read(encryptedSendControllerProvider.notifier)
               .start(account: account, plan: plan, amount: amount, recipientAddress: _recipient),
         );
-      case SendNeedsHardwareSignature():
+      case final SendNeedsHardwareSignature signing:
+        _releaseWork();
         setState(() {
           _isSending = false;
-          _error = failed;
+          _signing = signing;
+          _submittedRows = rows;
+          _step = _Step.signing;
         });
-        // Send is offered only on accounts whose key signs in the app.
-        throw StateError('The desktop app cannot finish this send: $outcome');
     }
+  }
+
+  void _backFromSigning() {
+    _stepFocus.requestFocus();
+    setState(() {
+      _signing = null;
+      _step = _Step.review;
+    });
+  }
+
+  void _onColdWalletSubmitting(bool isSubmitting) => isSubmitting ? _holdWork() : _releaseWork();
+
+  void _onColdWalletSigned(String hash) {
+    final signing = _signing;
+    if (signing == null) throw StateError('A cold wallet signed a send that was not being signed.');
+    setState(() {
+      _submitted = signing.terminalForHash(hash);
+      _confirmation = null;
+      _signing = null;
+      _step = _Step.receipt;
+    });
   }
 
   @override
@@ -482,15 +550,27 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ShellSheetHeader(
-                title: isReview ? l10n.desktopSendReview : title,
-                account: _account,
-                parent: isReview ? (title: title, onBack: _backToForm) : null,
-              ),
+              // The signing has its own headers: it has steps of its own.
+              if (_step != _Step.signing)
+                ShellSheetHeader(
+                  title: isReview ? l10n.desktopSendReview : title,
+                  account: _account,
+                  parent: isReview ? (title: title, onBack: _backToForm) : null,
+                ),
               ...switch (_step) {
                 _Step.form => _form(l10n),
                 _Step.review => _review(l10n),
                 _Step.proving => _proving(l10n),
+                _Step.signing => [
+                  KeystoneSigningView(
+                    session: (_signing ?? (throw StateError('The signing step has no signing.'))).session,
+                    account: _account,
+                    parentTitle: title,
+                    onLeave: _backFromSigning,
+                    onSubmitting: _onColdWalletSubmitting,
+                    onSigned: _onColdWalletSigned,
+                  ),
+                ],
                 _Step.receipt => _receipt(l10n),
               },
             ],
@@ -513,12 +593,15 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     // some.
     final pendingProvider = _strategy.pendingBalanceProvider;
     final pending = pendingProvider == null ? null : ref.watch(pendingProvider).value;
-    // Said beside the buttons where a send could not be approved.
-    final approvalNote = switch (availability) {
-      AsyncData(:final value) => approvalUnavailableNote(l10n, value),
-      AsyncError(:final error) => l10n.desktopApprovalFailed('$error'),
-      _ => null,
-    };
+    // Said beside the buttons where a send could not be approved; a cold
+    // wallet's send is approved on the cold wallet.
+    final approvalNote = _signsOnColdWallet
+        ? null
+        : switch (availability) {
+            AsyncData(:final value) => approvalUnavailableNote(l10n, value),
+            AsyncError(:final error) => l10n.desktopApprovalFailed('$error'),
+            _ => null,
+          };
 
     final amountStatus = SendScreenLogic.getAmountStatus(
       _amount,
@@ -546,7 +629,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         !_strategy.extraBalancesLoading(ref) &&
         affordabilityError == null &&
         amountStatus == AmountStatus.valid &&
-        availability.value == ApprovalAvailability.available;
+        (_signsOnColdWallet || availability.value == ApprovalAvailability.available);
 
     return [
       const SizedBox(height: 14),
@@ -816,11 +899,14 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         ? null
         : l10n.desktopProposeCostNotCovered(signer.name);
     // Beside the buttons: what stops the send, or why the last press sent
-    // nothing.
-    final problem =
-        _amountProblem(l10n, review.amountStatus, fee: review.fee) ??
-        costProblem ??
-        (review.feeFailed ? strings.feeFetchFailedMessage : _error);
+    // nothing. Nothing while it goes out: the wallet holds what it spends
+    // back from the account before it is broadcast, so the account reads as
+    // too short for it until the receipt opens.
+    final problem = _isSending
+        ? null
+        : _amountProblem(l10n, review.amountStatus, fee: review.fee) ??
+              costProblem ??
+              (review.feeFailed ? strings.feeFetchFailedMessage : _error);
 
     return [
       const SizedBox(height: 26),

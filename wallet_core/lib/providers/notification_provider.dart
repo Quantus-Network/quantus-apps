@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/services/local_notifications.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 import 'package:wallet_core/providers/notification_config_provider.dart';
+import 'package:wallet_core/utils/provider_reader.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Maximum number of notifications to keep (FIFO)
@@ -18,21 +20,43 @@ const String notificationsStorageKey = 'notifications';
 /// Notification provider that manages the notification state
 final notificationProvider = StateNotifierProvider<NotificationNotifier, List<NotificationData>>((ref) {
   final localNotifications = ref.watch(localNotificationsProvider);
-  final notificationConfig = ref.watch(notificationConfigProvider);
 
-  return NotificationNotifier(localNotifications, notificationConfig);
+  // Read, not watched: a config change must not replace the notifier while it
+  // is adding a notification.
+  return NotificationNotifier(localNotifications, ref.read, ref.read(walletSessionProvider));
 });
+
+/// Adds the notification [resolve] answers with, unless the wallet was reset
+/// while it was being resolved: it would be saved into the wiped storage, or
+/// scheduled to fire in the next wallet.
+Future<void> addResolvedNotification(ProviderReader read, Future<NotificationData?> Function() resolve) async {
+  final session = read(walletSessionProvider);
+  final ticket = session.ticket;
+  final notification = await resolve();
+  if (notification == null) return;
+  if (!session.stillCurrent(ticket, dropping: 'the notification ${notification.id}')) return;
+  await read(notificationProvider.notifier).addNotification(notification);
+}
 
 /// Notifier that manages notification state with persistence and streams
 class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   final LocalNotifications _localNotifications;
-  final NotificationConfig _config;
+  final ProviderReader _read;
+
+  /// Held back from during a reset: what this notifier's own timers do would
+  /// write the old wallet's list into the wiped storage.
+  final WalletSession _session;
 
   final Map<String, Timer> _scheduledTimers = {};
 
-  NotificationNotifier(this._localNotifications, this._config) : super([]) {
-    _initialize();
+  NotificationNotifier(this._localNotifications, this._read, this._session) : super([]) {
+    _ready = _initialize();
   }
+
+  /// Completes once the saved config and list have loaded. Before that, the
+  /// config holds the defaults, not a saved off switch, and the list is about
+  /// to be replaced.
+  late final Future<void> _ready;
 
   // Stream controllers for different notification sources
   final StreamController<NotificationData> _localAlertController = StreamController.broadcast();
@@ -48,7 +72,9 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
   /// Initialize the notifier by loading persisted notifications
   Future<void> _initialize() async {
+    await _read(notificationConfigProvider.notifier).loaded;
     await _loadPersistedNotifications();
+    if (!mounted) return;
     _startCleanupTimer();
     _cleanupExpiredNotifications();
   }
@@ -60,27 +86,24 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     });
   }
 
-  /// Check if notifications can be shown (OS + app level + notification type)
-  Future<bool> canShowNotification(NotificationIntent type) async {
-    // Check app-level master setting
-    if (!_config.enabled) {
-      quantusPrint('Notifications disabled at app level');
-      return false;
-    }
+  /// Check if any notifications can be shown (master check)
+  Future<bool> canShowNotifications() async {
+    await _ready;
+    return mounted && _isEnabled();
+  }
 
-    // Check specific notification type setting
-    if (!_config.isIntentEnabled(type)) {
-      quantusPrint('Notification type ${type.name} is disabled');
+  bool _isEnabled() {
+    if (!_read(notificationConfigProvider).enabled) {
+      quantusPrint('Notifications disabled at app level');
       return false;
     }
 
     return true;
   }
 
-  /// Check if any notifications can be shown (master check)
-  Future<bool> canShowNotifications() async {
-    if (!_config.enabled) {
-      quantusPrint('Notifications disabled at app level');
+  bool _isIntentAllowed(NotificationIntent type) {
+    if (!_read(notificationConfigProvider).isIntentEnabled(type)) {
+      quantusPrint('Notification type ${type.name} is disabled');
       return false;
     }
 
@@ -136,8 +159,12 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
 
     // Schedule timer to show notification at the right time
     final timer = Timer(duration, () {
-      _addNotificationImmediately(notification);
       _scheduledTimers.remove(notification.id);
+      _session.unlessWiped(() {
+        if (mounted && _isEnabled() && _isIntentAllowed(notification.intent)) {
+          _addNotificationImmediately(notification);
+        }
+      });
     });
 
     _scheduledTimers[notification.id] = timer;
@@ -148,6 +175,11 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    if (_session.isResetting) {
+      _session.unlessWiped(() => unawaited(_saveNotifications()));
+      return;
+    }
     final notificationsJson = state
         .where((notification) => notification.persistent)
         .map((notification) => jsonEncode(notification.toJson()))
@@ -159,9 +191,11 @@ class NotificationNotifier extends StateNotifier<List<NotificationData>> {
   /// Add a new notification
   Future<void> addNotification(NotificationData notification) async {
     if (!mounted) return;
+    await _ready;
+    if (!mounted) return;
 
     // Check if this specific notification intent can be shown
-    if (!await canShowNotification(notification.intent)) {
+    if (!_isEnabled() || !_isIntentAllowed(notification.intent)) {
       quantusPrint('Cannot show ${notification.intent.name} notification: disabled or permission not granted');
       return;
     }

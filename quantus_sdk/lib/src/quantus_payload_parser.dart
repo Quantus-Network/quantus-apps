@@ -107,9 +107,8 @@ class ParsedPayload {
 
   /// Whether the payload targets the runtime the bundled metadata came from.
   ///
-  /// When false the call decoded, but against possibly-shifted pallet or call
-  /// indices — the field labels may belong to a different call than the one that
-  /// will execute. Signers must say so prominently.
+  /// When false the call decoded against another runtime's metadata. Pallet and
+  /// call indices are never reassigned, so signers only note it.
   bool get specMatchesBundled =>
       AppConstants.compatibleRuntimes.contains((spec: extensions.specVersion, tx: extensions.transactionVersion));
 }

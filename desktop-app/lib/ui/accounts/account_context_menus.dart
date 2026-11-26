@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
-import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -22,7 +21,6 @@ class AccountContextMenu extends ConsumerWidget {
     return ContextMenuRegion(
       // Read as the menu opens, so it is what holds then.
       items: () => _items(
-        ref,
         accountMenuEntries(
           ref.read(l10nProvider),
           account,
@@ -47,26 +45,15 @@ class WalletContextMenu extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = walletMenuEntries(ref.watch(l10nProvider), wallet, ref.watch(accountManagerProvider));
     if (entries.isEmpty) return child;
-    return ContextMenuRegion(items: () => _items(ref, entries), child: child);
+    return ContextMenuRegion(items: () => _items(entries), child: child);
   }
 }
 
-/// [entries] as context menu items, each with its command's keys as they are now.
-List<ContextMenuItem?> _items(WidgetRef ref, List<AccountMenuEntry?> entries) {
-  final bindings = ref.read(shortcutBindingsProvider).bindings;
-  return [
-    for (final entry in entries)
-      if (entry == null)
-        null
-      else
-        ContextMenuItem(
-          entry.label,
-          onSelected: entry.onSelected,
-          keys: switch (entry.command) {
-            final command? => bindings[command],
-            null => null,
-          },
-          isDestructive: entry.isDestructive,
-        ),
-  ];
-}
+/// [entries] as context menu items.
+List<ContextMenuItem?> _items(List<AccountMenuEntry?> entries) => [
+  for (final entry in entries)
+    if (entry == null)
+      null
+    else
+      ContextMenuItem(entry.label, onSelected: entry.onSelected, isDestructive: entry.isDestructive),
+];

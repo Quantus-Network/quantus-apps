@@ -19,6 +19,7 @@ import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
+import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
 import '../../fakes.dart';
@@ -63,7 +64,7 @@ Matcher _isShortcut(
 
 /// The Account menu's groups in order: the active account's actions (absent
 /// when there is no active account), its own items (Get Info and the rest,
-/// tested with the account menus), Add Account…, then the accounts.
+/// tested with the account menus), New Account, then the accounts.
 List<List<PlatformMenuItem>> _accountMenuGroups(WidgetTester tester) => [
   for (final entry in _nativeMenu(tester, 'Account').menus) (entry as PlatformMenuItemGroup).members,
 ];
@@ -116,9 +117,34 @@ Finder _toolbarButton(String label) =>
 
 List<Override> _withActive(DisplayAccount active) => shellOverrides(
   accounts: const [mainAccount, vaultAccount],
-  settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig]),
+  settings: FakeSettingsService(activeAccount: active, multisigs: [teamMultisig], openWallets: const {0, 1}),
   balances: oneTokenEach,
 );
+
+/// A multisig whose member in this wallet is Vault, whose key is on a cold
+/// wallet: this app cannot propose from it yet.
+final _coldTeam = MultisigAccount(
+  name: 'Cold Team',
+  accountId: 'qzColdTeam',
+  signers: const ['qzVault', 'qzOther'],
+  threshold: 2,
+  nonce: BigInt.zero,
+  myMemberAccountId: 'qzVault',
+);
+
+/// Main, Vault and [_coldTeam], with Cold Team active.
+List<Override> _withColdTeamActive() => shellOverrides(
+  accounts: const [mainAccount, vaultAccount],
+  settings: FakeSettingsService(
+    activeAccount: MultisigDisplayAccount(_coldTeam),
+    multisigs: [_coldTeam],
+    openWallets: const {0, 1},
+  ),
+  balances: oneTokenEach,
+);
+
+/// The key that switches to [title] in the sidebar.
+LogicalKeyboardKey _digitOf(WidgetTester tester, String title) => _digits[_sidebarAccounts(tester).indexOf(title)];
 
 /// Two accounts, Main and Savings, both of which send, stored on [settings].
 List<Override> _withSlowSettings(SlowSettingsService settings) =>
@@ -179,18 +205,44 @@ void main() {
       (
         'a local account',
         const RegularAccount(mainAccount),
-        [('Receive', true), ('Send', true), ('Swap', true), ('Add Account…', true)],
+        [
+          ('Receive', true),
+          ('Send', true),
+          ('Swap', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', true),
+          ('Manage Multisigs…', true),
+        ],
       ),
       (
-        // Its key signs on the hardware wallet, which this app cannot ask yet.
+        // Its key signs on a cold wallet, which Send asks for the signature.
         'a Keystone account',
         const RegularAccount(vaultAccount),
-        [('Receive', true), ('Send', false), ('Swap', false), ('Add Account…', true)],
+        [
+          ('Receive', true),
+          ('Send', true),
+          ('Swap', false),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', false),
+          ('Manage Multisigs…', true),
+        ],
       ),
       (
         'a multisig',
         MultisigDisplayAccount(teamMultisig),
-        [('Receive', true), ('Propose', true), ('Add Account…', true)],
+        [
+          ('Receive', true),
+          ('Propose', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', false),
+          ('Manage Multisigs…', true),
+        ],
       ),
     ]) {
       testOnMac('the Account menu offers what the toolbar offers for $description', (tester) async {
@@ -199,13 +251,22 @@ void main() {
         final items = _accountMenuActions(tester);
         expect([for (final item in items) (item.label, item.onSelected != null)], expected);
 
-        for (final (label, enabled) in expected.where((entry) => entry.$1 != 'Add Account…')) {
+        final onToolbar = expected.where(
+          (entry) => !const {
+            'New Account',
+            'Import Wallet…',
+            'Connect Cold Wallet…',
+            'Create Multisig…',
+            'Manage Multisigs…',
+          }.contains(entry.$1),
+        );
+        for (final (label, enabled) in onToolbar) {
           expect(_toolbarButton(label), findsOneWidget, reason: label);
           expect(tester.widget<ToolbarAction>(_toolbarButton(label)).onPressed != null, enabled, reason: label);
         }
         expect(
           find.descendant(of: find.byType(AccountToolbar), matching: find.byType(ToolbarAction)),
-          findsNWidgets(expected.length - 1),
+          findsNWidgets(onToolbar.length),
         );
       });
     }
@@ -219,7 +280,7 @@ void main() {
       expect(_sheetTitled('Send'), findsOneWidget);
     });
 
-    testOnMac('with no active account the Account menu offers no actions: Add Account… and the accounts', (
+    testOnMac('with no active account the Account menu offers no actions: adding one, and the accounts', (
       tester,
     ) async {
       await pumpShell(
@@ -227,16 +288,76 @@ void main() {
         overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
       );
 
-      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), ['Add Account…', 'Main']);
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), [
+        'New Account',
+        'Import Wallet…',
+        'Connect Cold Wallet…',
+        'Create Multisig…',
+        'Manage Multisigs…',
+        'Main',
+      ]);
     });
 
-    testOnMac('Receive, Send and Add Account… answer to ⌘R, ⌘S and ⌘N; Swap has no shortcut yet', (tester) async {
+    testOnMac('Receive, Send, Swap and New Account answer to ⌘R, ⌘S, ⇧⌘S and ⌘N', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       expect(_nativeItem(tester, 'Account', 'Receive').shortcut, _isShortcut(LogicalKeyboardKey.keyR, meta: true));
       expect(_nativeItem(tester, 'Account', 'Send').shortcut, _isShortcut(LogicalKeyboardKey.keyS, meta: true));
-      expect(_nativeItem(tester, 'Account', 'Add Account…').shortcut, _isShortcut(LogicalKeyboardKey.keyN, meta: true));
-      expect(_nativeItem(tester, 'Account', 'Swap').shortcut, isNull);
+      expect(
+        _nativeItem(tester, 'Account', 'Swap').shortcut,
+        _isShortcut(LogicalKeyboardKey.keyS, meta: true, shift: true),
+      );
+      expect(_nativeItem(tester, 'Account', 'New Account').shortcut, _isShortcut(LogicalKeyboardKey.keyN, meta: true));
+    });
+
+    testOnMac('while a switch is still being saved, Swap is offered, to be checked against the account switched to', (
+      tester,
+    ) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+        ),
+      );
+      expect(_nativeItem(tester, 'Account', 'Swap').onSelected, isNull);
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Main').onSelected!();
+      await tester.pumpAndSettle();
+      final swap = _nativeItem(tester, 'Account', 'Swap');
+      expect(swap.onSelected, isNotNull);
+      expect(swap.shortcut, _isShortcut(LogicalKeyboardKey.keyS, meta: true, shift: true));
+      swap.onSelected!();
+      await tester.pumpAndSettle();
+      await settings.finishWrites(tester);
+
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(_inSheet(find.text('Main')), findsOneWidget);
+    });
+
+    testOnMac('where swaps are not offered, Swap stays out of the Account menu while a switch is still being saved', (
+      tester,
+    ) async {
+      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: settings,
+          balances: oneTokenEach,
+          swapAvailable: false,
+        ),
+      );
+
+      _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Main').onSelected!();
+      await tester.pumpAndSettle();
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).where((item) => item.label == 'Swap'), isEmpty);
+      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNotNull, reason: 'the switch is still waiting');
+      await settings.finishWrites(tester);
+
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).where((item) => item.label == 'Swap'), isEmpty);
     });
 
     testOnMac('the Account menu lists the accounts in the sidebar\'s order, numbered from ⌘1', (tester) async {
@@ -258,6 +379,7 @@ void main() {
             for (var index = 0; index < 11; index++)
               Account(walletIndex: 0, index: index, name: 'Account ${index + 1}', accountId: 'qzAccount$index'),
           ],
+          settings: FakeSettingsService(openWallets: const {0}),
           balances: oneTokenEach,
         ),
       );
@@ -281,14 +403,14 @@ void main() {
 
       expect(_selected(tester), 'Vault');
       expect(find.byType(AccountPane), findsOneWidget);
-      // Vault's key signs on its hardware wallet, so Send is offered dimmed.
-      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNull);
+      // Vault's key signs on its cold wallet, which Send asks.
+      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNotNull);
     });
 
     testOnMac('while a switch is still being saved, Send is offered, to be checked against the account switched to', (
       tester,
     ) async {
-      final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+      final settings = SlowSettingsService(activeAccount: MultisigDisplayAccount(_coldTeam), multisigs: [_coldTeam]);
       await pumpShell(
         tester,
         overrides: shellOverrides(
@@ -297,7 +419,7 @@ void main() {
           balances: oneTokenEach,
         ),
       );
-      expect(_nativeItem(tester, 'Account', 'Send').onSelected, isNull);
+      expect(_nativeItem(tester, 'Account', 'Propose').onSelected, isNull);
 
       _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Main').onSelected!();
       await tester.pumpAndSettle();
@@ -330,10 +452,55 @@ void main() {
       expect(_sheetTitled('Receive'), findsOneWidget);
     });
 
-    testOnMac('⌘S, pressed on an account this app cannot send from, opens nothing', (tester) async {
+    /// Presses ⇧⌘S.
+    Future<void> pressSwapKeys(WidgetTester tester) async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+      await tester.pumpAndSettle();
+    }
+
+    testOnMac('⇧⌘S, pressed, opens Swap, and not Send', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await pressSwapKeys(tester);
+
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(_sheetTitled('Send'), findsNothing);
+    });
+
+    testOnMac('⇧⌘S, pressed on an account this app cannot swap from, opens nothing', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(vaultAccount)));
 
-      await pressWithCommand(tester, [LogicalKeyboardKey.keyS]);
+      await pressSwapKeys(tester);
+
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('where swaps are not offered, the Account menu has no Swap and ⇧⌘S opens nothing', (tester) async {
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, vaultAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balances: oneTokenEach,
+          swapAvailable: false,
+        ),
+      );
+
+      expect(_itemsOf(_nativeMenu(tester, 'Account')).where((item) => item.label == 'Swap'), isEmpty);
+      await pressSwapKeys(tester);
+
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('⌘P, pressed on a multisig this app cannot propose from, opens nothing', (tester) async {
+      await pumpShell(tester, overrides: _withColdTeamActive());
+      expect(_nativeItem(tester, 'Account', 'Propose').onSelected, isNull);
+
+      await pressWithCommand(tester, [LogicalKeyboardKey.keyP]);
 
       expect(find.byType(ShellSheetView), findsNothing);
     });
@@ -358,8 +525,14 @@ void main() {
       expect(_inSheet(find.text('Main')), findsOneWidget);
     });
 
-    testOnMac('⌘2 to an account that cannot send, then ⌘S before the next frame, opens nothing', (tester) async {
-      final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+    testOnMac('⌘ and the number of a multisig that cannot propose, then ⌘P before the next frame, opens nothing', (
+      tester,
+    ) async {
+      final settings = SlowSettingsService(
+        activeAccount: const RegularAccount(mainAccount),
+        multisigs: [_coldTeam],
+        openWallets: const {0, 1},
+      );
       await pumpShell(
         tester,
         overrides: shellOverrides(
@@ -369,10 +542,10 @@ void main() {
         ),
       );
 
-      await pressWithCommand(tester, [LogicalKeyboardKey.digit2, LogicalKeyboardKey.keyS]);
+      await pressWithCommand(tester, [_digitOf(tester, 'Cold Team'), LogicalKeyboardKey.keyP]);
       await settings.finishWrites(tester);
 
-      expect(_selected(tester), 'Vault');
+      expect(_selected(tester), 'Cold Team');
       expect(find.byType(ShellSheetView), findsNothing);
     });
 
@@ -522,13 +695,13 @@ void main() {
     ) async {
       final polling = FakeHistoryPollingManager();
       await pumpShell(tester, polling: polling, overrides: _withActive(const RegularAccount(mainAccount)));
-      _nativeItem(tester, 'Account', 'Add Account…').onSelected!();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
       await tester.pumpAndSettle();
 
       _nativeItem(tester, 'View', 'Refresh').onSelected!();
       await tester.pumpAndSettle();
 
-      expect(_sheetTitled('Add Account'), findsOneWidget);
+      expect(_sheetTitled('Receive'), findsOneWidget);
       expect(polling.calls, ['manualRefresh']);
     });
 
@@ -547,10 +720,10 @@ void main() {
     testOnMac('while a sheet is open, the items that open sheets are disabled', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
-      _nativeItem(tester, 'Account', 'Add Account…').onSelected!();
+      _nativeItem(tester, 'Account', 'Receive').onSelected!();
       await tester.pumpAndSettle();
 
-      expect(_sheetTitled('Add Account'), findsOneWidget);
+      expect(_sheetTitled('Receive'), findsOneWidget);
       expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
       // The accounts it lists among them: a sheet is for the account it opened on.
       expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), contains('Vault'));
@@ -597,7 +770,7 @@ void main() {
 
       expect(find.byType(WelcomePage), findsOneWidget);
       expect(_nativeItem(tester, 'Quantus Wallet', 'Settings…').onSelected, isNull);
-      expect(_nativeItem(tester, 'Account', 'Add Account…').onSelected, isNull);
+      expect(_nativeItem(tester, 'Account', 'New Account').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Hide Sidebar').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Next Sidebar Item').onSelected, isNull);
       expect(_nativeItem(tester, 'View', 'Refresh').onSelected, isNull);
@@ -607,7 +780,7 @@ void main() {
       expect(exitRequests, 1);
     });
 
-    testOnMac('File → Close Window (⌘W) asks the app to exit', (tester) async {
+    testOnMac('with nothing under way, File → Close Window (⌘W) asks the app to exit', (tester) async {
       var exitRequests = 0;
       await pumpShell(
         tester,
@@ -683,13 +856,17 @@ void main() {
         [for (final item in items) ((item.child! as Text).data, item.onPressed != null)],
         [
           ('Receive', true),
-          ('Send', false),
+          ('Send', true),
           ('Swap', false),
           ('Get Info', true),
           ('Copy Address', true),
           ('Rename…', true),
           ('Disconnect Hardware Account…', true),
-          ('Add Account…', true),
+          ('New Account', true),
+          ('Import Wallet…', true),
+          ('Connect Cold Wallet…', true),
+          ('Create Multisig…', false),
+          ('Manage Multisigs…', true),
           ('Main', true),
           ('Team', true),
           ('Vault', true),
@@ -876,7 +1053,6 @@ void main() {
     for (final (key, name, title) in [
       (LogicalKeyboardKey.keyR, 'Ctrl+R', 'Receive'),
       (LogicalKeyboardKey.keyS, 'Ctrl+S', 'Send'),
-      (LogicalKeyboardKey.keyN, 'Ctrl+N', 'Add Account'),
     ]) {
       testOnWindowsAndLinux('$name opens $title', (tester) async {
         await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
@@ -887,10 +1063,32 @@ void main() {
       });
     }
 
-    testOnWindowsAndLinux('Ctrl+S does nothing on an account this app cannot send from', (tester) async {
-      await pumpShell(tester, overrides: _withActive(const RegularAccount(vaultAccount)));
+    testOnWindowsAndLinux('Account → Swap shows Ctrl+Shift+S, which opens Swap', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
-      await press(tester, LogicalKeyboardKey.keyS);
+      await openMenu(tester, 'Account');
+      expect(
+        tester.widget<MenuItemButton>(find.widgetWithText(MenuItemButton, 'Swap')).shortcut,
+        _isShortcut(LogicalKeyboardKey.keyS, control: true, shift: true),
+      );
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SwapSheet), findsOneWidget);
+      expect(_sheetTitled('Send'), findsNothing);
+    });
+
+    testOnWindowsAndLinux('Ctrl+P does nothing on a multisig this app cannot propose from', (tester) async {
+      await pumpShell(tester, overrides: _withColdTeamActive());
+
+      await press(tester, LogicalKeyboardKey.keyP);
 
       expect(find.byType(ShellSheetView), findsNothing);
     });
@@ -1034,39 +1232,85 @@ void main() {
         expect(_inSheet(find.text('Main')), findsOneWidget);
       });
 
-      testOnWindowsAndLinux('Ctrl+2 to an account that cannot send, then Ctrl+S before the next frame, opens '
-          'nothing', (tester) async {
+      testOnWindowsAndLinux('Ctrl and the number of a multisig that cannot propose, then Ctrl+P before the next '
+          'frame, opens nothing', (tester) async {
+        final settings = SlowSettingsService(
+          activeAccount: const RegularAccount(mainAccount),
+          multisigs: [_coldTeam],
+          openWallets: const {0, 1},
+        );
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await pressWithinOneFrame(tester, [_digitOf(tester, 'Cold Team'), LogicalKeyboardKey.keyP]);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Cold Team');
+        expect(find.byType(ShellSheetView), findsNothing);
+      });
+
+      /// Presses Ctrl+Shift+S, Swap's keys.
+      Future<void> pressSwapKeys(WidgetTester tester) async {
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+        await tester.sendKeyDownEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyEvent(LogicalKeyboardKey.keyS);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.shiftLeft);
+        await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+        await tester.pumpAndSettle();
+      }
+
+      testOnWindowsAndLinux('from an account that cannot swap, Ctrl+1 then Ctrl+Shift+S opens Swap on the account '
+          'switched to', (tester) async {
+        final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+        await pumpShell(tester, overrides: withVault(settings));
+
+        await press(tester, LogicalKeyboardKey.digit1);
+        await pressSwapKeys(tester);
+        await settings.finishWrites(tester);
+
+        expect(_selected(tester), 'Main');
+        expect(find.byType(SwapSheet), findsOneWidget);
+        expect(_inSheet(find.text('Main')), findsOneWidget);
+      });
+
+      testOnWindowsAndLinux('Ctrl+2 to an account that cannot swap, then Ctrl+Shift+S, opens nothing', (tester) async {
         final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
         await pumpShell(tester, overrides: withVault(settings));
 
-        await pressWithinOneFrame(tester, [LogicalKeyboardKey.digit2, LogicalKeyboardKey.keyS]);
+        await press(tester, LogicalKeyboardKey.digit2);
+        await pressSwapKeys(tester);
         await settings.finishWrites(tester);
 
         expect(_selected(tester), 'Vault');
         expect(find.byType(ShellSheetView), findsNothing);
       });
 
-      testOnWindowsAndLinux('Ctrl+2 to an account that cannot send, then Ctrl+S, opens nothing', (tester) async {
-        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
+      testOnWindowsAndLinux('Ctrl and the number of a multisig that cannot propose, then Ctrl+P, opens nothing', (
+        tester,
+      ) async {
+        final settings = SlowSettingsService(
+          activeAccount: const RegularAccount(mainAccount),
+          multisigs: [_coldTeam],
+          openWallets: const {0, 1},
+        );
         await pumpShell(tester, overrides: withVault(settings));
 
-        await press(tester, LogicalKeyboardKey.digit2);
-        await press(tester, LogicalKeyboardKey.keyS);
+        await press(tester, _digitOf(tester, 'Cold Team'));
+        await press(tester, LogicalKeyboardKey.keyP);
         await settings.finishWrites(tester);
 
-        expect(_selected(tester), 'Vault');
+        expect(_selected(tester), 'Cold Team');
         expect(find.byType(ShellSheetView), findsNothing);
       });
 
       testOnWindowsAndLinux('the toolbar keeps showing what the active account offers while a switch waits', (
         tester,
       ) async {
-        final settings = SlowSettingsService(activeAccount: const RegularAccount(vaultAccount));
+        final settings = SlowSettingsService(activeAccount: MultisigDisplayAccount(_coldTeam), multisigs: [_coldTeam]);
         await pumpShell(tester, overrides: withVault(settings));
 
         await press(tester, LogicalKeyboardKey.digit1);
 
-        expect(tester.widget<ToolbarAction>(_toolbarButton('Send')).onPressed, isNull);
+        expect(tester.widget<ToolbarAction>(_toolbarButton('Propose')).onPressed, isNull);
         await settings.finishWrites(tester);
         expect(tester.widget<ToolbarAction>(_toolbarButton('Send')).onPressed, isNotNull);
       });
