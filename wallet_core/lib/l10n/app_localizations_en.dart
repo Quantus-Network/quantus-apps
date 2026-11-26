@@ -3778,4 +3778,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopRecoveryAlreadyBackedUp => 'Already Backed Up';
+
+  @override
+  String get desktopSidebarMoveUp => 'Move Up';
+
+  @override
+  String get desktopSidebarMoveDown => 'Move Down';
 }

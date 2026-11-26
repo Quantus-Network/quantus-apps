@@ -5543,5 +5543,13 @@
     "desktopRecoveryAlreadyBackedUp": "Already Backed Up",
     "@desktopRecoveryAlreadyBackedUp": {
       "description": "Desktop Settings: on the recovery phrase caution opened from the backup reminder, the button that records the phrase as backed up without showing it"
+    },
+    "desktopSidebarMoveUp": "Move Up",
+    "@desktopSidebarMoveUp": {
+      "description": "Desktop sidebar: menu item on a group's heading (a wallet, the cold wallet, the multisigs) that moves the group one place up"
+    },
+    "desktopSidebarMoveDown": "Move Down",
+    "@desktopSidebarMoveDown": {
+      "description": "Desktop sidebar: menu item on a group's heading (a wallet, the cold wallet, the multisigs) that moves the group one place down"
     }
 }

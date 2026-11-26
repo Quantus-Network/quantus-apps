@@ -6739,6 +6739,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Already Backed Up'**
   String get desktopRecoveryAlreadyBackedUp;
+
+  /// Desktop sidebar: menu item on a group's heading (a wallet, the cold wallet, the multisigs) that moves the group one place up
+  ///
+  /// In en, this message translates to:
+  /// **'Move Up'**
+  String get desktopSidebarMoveUp;
+
+  /// Desktop sidebar: menu item on a group's heading (a wallet, the cold wallet, the multisigs) that moves the group one place down
+  ///
+  /// In en, this message translates to:
+  /// **'Move Down'**
+  String get desktopSidebarMoveDown;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

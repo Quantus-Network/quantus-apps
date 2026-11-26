@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/add_account_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
+import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
@@ -38,7 +41,8 @@ class AccountContextMenu extends ConsumerWidget {
 
 /// The context menu of a wallet's heading: a software wallet's entries
 /// ([walletMenuEntries]); on a cold wallet's, Connect Cold Wallet… where cold
-/// wallets are offered. [child] alone where there is nothing to offer.
+/// wallets are offered; then, on every one, Move Up and Move Down
+/// ([moveGroupMenuItems]).
 class WalletContextMenu extends ConsumerWidget {
   const WalletContextMenu({super.key, required this.wallet, required this.child});
 
@@ -47,22 +51,31 @@ class WalletContextMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = ref.watch(l10nProvider);
-    final manager = ref.watch(accountManagerProvider);
-    final items = switch (wallet.kind) {
-      WalletKind.software => _items(walletMenuEntries(l10n, wallet, manager)),
-      WalletKind.keystone => [
-        if (ref.watch(remoteConfigProvider).enableKeystoneHardwareWallet) connectColdWalletMenuItem(l10n, manager),
-      ],
-    };
-    if (items.isEmpty) return child;
-    return ContextMenuRegion(items: () => items, child: child);
+    return ContextMenuRegion(
+      // Read as the menu opens, so it is what holds then.
+      items: () {
+        final l10n = ref.read(l10nProvider);
+        final manager = ref.read(accountManagerProvider);
+        final own = switch (wallet.kind) {
+          WalletKind.software => _items(walletMenuEntries(l10n, wallet, manager)),
+          WalletKind.keystone => [
+            if (ref.read(remoteConfigProvider).enableKeystoneHardwareWallet) connectColdWalletMenuItem(l10n, manager),
+          ],
+        };
+        return [
+          ...own,
+          if (own.isNotEmpty) null,
+          ...moveGroupMenuItems(l10n, ref.read(sidebarGroupMoverProvider), SidebarWallet.keyOf(wallet.walletIndex)),
+        ];
+      },
+      child: child,
+    );
   }
 }
 
 /// The context menu of the multisigs' heading: Create Multisig… and Manage
-/// Multisigs…, as Add Account offers them; [child] alone where multisigs are
-/// not offered.
+/// Multisigs…, as Add Account offers them, where multisigs are offered; then
+/// Move Up and Move Down ([moveGroupMenuItems]).
 class MultisigsContextMenu extends ConsumerWidget {
   const MultisigsContextMenu({super.key, required this.child});
 
@@ -70,18 +83,35 @@ class MultisigsContextMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!ref.watch(remoteConfigProvider).enableMultisig) return child;
     return ContextMenuRegion(
       // Read as the menu opens, so it is what holds then.
-      items: () => multisigMenuItems(
-        ref.read(l10nProvider),
-        ref.read(accountManagerProvider),
-        canCreateMultisig: ref.read(multisigCreatorProvider) != null,
-      ),
+      items: () {
+        final l10n = ref.read(l10nProvider);
+        return [
+          if (ref.read(remoteConfigProvider).enableMultisig) ...[
+            ...multisigMenuItems(
+              l10n,
+              ref.read(accountManagerProvider),
+              canCreateMultisig: ref.read(multisigCreatorProvider) != null,
+            ),
+            null,
+          ],
+          ...moveGroupMenuItems(l10n, ref.read(sidebarGroupMoverProvider), SidebarMultisigs.key),
+        ];
+      },
       child: child,
     );
   }
 }
+
+/// Move Up and Move Down for the sidebar's group kept as [key], each shown
+/// dimmed where the group is already at that end.
+List<ContextMenuItem> moveGroupMenuItems(AppLocalizations l10n, SidebarGroupMover mover, String key) => [
+  for (final (label, by) in [(l10n.desktopSidebarMoveUp, -1), (l10n.desktopSidebarMoveDown, 1)])
+    mover.canMoveBy(key, by)
+        ? ContextMenuItem(label, onSelected: () => mover.moveBy(key, by))
+        : ContextMenuItem.disabled(label),
+];
 
 /// [entries] as context menu items.
 List<ContextMenuItem?> _items(List<AccountMenuEntry?> entries) => [

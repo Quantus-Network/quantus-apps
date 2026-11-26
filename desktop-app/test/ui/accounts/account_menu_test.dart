@@ -216,11 +216,13 @@ void main() {
       expect(_menuLabels(tester), ['Get Info', 'Copy Address', 'Rename…', 'Show Recovery Phrase…']);
     });
 
-    testOnMac('a software wallet\'s heading offers Rename and its recovery phrase, opened in Settings', (tester) async {
+    testOnMac('a software wallet\'s heading offers Rename, its recovery phrase, opened in Settings, and the moves', (
+      tester,
+    ) async {
       await _pump(tester);
       await _rightClick(tester, find.descendant(of: find.byType(Sidebar), matching: find.text('WALLET 2')));
 
-      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…']);
+      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…', 'Move Up', 'Move Down']);
       await _choose(tester, 'Show Recovery Phrase…');
       expect(find.byType(SettingsSheet), findsOneWidget);
       expect(find.byKey(SettingsSheet.continueKey), findsOneWidget);
@@ -240,23 +242,25 @@ void main() {
       await gesture.up();
       await tester.pumpAndSettle();
 
-      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…']);
+      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…', 'Move Up', 'Move Down']);
     });
 
-    testOnMac('a cold wallet\'s heading offers only Connect Cold Wallet…, which opens it', (tester) async {
+    testOnMac('a cold wallet\'s heading offers only Connect Cold Wallet…, which opens it, and the moves', (
+      tester,
+    ) async {
       await _pump(tester);
       await _rightClick(tester, _inSidebar('COLD WALLET'));
 
-      expect(_menuLabels(tester), ['Connect Cold Wallet…']);
+      expect(_menuLabels(tester), ['Connect Cold Wallet…', 'Move Up', 'Move Down']);
       await _choose(tester, 'Connect Cold Wallet…');
       expect(_container(tester).read(shellSheetProvider), ShellSheet.connectColdWallet);
     });
 
-    testOnMac('with cold wallets turned off remotely, a cold wallet\'s heading has no menu', (tester) async {
+    testOnMac('with cold wallets turned off remotely, a cold wallet\'s heading offers only the moves', (tester) async {
       await _pump(tester, remoteConfig: RemoteConfigModel.fromJson({'enableKeystoneHardwareWallet': false}));
       await _rightClick(tester, _inSidebar('COLD WALLET'));
 
-      expect(_menu, findsNothing);
+      expect(_menuLabels(tester), ['Move Up', 'Move Down']);
     });
 
     for (final (label, sheet) in [
@@ -269,7 +273,7 @@ void main() {
         await _pump(tester);
         await _rightClick(tester, _inSidebar('MULTISIGS'));
 
-        expect(_menuLabels(tester), ['Create Multisig…', 'Manage Multisigs…']);
+        expect(_menuLabels(tester), ['Create Multisig…', 'Manage Multisigs…', 'Move Up', 'Move Down']);
         await _choose(tester, label);
         expect(_container(tester).read(shellSheetProvider), sheet);
       });
@@ -288,11 +292,11 @@ void main() {
       expect(_container(tester).read(shellSheetProvider), isNull);
     });
 
-    testOnMac('with multisigs turned off remotely, the multisigs\' heading has no menu', (tester) async {
+    testOnMac('with multisigs turned off remotely, the multisigs\' heading offers only the moves', (tester) async {
       await _pump(tester, remoteConfig: RemoteConfigModel.fromJson({'enableMultisig': false}));
       await _rightClick(tester, _inSidebar('MULTISIGS'));
 
-      expect(_menu, findsNothing);
+      expect(_menuLabels(tester), ['Move Up', 'Move Down']);
     });
 
     testOnMac('the items act on the account right-clicked, not the active one', (tester) async {

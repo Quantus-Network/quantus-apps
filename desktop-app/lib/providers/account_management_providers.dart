@@ -11,6 +11,7 @@ import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/providers/wallet_settings_providers.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
+import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -637,10 +638,11 @@ class AccountManager {
   }
 
   /// What this app kept for the wallet at [walletIndex], just removed, goes:
-  /// whether it was open, and its settings, so the next wallet added at its
-  /// index starts without them.
+  /// whether it was open, its place in the sidebar, and its settings, so the
+  /// next wallet added at its index starts without them.
   void _forgetWallet(int walletIndex) {
     _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
+    _ref.read(sidebarOrderProvider.notifier).forgetWallet(walletIndex);
     walletSettingsProviders(walletIndex).forEach(_ref.invalidate);
   }
 

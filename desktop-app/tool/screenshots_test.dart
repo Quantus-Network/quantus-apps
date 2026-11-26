@@ -695,6 +695,24 @@ void main() {
     await _rightClickInSidebar(tester, 'Savings');
   });
 
+  _scene('sidebar_group_menu', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    await _rightClickInSidebar(tester, 'WALLET 2');
+  });
+
+  _scene('sidebar_group_drag', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    Finder heading(String text) => find.descendant(of: find.byType(Sidebar), matching: find.text(text)).first;
+    final from = tester.getCenter(heading('COLD WALLET'));
+    final to = tester.getTopLeft(heading('WALLET 2')) + const Offset(40, 2);
+    final gesture = await tester.startGesture(from, kind: PointerDeviceKind.mouse, buttons: kPrimaryButton);
+    for (var step = 1; step <= 10; step++) {
+      await gesture.moveTo(Offset.lerp(from, to, step / 10)!);
+      await tester.pump();
+    }
+    addTearDown(gesture.up);
+  });
+
   _scene('account_menu_encrypted', (tester) async {
     await _openAccounts(tester);
     await _rightClickInSidebar(tester, 'Encrypted Account');

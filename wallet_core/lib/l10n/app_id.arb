@@ -1058,5 +1058,7 @@
   "desktopKeystoneRejectStep2Body": "Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.",
   "desktopSidebarMultisigs": "Multisig",
   "desktopBackupReminderButton": "Cadangkan…",
-  "desktopRecoveryAlreadyBackedUp": "Sudah Dicadangkan"
+  "desktopRecoveryAlreadyBackedUp": "Sudah Dicadangkan",
+  "desktopSidebarMoveUp": "Pindah ke Atas",
+  "desktopSidebarMoveDown": "Pindah ke Bawah"
 }

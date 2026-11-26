@@ -3784,4 +3784,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopRecoveryAlreadyBackedUp => 'Sudah Dicadangkan';
+
+  @override
+  String get desktopSidebarMoveUp => 'Pindah ke Atas';
+
+  @override
+  String get desktopSidebarMoveDown => 'Pindah ke Bawah';
 }

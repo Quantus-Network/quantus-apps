@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/proposal_action_providers.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
@@ -240,10 +241,9 @@ class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
 /// The accounts in the order the sidebar lists them; none until they have
 /// loaded.
 final sidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
-  final accounts = ref.watch(accountsProvider).value;
-  final multisigs = ref.watch(multisigAccountsProvider).value;
-  if (accounts == null || multisigs == null) return const [];
-  return accountsInSidebarOrder(groupSidebar(accounts: accounts, multisigs: multisigs));
+  final groups = ref.watch(sidebarGroupsProvider);
+  if (groups == null) return const [];
+  return accountsInSidebarOrder(groups);
 });
 
 /// The account that would create a new multisig, sign for it and pay: the
