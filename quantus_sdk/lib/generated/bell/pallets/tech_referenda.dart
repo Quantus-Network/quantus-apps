@@ -408,7 +408,7 @@ class Constants {
   Constants();
 
   /// The minimum amount to be used as a deposit for a public referendum proposal.
-  final BigInt submissionDeposit = BigInt.from(1000000000000);
+  final BigInt submissionDeposit = BigInt.from(100000000000);
 
   /// Maximum size of the referendum queue for a single track.
   final int maxQueued = 100;
@@ -465,7 +465,7 @@ class Constants {
       _i14.TrackDetails(
         name: 'tech_collective_members',
         maxDeciding: 1,
-        decisionDeposit: BigInt.from(1000000000000),
+        decisionDeposit: BigInt.from(100000000000),
         preparePeriod: 600,
         decisionPeriod: 7200,
         confirmPeriod: 7200,
@@ -479,7 +479,7 @@ class Constants {
       _i14.TrackDetails(
         name: 'fast_upgrade',
         maxDeciding: 1,
-        decisionDeposit: BigInt.from(1000000000000),
+        decisionDeposit: BigInt.from(100000000000),
         preparePeriod: 50,
         decisionPeriod: 7200,
         confirmPeriod: 50,

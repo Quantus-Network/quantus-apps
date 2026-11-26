@@ -358,7 +358,7 @@ class SubstrateService {
       genesisHash: ctx.genesisHash,
       blockHash: ctx.blockHash,
       blockNumber: ctx.blockNumber,
-      eraPeriod: AppConstants.txMortalEraPeriodBlocks,
+      eraPeriod: AppConstants.coldWalletTxMortalEraPeriodBlocks,
       nonce: ctx.nonce,
       tip: 0,
     );
