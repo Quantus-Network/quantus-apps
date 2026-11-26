@@ -19,6 +19,7 @@ import 'package:quantus_desktop_wallet/ui/components/notice_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_form_parts.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
@@ -36,10 +37,12 @@ import 'package:wallet_core/send/send_screen_logic.dart';
 import 'package:wallet_core/send/send_strategy.dart';
 import 'package:wallet_core/send/wormhole_steps.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
 
-/// The steps of the Send sheet. Only a private send has the proving.
-enum _Step { form, review, proving, receipt }
+/// The steps of the Send sheet. Only a private send has the proving, and only
+/// a send from a cold wallet the signing.
+enum _Step { form, review, proving, signing, receipt }
 
 /// The Send sheet: a form for who is paid and how much, a review of the send
 /// before the system is asked to approve it, and a receipt once it has been
@@ -102,6 +105,12 @@ class _SendSheetState extends ConsumerState<SendSheet> {
   /// The account that signs a proposal and pays what it costs; null for a
   /// send, which the account it leaves pays.
   late final Account? _signer;
+
+  /// The send is signed on a cold wallet, not approved on this computer.
+  late final bool _signsOnColdWallet;
+
+  /// The cold wallet's signing of the send, on the signing step.
+  SendNeedsHardwareSignature? _signing;
 
   final _address = TextEditingController();
   final _amountText = TextEditingController();
@@ -193,6 +202,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     _account = active.account;
     _strategy = strategy;
     _signer = sendSigner(strategy, accounts);
+    _signsOnColdWallet = switch (active) {
+      RegularAccount(:final account) => account.signsWithHardware,
+      _ => false,
+    };
     _address.addListener(_onAddressChanged);
     _addressFocus.requestFocus();
     unawaited(_loadRecents());
@@ -482,15 +495,36 @@ class _SendSheetState extends ConsumerState<SendSheet> {
               .read(encryptedSendControllerProvider.notifier)
               .start(account: account, plan: plan, amount: amount, recipientAddress: _recipient),
         );
-      case SendNeedsHardwareSignature():
+      case final SendNeedsHardwareSignature signing:
         _releaseWork();
         setState(() {
           _isSending = false;
-          _error = failed;
+          _signing = signing;
+          _submittedRows = rows;
+          _step = _Step.signing;
         });
-        // Send is offered only on accounts whose key signs in the app.
-        throw StateError('The desktop app cannot finish this send: $outcome');
     }
+  }
+
+  void _backFromSigning() {
+    _stepFocus.requestFocus();
+    setState(() {
+      _signing = null;
+      _step = _Step.review;
+    });
+  }
+
+  void _onColdWalletSubmitting(bool isSubmitting) => isSubmitting ? _holdWork() : _releaseWork();
+
+  void _onColdWalletSigned(String hash) {
+    final signing = _signing;
+    if (signing == null) throw StateError('A cold wallet signed a send that was not being signed.');
+    setState(() {
+      _submitted = signing.terminalForHash(hash);
+      _confirmation = null;
+      _signing = null;
+      _step = _Step.receipt;
+    });
   }
 
   @override
@@ -516,15 +550,27 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ShellSheetHeader(
-                title: isReview ? l10n.desktopSendReview : title,
-                account: _account,
-                parent: isReview ? (title: title, onBack: _backToForm) : null,
-              ),
+              // The signing has its own headers: it has steps of its own.
+              if (_step != _Step.signing)
+                ShellSheetHeader(
+                  title: isReview ? l10n.desktopSendReview : title,
+                  account: _account,
+                  parent: isReview ? (title: title, onBack: _backToForm) : null,
+                ),
               ...switch (_step) {
                 _Step.form => _form(l10n),
                 _Step.review => _review(l10n),
                 _Step.proving => _proving(l10n),
+                _Step.signing => [
+                  KeystoneSigningView(
+                    session: (_signing ?? (throw StateError('The signing step has no signing.'))).session,
+                    account: _account,
+                    parentTitle: title,
+                    onLeave: _backFromSigning,
+                    onSubmitting: _onColdWalletSubmitting,
+                    onSigned: _onColdWalletSigned,
+                  ),
+                ],
                 _Step.receipt => _receipt(l10n),
               },
             ],
@@ -547,12 +593,15 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     // some.
     final pendingProvider = _strategy.pendingBalanceProvider;
     final pending = pendingProvider == null ? null : ref.watch(pendingProvider).value;
-    // Said beside the buttons where a send could not be approved.
-    final approvalNote = switch (availability) {
-      AsyncData(:final value) => approvalUnavailableNote(l10n, value),
-      AsyncError(:final error) => l10n.desktopApprovalFailed('$error'),
-      _ => null,
-    };
+    // Said beside the buttons where a send could not be approved; a cold
+    // wallet's send is approved on the cold wallet.
+    final approvalNote = _signsOnColdWallet
+        ? null
+        : switch (availability) {
+            AsyncData(:final value) => approvalUnavailableNote(l10n, value),
+            AsyncError(:final error) => l10n.desktopApprovalFailed('$error'),
+            _ => null,
+          };
 
     final amountStatus = SendScreenLogic.getAmountStatus(
       _amount,
@@ -580,7 +629,7 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         !_strategy.extraBalancesLoading(ref) &&
         affordabilityError == null &&
         amountStatus == AmountStatus.valid &&
-        availability.value == ApprovalAvailability.available;
+        (_signsOnColdWallet || availability.value == ApprovalAvailability.available);
 
     return [
       const SizedBox(height: 14),

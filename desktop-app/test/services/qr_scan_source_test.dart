@@ -400,8 +400,8 @@ void main() {
       MobileScannerPlatform.instance = original;
     });
 
-    Future<MacQrScanSource> mounted(WidgetTester tester) async {
-      final scan = MacQrScanSource();
+    Future<MacQrScanSource> mounted(WidgetTester tester, {bool readsEveryFrame = false}) async {
+      final scan = MacQrScanSource(readsEveryFrame: readsEveryFrame);
       await tester.pumpWidget(Directionality(textDirection: TextDirection.ltr, child: scan.buildPreview()));
       await tester.pump();
       return scan;
@@ -519,6 +519,27 @@ void main() {
       unawaited(subscription.cancel());
       await unmount(tester, scan);
     }, variant: onMac);
+
+    testWidgets('reads a frame every 200 ms unless asked to read every frame', (tester) async {
+      native.hasCamera = true;
+      final scan = await mounted(tester);
+
+      await scan.start();
+
+      expect(native.startArguments?['speed'], DetectionSpeed.normal.rawValue);
+      expect(native.startArguments?['timeout'], 200);
+      await unmount(tester, scan);
+    }, variant: onMac);
+
+    testWidgets('reads every frame when asked to, for an animated code', (tester) async {
+      native.hasCamera = true;
+      final scan = await mounted(tester, readsEveryFrame: true);
+
+      await scan.start();
+
+      expect(native.startArguments?['speed'], DetectionSpeed.unrestricted.rawValue);
+      await unmount(tester, scan);
+    }, variant: onMac);
   });
 }
 
@@ -568,6 +589,9 @@ class _NativeScanner {
   bool isConfiguring = false;
   int? texture;
 
+  /// What the last `start` was asked for.
+  Map<String, Object?>? startArguments;
+
   bool get _stopped => !hasDevice || !hasSession;
   bool get _paused => _stopped && texture != null;
   bool get isRunning => hasDevice && hasSession && texture != null;
@@ -578,6 +602,7 @@ class _NativeScanner {
       case 'state':
         return 1;
       case 'start':
+        startArguments = (call.arguments as Map).cast<String, Object?>();
         if (hasDevice || hasSession) throw PlatformException(code: 'MOBILE_SCANNER_ALREADY_STARTED_ERROR');
         texture ??= 7;
         hasSession = true;

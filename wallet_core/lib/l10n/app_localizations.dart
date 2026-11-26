@@ -2054,6 +2054,12 @@ abstract class AppLocalizations {
   /// **'ACTION'**
   String get keystoneSignActionLabel;
 
+  /// In place of the amount on the cold wallet signing screens for a maximum send: the cold wallet shows these words, since the transfer carries no amount
+  ///
+  /// In en, this message translates to:
+  /// **'Entire transferable balance'**
+  String get keystoneSignEntireBalance;
+
   /// Section label above the transaction details on the Keystone sign screen
   ///
   /// In en, this message translates to:
@@ -5966,6 +5972,12 @@ abstract class AppLocalizations {
   /// **'In {account}'**
   String desktopNotificationReceivedBody(String account);
 
+  /// Desktop notification body: what a swap that ended or came short was about, as its row says it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} for {foreignAmount} on {network}'**
+  String desktopNotificationSwapBody(String amount, String foreignAmount, String network);
+
   /// Desktop notification title: a reversible transfer to one of the wallet's accounts was scheduled and has not arrived yet; amount includes the token symbol
   ///
   /// In en, this message translates to:
@@ -6578,6 +6590,24 @@ abstract class AppLocalizations {
   /// **'Quit {appName}'**
   String desktopStatusItemQuit(String appName);
 
+  /// Desktop menu bar icon's text while a swap is in progress: the step the swap is on out of how many it has, e.g. Swap 2/4. Keep it short: it sits in the menu bar
+  ///
+  /// In en, this message translates to:
+  /// **'Swap {step}/{count}'**
+  String desktopStatusItemSwap(int step, int count);
+
+  /// Desktop menu bar icon's text while several swaps are in progress: the step the newest swap is on out of how many it has, and how many more swaps are in progress, e.g. Swap 3/4 +1. Keep it short: it sits in the menu bar
+  ///
+  /// In en, this message translates to:
+  /// **'Swap {step}/{count} +{more}'**
+  String desktopStatusItemSwapAndMore(int step, int count, int more);
+
+  /// Desktop menu bar icon's menu: a swap in progress, which opens it. amount is the account's side with its sign and token symbol (-250 QTC paid, +236.9 QTC received); foreignAmount is the other token's amount with its symbol; network is the other token's chain
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} for {foreignAmount} on {network}'**
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network);
+
   /// Desktop dialog when the person quits while a send or multisig action is still under way: its title
   ///
   /// In en, this message translates to:
@@ -6601,6 +6631,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Quit Now'**
   String get desktopQuitNow;
+
+  /// Desktop signing with a cold wallet: the step strip's first step, where the request QR code is shown
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get desktopKeystoneStepShow;
+
+  /// Desktop signing with a cold wallet: the step strip's second step, where the person checks the cold wallet's screen and scans its signature
+  ///
+  /// In en, this message translates to:
+  /// **'Check and scan back'**
+  String get desktopKeystoneStepCheckAndScan;
+
+  /// Desktop signing with a cold wallet: heading over what to do on the cold wallet while the request QR code is shown
+  ///
+  /// In en, this message translates to:
+  /// **'On your cold wallet'**
+  String get desktopKeystoneOnColdWallet;
+
+  /// Desktop signing with a cold wallet: first thing to do on the cold wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Open your cold wallet and choose Scan.'**
+  String get desktopKeystoneShowStepScan;
+
+  /// Desktop signing with a cold wallet: second thing to do on the cold wallet, pointing it at the QR code on the computer's screen
+  ///
+  /// In en, this message translates to:
+  /// **'Hold it up to this QR code until it shows the transaction.'**
+  String get desktopKeystoneShowStepHold;
+
+  /// Desktop signing with a cold wallet: last step before pressing Continue on the computer
+  ///
+  /// In en, this message translates to:
+  /// **'Then continue here.'**
+  String get desktopKeystoneShowStepContinue;
+
+  /// Desktop signing with a cold wallet: heading over the details the cold wallet's screen must show
+  ///
+  /// In en, this message translates to:
+  /// **'Check your cold wallet\'s screen'**
+  String get desktopKeystoneCheckTitle;
+
+  /// Desktop signing with a cold wallet: under the heading, before the amount and address to compare
+  ///
+  /// In en, this message translates to:
+  /// **'Approve there only if it shows exactly this.'**
+  String get desktopKeystoneCheckBody;
+
+  /// Desktop signing with a cold wallet: heading over the steps for scanning the signature back
+  ///
+  /// In en, this message translates to:
+  /// **'Then'**
+  String get desktopKeystoneThen;
+
+  /// Desktop signing with a cold wallet: after approving on the cold wallet, show its signature QR code to the computer's camera
+  ///
+  /// In en, this message translates to:
+  /// **'Hold its signature QR code up to this computer\'s camera.'**
+  String get desktopKeystoneScanStepHold;
+
+  /// Desktop signing with a cold wallet: the signature QR code is animated, so it must stay in view until every frame is read
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it there until every part has arrived.'**
+  String get desktopKeystoneScanStepKeep;
+
+  /// Desktop guide after the cold wallet showed different details: second step's title (the computer may be compromised)
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t retry from this computer.'**
+  String get desktopKeystoneRejectStep2Title;
+
+  /// Desktop guide after the cold wallet showed different details: third step's body
+  ///
+  /// In en, this message translates to:
+  /// **'Keys never left the device. Move to a trusted computer before sending again.'**
+  String get desktopKeystoneRejectStep3Body;
+
+  /// Desktop guide after the cold wallet showed different details: second step's body (the computer may be compromised)
+  ///
+  /// In en, this message translates to:
+  /// **'If it\'s compromised, retrying gives the attacker another chance.'**
+  String get desktopKeystoneRejectStep2Body;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

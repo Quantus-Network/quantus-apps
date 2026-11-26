@@ -17,9 +17,10 @@ import 'package:wallet_core/services/telemetry.dart';
 /// unsettled swap is polled in turn, and an answer merges into that swap as
 /// it is by then. A poll that fails is recorded on its swap and tried again
 /// at the next interval; the error leaves it once a poll succeeds. Polls
-/// pause while the app is in the background, except on Android, where the
-/// swap card's foreground service keeps the process alive so the polls keep
-/// the lock-screen card current. An interval polls the swaps that were not
+/// pause while the app is in the background, unless it polls there
+/// ([swapsPollInBackgroundProvider]): on Android the swap card's foreground
+/// service keeps the process alive so the polls keep the lock-screen card
+/// current. An interval polls the swaps that were not
 /// overdue as it began: one that turns overdue meanwhile is polled that last
 /// time, so what settled just before is learned of, and on no interval
 /// after, whatever else still runs. An overdue swap is polled once when the
@@ -32,6 +33,11 @@ final activeSwapsProvider = NotifierProvider<ActiveSwapsNotifier, List<ActiveSwa
 /// with the last run; an app that lists such a swap among the rest says so
 /// here.
 final keepsUnpaidSwapsProvider = Provider<bool>((_) => false);
+
+/// Whether the swaps are still polled while the app is in the background: on
+/// Android, where the swap card's foreground service keeps the process alive,
+/// and in an app that keeps running out of sight to tell how a swap ended.
+final swapsPollInBackgroundProvider = Provider<bool>((_) => defaultTargetPlatform == TargetPlatform.android);
 
 /// The followed swap with [id], or null once it was put away.
 final activeSwapProvider = Provider.family<ActiveSwap?, String>(
@@ -61,7 +67,7 @@ class ActiveSwapsNotifier extends Notifier<List<ActiveSwap>> {
   Set<String>? _inFlightOnly;
   final _tickets = <Object>{};
 
-  bool get _pollsInBackground => defaultTargetPlatform == TargetPlatform.android;
+  bool get _pollsInBackground => ref.read(swapsPollInBackgroundProvider);
 
   /// The swaps kept on the device, less any still waiting for its deposit by
   /// hand: the deposit screen that pays it went with the last run, so such a

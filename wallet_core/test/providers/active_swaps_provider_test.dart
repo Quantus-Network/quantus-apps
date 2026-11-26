@@ -238,6 +238,56 @@ void main() {
     });
   });
 
+  group('polling with the app in the background', () {
+    /// Launches following a running swap at 0xnow, with polls in the
+    /// background as [pollsInBackground] says, or as the app's platform does
+    /// by default, and sends the app to the background once launched.
+    Future<(ProviderContainer, _OneClick)> inBackground(WidgetTester tester, {bool? pollsInBackground}) async {
+      final oneClick = _OneClick();
+      final container = ProviderContainer(
+        overrides: [
+          settingsServiceProvider.overrideWithValue(
+            FakeSettingsService()..activeSwaps.add(_swapOut('0xnow', overdue: false)),
+          ),
+          swapServiceProvider.overrideWithValue(oneClick),
+          if (pollsInBackground != null) swapsPollInBackgroundProvider.overrideWithValue(pollsInBackground),
+        ],
+      );
+      container.read(activeSwapsProvider);
+      await tester.pump(Duration.zero);
+      container.read(appLifecycleStateProvider.notifier).state = AppLifecycleState.hidden;
+      await tester.pump();
+      return (container, oneClick);
+    }
+
+    Future<void> close(WidgetTester tester, ProviderContainer container) async {
+      container.dispose();
+      await tester.pump(const Duration(minutes: 1));
+    }
+
+    testWidgets('where the app polls in the background, a running swap is still polled at each interval', (
+      tester,
+    ) async {
+      final (container, oneClick) = await inBackground(tester, pollsInBackground: true);
+
+      await tester.pump(SwapService.statusPollInterval);
+      await tester.pump(SwapService.statusPollInterval);
+
+      expect(oneClick.polled, ['0xnow', '0xnow']);
+      await close(tester, container);
+    }, variant: TargetPlatformVariant.only(TargetPlatform.macOS));
+
+    testWidgets('by default, an app away from Android stops polling in the background', (tester) async {
+      final (container, oneClick) = await inBackground(tester);
+
+      await tester.pump(SwapService.statusPollInterval);
+      await tester.pump(SwapService.statusPollInterval);
+
+      expect(oneClick.polled, isEmpty);
+      await close(tester, container);
+    }, variant: const TargetPlatformVariant({TargetPlatform.iOS, TargetPlatform.macOS}));
+  });
+
   group('the limit on swaps followed', () {
     /// Launches following [swaps], with the 1Click that answers for them.
     (ProviderContainer, _OneClick) following(List<ActiveSwap> swaps) {

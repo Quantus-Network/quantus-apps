@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
+import 'package:quantus_desktop_wallet/providers/keystone_signing_providers.dart';
 import 'package:quantus_desktop_wallet/services/background_window.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
@@ -24,6 +25,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
@@ -194,7 +196,7 @@ class FakeAccountsService extends Fake implements AccountsService {
 /// Stored settings on a slow disk: each write of the active account waits
 /// until the test lets it finish with [finishWrites].
 class SlowSettingsService extends FakeSettingsService {
-  SlowSettingsService({super.activeAccount, super.multisigs});
+  SlowSettingsService({super.activeAccount, super.multisigs, super.openWallets});
 
   final List<Completer<void>> _writes = [];
 
@@ -575,7 +577,43 @@ class _FakeSubstrateService extends Fake implements SubstrateService {
 
   @override
   Future<BigInt> queryBalance(String address) async => device!.balance;
+
+  @override
+  Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) {
+    final transfer = chain.describe(call);
+    chain.signRequests.add(transfer);
+    return chain.unsigned(transfer);
+  }
+
+  @override
+  Future<int> getCurrentBlockNumber() => chain.currentBlock();
 }
+
+/// A transaction as a cold wallet is handed it, built at [blockNumber] and
+/// alive for [eraPeriod] blocks: by default ten blocks before the chain's
+/// usual latest, 1250000, so it ends at 1250054.
+UnsignedTransactionData fakeUnsignedTransaction({int blockNumber = 1249990, int eraPeriod = 64}) =>
+    UnsignedTransactionData(
+      payloadToSign: QuantusSigningPayload(
+        method: Uint8List(0),
+        specVersion: 1,
+        transactionVersion: 1,
+        genesisHash: '0x00',
+        blockHash: '0x00',
+        blockNumber: blockNumber,
+        eraPeriod: eraPeriod,
+        nonce: 0,
+        tip: 0,
+      ),
+      signer: Uint8List(32),
+      registry: Object(),
+    );
+
+/// The frames of a cold wallet's signature, [total] of them, as the fake
+/// collector reads them: `ur:quantus-signature/<index>-<total>/`.
+List<String> fakeSignatureFrames(int total) => [
+  for (var index = 1; index <= total; index++) 'ur:quantus-signature/$index-$total/part$index',
+];
 
 /// A transfer as Send builds it: who is paid and how much. An [amount] of
 /// null is a transfer of everything the account has.
@@ -603,6 +641,55 @@ class FakeSendChain {
   /// Every transfer handed over: the account it left, the transfer, and the
   /// amount and fee it was recorded with.
   final transfers = <({String from, SendCall call, BigInt amount, BigInt fee})>[];
+
+  /// What building the request a cold wallet signs answers, by the transfer;
+  /// it may throw.
+  Future<UnsignedTransactionData> Function(SendCall transfer) unsigned = (_) async => fakeUnsignedTransaction();
+
+  /// Every transfer a request for a cold wallet was built for, in order.
+  final signRequests = <SendCall>[];
+
+  /// The frames of the request a cold wallet scans: here one, naming the
+  /// account and the block the transaction was built at.
+  static List<String> requestFrames(Account account, UnsignedTransactionData unsigned) => [
+    'UR:QUANTUS-SIGN-REQUEST/${account.accountId}/${unsigned.payloadToSign.blockNumber}',
+  ];
+
+  /// What a cold wallet's signature frames decode to: by default a
+  /// signature with its public key of ML-DSA-87's length.
+  Uint8List signature = Uint8List(DilithiumScheme.mlDsa87.signatureWithPublicKeyBytes);
+
+  /// When set, decoding a signature's frames fails with it.
+  Object? signatureDecodeError;
+
+  /// Every transfer a cold wallet signed that was handed over: the account
+  /// it left, who is paid, how much, its fee, the transaction signed and the
+  /// signature.
+  final signedTransfers =
+      <
+        ({
+          String from,
+          String recipient,
+          BigInt amount,
+          BigInt fee,
+          UnsignedTransactionData unsigned,
+          Uint8List signature,
+        })
+      >[];
+
+  /// When set, handing a signed transfer over waits for it.
+  Completer<void>? holdSignedSubmit;
+
+  /// Collects the frames of [fakeSignatureFrames] without Rust.
+  UrScanAccumulator signatureCollector() => UrScanAccumulator(
+    isAcceptable: (part) => part.startsWith('ur:quantus-signature/'),
+    isComplete: (parts) {
+      final total = urSequenceFor(parts.first)!.total;
+      return {for (final part in parts) urSequenceFor(part)!.index}.length == total;
+    },
+    decode: (_) => signatureDecodeError == null ? signature : throw signatureDecodeError!,
+    maxParts: 256,
+  );
 
   /// The transfers the indexer holds, by the hash of the transaction each was
   /// sent in.
@@ -807,6 +894,8 @@ class FakeSendChain {
     if (substrate) substrateServiceProvider.overrideWithValue(_FakeSubstrateService(this)),
     balancesServiceProvider.overrideWithValue(_FakeBalancesService(this)),
     transactionSubmissionServiceProvider.overrideWithValue(_FakeTransactionSubmissionService(this)),
+    keystoneSignRequestFramesProvider.overrideWithValue(requestFrames),
+    signatureCollectorFactoryProvider.overrideWithValue(signatureCollector),
     recentAddressesServiceProvider.overrideWithValue(_FakeRecentAddressesService(this)),
     multisigServiceProvider.overrideWithValue(_FakeMultisigService(this)),
     chainHistoryServiceProvider.overrideWithValue(_FakeChainHistoryService(this)),
@@ -1083,6 +1172,29 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
   }) async {
     final hash = await chain.submit();
     chain.transfers.add((from: account.accountId, call: chain.describe(call), amount: amount, fee: fee));
+    return hash;
+  }
+
+  @override
+  Future<String> submitExternallySignedTransfer({
+    required Account account,
+    required String targetAddress,
+    required BigInt amount,
+    required BigInt fee,
+    required int blockHeight,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) async {
+    await chain.holdSignedSubmit?.future;
+    final hash = await chain.submit();
+    chain.signedTransfers.add((
+      from: account.accountId,
+      recipient: targetAddress,
+      amount: amount,
+      fee: fee,
+      unsigned: unsignedData,
+      signature: signatureWithPublicKey,
+    ));
     return hash;
   }
 

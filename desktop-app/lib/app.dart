@@ -7,6 +7,7 @@ import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/incoming_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/services/mac_push_registration.dart';
 import 'package:quantus_desktop_wallet/services/own_activity_notifications.dart';
+import 'package:quantus_desktop_wallet/services/swap_end_notifications.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -20,6 +21,7 @@ class QuantusDesktopApp extends ConsumerWidget {
     ref.watch(notificationsStartupProvider);
     ref.watch(ownActivityNotificationsProvider);
     ref.watch(incomingActivityNotificationsProvider);
+    ref.watch(swapEndNotificationsProvider);
     ref.watch(macPushSyncProvider);
     ref.watch(locationRecheckProvider);
     ref.watch(backgroundModeProvider);
