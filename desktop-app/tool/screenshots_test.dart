@@ -847,6 +847,32 @@ void main() {
     await _tapAndSettle(tester, find.text('English'));
   });
 
+  _scene('help_support', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(shellSheetProvider.notifier).open(ShellSheet.helpSupport);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('about', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(shellSheetProvider.notifier).open(ShellSheet.about);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('help_menu_linux', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _second, _encrypted]), reduceMotion: true);
+    await tester.pumpAndSettle();
+    await _tapAndSettle(tester, find.descendant(of: find.byType(MenuBar), matching: find.text('Help')));
+  }, platform: TargetPlatform.linux);
+
   _scene('backup_reminder', (tester) async {
     await _openSettings(tester);
     await tester.sendKeyEvent(LogicalKeyboardKey.escape);

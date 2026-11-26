@@ -24,4 +24,6 @@ String sheetTitle(AppLocalizations l10n, ShellSheet sheet) => switch (sheet) {
   ShellSheet.manageMultisigs => l10n.desktopManageMultisigsTitle,
   // The sheet heads itself by the action it does.
   ShellSheet.proposalAction => l10n.multisigProposalTitle,
+  ShellSheet.helpSupport => l10n.settingsHelpScreenTitle,
+  ShellSheet.about => l10n.settingsAboutScreenTitle,
 };

@@ -3790,4 +3790,21 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopSidebarMoveDown => 'Pindah ke Bawah';
+
+  @override
+  String get desktopMenuHelp => 'Bantuan';
+
+  @override
+  String get desktopMenuHelpSupport => 'Bantuan & Dukungan…';
+
+  @override
+  String get desktopMenuPrivacyPolicy => 'Kebijakan Privasi';
+
+  @override
+  String get desktopMenuWebsite => 'Situs Web Quantus';
+
+  @override
+  String desktopMenuAbout(String app) {
+    return 'Tentang $app';
+  }
 }

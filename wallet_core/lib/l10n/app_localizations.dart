@@ -6751,6 +6751,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Move Down'**
   String get desktopSidebarMoveDown;
+
+  /// Desktop menu bar: the Help menu, the last menu
+  ///
+  /// In en, this message translates to:
+  /// **'Help'**
+  String get desktopMenuHelp;
+
+  /// Desktop Help menu: opens the Help & Support sheet (Discord, Telegram)
+  ///
+  /// In en, this message translates to:
+  /// **'Help & Support…'**
+  String get desktopMenuHelpSupport;
+
+  /// Desktop Help menu: opens the privacy policy on the website
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get desktopMenuPrivacyPolicy;
+
+  /// Desktop Help menu: opens quantus.com
+  ///
+  /// In en, this message translates to:
+  /// **'Quantus Website'**
+  String get desktopMenuWebsite;
+
+  /// Desktop menu item that opens the About sheet: in the app menu on macOS, at the end of the Help menu elsewhere
+  ///
+  /// In en, this message translates to:
+  /// **'About {app}'**
+  String desktopMenuAbout(String app);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

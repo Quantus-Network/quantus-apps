@@ -5551,5 +5551,30 @@
     "desktopSidebarMoveDown": "Move Down",
     "@desktopSidebarMoveDown": {
       "description": "Desktop sidebar: menu item on a group's heading (a wallet, the cold wallet, the multisigs) that moves the group one place down"
+    },
+    "desktopMenuHelp": "Help",
+    "@desktopMenuHelp": {
+      "description": "Desktop menu bar: the Help menu, the last menu"
+    },
+    "desktopMenuHelpSupport": "Help & Support…",
+    "@desktopMenuHelpSupport": {
+      "description": "Desktop Help menu: opens the Help & Support sheet (Discord, Telegram)"
+    },
+    "desktopMenuPrivacyPolicy": "Privacy Policy",
+    "@desktopMenuPrivacyPolicy": {
+      "description": "Desktop Help menu: opens the privacy policy on the website"
+    },
+    "desktopMenuWebsite": "Quantus Website",
+    "@desktopMenuWebsite": {
+      "description": "Desktop Help menu: opens quantus.com"
+    },
+    "desktopMenuAbout": "About {app}",
+    "@desktopMenuAbout": {
+      "description": "Desktop menu item that opens the About sheet: in the app menu on macOS, at the end of the Help menu elsewhere",
+      "placeholders": {
+        "app": {
+          "type": "String"
+        }
+      }
     }
 }

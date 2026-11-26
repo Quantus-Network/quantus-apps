@@ -317,7 +317,9 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       ShellSheet.connectColdWallet ||
       ShellSheet.createMultisig ||
       ShellSheet.manageMultisigs ||
-      ShellSheet.proposalAction => null,
+      ShellSheet.proposalAction ||
+      ShellSheet.helpSupport ||
+      ShellSheet.about => null,
     };
     if (kind == null) return true;
     return ref.read(activeAccountActionsProvider).any((action) => action.kind == kind && action.isEnabled);

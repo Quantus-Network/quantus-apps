@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/activity/proposal_action_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/help/about_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/help/help_support_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/connect_cold_wallet_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/import_wallet_sheet.dart';
@@ -52,7 +54,9 @@ class ShellSheetView extends ConsumerWidget {
     ShellSheet.importWallet ||
     ShellSheet.connectColdWallet ||
     ShellSheet.createMultisig ||
-    ShellSheet.manageMultisigs => false,
+    ShellSheet.manageMultisigs ||
+    ShellSheet.helpSupport ||
+    ShellSheet.about => false,
   };
 
   Widget? get _content => switch (sheet) {
@@ -67,6 +71,8 @@ class ShellSheetView extends ConsumerWidget {
     ShellSheet.createMultisig ||
     ShellSheet.manageMultisigs ||
     ShellSheet.proposalAction => null,
+    ShellSheet.helpSupport => const HelpSupportSheet(),
+    ShellSheet.about => const AboutSheet(),
   };
 
   @override

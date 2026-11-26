@@ -1060,5 +1060,10 @@
   "desktopBackupReminderButton": "Cadangkan…",
   "desktopRecoveryAlreadyBackedUp": "Sudah Dicadangkan",
   "desktopSidebarMoveUp": "Pindah ke Atas",
-  "desktopSidebarMoveDown": "Pindah ke Bawah"
+  "desktopSidebarMoveDown": "Pindah ke Bawah",
+  "desktopMenuHelp": "Bantuan",
+  "desktopMenuHelpSupport": "Bantuan & Dukungan…",
+  "desktopMenuPrivacyPolicy": "Kebijakan Privasi",
+  "desktopMenuWebsite": "Situs Web Quantus",
+  "desktopMenuAbout": "Tentang {app}"
 }
