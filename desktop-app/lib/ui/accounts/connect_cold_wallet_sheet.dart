@@ -2,14 +2,13 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:desktop_qr_camera/desktop_qr_camera.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
-import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
+import 'package:quantus_desktop_wallet/ui/components/qr_camera_box.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -190,42 +189,6 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
     });
   }
 
-  Future<void> _openSettings(Uri url) async {
-    try {
-      await ref.read(openExternalUrlProvider)(url);
-    } catch (e) {
-      // The notice already says where to go.
-      quantusPrint('Opening the camera settings failed: $e');
-    }
-  }
-
-  static Uri? get _cameraSettings => switch (defaultTargetPlatform) {
-    TargetPlatform.macOS => Uri.parse('x-apple.systempreferences:com.apple.preference.security?Privacy_Camera'),
-    TargetPlatform.windows => Uri.parse('ms-settings:privacy-webcam'),
-    _ => null,
-  };
-
-  static ({String title, String body}) _failureText(AppLocalizations l10n, QrCameraFailure failure) =>
-      switch (failure) {
-        QrCameraFailure.noCamera => (title: l10n.desktopCameraNoneTitle, body: l10n.desktopCameraNoneBody),
-        QrCameraFailure.permissionDenied => (
-          title: l10n.desktopCameraPermissionTitle,
-          body: switch (defaultTargetPlatform) {
-            TargetPlatform.macOS => l10n.desktopCameraPermissionMac,
-            TargetPlatform.windows => l10n.desktopCameraPermissionWindows,
-            _ => l10n.desktopCameraPermissionLinux,
-          },
-        ),
-        QrCameraFailure.busy => (title: l10n.desktopCameraBusyTitle, body: l10n.desktopCameraBusyBody),
-        QrCameraFailure.unsupported => (
-          title: l10n.desktopCameraUnsupportedTitle,
-          body: l10n.desktopCameraUnsupportedBody,
-        ),
-        QrCameraFailure.mediaUnavailable => (title: l10n.desktopCameraMediaTitle, body: l10n.desktopCameraMediaBody),
-        QrCameraFailure.stopped => (title: l10n.desktopCameraStoppedTitle, body: l10n.desktopCameraStoppedBody),
-        QrCameraFailure.failed => (title: l10n.desktopCameraFailedTitle, body: l10n.desktopCameraFailedBody),
-      };
-
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
@@ -278,7 +241,7 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _cameraBox(context, l10n, cameraWidth),
+                      QrCameraBox(preview: _preview, width: cameraWidth, failure: _failure, onTryAgain: _startCamera),
                       const SizedBox(height: 12),
                       ConstrainedBox(constraints: const BoxConstraints(minHeight: 20), child: _status(context, l10n)),
                     ],
@@ -300,57 +263,6 @@ class _ConnectColdWalletSheetState extends ConsumerState<ConnectColdWalletSheet>
           ],
         ),
       ],
-    );
-  }
-
-  Widget _cameraBox(BuildContext context, AppLocalizations l10n, double width) {
-    final colors = context.colorsV3;
-    final failure = _failure;
-
-    return ClipRRect(
-      borderRadius: context.radiusV3.mdBorder,
-      child: Container(
-        width: width,
-        height: width * 0.72,
-        decoration: BoxDecoration(
-          color: colors.bgVoid,
-          border: Border.all(color: colors.borderHairline),
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          alignment: Alignment.center,
-          children: [
-            _preview,
-            if (failure == null)
-              Center(
-                child: SizedBox.square(
-                  dimension: width * 0.6,
-                  child: CustomPaint(
-                    painter: ScanFramePainter(
-                      accent: colors.accentFlare,
-                      scrim: colors.bgVoid.useOpacity(0.35),
-                      radius: context.radiusV3.md,
-                    ),
-                  ),
-                ),
-              )
-            else
-              ColoredBox(
-                color: colors.bgVoid,
-                child: _CameraNotice(
-                  text: _failureText(l10n, failure),
-                  tryAgainLabel: l10n.commonTryAgain,
-                  onTryAgain: _startCamera,
-                  settingsLabel: l10n.desktopCameraOpenSettings,
-                  onOpenSettings: switch ((failure, _cameraSettings)) {
-                    (QrCameraFailure.permissionDenied, final Uri url) => () => unawaited(_openSettings(url)),
-                    _ => null,
-                  },
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -485,69 +397,6 @@ class _Step extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Why the camera shows no picture, in its place, and what can be done.
-class _CameraNotice extends StatelessWidget {
-  const _CameraNotice({
-    required this.text,
-    required this.tryAgainLabel,
-    required this.onTryAgain,
-    required this.settingsLabel,
-    required this.onOpenSettings,
-  });
-
-  final ({String title, String body}) text;
-  final String tryAgainLabel;
-  final VoidCallback onTryAgain;
-  final String settingsLabel;
-  final VoidCallback? onOpenSettings;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colorsV3;
-    final style = context.themeTextV3;
-    final onOpenSettings = this.onOpenSettings;
-
-    return Semantics(
-      liveRegion: true,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              text.title,
-              textAlign: TextAlign.center,
-              style: style.bodyEmphasis.copyWith(color: colors.textContent),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              text.body,
-              textAlign: TextAlign.center,
-              style: style.body.copyWith(color: colors.textMuted),
-            ),
-            const SizedBox(height: 14),
-            // Side by side when they fit, each as wide as its label.
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (onOpenSettings != null)
-                  IntrinsicWidth(
-                    child: SheetButton(label: settingsLabel, kind: SheetButtonKind.secondary, onTap: onOpenSettings),
-                  ),
-                IntrinsicWidth(
-                  child: SheetButton(label: tryAgainLabel, kind: SheetButtonKind.secondary, onTap: onTryAgain),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

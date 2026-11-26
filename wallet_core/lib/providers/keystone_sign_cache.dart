@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -41,9 +42,31 @@ Duration keystoneSignCacheMaxAge(QuantusSigningPayload payload) {
   return Duration(seconds: usableBlocks * AppConstants.avgBlockTimeSeconds);
 }
 
+/// Whether [payload], built at [storedAt], has used up its era reserve by
+/// [now]: what is left of its lifetime no longer covers a full round trip
+/// through the device, so it must be built again before it is shown.
+bool isKeystonePayloadStale(QuantusSigningPayload payload, {required DateTime storedAt, required DateTime now}) =>
+    now.difference(storedAt) >= keystoneSignCacheMaxAge(payload);
+
 /// Returns true when [entry] is older than the mortal era validity window.
-bool isKeystoneSignCacheEntryExpired(KeystoneSignCacheEntry entry, DateTime now) {
-  return now.difference(entry.storedAt) >= keystoneSignCacheMaxAge(entry.unsignedData.payloadToSign);
+bool isKeystoneSignCacheEntryExpired(KeystoneSignCacheEntry entry, DateTime now) =>
+    isKeystonePayloadStale(entry.unsignedData.payloadToSign, storedAt: entry.storedAt, now: now);
+
+/// Refuses a signed [payload] whose mortal era is over, or within
+/// [keystoneSignSubmitEraMarginBlocks] of it, by throwing
+/// [KeystoneEraExpiredException]: the chain would reject it, or worse, accept
+/// it right at the edge. [currentBlock] is asked only for a payload that can
+/// expire.
+Future<void> ensureKeystoneEraNotExpired(
+  QuantusSigningPayload payload, {
+  required Future<int> Function() currentBlock,
+}) async {
+  if (payload.eraPeriod == 0) return;
+  final block = await currentBlock();
+  final expiryBlock = payload.blockNumber + payload.eraPeriod;
+  if (block >= expiryBlock - keystoneSignSubmitEraMarginBlocks) {
+    throw KeystoneEraExpiredException(currentBlock: block, expiryBlock: expiryBlock);
+  }
 }
 
 /// Identifies a Keystone signing payload by the parameters that define the
@@ -117,7 +140,7 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
   KeystoneSignCacheEntry? lookup(KeystoneSignCacheKey key, {DateTime? now}) {
     final entry = state;
     if (entry == null || entry.key != key) return null;
-    if (isKeystoneSignCacheEntryExpired(entry, now ?? DateTime.now())) {
+    if (isKeystoneSignCacheEntryExpired(entry, now ?? clock.now())) {
       state = null;
       return null;
     }
@@ -134,7 +157,7 @@ class KeystoneSignCacheNotifier extends StateNotifier<KeystoneSignCacheEntry?> {
       key: key,
       unsignedData: unsignedData,
       urParts: urParts,
-      storedAt: storedAt ?? DateTime.now(),
+      storedAt: storedAt ?? clock.now(),
     );
   }
 
@@ -156,6 +179,16 @@ final keystoneSignCacheProvider = StateNotifierProvider<KeystoneSignCacheNotifie
 Uint8List signRequestBytes({required String signer, required Uint8List payload}) =>
     SigningRequest(signer: signer, payload: payload).encode();
 
+/// Frames the request [account]'s signer scans: [unsigned]'s payload in a
+/// [SigningRequest], as UR parts. The framing runs in Rust.
+final keystoneSignRequestFramesProvider =
+    Provider<List<String> Function(Account account, UnsignedTransactionData unsigned)>(
+      (ref) =>
+          (account, unsigned) => encodeUr(
+            data: signRequestBytes(signer: account.accountId, payload: unsigned.encodedPayloadRaw),
+          ),
+    );
+
 /// Builds the unsigned payload and its UR frames, serving a fresh cache entry
 /// when one exists and storing the result under [cacheKey]. The review screen
 /// prefetches through this so the QR screen usually renders instantly; the QR
@@ -174,11 +207,9 @@ Future<({UnsignedTransactionData unsignedData, List<String> urParts, DateTime st
     }
   }
   final unsigned = await ref.read(substrateServiceProvider).getUnsignedTransactionPayload(account, buildCall());
-  final parts = encodeUr(
-    data: signRequestBytes(signer: account.accountId, payload: unsigned.encodedPayloadRaw),
-  );
+  final parts = ref.read(keystoneSignRequestFramesProvider)(account, unsigned);
   if (parts.isEmpty) throw Exception('Failed to encode transaction payload as UR');
-  final storedAt = DateTime.now();
+  final storedAt = clock.now();
   if (cacheKey != null) cache.store(key: cacheKey, unsignedData: unsigned, urParts: parts, storedAt: storedAt);
   return (unsignedData: unsigned, urParts: parts, storedAt: storedAt);
 }

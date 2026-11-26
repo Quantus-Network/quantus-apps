@@ -1017,6 +1017,7 @@
   "keystoneSignStep": "LANGKAH {current}/{total}",
   "keystoneSignInstruction": "Buka cold wallet Anda dan pindai kode QR ini untuk memuat transaksi.",
   "keystoneSignActionLabel": "TINDAKAN",
+  "keystoneSignEntireBalance": "Seluruh saldo yang dapat ditransfer",
   "keystoneSignYouAreSigning": "ANDA MENANDATANGANI",
   "keystoneSignNext": "Lanjut ke Tanda Tangan",
   "keystoneSignCancel": "Batalkan Transaksi",
@@ -1034,5 +1035,19 @@
   "keystoneRejectStep2Body": "Jika ponsel ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.",
   "keystoneRejectStep3Title": "Dana Anda aman di cold wallet.",
   "keystoneRejectStep3Body": "Kunci tidak pernah meninggalkan perangkat. Pindah ke ponsel tepercaya sebelum mengirim lagi.",
-  "keystoneRejectConfirm": "Saya sudah menolaknya di cold wallet"
+  "keystoneRejectConfirm": "Saya sudah menolaknya di cold wallet",
+  "desktopKeystoneStepShow": "Tampilkan",
+  "desktopKeystoneStepCheckAndScan": "Periksa dan pindai kembali",
+  "desktopKeystoneOnColdWallet": "Di cold wallet Anda",
+  "desktopKeystoneShowStepScan": "Buka cold wallet Anda dan pilih Pindai.",
+  "desktopKeystoneShowStepHold": "Arahkan ke kode QR ini sampai transaksinya muncul.",
+  "desktopKeystoneShowStepContinue": "Lalu lanjutkan di sini.",
+  "desktopKeystoneCheckTitle": "Periksa layar cold wallet Anda",
+  "desktopKeystoneCheckBody": "Setujui di sana hanya jika layarnya menampilkan persis ini.",
+  "desktopKeystoneThen": "Lalu",
+  "desktopKeystoneScanStepHold": "Arahkan kode QR tanda tangannya ke kamera komputer ini.",
+  "desktopKeystoneScanStepKeep": "Tahan di sana sampai semua bagian diterima.",
+  "desktopKeystoneRejectStep2Title": "Jangan coba lagi dari komputer ini.",
+  "desktopKeystoneRejectStep3Body": "Kunci tidak pernah meninggalkan perangkat. Pindah ke komputer tepercaya sebelum mengirim lagi.",
+  "desktopKeystoneRejectStep2Body": "Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain."
 }
