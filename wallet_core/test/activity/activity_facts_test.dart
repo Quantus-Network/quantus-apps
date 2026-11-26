@@ -273,6 +273,34 @@ void main() {
       );
     });
 
+    PendingMultisigApprovalEvent approving({BigInt? fee}) => PendingMultisigApprovalEvent.create(
+      multisigAddress: msig,
+      proposalId: 4,
+      approverId: me,
+      recipient: recipient,
+      amount: BigInt.from(500),
+      fee: fee,
+    ).copyWith(extrinsicHash: '0xapproving');
+
+    test('approving: its fee is the amount, on its way out; no time until it is in a block', () {
+      expect(
+        factsOf(approving(fee: BigInt.from(7))),
+        ActivityFacts(
+          amount: BigInt.from(7),
+          highlight: ActivityHighlight.leaving,
+          facts: [multisigFact, toRecipient, moves, fee(7), const ActivityHashFact('0xapproving')],
+        ),
+      );
+      expect(
+        factsOf(approving()),
+        ActivityFacts(
+          amount: null,
+          highlight: ActivityHighlight.leaving,
+          facts: [multisigFact, toRecipient, moves, const ActivityHashFact('0xapproving')],
+        ),
+      );
+    });
+
     PendingMultisigExecutionEvent executing({BigInt? fee}) => PendingMultisigExecutionEvent.create(
       multisigAddress: msig,
       proposalId: 4,

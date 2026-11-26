@@ -7,6 +7,7 @@ bool isActivityInProgress(TransactionEvent tx) => switch (tx) {
   PendingTransactionEvent() => !tx.isFailed,
   PendingMultisigCreationEvent() ||
   PendingMultisigProposalEvent() ||
+  PendingMultisigApprovalEvent() ||
   PendingMultisigExecutionEvent() ||
   PendingMultisigCancellationEvent() => true,
   _ => tx.isReversibleScheduled,

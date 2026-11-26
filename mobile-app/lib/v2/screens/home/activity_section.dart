@@ -69,6 +69,7 @@ class _ActivitySectionState extends ConsumerState<ActivitySection> {
           pendingTransactions: data.pendingTransactions,
           pendingMultisigCreations: data.pendingMultisigCreations,
           pendingMultisigProposals: data.pendingMultisigProposals,
+          pendingMultisigApprovals: data.pendingMultisigApprovals,
           pendingMultisigExecutions: data.pendingMultisigExecutions,
           pendingMultisigCancellations: data.pendingMultisigCancellations,
           scheduledReversibleTransfers: data.scheduledReversibleTransfers,

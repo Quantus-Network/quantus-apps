@@ -84,8 +84,13 @@ void main() {
   });
 
   group('what an open proposal waits for', () {
-    PendingMultisigApprovalEvent approving(String approverId) =>
-        PendingMultisigApprovalEvent.create(multisigAddress: msig.accountId, proposalId: 1, approverId: approverId);
+    PendingMultisigApprovalEvent approving(String approverId) => PendingMultisigApprovalEvent.create(
+      multisigAddress: msig.accountId,
+      proposalId: 1,
+      approverId: approverId,
+      recipient: recipient,
+      amount: BigInt.from(500),
+    );
     final executing = PendingMultisigExecutionEvent.create(
       multisigAddress: msig.accountId,
       proposalId: 1,
@@ -162,11 +167,15 @@ void main() {
               multisigAddress: elsewhere.accountId,
               proposalId: 1,
               approverId: me.accountId,
+              recipient: recipient,
+              amount: BigInt.from(500),
             ),
             PendingMultisigApprovalEvent.create(
               multisigAddress: msig.accountId,
               proposalId: 2,
               approverId: me.accountId,
+              recipient: recipient,
+              amount: BigInt.from(500),
             ),
           ],
         ),
@@ -234,6 +243,26 @@ void main() {
       final activity = multisigActivityOf(
         service,
         CombinedTransactionsList.empty.copyWith(pendingMultisigProposals: [ours, theirs]),
+        const [],
+        msig,
+      );
+
+      expect(activity, [theirs]);
+    });
+
+    test('its approvals on their way are left out: they are among its open proposals', () {
+      PendingMultisigApprovalEvent approving(MultisigAccount of) => PendingMultisigApprovalEvent.create(
+        multisigAddress: of.accountId,
+        proposalId: 1,
+        approverId: me.accountId,
+        recipient: recipient,
+        amount: BigInt.from(500),
+      );
+      final ours = approving(msig);
+      final theirs = approving(elsewhere);
+      final activity = multisigActivityOf(
+        service,
+        CombinedTransactionsList.empty.copyWith(pendingMultisigApprovals: [ours, theirs]),
         const [],
         msig,
       );

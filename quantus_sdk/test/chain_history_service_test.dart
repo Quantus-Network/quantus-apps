@@ -668,4 +668,181 @@ void main() {
       );
     });
   });
+
+  group('what accounts received since they were last read', () {
+    const cursor = AccountEventCursor(timestamp: '2026-11-24T10:00:00+00:00', id: 'ae-transfer-5');
+
+    Map<String, dynamic> transferRow(String id, String timestamp, {String pallet = 'Balances'}) => {
+      'id': 'ae-transfer-$id',
+      'timestamp': timestamp,
+      'transfer': {
+        'id': id,
+        'amount': '1000',
+        'timestamp': timestamp,
+        'from': {'id': 'qzAlice'},
+        'to': {'id': 'qzMain'},
+        'block': {'height': 7, 'hash': '0xblock'},
+        'extrinsic': {'id': '0x$id', 'pallet': pallet},
+        'fee': '1',
+      },
+      'scheduledReversibleTransfer': null,
+    };
+
+    Map<String, dynamic> scheduledRow(String id, String timestamp) => {
+      'id': 'ae-scheduled-$id',
+      'timestamp': timestamp,
+      'transfer': null,
+      'scheduledReversibleTransfer': {
+        'id': id,
+        'amount': '2000',
+        'timestamp': timestamp,
+        'from': {'id': 'qzAlice'},
+        'to': {'id': 'qzMain'},
+        'txId': '0xtx$id',
+        'scheduledAt': '2026-11-25T10:00:00Z',
+        'block': {'height': 8, 'hash': '0xblock'},
+        'extrinsic': {'id': '0x$id'},
+      },
+    };
+
+    /// A row of some other kind, such as a mining reward: neither is selected.
+    Map<String, dynamic> otherRow(String id, String timestamp) => {
+      'id': 'ae-reward-$id',
+      'timestamp': timestamp,
+      'transfer': null,
+      'scheduledReversibleTransfer': null,
+    };
+
+    test('an account never read is asked only where its incoming history ends', () {
+      final query = ChainHistoryService.buildIncomingSinceQuery(withCursor: [false]);
+
+      expect(query, contains(r'query IncomingSince($account0: String!)'));
+      expect(query, contains('events0: account_event(limit: 1,'));
+      expect(_whereClause(query), contains(r'{account_id: {_eq: $account0}}'));
+      expect(_whereClause(query), contains('{incoming: {_eq: true}}'));
+      expect(query, contains('order_by: [{account_id: desc}, {incoming: desc}, {timestamp: desc}, {id: desc}]'));
+      expect(query, isNot(contains('transfer')));
+      expect(query, isNot(contains('limit: \$limit')));
+    });
+
+    test('an account read before is read on from its cursor, oldest first, along the incoming index', () {
+      final query = ChainHistoryService.buildIncomingSinceQuery(withCursor: [true]);
+
+      expect(
+        query,
+        contains(
+          r'query IncomingSince($account0: String!, $cursorTimestamp0: timestamptz!, $cursorId0: String!, $limit: Int!)',
+        ),
+      );
+      expect(query, contains(r'events0: account_event(limit: $limit,'));
+      final where = _whereClause(query);
+      expect(where, contains(r'{account_id: {_eq: $account0}}'));
+      expect(where, contains('{incoming: {_eq: true}}'));
+      expect(where, contains(r'{timestamp: {_gte: $cursorTimestamp0}}'));
+      expect(where, contains(r'{_not: {timestamp: {_eq: $cursorTimestamp0}, id: {_lte: $cursorId0}}}'));
+      for (final slow in ['_or', '_in', 'transfer', 'scheduledReversibleTransfer:', 'from', 'to:']) {
+        expect(where, isNot(contains(slow)), reason: slow);
+      }
+      expect(query, contains('order_by: [{account_id: asc}, {incoming: asc}, {timestamp: asc}, {id: asc}]'));
+      expect(query, contains('transfer {'));
+      expect(query, contains('pallet'), reason: 'what tells a wormhole receipt apart');
+      expect(query, contains('scheduledReversibleTransfer {'));
+    });
+
+    test('each account has its own selection and its own cursor', () {
+      final query = ChainHistoryService.buildIncomingSinceQuery(withCursor: [true, false, true]);
+
+      expect(
+        query,
+        contains(
+          r'($account0: String!, $cursorTimestamp0: timestamptz!, $cursorId0: String!, '
+          r'$account1: String!, '
+          r'$account2: String!, $cursorTimestamp2: timestamptz!, $cursorId2: String!, $limit: Int!)',
+        ),
+      );
+      expect(query, contains(r'events0: account_event(limit: $limit,'));
+      expect(query, contains('events1: account_event(limit: 1,'));
+      expect(query, contains(r'events2: account_event(limit: $limit,'));
+      expect(query, contains(r'{timestamp: {_gte: $cursorTimestamp2}}'));
+      expect(query, isNot(contains(r'$cursorTimestamp1')));
+    });
+
+    test('the variables are those the query declares, and no others', () {
+      expect(ChainHistoryService.incomingSinceVariables({'qzMain': cursor, 'qzSavings': null}, limit: 100), {
+        'account0': 'qzMain',
+        'cursorTimestamp0': '2026-11-24T10:00:00+00:00',
+        'cursorId0': 'ae-transfer-5',
+        'account1': 'qzSavings',
+        'limit': 100,
+      });
+      expect(ChainHistoryService.incomingSinceVariables({'qzSavings': null}, limit: 100), {'account0': 'qzSavings'});
+    });
+
+    test('no account to ask about is a mistake, not an empty answer', () {
+      expect(() => ChainHistoryService.buildIncomingSinceQuery(withCursor: []), throwsArgumentError);
+      expect(() => ChainHistoryService.incomingSinceVariables({}, limit: 100), throwsArgumentError);
+    });
+
+    test('a first read answers nothing received, from where the history ends', () {
+      final read = ChainHistoryService.incomingSinceOf(
+        {
+          'events0': [
+            {'id': 'ae-transfer-9', 'timestamp': '2026-11-24T11:00:00+00:00'},
+          ],
+        },
+        {'qzMain': null},
+      );
+
+      expect(read.keys, ['qzMain']);
+      expect(read['qzMain']!.received, isEmpty);
+      expect(read['qzMain']!.cursor.timestamp, '2026-11-24T11:00:00+00:00');
+      expect(read['qzMain']!.cursor.id, 'ae-transfer-9');
+    });
+
+    test('a first read of an account with no history starts before any event', () {
+      final read = ChainHistoryService.incomingSinceOf({'events0': <dynamic>[]}, {'qzMain': null});
+
+      expect(read['qzMain']!.received, isEmpty);
+      // What the next read asks with: every row is strictly after it.
+      expect(DateTime.parse(read['qzMain']!.cursor.timestamp), DateTime.utc(1970));
+      expect(read['qzMain']!.cursor.id, '');
+    });
+
+    test('a later read answers the transfers and scheduled transfers in order, and ends at its last row', () {
+      final read = ChainHistoryService.incomingSinceOf(
+        {
+          'events0': [
+            transferRow('6', '2026-11-24T10:01:00+00:00'),
+            transferRow('7', '2026-11-24T10:02:00+00:00', pallet: 'Wormhole'),
+            scheduledRow('8', '2026-11-24T10:03:00+00:00'),
+            otherRow('9', '2026-11-24T10:04:00+00:00'),
+          ],
+          'events1': <dynamic>[],
+        },
+        {'qzMain': cursor, 'qzSavings': cursor},
+      );
+
+      final received = read['qzMain']!.received;
+      expect(received.map((event) => event.id), ['6', '7', '8']);
+      expect(received[0], isA<TransferEvent>());
+      expect(received[0], isNot(isA<WormholeTransferEvent>()));
+      expect(received[0].extrinsicHash, '0x6');
+      expect((received[0].from, received[0].to, received[0].amount), ('qzAlice', 'qzMain', BigInt.from(1000)));
+      expect(received[1], isA<WormholeTransferEvent>());
+      expect(received[2], isA<ReversibleTransferEvent>());
+      expect((received[2] as ReversibleTransferEvent).status, ReversibleTransferStatus.SCHEDULED);
+      expect(read['qzMain']!.cursor.id, 'ae-reward-9', reason: 'past the row that is neither');
+      expect(read['qzMain']!.cursor.timestamp, '2026-11-24T10:04:00+00:00');
+
+      expect(read['qzSavings']!.received, isEmpty);
+      expect(read['qzSavings']!.cursor, same(cursor), reason: 'nothing new: read on from the same place');
+    });
+
+    test('an answer without an account asked about is a failure', () {
+      expect(
+        () => ChainHistoryService.incomingSinceOf({'events0': <dynamic>[]}, {'qzMain': cursor, 'qzSavings': null}),
+        throwsStateError,
+      );
+    });
+  });
 }

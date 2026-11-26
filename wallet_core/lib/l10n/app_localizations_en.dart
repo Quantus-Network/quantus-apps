@@ -12,10 +12,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get walletInitErrorTitle => 'Wallet Error';
 
   @override
-  String get walletInitErrorMessage => 'Unable to find secret phrase. Please restore your wallet.';
+  String get walletInitErrorMessage => 'Unable to read your recovery phrase from this device.';
 
   @override
-  String get walletInitErrorButtonLabel => 'OK';
+  String get walletInitErrorRemoveWallet => 'Remove Wallet';
+
+  @override
+  String get desktopWalletInitErrorRemoveWallet => 'Remove Wallet…';
+
+  @override
+  String get walletInitErrorRemoveTitle => 'Remove all wallets from this device?';
+
+  @override
+  String get walletInitErrorRemoveBody => 'This cannot be undone.';
+
+  @override
+  String get walletInitErrorRemoveConfirm => 'Remove';
 
   @override
   String get authUseDeviceBiometricsToUnlock => 'Use device biometrics to unlock';
@@ -302,6 +314,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Multisig creation is taking longer than expected. Check the chain or try again.';
 
   @override
+  String get multisigCreateNotSavedToast =>
+      'Your multisig was created, but it could not be saved on this device. Restart the app to add it.';
+
+  @override
   String get multisigCreateAuthReason => 'Authenticate to create this multisig';
 
   @override
@@ -396,6 +412,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get multisigProposalCallUnavailable =>
       'Could not read this proposal from the chain, so there is nothing to approve. Try again when you are back online.';
+
+  @override
+  String get multisigProposalStateUnreadNote =>
+      'Could not check where this proposal stands now, so nothing can be done with it here. Try again when you are back online.';
 
   @override
   String get multisigProposalInvalid => 'Invalid proposal';
@@ -532,6 +552,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get multisigApproveUnavailableNote => 'This proposal can no longer be approved.';
+
+  @override
+  String get multisigProposalExpiredNote => 'This proposal has expired.';
+
+  @override
+  String get multisigNoSignerHereNote => 'None of this multisig\'s signers is in this wallet.';
+
+  @override
+  String get multisigCancelWaitsNote => 'Cancel waits until the approval sent from this device is confirmed.';
 
   @override
   String get activityTxApproving => 'Approving…';
@@ -1286,6 +1315,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activityDetailTitleCancelling => 'Cancelling proposal';
+
+  @override
+  String get activityDetailTitleApproving => 'Approving proposal';
 
   @override
   String get activityDetailTitleExecuting => 'Executing proposal';
@@ -2871,6 +2903,118 @@ class AppLocalizationsEn extends AppLocalizations {
   String get desktopProposeWaiting => 'Waiting for the network to create the proposal.';
 
   @override
+  String get desktopProposalApproved => 'Approved';
+
+  @override
+  String get desktopProposalExpired => 'Expired';
+
+  @override
+  String get desktopProposalUnreadable =>
+      'This wallet can\'t read what this proposal would do, so it can\'t be approved or executed here.';
+
+  @override
+  String get desktopProposalApproving => 'Approving';
+
+  @override
+  String get desktopProposalExecuting => 'Executing';
+
+  @override
+  String get desktopProposalCancelling => 'Cancelling';
+
+  @override
+  String get desktopProposalSignsAs => 'Signs as';
+
+  @override
+  String get desktopProposalSignedAs => 'Signed as';
+
+  @override
+  String get desktopProposalDepositRefunded => 'Deposit refunded';
+
+  @override
+  String desktopProposalApprovalsChange(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String desktopProposalKeystoneApprove(String name) {
+    return '$name signs with a Keystone, which this app cannot sign with yet. Approve on your phone.';
+  }
+
+  @override
+  String desktopProposalKeystoneExecute(String name) {
+    return '$name signs with a Keystone, which this app cannot sign with yet. Execute on your phone.';
+  }
+
+  @override
+  String desktopProposalKeystoneCancel(String name) {
+    return '$name signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.';
+  }
+
+  @override
+  String desktopProposalApprovingTitle(String what) {
+    return 'Approving $what';
+  }
+
+  @override
+  String desktopProposalApprovedTitle(String what) {
+    return '$what approved';
+  }
+
+  @override
+  String desktopProposalExecutingTitle(String what) {
+    return 'Executing $what';
+  }
+
+  @override
+  String desktopProposalExecutedTitle(String what) {
+    return '$what executed';
+  }
+
+  @override
+  String desktopProposalCancellingTitle(String what) {
+    return 'Cancelling $what';
+  }
+
+  @override
+  String get desktopProposalCancelledTitle => 'Proposal cancelled';
+
+  @override
+  String get desktopProposalApprovalWaiting => 'Waiting for the network to record your approval.';
+
+  @override
+  String get desktopProposalExecutionWaiting => 'Waiting for the network to record your execution.';
+
+  @override
+  String get desktopProposalCancellationWaiting => 'Waiting for the network to record your cancellation.';
+
+  @override
+  String get desktopProposalReadyToExecute => 'It has every approval it needs, and can be executed.';
+
+  @override
+  String desktopProposalApprovalsNeeded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more approvals needed.',
+      one: '1 more approval needed.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get desktopProposalExecutedDone => 'The proposal has run.';
+
+  @override
+  String get desktopProposalCancelledDone => 'Your deposit is refunded.';
+
+  @override
+  String get desktopProposalExecutedByAnother => 'Executed by another signer';
+
+  @override
+  String get desktopProposalExecutedByAnotherBody =>
+      'Another signer executed this proposal first, so your transaction did not go through. Its network fee was still paid.';
+
+  @override
   String get desktopFooterMainnet => 'Mainnet';
 
   @override
@@ -3172,6 +3316,31 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String desktopNotificationReceivedTitle(String amount) {
+    return 'Received $amount';
+  }
+
+  @override
+  String desktopNotificationReceivedBody(String account) {
+    return 'In $account';
+  }
+
+  @override
+  String desktopNotificationSwapBody(String amount, String foreignAmount, String network) {
+    return '$amount for $foreignAmount on $network';
+  }
+
+  @override
+  String desktopNotificationIncomingTitle(String amount) {
+    return 'Incoming $amount';
+  }
+
+  @override
+  String desktopNotificationIncomingBody(String account) {
+    return 'Scheduled to arrive in $account';
+  }
+
+  @override
   String get desktopNotificationSendNotConfirmedTitle => 'Send not confirmed';
 
   @override
@@ -3193,6 +3362,34 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String desktopNotificationProposalCreatedBody(String amount, String multisig) {
     return 'Send $amount from $multisig';
+  }
+
+  @override
+  String get desktopNotificationProposalNewTitle => 'New proposal';
+
+  @override
+  String desktopNotificationProposalSignedTitle(int count, int threshold) {
+    return 'Proposal signed: $count of $threshold';
+  }
+
+  @override
+  String get desktopNotificationProposalReadyTitle => 'Proposal ready to execute';
+
+  @override
+  String get desktopNotificationProposalExecutedTitle => 'Proposal executed';
+
+  @override
+  String get desktopNotificationProposalFailedTitle => 'Proposal execution failed';
+
+  @override
+  String get desktopNotificationProposalCancelledTitle => 'Proposal cancelled';
+
+  @override
+  String get desktopNotificationProposalRemovedTitle => 'Proposal removed';
+
+  @override
+  String desktopNotificationProposalOtherBody(String multisig) {
+    return 'In $multisig';
   }
 
   @override
@@ -3497,6 +3694,21 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String desktopStatusItemQuit(String appName) {
     return 'Quit $appName';
+  }
+
+  @override
+  String desktopStatusItemSwap(int step, int count) {
+    return 'Swap $step/$count';
+  }
+
+  @override
+  String desktopStatusItemSwapAndMore(int step, int count, int more) {
+    return 'Swap $step/$count +$more';
+  }
+
+  @override
+  String desktopStatusItemSwapFor(String amount, String foreignAmount, String network) {
+    return '$amount for $foreignAmount on $network';
   }
 
   @override

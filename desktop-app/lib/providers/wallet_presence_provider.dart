@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
@@ -18,12 +19,29 @@ final walletPresenceProvider = AsyncNotifierProvider<WalletPresenceNotifier, Wal
 
 class WalletPresenceNotifier extends AsyncNotifier<WalletPresence> {
   @override
-  Future<WalletPresence> build() async {
-    final settings = ref.watch(settingsServiceProvider);
+  Future<WalletPresence> build() => _check(ref.watch(settingsServiceProvider));
+
+  Future<WalletPresence> _check(SettingsService settings) async {
     if (!await settings.getHasWallet()) return WalletPresence.none;
     // The first wallet on a device is always a software wallet.
     if (await settings.getMnemonic(0) == null) return WalletPresence.phraseMissing;
     return WalletPresence.present;
+  }
+
+  /// Checks again, as asked for when the recovery phrase could not be read,
+  /// and answers what it found; null when the check failed, which the state
+  /// then holds. The state changes only when the answer does, so the same
+  /// answer is not reported twice.
+  Future<WalletPresence?> checkAgain() async {
+    final WalletPresence presence;
+    try {
+      presence = await _check(ref.read(settingsServiceProvider));
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return null;
+    }
+    if (presence != state.value) state = AsyncData(presence);
+    return presence;
   }
 
   /// Onboarding created or imported a wallet.

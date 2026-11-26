@@ -180,18 +180,34 @@ class SendSummary extends StatelessWidget {
 /// figure after [label], or after the name of the [signer] and [label] where
 /// another account than the one the send leaves pays it, a proposal's member.
 class SendTotal extends StatelessWidget {
-  const SendTotal({super.key, required this.rows, required this.label, this.signer});
+  const SendTotal({super.key, required this.rows, required this.label, this.signer, this.updating = false})
+    : _loading = false;
+
+  /// What is paid, not known yet: its line, turning where the figure will
+  /// stand.
+  const SendTotal.loading({super.key, required this.label, this.signer})
+    : rows = const [],
+      _loading = true,
+      updating = false;
 
   final List<SendReviewRow> rows;
   final String label;
   final Account? signer;
+
+  /// What is paid is the figure before, standing while the new one is
+  /// worked out: it turns beside it.
+  final bool updating;
+  final bool _loading;
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colorsV3;
     final text = context.themeTextV3;
     final signer = this.signer;
-    final totals = rows.where((row) => row.kind == SendReviewRowKind.total);
+    // Null for the figure not known yet.
+    final totals = _loading
+        ? const <String?>[null]
+        : [for (final row in rows.where((row) => row.kind == SendReviewRowKind.total)) SendSummary._figure(row)];
     if (totals.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -199,9 +215,11 @@ class SendTotal extends StatelessWidget {
       children: [
         const MenuDivider(),
         const SizedBox(height: 4),
-        for (final row in totals)
+        for (final figure in totals)
           if (signer == null)
-            FigureRow(label: label, value: SendSummary._figure(row), isStrong: true)
+            figure == null
+                ? FigureRow.loading(label: label, isStrong: true)
+                : FigureRow(label: label, value: figure, isStrong: true, updating: updating)
           else
             // The figure is whole whatever the account is called: the name
             // takes what is left of the line, and is cut short there.
@@ -228,7 +246,12 @@ class SendTotal extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: SummaryRow.gap),
-                  FigureText(SendSummary._figure(row), isStrong: true),
+                  if (figure == null)
+                    const FigureLoader()
+                  else if (updating)
+                    Flexible(child: UpdatingFigure(figure, isStrong: true))
+                  else
+                    FigureText(figure, isStrong: true),
                 ],
               ),
             ),

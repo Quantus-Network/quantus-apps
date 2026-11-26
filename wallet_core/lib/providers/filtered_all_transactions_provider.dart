@@ -8,6 +8,7 @@ import 'package:wallet_core/providers/account_id_list_cache.dart';
 import 'package:wallet_core/providers/controllers/unified_pagination_controller.dart';
 import 'package:wallet_core/providers/pending_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
@@ -24,14 +25,15 @@ final filteredPaginationControllerProviderFamily =
     );
 
 /// Everything the wallet has pending, every account's: what is being sent,
-/// the multisigs being created, the proposals being proposed, executed or
-/// cancelled, and the reversible transfers being cancelled.
+/// the multisigs being created, the proposals being proposed, approved,
+/// executed or cancelled, and the reversible transfers being cancelled.
 final pendingActivityProvider = Provider<CombinedTransactionsList>((ref) {
   return CombinedTransactionsList(
     pendingCancellationIds: ref.watch(pendingCancellationsProvider),
     pendingTransactions: ref.watch(pendingTransactionsProvider),
     pendingMultisigCreations: ref.watch(pendingMultisigCreationsProvider),
     pendingMultisigProposals: ref.watch(pendingMultisigProposalsProvider),
+    pendingMultisigApprovals: ref.watch(pendingMultisigApprovalsProvider),
     pendingMultisigExecutions: ref.watch(pendingMultisigExecutionsProvider),
     pendingMultisigCancellations: ref.watch(pendingMultisigCancellationsProvider),
     scheduledReversibleTransfers: const [],
@@ -41,7 +43,7 @@ final pendingActivityProvider = Provider<CombinedTransactionsList>((ref) {
 
 /// What of the wallet's [pending] activity belongs to [accountIds] under
 /// [filter]: what they send or receive, the multisigs they create, the
-/// proposals they propose, execute or cancel (none of it when only what was
+/// proposals they propose, approve, execute or cancel (none of it when only what was
 /// received is asked for); with the history's [scheduledReversibleTransfers]
 /// and [otherTransfers] as they are.
 CombinedTransactionsList combinedTransactionsOf(
@@ -62,6 +64,9 @@ CombinedTransactionsList combinedTransactionsOf(
         .toList(),
     pendingMultisigProposals: pending.pendingMultisigProposals
         .where((tx) => sends && accountIds.contains(tx.proposerId))
+        .toList(),
+    pendingMultisigApprovals: pending.pendingMultisigApprovals
+        .where((tx) => sends && accountIds.contains(tx.approverId))
         .toList(),
     pendingMultisigExecutions: pending.pendingMultisigExecutions
         .where((tx) => sends && accountIds.contains(tx.executorId))

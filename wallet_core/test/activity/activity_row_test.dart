@@ -280,6 +280,25 @@ void main() {
       expect(proposalRow(approved()).hidesAmount, isTrue);
     });
 
+    test('being approved is leaving, now, at what approving costs; with no cost known, no amount', () {
+      PendingMultisigApprovalEvent approving({BigInt? fee}) => PendingMultisigApprovalEvent.create(
+        multisigAddress: msig.accountId,
+        proposalId: 4,
+        approverId: me,
+        recipient: recipient,
+        amount: BigInt.from(500),
+        fee: fee,
+      );
+
+      final row = proposalRow(approving(fee: BigInt.from(7)));
+
+      expect(
+        (row.label, row.timeLabel, row.highlight, row.amount, row.hidesAmount),
+        (l10n.activityTxApproving, l10n.activityTxTimeNow, ActivityHighlight.leaving, BigInt.from(7), false),
+      );
+      expect(proposalRow(approving()).hidesAmount, isTrue);
+    });
+
     test('being executed is leaving, now, at what executing costs; with no cost known, no amount', () {
       PendingMultisigExecutionEvent executing({BigInt? fee}) => PendingMultisigExecutionEvent.create(
         multisigAddress: msig.accountId,

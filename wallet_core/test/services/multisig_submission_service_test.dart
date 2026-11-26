@@ -9,6 +9,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/models/pending_multisig_creation_record.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
+import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
@@ -148,6 +149,24 @@ void main() {
   test("a send of the payer's still pending is not spendable", () async {
     chain.balance = cost;
     container.read(pendingTransactionsProvider.notifier).add(send(from: payer.accountId, amount: BigInt.one));
+
+    await expectLater(preflight(), refusedWithSpendable(cost - BigInt.one));
+  });
+
+  test("the fee of an approval of the payer's still pending is not spendable", () async {
+    chain.balance = cost;
+    container
+        .read(pendingMultisigApprovalsProvider.notifier)
+        .add(
+          PendingMultisigApprovalEvent.create(
+            multisigAddress: _other,
+            proposalId: 1,
+            approverId: payer.accountId,
+            recipient: _other,
+            amount: BigInt.from(1000),
+            fee: BigInt.one,
+          ),
+        );
 
     await expectLater(preflight(), refusedWithSpendable(cost - BigInt.one));
   });

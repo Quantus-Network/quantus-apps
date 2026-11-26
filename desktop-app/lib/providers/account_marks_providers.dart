@@ -10,6 +10,7 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
+import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/transaction_service.dart';
 import 'package:wallet_core/utils/multisig_local_signers.dart';
@@ -62,9 +63,10 @@ final stillScheduledTransfersProvider = FutureProvider<List<ReversibleTransferEv
 /// has pending, with what is still scheduled to or from it; the Encrypted
 /// account's, from what its last scan holds. A multisig's open proposals are
 /// read again each time the wallet syncs; one waits for this wallet's
-/// signature while it is active, not expired (at the latest block, when that
-/// is known) and one of its signers here has neither approved it nor an
-/// approval on its way.
+/// signature while it is not expired (at the latest block, when that is
+/// known) and either is active, with a signer here that has neither approved
+/// it nor an approval on its way, or is ready to execute, with a signer here
+/// and no execution of it on its way.
 final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
   final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
   final multisigs = ref.watch(multisigAccountsProvider).value ?? const <MultisigAccount>[];
@@ -76,6 +78,7 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
   final pending = ref.watch(pendingActivityProvider);
   final scheduled = ref.watch(stillScheduledTransfersProvider).value ?? const <ReversibleTransferEvent>[];
   final approvals = ref.watch(pendingMultisigApprovalsProvider);
+  final executions = ref.watch(pendingMultisigExecutionsProvider);
   final block = ref.watch(latestBlockProvider);
   final service = ref.read(transactionServiceProvider);
 
@@ -110,8 +113,15 @@ final accountMarksProvider = Provider<Map<String, AccountMark>>((ref) {
     final open = ref.watch(multisigOpenProposalsProvider(multisig)).value ?? const <MultisigProposal>[];
     final signerIds = localSignersForMultisig(multisig, accounts).map((signer) => signer.accountId);
     return open.where((proposal) {
-      if (proposal.status != MultisigProposalStatus.active) return false;
       if (block != null && proposal.expired(block)) return false;
+      if (proposal.isReadyToExecute) {
+        // Any signer here executes it, a Keystone one too.
+        return signerIds.isNotEmpty &&
+            !signerIds.any(
+              (id) => findPendingExecutionForProposal(executions, multisig.accountId, proposal.id, id) != null,
+            );
+      }
+      if (proposal.status != MultisigProposalStatus.active) return false;
       final approving = pendingApproverIdsForProposal(approvals, multisig.accountId, proposal.id, signerIds);
       return eligibleApproversForProposal(multisig, proposal, accounts, pendingApproverIds: approving).isNotEmpty;
     }).length;

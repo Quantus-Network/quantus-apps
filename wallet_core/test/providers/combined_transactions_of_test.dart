@@ -30,6 +30,15 @@ void main() {
     expiryBlock: 10,
     palletFee: BigInt.one,
   );
+  final approving = PendingMultisigApprovalEvent(
+    id: 'approving',
+    multisigAddress: 'qzTeam',
+    proposalId: 3,
+    approverId: 'qzA',
+    recipient: 'qzC',
+    amount: BigInt.one,
+    submittedAt: now,
+  );
   final executing = PendingMultisigExecutionEvent(
     tempId: 'executing',
     multisigAddress: 'qzTeam',
@@ -57,6 +66,7 @@ void main() {
     ],
     pendingMultisigCreations: [creating],
     pendingMultisigProposals: [proposing],
+    pendingMultisigApprovals: [approving],
     pendingMultisigExecutions: [executing],
     pendingMultisigCancellations: [cancelling],
     scheduledReversibleTransfers: const [],
@@ -73,15 +83,20 @@ void main() {
       );
 
   test("an account's: what it sends or receives, the multisigs it creates, the proposals it makes, "
-      'executes or cancels', () {
+      'approves, executes or cancels', () {
     final mine = of('qzA');
 
     expect(mine.pendingTransactions.map((tx) => tx.id), ['out', 'in']);
     expect(mine.pendingMultisigCreations, [creating]);
     expect(mine.pendingMultisigProposals, [proposing]);
+    expect(mine.pendingMultisigApprovals, [approving]);
     expect(mine.pendingMultisigExecutions, [executing]);
     expect(mine.pendingMultisigCancellations, [cancelling]);
     expect(mine.pendingCancellationIds, {'reversed'});
+  });
+
+  test("an approval is the approver's, not the multisig's", () {
+    expect(of('qzTeam').pendingMultisigApprovals, isEmpty);
   });
 
   test("another account's holds none of them", () {
@@ -90,6 +105,7 @@ void main() {
     expect(theirs.pendingTransactions, isEmpty);
     expect(theirs.pendingMultisigCreations, isEmpty);
     expect(theirs.pendingMultisigProposals, isEmpty);
+    expect(theirs.pendingMultisigApprovals, isEmpty);
     expect(theirs.pendingMultisigExecutions, isEmpty);
     expect(theirs.pendingMultisigCancellations, isEmpty);
   });
@@ -100,6 +116,7 @@ void main() {
     expect(received.pendingTransactions, isEmpty);
     expect(received.pendingMultisigCreations, isEmpty);
     expect(received.pendingMultisigProposals, isEmpty);
+    expect(received.pendingMultisigApprovals, isEmpty);
     expect(received.pendingMultisigExecutions, isEmpty);
     expect(received.pendingMultisigCancellations, isEmpty);
   });
