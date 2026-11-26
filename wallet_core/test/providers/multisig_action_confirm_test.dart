@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
 import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -120,6 +121,27 @@ class _Chain extends Fake implements MultisigService {
   @override
   Future<BigInt> estimateCancelFee({required MultisigAccount msig, required Account signer, required int proposalId}) =>
       _estimate('cancel', signer, null);
+
+  /// The calls built for a signer to sign, in order: the action, the
+  /// multisig, the proposal and the call it carries.
+  final built = <(String action, String msig, int proposalId, List<int>? call)>[];
+
+  Multisig _build(String action, MultisigAccount msig, int proposalId, List<int>? call) {
+    built.add((action, msig.accountId, proposalId, call));
+    return const multisig_pallet.Txs().cancel(multisigAddress: List<int>.filled(32, 0), proposalId: proposalId);
+  }
+
+  @override
+  Multisig buildApproveCall({required MultisigAccount msig, required int proposalId, required List<int> call}) =>
+      _build('approve', msig, proposalId, call);
+
+  @override
+  Multisig buildExecuteCall({required MultisigAccount msig, required int proposalId, required List<int> call}) =>
+      _build('execute', msig, proposalId, call);
+
+  @override
+  Multisig buildCancelCall({required MultisigAccount msig, required int proposalId}) =>
+      _build('cancel', msig, proposalId, null);
 }
 
 class _Unsigned extends Fake implements UnsignedTransactionData {}
@@ -680,6 +702,46 @@ void main() {
       expect(hash, '0xapprove signed');
       expect(submission.submitted, [('approve signed', _keystone.accountId, _fee, null)]);
     });
+
+    testWidgets('a Keystone signing session carries the labels and kinds of detail it is given', (tester) async {
+      final confirm = await open(tester, MultisigActionKind.cancel, signer: _keystone);
+      await tester.pump();
+      final outcome = (await confirm.controller.confirm()) as MultisigActionNeedsHardwareSignature;
+
+      final plain = outcome.session(primaryDetail: 'Send 1 QTC', secondaryDetail: 'qzPayee');
+      expect(
+        (plain.primaryLabel, plain.primaryIsAmount, plain.secondaryLabel, plain.secondaryIsAddress),
+        (null, false, null, false),
+      );
+
+      final told = outcome.session(
+        primaryLabel: 'ACTION',
+        primaryDetail: 'Cancel Proposal',
+        primaryIsAmount: true,
+        secondaryLabel: 'MULTISIG',
+        secondaryDetail: _msig.accountId,
+        secondaryIsAddress: true,
+      );
+      expect((told.primaryLabel, told.primaryDetail, told.primaryIsAmount), ('ACTION', 'Cancel Proposal', true));
+      expect((told.secondaryLabel, told.secondaryDetail, told.secondaryIsAddress), ('MULTISIG', _msig.accountId, true));
+    });
+
+    for (final kind in MultisigActionKind.values) {
+      testWidgets('a Keystone signing session for ${kind.name} builds its call with the wallet\'s multisig service', (
+        tester,
+      ) async {
+        final confirm = await open(tester, kind, signer: _keystone);
+        await tester.pump();
+        final outcome = (await confirm.controller.confirm()) as MultisigActionNeedsHardwareSignature;
+
+        outcome.session(primaryDetail: 'Send 1 QTC').buildCall();
+
+        expect(chain.built, hasLength(1));
+        final (action, msig, proposalId, call) = chain.built.single;
+        expect((action, msig, proposalId), (kind.name, _msig.accountId, _proposal.id));
+        expect(call, kind == MultisigActionKind.cancel ? isNull : _transferBytes);
+      });
+    }
   });
 
   group('a wallet reset', () {
