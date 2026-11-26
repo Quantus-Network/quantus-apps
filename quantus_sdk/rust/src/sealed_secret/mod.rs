@@ -2,11 +2,11 @@
 //! its owner under a [`SealPolicy`].
 //!
 //! The operating system enforces the policy, not this process: the iOS
-//! keychain holds the secret and prompts on every [`read`]. Nothing here keeps
-//! a released secret or an authentication, so every read is its own prompt.
-//! The secret never syncs and never leaves the device, and the operating
-//! system destroys it when what its policy rests on changes: the enrolled
-//! biometrics, or the screen lock itself.
+//! keychain or the Android Keystore holds the secret and prompts on every
+//! [`read`]. Nothing here keeps a released secret or an authentication, so
+//! every read is its own prompt. The secret never syncs and never leaves the
+//! device, and the operating system destroys it when what its policy rests on
+//! changes: the enrolled biometrics, or the screen lock itself.
 //!
 //! [`available`] is the scheme: a biometric where one is enrolled, the device
 //! passcode only where none is, and nothing without a screen lock.
@@ -16,10 +16,13 @@ use crate::sensitive::SensitiveVec;
 #[cfg(target_os = "ios")]
 #[path = "ios.rs"]
 mod backend;
-#[cfg(all(test, not(target_os = "ios")))]
+#[cfg(target_os = "android")]
+#[path = "android.rs"]
+mod backend;
+#[cfg(all(test, not(any(target_os = "ios", target_os = "android"))))]
 #[path = "memory.rs"]
 pub(crate) mod backend;
-#[cfg(not(any(test, target_os = "ios")))]
+#[cfg(not(any(test, target_os = "ios", target_os = "android")))]
 #[path = "unsupported.rs"]
 mod backend;
 
@@ -51,7 +54,10 @@ pub enum SealPolicy {
 
 /// A platform with no sealed store raises only `Missing` and `Platform`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(not(any(test, target_os = "ios")), allow(dead_code))]
+#[cfg_attr(
+    not(any(test, target_os = "ios", target_os = "android")),
+    allow(dead_code)
+)]
 pub(crate) enum Failure {
     /// The prompt was dismissed.
     Cancelled,

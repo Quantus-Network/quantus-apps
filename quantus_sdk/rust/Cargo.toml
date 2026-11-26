@@ -57,6 +57,11 @@ qp-wormhole-inputs = { version = "4.4.0", default-features = false, features = [
 qp-zk-circuits-common = { version = "4.4.0", default-features = false, features = ["std"] }
 qp-wormhole-circuit-builder = { version = "4.4.0" }
 
+# The Java VM interface, for the Keystore half of sealed_secret. Pinned to the
+# last release that is declarations only: 0.3.1 adds a proc-macro crate.
+[target.'cfg(target_os = "android")'.dependencies]
+jni-sys = "=0.3.0"
+
 [dev-dependencies]
 tempfile = "3"
 

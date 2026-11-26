@@ -13,7 +13,7 @@ String get lockRequiredMessage => _apple
     ? 'Turn on a passcode in Settings, and Face ID if this iPhone has it, then come back. The signing key is kept '
           'only behind one of them.'
     : 'Set a screen lock in Settings, and a fingerprint if this phone reads one, then come back. The signing key is '
-          'kept only behind one of them.';
+          'kept only behind one of them, and on Android 10 or older only behind the fingerprint.';
 
 String get notRecognisedMessage => _apple
     ? 'This iPhone did not recognise you. If Face ID is locked, lock the phone and unlock it with your passcode. If '

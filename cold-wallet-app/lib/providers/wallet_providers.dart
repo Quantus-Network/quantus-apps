@@ -333,9 +333,10 @@ class VaultWalletController extends WalletController {
   }
 }
 
-/// An iPhone seals the phrase; every other device keeps the vault.
+/// A phone seals the phrase; the host the tests run on, which has no sealed
+/// store, keeps the vault.
 final walletControllerProvider = NotifierProvider<WalletController, WalletState>(
-  () => Platform.isIOS ? SealedWalletController() : VaultWalletController(),
+  () => Platform.isIOS || Platform.isAndroid ? SealedWalletController() : VaultWalletController(),
 );
 
 /// Every account, in the order they were added to the wallet.
