@@ -407,6 +407,8 @@ void main() {
                 multisigAddress: _team.accountId,
                 proposalId: 1,
                 approverId: 'qzMain',
+                recipient: _bob,
+                amount: oneToken,
               ).copyWith(extrinsicHash: hash);
               container.read(pendingMultisigApprovalsProvider.notifier).add(pending);
               container.read(multisigApprovalPollingServiceProvider).startPolling(_team, pending);
