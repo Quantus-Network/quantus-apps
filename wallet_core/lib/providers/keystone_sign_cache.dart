@@ -9,8 +9,9 @@ import 'package:wallet_core/providers/wallet_providers.dart';
 /// Blocks of era lifetime that must still remain when a payload is served or
 /// kept on screen. After the QR is displayed the user still has to scan it
 /// with the device, verify, approve, and scan the signature back, so a payload
-/// anywhere near expiry must never enter that round trip.
-const int keystoneSignEraReserveBlocks = 10;
+/// anywhere near expiry must never enter that round trip. A quarter of
+/// [AppConstants.coldWalletTxMortalEraPeriodBlocks]: 16 blocks ≈ 3.2 minutes.
+const int keystoneSignEraReserveBlocks = 16;
 
 /// Blocks left before era expiry below which a signed payload is refused at
 /// submission: it would likely expire while propagating.
