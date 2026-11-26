@@ -722,12 +722,6 @@ abstract class AppLocalizations {
   /// **'{count} of {total}'**
   String multisigCreateThresholdValue(int count, int total);
 
-  /// What a Keystone creator is signing, shown on the Keystone sign and verify screens
-  ///
-  /// In en, this message translates to:
-  /// **'Create {count} of {total} multisig'**
-  String multisigCreateKeystoneAction(int count, int total);
-
   /// Label for predicted multisig address preview
   ///
   /// In en, this message translates to:

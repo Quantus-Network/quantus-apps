@@ -16,9 +16,7 @@ import 'package:wallet_core/utils/multisig_form.dart';
 import 'package:resonance_network_wallet/services/local_auth_service.dart';
 import 'package:wallet_core/services/multisig_submission_service.dart';
 import 'package:resonance_network_wallet/v2/screens/accounts/accounts_navigation.dart';
-import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
-import 'package:wallet_core/send/keystone_signing_session.dart';
 
 class AddMultisigScreen extends ConsumerStatefulWidget {
   const AddMultisigScreen({super.key});
@@ -254,27 +252,10 @@ class _AddMultisigScreenState extends ConsumerState<AddMultisigScreen> {
   /// Keystone creators sign off-device: the shared QR flow signs and submits
   /// the creation, then we return to Accounts exactly like the local path.
   Future<void> _createWithHardware(Account creator, MultisigCreationPreflight preflight) async {
-    final l10n = ref.read(l10nProvider);
     final draft = preflight.draft;
-
-    final session = KeystoneSigningSession(
-      account: creator,
-      buildCall: () => ref.read(multisigSubmissionServiceProvider).buildCreateCall(draft),
-      primaryLabel: l10n.keystoneSignActionLabel,
-      primaryDetail: l10n.multisigCreateKeystoneAction(draft.threshold, draft.signers.length),
-      secondaryLabel: l10n.multisigCreatePredictedAddressLabel,
-      secondaryDetail: draft.accountId,
-      secondaryIsAddress: true,
-      cacheKey: KeystoneSignCacheKey.forExtrinsic(accountId: creator.accountId, identity: 'create|${draft.accountId}'),
-      telemetryPrefix: 'multisig_create_hardware',
-      submitSigned: (ref, {required unsignedData, required signatureWithPublicKey}) => ref
-          .read(multisigSubmissionServiceProvider)
-          .submitExternallySignedMultisigCreation(
-            preflight: preflight,
-            unsignedData: unsignedData,
-            signatureWithPublicKey: signatureWithPublicKey,
-          ),
-    );
+    final session = ref
+        .read(multisigSubmissionServiceProvider)
+        .creationSigningSession(preflight: preflight, creator: creator);
 
     setState(() => _isLoading = false);
     final hash = await Navigator.of(

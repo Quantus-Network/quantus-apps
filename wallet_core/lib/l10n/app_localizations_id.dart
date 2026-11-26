@@ -353,11 +353,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String multisigCreateKeystoneAction(int count, int total) {
-    return 'Buat multisig $count dari $total';
-  }
-
-  @override
   String get multisigCreatePredictedAddressLabel => 'ALAMAT MULTISIG';
 
   @override

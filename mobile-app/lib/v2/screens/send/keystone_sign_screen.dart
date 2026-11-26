@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart' hide ScaffoldBase;
@@ -54,7 +55,7 @@ class _KeystoneSignScreenState extends ConsumerState<KeystoneSignScreen> {
     final unsignedData = _unsignedData;
     final storedAt = _payloadStoredAt;
     if (unsignedData == null || storedAt == null) return false;
-    return DateTime.now().difference(storedAt) >= keystoneSignCacheMaxAge(unsignedData.payloadToSign);
+    return isKeystonePayloadStale(unsignedData.payloadToSign, storedAt: storedAt, now: clock.now());
   }
 
   void _refreshIfStale() {

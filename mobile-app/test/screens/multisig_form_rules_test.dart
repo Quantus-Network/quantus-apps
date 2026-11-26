@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_auth_platform_interface/local_auth_platform_interface.dart';
 import 'package:quantus_sdk/generated/bell/pallets/multisig.dart' as multisig_pallet;
@@ -11,13 +12,18 @@ import 'package:resonance_network_wallet/v2/components/multisig_signer_list_tile
 import 'package:resonance_network_wallet/v2/components/multisig_threshold_slider.dart';
 import 'package:resonance_network_wallet/v2/components/name_field.dart';
 import 'package:resonance_network_wallet/v2/screens/multisig/add_multisig_screen.dart';
+import 'package:resonance_network_wallet/v2/screens/send/keystone_sign_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
+import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
+import 'package:wallet_core/services/multisig_creation_polling_service.dart';
+import 'package:wallet_core/services/wallet_session.dart';
 
 import '../extensions.dart';
 import '../fakes.dart';
@@ -33,6 +39,36 @@ class _Substrate extends FakeSubstrateService {
 
   @override
   Future<BigInt> queryBalance(String address) async => balance;
+
+  /// The transactions handed to a cold wallet to sign.
+  final unsigned = <UnsignedTransactionData>[];
+
+  @override
+  Future<UnsignedTransactionData> getUnsignedTransactionPayload(Account account, RuntimeCall call) async {
+    final data = makeUnsignedTransactionData();
+    unsigned.add(data);
+    return data;
+  }
+
+  /// What came back signed from a cold wallet and was broadcast.
+  final externallySigned = <(UnsignedTransactionData, Uint8List)>[];
+
+  @override
+  Future<Uint8List> submitExtrinsicWithExternalSignature(
+    UnsignedTransactionData unsignedData,
+    Uint8List signatureWithPublicKey,
+  ) async {
+    externallySigned.add((unsignedData, signatureWithPublicKey));
+    return Uint8List.fromList([0xab, 0xcd]);
+  }
+}
+
+/// Follows nothing: records which creations it was asked to follow.
+class _Polling extends Fake implements MultisigCreationPollingService {
+  final followed = <String>[];
+
+  @override
+  void startPolling(MultisigAccount draft, {DateTime? submittedAt}) => followed.add(draft.accountId);
 }
 
 /// A device with a lock screen that approves every request. The real
@@ -169,7 +205,7 @@ void main() {
     await settings.setActiveAccount(active ?? RegularAccount(second));
   }
 
-  Future<void> openForm(WidgetTester tester, {MultisigAccount? creating}) async {
+  Future<void> openForm(WidgetTester tester, {MultisigAccount? creating, List<Override> extra = const []}) async {
     tester.view.physicalSize = const Size(750, 2400);
     tester.view.devicePixelRatio = 2;
     addTearDown(tester.view.reset);
@@ -194,6 +230,7 @@ void main() {
       overrides: [
         substrateServiceProvider.overrideWithValue(substrate),
         multisigServiceProvider.overrideWithValue(service),
+        ...extra,
       ],
     );
     await tester.pumpAndSettle();
@@ -518,6 +555,124 @@ void main() {
       expect(toasts, [l10n.multisigCreateInsufficientBalance]);
       expect(service.submitted, isEmpty);
       ToastController.instance.dismiss();
+    });
+  });
+
+  group('pressing Create with a cold wallet creator', () {
+    final cold = makeAccount(3, accountType: AccountType.keystone);
+    final cost = MultisigCreationEvent.palletConstants.multisigFee + BigInt.one;
+    final address = _FakeMultisigService.addressFor(2, 0);
+    late _ApprovingLocalAuth approval;
+    late LocalAuthPlatform realLocalAuth;
+    late _Polling polling;
+
+    setUp(() {
+      realLocalAuth = LocalAuthPlatform.instance;
+      LocalAuthPlatform.instance = approval = _ApprovingLocalAuth();
+      polling = _Polling();
+      recordTelemetry();
+    });
+
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+        const MethodChannel('telemetrydecksdk'),
+        null,
+      );
+      LocalAuthPlatform.instance = realLocalAuth;
+    });
+
+    /// Opens the form on the cold wallet's account, adds [signerA] and presses
+    /// Create: the cold wallet signing opens. Answers that signing.
+    Future<KeystoneSigningSession> pressCreate(WidgetTester tester) async {
+      substrate.balance = cost;
+      final settings = SettingsService();
+      await settings.saveAccounts([first, second, cold]);
+      await settings.setActiveAccount(RegularAccount(cold));
+      await openForm(
+        tester,
+        extra: [
+          keystoneSignRequestFramesProvider.overrideWithValue((account, unsigned) => ['UR:QUANTUS-SIGN-REQUEST/1']),
+          multisigCreationPollingServiceProvider.overrideWithValue(polling),
+        ],
+      );
+      await addSigner(tester, signerA);
+      final create = find.widgetWithText(QuantusButton, l10n.multisigCreateButton);
+      await tester.ensureVisible(create);
+      await tester.pumpAndSettle();
+      await tester.tap(create);
+      await tester.pumpAndSettle();
+      return tester.widget<KeystoneSignScreen>(find.byType(KeystoneSignScreen)).session;
+    }
+
+    WidgetRef refOf(WidgetTester tester) =>
+        tester.state<ConsumerState<KeystoneSignScreen>>(find.byType(KeystoneSignScreen)).ref;
+
+    testWidgets('opens the cold wallet signing for the creation, its action and new address, with no approval', (
+      tester,
+    ) async {
+      final session = await pressCreate(tester);
+
+      expect(session.account.accountId, cold.accountId);
+      expect(
+        (session.primaryLabel, session.primaryDetail, session.secondaryLabel, session.secondaryDetail),
+        (
+          l10n.keystoneSignActionLabel,
+          l10n.keystoneSignCreateMultisig,
+          l10n.multisigCreatePredictedAddressLabel,
+          address,
+        ),
+      );
+      expect(session.secondaryIsAddress, isTrue);
+      expect(
+        session.cacheKey,
+        KeystoneSignCacheKey.forExtrinsic(accountId: cold.accountId, identity: 'create|$address'),
+      );
+      expect(session.telemetryPrefix, 'multisig_create_hardware');
+      expect(approval.asked, isEmpty);
+      expect(service.submitted, isEmpty);
+      expect(substrate.unsigned, hasLength(1));
+    });
+
+    testWidgets('its signature is handed over once as the creation, which is then being created', (tester) async {
+      final session = await pressCreate(tester);
+      final signed = substrate.unsigned.single;
+      final signature = Uint8List.fromList([1, 2, 3]);
+
+      final hash = await session.submitSigned(refOf(tester), unsignedData: signed, signatureWithPublicKey: signature);
+      await tester.pump();
+
+      expect(hash, '0xabcd');
+      expect(substrate.externallySigned.single.$1, same(signed));
+      expect(substrate.externallySigned.single.$2, same(signature));
+      final creating = ProviderScope.containerOf(
+        tester.element(find.byType(KeystoneSignScreen)),
+      ).read(pendingMultisigCreationsProvider);
+      expect(creating.map((event) => event.multisigAddress), [address]);
+      expect(polling.followed, [address]);
+    });
+
+    testWidgets('a signature back after a wallet reset is refused: nothing is broadcast or being created', (
+      tester,
+    ) async {
+      final session = await pressCreate(tester);
+      final ref = refOf(tester);
+      ref.read(walletSessionProvider)
+        ..beginReset()
+        ..finishReset();
+
+      await expectLater(
+        session.submitSigned(ref, unsignedData: substrate.unsigned.single, signatureWithPublicKey: Uint8List(3)),
+        throwsStateError,
+      );
+      await tester.pump();
+
+      expect(substrate.externallySigned, isEmpty);
+      expect(
+        ProviderScope.containerOf(
+          tester.element(find.byType(KeystoneSignScreen)),
+        ).read(pendingMultisigCreationsProvider),
+        isEmpty,
+      );
     });
   });
 }

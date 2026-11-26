@@ -351,11 +351,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String multisigCreateKeystoneAction(int count, int total) {
-    return 'Create $count of $total multisig';
-  }
-
-  @override
   String get multisigCreatePredictedAddressLabel => 'MULTISIG ADDRESS';
 
   @override

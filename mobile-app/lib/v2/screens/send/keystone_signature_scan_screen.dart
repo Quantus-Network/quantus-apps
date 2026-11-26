@@ -33,23 +33,14 @@ class KeystoneSignatureScanScreen extends ConsumerStatefulWidget {
 class _KeystoneSignatureScanScreenState extends ConsumerState<KeystoneSignatureScanScreen> {
   String? _error;
 
-  /// Refuses submission when the mortal era window is (nearly) over — the
-  /// chain would reject the extrinsic, or worse, accept it right at the edge.
-  Future<void> _ensureEraNotExpired() async {
-    final payload = widget.unsignedData.payloadToSign;
-    if (payload.eraPeriod == 0) return;
-    final currentBlock = await SubstrateService().getCurrentBlockNumber();
-    final expiryBlock = payload.blockNumber + payload.eraPeriod;
-    if (currentBlock >= expiryBlock - keystoneSignSubmitEraMarginBlocks) {
-      throw KeystoneEraExpiredException(currentBlock: currentBlock, expiryBlock: expiryBlock);
-    }
-  }
-
   Future<void> _submit(Uint8List bytes) async {
     // Validates the length and identifies the signature scheme; the SDK reads it back off the blob.
     DilithiumSchemeExtension.forSignatureWithPublicKeyLength(bytes.length);
 
-    await _ensureEraNotExpired();
+    await ensureKeystoneEraNotExpired(
+      widget.unsignedData.payloadToSign,
+      currentBlock: SubstrateService().getCurrentBlockNumber,
+    );
 
     final hash = await widget.session.submitSigned(
       ref,
