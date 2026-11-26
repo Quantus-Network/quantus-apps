@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:clock/clock.dart';
+import 'package:desktop_qr_camera/desktop_qr_camera.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
@@ -15,6 +16,7 @@ import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/mac_push.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
+import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
@@ -680,6 +682,22 @@ class FakeSendChain {
   /// When set, handing a signed transfer over waits for it.
   Completer<void>? holdSignedSubmit;
 
+  /// Every proposal a cold wallet signed that was handed over: the multisig,
+  /// its member who signed, who is paid, how much, its expiry block, the
+  /// transaction signed and the signature.
+  final signedProposals =
+      <
+        ({
+          String multisig,
+          String signer,
+          String recipient,
+          BigInt amount,
+          int expiryBlock,
+          UnsignedTransactionData unsigned,
+          Uint8List signature,
+        })
+      >[];
+
   /// Collects the frames of [fakeSignatureFrames] without Rust.
   UrScanAccumulator signatureCollector() => UrScanAccumulator(
     isAcceptable: (part) => part.startsWith('ur:quantus-signature/'),
@@ -963,6 +981,23 @@ class _FakeMultisigService extends Fake implements MultisigService {
   Future<bool> isMultisigIndexed(String address) async => chain.indexedMultisigs.contains(address);
 
   @override
+  RuntimeCall buildProposeTransferCall({
+    required MultisigAccount msig,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+  }) {
+    // Any call stands for it: the chain only tells calls apart by what it
+    // was told of each.
+    final call = const balances_pallet.Txs().transferAllowDeath(
+      dest: const multi_address.$MultiAddress().id(List<int>.filled(32, 0)),
+      value: amount,
+    );
+    chain._calls[call] = (recipient: recipient, amount: amount);
+    return call;
+  }
+
+  @override
   Multisig buildCreateMultisigCall({required List<String> signers, required int threshold, required BigInt nonce}) {
     final call = const multisig_pallet.Txs().createMultisig(signers: const [], threshold: threshold, nonce: nonce);
     chain._calls[call] = (recipient: 'a new multisig', amount: null);
@@ -1192,6 +1227,30 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
       recipient: targetAddress,
       amount: amount,
       fee: fee,
+      unsigned: unsignedData,
+      signature: signatureWithPublicKey,
+    ));
+    return hash;
+  }
+
+  @override
+  Future<String> proposeTransferWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required String recipient,
+    required BigInt amount,
+    required int expiryBlock,
+    required ProposeFeeBreakdown feeBreakdown,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+  }) async {
+    final hash = await chain.submit();
+    chain.signedProposals.add((
+      multisig: msig.accountId,
+      signer: signer.accountId,
+      recipient: recipient,
+      amount: amount,
+      expiryBlock: expiryBlock,
       unsigned: unsignedData,
       signature: signatureWithPublicKey,
     ));
@@ -2189,6 +2248,50 @@ EncryptedAccountState emptyEncryptedState(int walletIndex) => EncryptedAccountSt
   nextIndex: 0,
   nextChangeIndex: 0,
 );
+
+/// A camera that reads what the test shows it.
+class FakeScanSource implements QrScanSource {
+  final _reads = StreamController<String>.broadcast(sync: true);
+
+  /// What the next start fails with.
+  Object? startError;
+  bool isOn = false;
+  bool isDisposed = false;
+  int starts = 0;
+
+  @override
+  Stream<String> get reads => _reads.stream;
+
+  @override
+  Future<void> start() async {
+    starts++;
+    if (startError case final error?) {
+      startError = null;
+      throw error;
+    }
+    isOn = true;
+  }
+
+  @override
+  Future<void> stop() async => isOn = false;
+
+  @override
+  Widget buildPreview() => const SizedBox.expand(key: Key('camera-preview'));
+
+  @override
+  Future<void> dispose() async {
+    isOn = false;
+    isDisposed = true;
+  }
+
+  void read(String code) => _reads.add(code);
+
+  /// The camera fails while it runs.
+  void fail(QrCameraFailure failure) {
+    isOn = false;
+    _reads.addError(QrCameraException(failure));
+  }
+}
 
 /// The bytes of a real runtime call from quantus_sdk's sample calls, by its
 /// name there (e.g. `ReversibleTransfers.set_high_security`), as a

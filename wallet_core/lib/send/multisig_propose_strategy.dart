@@ -272,7 +272,9 @@ class MultisigProposeStrategy extends SendStrategy {
             return hash;
           },
         ),
-        terminalForHash: (_) => terminal,
+        terminalForHash: (hash) => terminal.copyWith(explorerUrl: multisigProposalExplorerUrl(hash)),
+        // Broadcast is not created, as for a member who signs here.
+        confirmationForHash: multisigProposalConfirmationProvider.call,
       );
     }
 

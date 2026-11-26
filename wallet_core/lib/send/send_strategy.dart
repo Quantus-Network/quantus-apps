@@ -198,7 +198,12 @@ class SendNeedsHardwareSignature extends SendOutcome {
   final KeystoneSigningSession session;
   final SendTerminalContent Function(String extrinsicHash) terminalForHash;
 
-  const SendNeedsHardwareSignature({required this.session, required this.terminalForHash});
+  /// What becomes of the transaction of that hash, where what its terminal
+  /// says holds only once the chain has carried it out, as
+  /// [SendSubmitted.confirmation]; null where it holds from the broadcast on.
+  final ProviderListenable<SendConfirmation> Function(String extrinsicHash)? confirmationForHash;
+
+  const SendNeedsHardwareSignature({required this.session, required this.terminalForHash, this.confirmationForHash});
 }
 
 /// Encrypted send authenticated and planned: hand off to the proving progress

@@ -26,50 +26,6 @@ import 'package:wallet_core/services/user_approval.dart';
 
 import '../../fakes.dart';
 
-/// A camera that reads what the test shows it.
-class _FakeScanSource implements QrScanSource {
-  final _reads = StreamController<String>.broadcast(sync: true);
-
-  /// What the next start fails with.
-  Object? startError;
-  bool isOn = false;
-  bool isDisposed = false;
-  int starts = 0;
-
-  @override
-  Stream<String> get reads => _reads.stream;
-
-  @override
-  Future<void> start() async {
-    starts++;
-    if (startError case final error?) {
-      startError = null;
-      throw error;
-    }
-    isOn = true;
-  }
-
-  @override
-  Future<void> stop() async => isOn = false;
-
-  @override
-  Widget buildPreview() => const SizedBox.expand(key: Key('camera-preview'));
-
-  @override
-  Future<void> dispose() async {
-    isOn = false;
-    isDisposed = true;
-  }
-
-  void read(String code) => _reads.add(code);
-
-  /// The camera fails while it runs.
-  void fail(QrCameraFailure failure) {
-    isOn = false;
-    _reads.addError(QrCameraException(failure));
-  }
-}
-
 /// [tokens] in the chain's smallest unit.
 BigInt _qtc(num tokens) => BigInt.from((tokens * 10000).round()) * oneToken ~/ BigInt.from(10000);
 
@@ -102,7 +58,7 @@ class _Harness {
 
   final FakeSendChain chain;
   final FakeUserApproval approval;
-  final _FakeScanSource camera;
+  final FakeScanSource camera;
   final List<Uri> opened;
 
   ProviderContainer container(WidgetTester tester) =>
@@ -113,7 +69,7 @@ class _Harness {
 Future<_Harness> _openSend(WidgetTester tester, {FakeUserApproval? approval}) async {
   final chain = FakeSendChain();
   approval ??= FakeUserApproval();
-  final camera = _FakeScanSource();
+  final camera = FakeScanSource();
   final opened = <Uri>[];
   await pumpShell(
     tester,
@@ -163,7 +119,7 @@ Future<void> _toScan(WidgetTester tester) async {
 }
 
 /// The camera reads every frame of a signature of [total] frames.
-Future<void> _readSignature(WidgetTester tester, _FakeScanSource camera, {int total = 3}) async {
+Future<void> _readSignature(WidgetTester tester, FakeScanSource camera, {int total = 3}) async {
   for (final frame in fakeSignatureFrames(total)) {
     camera.read(frame);
     await tester.pump();
@@ -173,25 +129,12 @@ Future<void> _readSignature(WidgetTester tester, _FakeScanSource camera, {int to
 
 void main() {
   group('opening Send on a cold wallet', () {
-    test(
-      'a transparent account whose key is on a cold wallet sends; a multisig it is the member of proposes nothing',
-      () {
-        expect(
-          sendStrategyFor(const RegularAccount(vaultAccount), accounts: const [mainAccount, vaultAccount]),
-          isA<RegularSendStrategy>(),
-        );
-
-        final multisig = MultisigAccount(
-          name: 'Cold Team',
-          accountId: 'qzColdTeam',
-          signers: const ['qzVault', 'qzOther'],
-          threshold: 2,
-          nonce: BigInt.zero,
-          myMemberAccountId: 'qzVault',
-        );
-        expect(sendStrategyFor(MultisigDisplayAccount(multisig), accounts: const [mainAccount, vaultAccount]), isNull);
-      },
-    );
+    test('a transparent account whose key is on a cold wallet sends', () {
+      expect(
+        sendStrategyFor(const RegularAccount(vaultAccount), accounts: const [mainAccount, vaultAccount]),
+        isA<RegularSendStrategy>(),
+      );
+    });
 
     testOnMac('Review is available where this Mac cannot approve, and the form says nothing of approval', (
       tester,
