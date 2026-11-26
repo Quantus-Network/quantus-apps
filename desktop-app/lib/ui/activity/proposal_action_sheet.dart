@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/chain_status_providers.dart';
 import 'package:quantus_desktop_wallet/providers/proposal_action_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
@@ -13,10 +14,12 @@ import 'package:quantus_desktop_wallet/ui/activity/proposal_detail.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
+import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/summary_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -31,6 +34,8 @@ import 'package:wallet_core/providers/pending_multisig_approvals_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_cancellations_provider.dart';
 import 'package:wallet_core/providers/pending_multisig_executions_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
+import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/send/send_review_row.dart';
 import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/explorer_url.dart';
@@ -38,10 +43,11 @@ import 'package:wallet_core/utils/multisig_proposal_actions.dart';
 
 /// Approves, executes or cancels a multisig proposal, as Propose sends one:
 /// a review of what it does and costs, the computer's approval when it is
-/// confirmed, then a receipt that follows what became of it.
+/// confirmed, or for a cold wallet account its signing there, then a receipt
+/// that follows what became of it.
 ///
-/// Only an account whose key this app holds signs. Where several could
-/// approve, the review offers the choice.
+/// Where several accounts here could sign it, the review offers the choice.
+/// The header names the multisig, so no line of its own does.
 class ProposalActionSheet extends ConsumerStatefulWidget {
   const ProposalActionSheet({super.key});
 
@@ -50,8 +56,8 @@ class ProposalActionSheet extends ConsumerStatefulWidget {
   static const doneKey = Key('proposalActionDone');
   static const explorerKey = Key('proposalActionExplorer');
 
-  /// The choice of [accountId] as the account that signs.
-  static Key signerKey(String accountId) => ValueKey('proposalActionSigner-$accountId');
+  /// The choice of the account that signs, where more than one could.
+  static const signerKey = Key('proposalActionSigner');
 
   @override
   ConsumerState<ProposalActionSheet> createState() => _ProposalActionSheetState();
@@ -69,7 +75,13 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
   /// the member first; for a cancellation, its proposer.
   late final List<Account> _signers = _signersAtOpen();
 
-  late Account _signer = _signers.first;
+  /// The account chosen to sign, once it is chosen in the review or the
+  /// action is confirmed.
+  Account? _chosen;
+
+  /// Who signs: the one chosen, or until then the first that can, a cold
+  /// wallet account where the computer cannot ask for approval.
+  Account get _signer => _chosen ?? _firstSigner();
 
   /// The fee the signer chosen before would have paid: shown until the one
   /// chosen now is priced, so that the review stands still.
@@ -77,6 +89,13 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
 
   /// The hash of the transaction it went out in, once it has.
   String? _hash;
+
+  /// The cold wallet's signing, while it is the step on screen.
+  KeystoneSigningSession? _signing;
+
+  /// Where the cold wallet's signature is being handed over, which counts
+  /// as work under way. Set and cleared where that happens, not in a build.
+  WorkHoldsNotifier? _workHold;
 
   MultisigActionKind get _kind => _target.kind;
   MultisigProposal get _proposal => _target.proposal;
@@ -97,18 +116,33 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
     );
     final signers = switch (actions) {
       ProposalOpen(:final canceller) when _kind == MultisigActionKind.cancel => [?canceller],
-      ProposalOpen(:final executors) when _kind == MultisigActionKind.execute =>
-        executors.where((a) => !a.signsWithHardware).toList(),
-      ProposalOpen(:final eligibleApprovers) => eligibleApprovers.where((a) => !a.signsWithHardware).toList(),
+      ProposalOpen(:final executors) when _kind == MultisigActionKind.execute => executors,
+      ProposalOpen(:final eligibleApprovers) => eligibleApprovers,
       ProposalOver() => const <Account>[],
     };
-    if (signers.isEmpty || signers.any((a) => a.signsWithHardware)) {
-      throw StateError('The ${_kind.name} sheet opened with no account whose key is here to sign it.');
-    }
+    if (signers.isEmpty) throw StateError('The ${_kind.name} sheet opened with no account here to sign it.');
     return signers;
   }
 
+  Account _firstSigner() {
+    final availability = ref.read(approvalAvailabilityProvider).value;
+    final canApprove = availability == null || availability == ApprovalAvailability.available;
+    if (canApprove) return _signers.first;
+    return _signers.firstWhere((a) => a.signsWithHardware, orElse: () => _signers.first);
+  }
+
+  @override
+  void dispose() {
+    // After this frame: no provider may change while the tree is being torn
+    // down.
+    final hold = _workHold;
+    if (hold != null) scheduleMicrotask(() => hold.release(this));
+    super.dispose();
+  }
+
   Future<void> _confirm() async {
+    // Whoever signs it now signs it to the end.
+    _chosen ??= _signer;
     final outcome = await ref.read(multisigActionConfirmProvider(_request).notifier).confirm();
     if (!mounted) return;
     switch (outcome) {
@@ -117,14 +151,69 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
       case MultisigActionFailed() || MultisigActionDropped():
         // What stopped it is the confirmation's to say, beside the buttons.
         return;
-      case MultisigActionNeedsHardwareSignature():
-        throw StateError('The desktop app cannot sign with a Keystone; only accounts whose key is here are offered.');
+      case final MultisigActionNeedsHardwareSignature needs:
+        setState(() => _signing = _coldWalletSigning(needs));
     }
   }
+
+  /// The signing on the cold wallet, with what its screen must show: the
+  /// amount and whom it pays, the call's name, or for a cancellation the
+  /// multisig, as the cold wallet shows them.
+  KeystoneSigningSession _coldWalletSigning(MultisigActionNeedsHardwareSignature needs) {
+    final l10n = ref.read(l10nProvider);
+    if (_kind == MultisigActionKind.cancel) {
+      return needs.session(
+        primaryLabel: l10n.keystoneSignActionLabel,
+        primaryDetail: l10n.multisigCancelProposalButton,
+        secondaryLabel: l10n.activityTxMultisigLabel,
+        secondaryDetail: _target.msig.accountId,
+        secondaryIsAddress: true,
+      );
+    }
+    final call =
+        ref.read(multisigActionConfirmProvider(_request)).decodedCall ??
+        (throw StateError('A ${_kind.name} was confirmed before its call was read.'));
+    final headline = DecodedCallHeadline.of(call, amountText: _amountNow);
+    return switch (call.summary) {
+      null => needs.session(primaryLabel: l10n.keystoneSignActionLabel, primaryDetail: headline.primary),
+      final summary => needs.session(
+        primaryDetail: headline.primary,
+        primaryIsAmount: summary.assetId == null,
+        secondaryDetail: summary.recipient,
+        secondaryIsAddress: true,
+      ),
+    };
+  }
+
+  /// [value] in tokens, as said where no build watches it.
+  String _amountNow(BigInt value) {
+    final formatting = ref.read(numberFormattingServiceProvider);
+    return ref.read(l10nProvider).commonAmountBalance(formatting.formatBalance(value), AppConstants.tokenSymbol);
+  }
+
+  void _backFromSigning() => setState(() => _signing = null);
+
+  void _onColdWalletSubmitting(bool isSubmitting) {
+    if (isSubmitting) {
+      final holds = ref.read(workHoldsProvider.notifier);
+      holds.hold(this);
+      _workHold = holds;
+    } else {
+      _workHold?.release(this);
+      _workHold = null;
+    }
+  }
+
+  void _onColdWalletSigned(String hash) => setState(() {
+    _signing = null;
+    _hash = hash;
+  });
 
   @override
   Widget build(BuildContext context) {
     final l10n = ref.watch(l10nProvider);
+    // Who signs first follows whether the computer can ask for approval.
+    ref.watch(approvalAvailabilityProvider);
     final confirm = ref.watch(multisigActionConfirmProvider(_request));
     final title = switch (_kind) {
       MultisigActionKind.approve => l10n.multisigApproveButton,
@@ -132,6 +221,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
       MultisigActionKind.cancel => l10n.multisigCancelProposalButton,
     };
     final hash = _hash;
+    final signing = _signing;
 
     return PopScope(
       // Not while it is being sent; once it has gone out, the receipt closes
@@ -141,9 +231,21 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ShellSheetHeader(title: title, account: _account),
-          const SizedBox(height: 26),
-          ...(hash == null ? _review(l10n, confirm) : _receipt(l10n, confirm, hash)),
+          // The signing has its own headers: it has steps of its own.
+          if (signing != null)
+            KeystoneSigningView(
+              session: signing,
+              account: _signer,
+              parentTitle: title,
+              onLeave: _backFromSigning,
+              onSubmitting: _onColdWalletSubmitting,
+              onSigned: _onColdWalletSigned,
+            )
+          else ...[
+            ShellSheetHeader(title: title, account: _account),
+            const SizedBox(height: 26),
+            ...(hash == null ? _review(l10n, confirm) : _receipt(l10n, confirm, hash)),
+          ],
         ],
       ),
     );
@@ -232,49 +334,27 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
     );
   }
 
-  /// Who signs: the account, or the choice of them.
+  /// Who signs: the account, or the choice of them, fixed while it is sent.
   Widget _signsAs(AppLocalizations l10n, {required bool choosing}) {
-    if (_signers.length == 1 || !choosing) {
+    final label = inspectorLabel(context, choosing ? l10n.desktopProposalSignsAs : l10n.desktopProposalSignedAs);
+    final submitting = ref.watch(multisigActionConfirmProvider(_request)).submitting;
+    if (_signers.length == 1 || !choosing || submitting) {
       return SummaryRow(
-        label: inspectorLabel(context, choosing ? l10n.desktopProposalSignsAs : l10n.desktopProposalSignedAs),
+        label: label,
         value: AccountLabel(account: _signer, revealsAddress: true),
       );
     }
-    final colors = context.colorsV3;
-    return Padding(
-      padding: SummaryRow.padding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          inspectorLabel(context, l10n.desktopProposalSignsAs),
-          const SizedBox(height: 8),
-          for (final signer in _signers)
-            InkWell(
-              key: ProposalActionSheet.signerKey(signer.accountId),
-              onTap: ref.watch(multisigActionConfirmProvider(_request)).submitting
-                  ? null
-                  : () => setState(() {
-                      _feeBefore = ref.read(multisigActionConfirmProvider(_request)).fee ?? _feeBefore;
-                      _signer = signer;
-                    }),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(
-                  children: [
-                    Icon(
-                      signer.accountId == _signer.accountId
-                          ? CupertinoIcons.largecircle_fill_circle
-                          : CupertinoIcons.circle,
-                      size: 15,
-                      color: signer.accountId == _signer.accountId ? colors.accentFlare : colors.textMuted2,
-                    ),
-                    const SizedBox(width: 10),
-                    Flexible(child: AccountLabel(account: signer)),
-                  ],
-                ),
-              ),
-            ),
-        ],
+    return SummaryRow(
+      label: label,
+      value: PopUpButton<String>(
+        key: ProposalActionSheet.signerKey,
+        semanticLabel: l10n.desktopProposalSignsAs,
+        items: [for (final signer in _signers) PopUpItem(signer.accountId, signer.name)],
+        value: _signer.accountId,
+        onSelected: (accountId) => setState(() {
+          _feeBefore = ref.read(multisigActionConfirmProvider(_request)).fee ?? _feeBefore;
+          _chosen = _signers.singleWhere((signer) => signer.accountId == accountId);
+        }),
       ),
     );
   }
@@ -298,11 +378,14 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
     final call = _call(confirm);
     final isCancel = _kind == MultisigActionKind.cancel;
     final fee = confirm.fee ?? (confirm.loadingFee ? _feeBefore : null);
-    final approvalNote = switch (ref.watch(approvalAvailabilityProvider)) {
-      AsyncData(:final value) => approvalUnavailableNote(l10n, value),
-      AsyncError(:final error) => l10n.desktopApprovalFailed('$error'),
-      _ => null,
-    };
+    // A cold wallet account's signing is approved on its cold wallet.
+    final approvalNote = _signer.signsWithHardware
+        ? null
+        : switch (ref.watch(approvalAvailabilityProvider)) {
+            AsyncData(:final value) => approvalUnavailableNote(l10n, value),
+            AsyncError(:final error) => l10n.desktopApprovalFailed('$error'),
+            _ => null,
+          };
     final error = switch (confirm.error) {
       null when confirm.cannotPayFee => l10n.multisigProposeFeePayerInsufficient,
       null => null,
@@ -344,10 +427,6 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
                   padding: SummaryRow.padding,
                   child: Text(l10n.multisigCancelConfirmBody, style: context.sendBody(color: colors.textContent)),
                 ),
-              SummaryRow(
-                label: inspectorLabel(context, l10n.activityTxMultisigLabel),
-                value: AccountLabel(account: _target.msig, revealsAddress: true),
-              ),
               _signsAs(l10n, choosing: true),
               switch (_kind) {
                 MultisigActionKind.approve => _approvals(
@@ -531,10 +610,6 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
               ],
               const MenuDivider(),
               const SizedBox(height: 4),
-              SummaryRow(
-                label: inspectorLabel(context, l10n.activityTxMultisigLabel),
-                value: AccountLabel(account: _target.msig, revealsAddress: true),
-              ),
               _signsAs(l10n, choosing: false),
               if (_kind == MultisigActionKind.approve) _approvals(count: settled ? after : _proposal.approvalCount),
               if (fee != null) FigureRow(label: l10n.swapReviewNetworkFee, value: _money(fee)),

@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/ui/activity/proposal_action_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/activity/proposal_detail.dart';
+import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -127,6 +128,19 @@ bool _offered(WidgetTester tester, Key key) {
   return !button.isDisabled;
 }
 
+/// The pop-up of who signs.
+PopUpButton<String> _signers(WidgetTester tester) =>
+    tester.widget<PopUpButton<String>>(_inSheet(find.byKey(ProposalActionSheet.signerKey)));
+
+/// Chooses [name] in the pop-up of who signs; unless [settle], what moves
+/// after it is left moving.
+Future<void> _choose(WidgetTester tester, String name, {bool settle = true}) async {
+  await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey)));
+  await tester.pumpAndSettle();
+  await tester.tap(find.descendant(of: find.byKey(PopUpButton.menuKey), matching: find.text(name)));
+  if (settle) await tester.pumpAndSettle();
+}
+
 Future<void> _confirm(WidgetTester tester) async {
   await tester.tap(_inSheet(find.byKey(ProposalActionSheet.confirmKey)));
   await tester.pumpAndSettle();
@@ -140,16 +154,16 @@ Future<void> _settle(WidgetTester tester, String hash, MultisigActionConfirmatio
 
 void main() {
   group('the review', () {
-    testOnMac('approve: what it approves, to whom, the multisig, who signs, how far it gets, and who pays the fee', (
-      tester,
-    ) async {
+    testOnMac('approve: what it approves, to whom, who signs, how far it gets, and who pays the fee', (tester) async {
       await _open(tester, MultisigActionKind.approve, _proposal());
 
       expect(_inSheet(find.text(_l10n.desktopProposalApproving.toUpperCase())), findsOne);
       expect(_inSheet(find.text(_sent.recipient!)), findsOne);
-      for (final label in [_l10n.activityTxMultisigLabel, _l10n.desktopProposalSignsAs, _l10n.swapReviewNetworkFee]) {
+      for (final label in [_l10n.desktopProposalSignsAs, _l10n.swapReviewNetworkFee]) {
         expect(_inSheet(find.text(label)), findsOne, reason: label);
       }
+      // The sheet's header names the multisig: no line repeats it.
+      expect(_inSheet(find.text(_l10n.activityTxMultisigLabel)), findsNothing);
       expect(_inSheet(find.text(mainAccount.name)), findsWidgets);
       expect(
         _inSheet(
@@ -219,7 +233,7 @@ void main() {
         final newFee = Completer<BigInt>();
         chain.actionFee = () => newFee.future;
 
-        await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
+        await _choose(tester, savingsAccount.name, settle: false);
         await tester.pump();
         await tester.pump();
 
@@ -256,7 +270,7 @@ void main() {
         final newFee = Completer<BigInt>();
         chain.actionFee = () => newFee.future;
 
-        await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
+        await _choose(tester, savingsAccount.name, settle: false);
         await tester.pump();
         await tester.pump();
 
@@ -335,12 +349,11 @@ void main() {
         accounts: const [mainAccount, savingsAccount],
       );
 
-      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzMain'))), findsOne);
-      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))), findsOne);
+      expect(_signers(tester).items.map((item) => item.label), [mainAccount.name, savingsAccount.name]);
+      expect(_signers(tester).value, mainAccount.accountId);
       expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzMain']);
 
-      await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
-      await tester.pumpAndSettle();
+      await _choose(tester, savingsAccount.name);
       expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzMain', 'qzSavings']);
 
       await _confirm(tester);
@@ -348,11 +361,34 @@ void main() {
       expect(sheet.chain.actions.map((action) => (action.$1, action.$2)), [('approve', 'qzSavings')]);
     });
 
-    testOnMac('a Keystone account is not offered as a choice', (tester) async {
+    testOnMac('a cold wallet account beside one whose key is here: both a choice, the first chosen', (tester) async {
       await _open(tester, MultisigActionKind.approve, _proposal(), accounts: const [mainAccount, vaultAccount]);
 
-      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzVault'))), findsNothing);
-      expect(_inSheet(find.text(vaultAccount.name)), findsNothing);
+      expect(_signers(tester).items.map((item) => item.label), [mainAccount.name, vaultAccount.name]);
+      expect(_signers(tester).value, mainAccount.accountId);
+    });
+
+    testOnMac('choosing the cold wallet account prices its fee', (tester) async {
+      final sheet = await _open(
+        tester,
+        MultisigActionKind.approve,
+        _proposal(),
+        accounts: const [mainAccount, vaultAccount],
+      );
+
+      await _choose(tester, vaultAccount.name);
+
+      expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzMain', 'qzVault']);
+      expect(_signers(tester).value, vaultAccount.accountId);
+      expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
+    });
+
+    testOnMac('one account here can approve: it is named, with nothing to choose', (tester) async {
+      await _open(tester, MultisigActionKind.approve, _proposal());
+
+      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey)), findsNothing);
+      expect(_inSheet(find.text(_l10n.desktopProposalSignsAs)), findsOne);
+      expect(_inSheet(find.text(mainAccount.name)), findsWidgets);
     });
 
     testOnMac('execute: every approval it needs, and Execute', (tester) async {
@@ -377,18 +413,33 @@ void main() {
         accounts: const [savingsAccount, mainAccount],
       );
 
-      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzMain'))), findsOne);
-      expect(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))), findsOne);
+      expect(_signers(tester).items.map((item) => item.label), [mainAccount.name, savingsAccount.name]);
+      expect(_signers(tester).value, mainAccount.accountId);
       expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzMain']);
 
-      await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
-      await tester.pumpAndSettle();
+      await _choose(tester, savingsAccount.name);
       expect(sheet.chain.actionQuotes.map((quote) => quote.$2), ['qzMain', 'qzSavings']);
 
       await _confirm(tester);
 
       expect(sheet.chain.actions.map((action) => (action.$1, action.$2)), [('execute', 'qzSavings')]);
     });
+
+    for (final (kind, proposal) in [
+      (MultisigActionKind.approve, _proposal()),
+      (
+        MultisigActionKind.execute,
+        _proposal(status: MultisigProposalStatus.approved, approvals: const ['qzOther', 'qzSavings']),
+      ),
+      (MultisigActionKind.cancel, _proposal(proposer: 'qzMain')),
+    ]) {
+      testOnMac('${kind.name}: the header names the multisig, and no line repeats it', (tester) async {
+        await _open(tester, kind, proposal);
+
+        expect(_inSheet(find.text(_team.name)), findsOne);
+        expect(_inSheet(find.text(_l10n.activityTxMultisigLabel)), findsNothing);
+      });
+    }
 
     testOnMac('cancel: in ember, the phone\'s sentence, the deposit refunded, Keep or Cancel Proposal', (tester) async {
       await _open(tester, MultisigActionKind.cancel, _proposal(proposer: 'qzMain'));
@@ -437,8 +488,7 @@ void main() {
       );
       expect(_inSheet(find.text(_l10n.multisigProposeFeePayerInsufficient)), findsOne);
 
-      await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
-      await tester.pumpAndSettle();
+      await _choose(tester, savingsAccount.name);
 
       expect(_inSheet(find.text(_l10n.multisigProposeFeePayerInsufficient)), findsNothing);
       expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
@@ -539,6 +589,8 @@ void main() {
       expect(_inSheet(find.text(_l10n.desktopProposalApproved.toUpperCase())), findsOne);
       expect(_inSheet(find.text(_l10n.desktopProposalApprovedTitle(what))), findsOne);
       expect(_inSheet(find.text(_l10n.desktopProposalReadyToExecute)), findsOne);
+      expect(_inSheet(find.text(_l10n.activityTxMultisigLabel)), findsNothing);
+      expect(_inSheet(find.text(_l10n.desktopProposalSignedAs)), findsOne);
     });
 
     testOnMac('approve, short of what it needs: how many more approvals', (tester) async {
