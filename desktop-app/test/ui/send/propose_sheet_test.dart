@@ -83,12 +83,18 @@ List<Override> _overrides({
   num teamHolds = 4800,
   num mainHolds = 1250,
   Account member = mainAccount,
+  List<Account> extra = const [],
 }) {
   _mainHolds = _qtc(mainHolds);
-  final others = {'qzTeam': _qtc(teamHolds), 'qzSavings': oneToken, 'qzVault': oneToken};
+  final others = {
+    'qzTeam': _qtc(teamHolds),
+    'qzSavings': oneToken,
+    'qzVault': oneToken,
+    for (final account in extra) account.accountId: oneToken,
+  };
   return [
     ...shellOverrides(
-      accounts: [member, savingsAccount, vaultAccount],
+      accounts: [member, savingsAccount, vaultAccount, ...extra],
       settings: FakeSettingsService(activeAccount: MultisigDisplayAccount(multisig), multisigs: [multisig]),
       balanceOf: (accountId) async =>
           accountId == 'qzMain' ? _mainHolds : others[accountId] ?? (throw StateError('no balance set for $accountId')),
@@ -118,6 +124,7 @@ Future<FakeSendChain> _openPropose(
   Size? window,
   MultisigAccount? multisig,
   Account member = mainAccount,
+  List<Account> extra = const [],
 }) async {
   _opened.clear();
   _shared.clear();
@@ -131,6 +138,7 @@ Future<FakeSendChain> _openPropose(
       teamHolds: teamHolds,
       mainHolds: mainHolds,
       member: member,
+      extra: extra,
     ),
   );
   if (window != null) {
@@ -1018,6 +1026,43 @@ void main() {
       expect(tester.takeException(), isNull, reason: 'the open menu');
       final menu = tester.getRect(find.byKey(PopUpButton.menuKey));
       expect((menu.left >= 0, menu.right <= _smallestWindow.width), (true, true), reason: 'the menu in the window');
+    });
+
+    testOnMac('with more signers here than the smallest window holds, the picker\'s menu scrolls to the last, who can '
+        'be chosen', (tester) async {
+      final signers = [
+        for (var i = 0; i < 30; i++) Account(walletIndex: 0, index: 2 + i, name: 'Signer $i', accountId: 'qzSigner$i'),
+      ];
+      final chain = await _openPropose(
+        tester,
+        window: _smallestWindow,
+        extra: signers,
+        multisig: MultisigAccount(
+          name: 'Team',
+          accountId: 'qzTeam',
+          signers: ['qzMain', for (final signer in signers) signer.accountId],
+          threshold: 2,
+          nonce: BigInt.zero,
+          myMemberAccountId: 'qzMain',
+        ),
+      );
+      await _fill(tester);
+
+      await _tap(tester, SendSheet.proposerKey);
+
+      expect(tester.takeException(), isNull, reason: 'the open menu');
+      final menu = tester.getRect(find.byKey(PopUpButton.menuKey));
+      expect((menu.top >= 0, menu.bottom <= _smallestWindow.height), (true, true), reason: 'the menu in the window');
+      final last = find.descendant(of: find.byKey(PopUpButton.menuKey), matching: find.text('Signer 29'));
+      await tester.drag(
+        find.descendant(of: find.byKey(PopUpButton.menuKey), matching: find.text('Signer 5')),
+        const Offset(0, -2000),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(last.hitTestable());
+      await tester.pumpAndSettle();
+
+      expect(chain.proposalQuoteSigners.last, 'qzSigner29');
     });
   });
 

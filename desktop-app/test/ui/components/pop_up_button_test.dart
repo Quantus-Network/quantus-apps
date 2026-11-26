@@ -289,4 +289,61 @@ void main() {
     final chevrons = tester.getRect(find.descendant(of: find.byType(PopUpButton<String>), matching: find.byType(Icon)));
     expect(chevrons.left, greaterThanOrEqualTo(label.right));
   });
+
+  group('more items than the window holds', () {
+    final many = [for (var i = 0; i < 30; i++) PopUpItem('s$i', 'Signer $i')];
+    const window = Size(400, 300);
+
+    /// Whether [label]'s row lies wholly inside the open menu, where a click
+    /// reaches it.
+    bool inView(WidgetTester tester, String label) {
+      final menu = tester.getRect(_menu);
+      final row = tester.getRect(_inMenu(label));
+      return row.top >= menu.top && row.bottom <= menu.bottom && _inMenu(label).hitTestable().evaluate().isNotEmpty;
+    }
+
+    testWidgets('the menu stays inside the window and scrolls to its last item, which can be chosen', (tester) async {
+      final chosen = <String>[];
+      await _pump(tester, chosen: chosen, items: many, value: 's0', size: window);
+
+      await _open(tester);
+
+      expect(tester.takeException(), isNull);
+      final menu = tester.getRect(_menu);
+      expect((menu.top >= 0, menu.bottom <= window.height), (true, true));
+      expect(inView(tester, 'Signer 29'), isFalse);
+
+      await tester.drag(_inMenu('Signer 10'), const Offset(0, -1000));
+      await tester.pumpAndSettle();
+      expect(inView(tester, 'Signer 29'), isTrue);
+
+      await tester.tap(_inMenu('Signer 29'));
+      await tester.pumpAndSettle();
+      expect(chosen, ['s29']);
+    });
+
+    testWidgets('the current item is in view when the menu opens', (tester) async {
+      await _pump(tester, chosen: [], items: many, value: 's25', size: window);
+
+      await _open(tester);
+
+      expect(inView(tester, 'Signer 25'), isTrue);
+    });
+
+    testWidgets('Down to the last item keeps it in view, and Return picks it', (tester) async {
+      final chosen = <String>[];
+      await _pump(tester, chosen: chosen, items: many, value: 's0', size: window);
+      await _open(tester);
+
+      for (var i = 0; i < 29; i++) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      }
+      await tester.pumpAndSettle();
+      expect(inView(tester, 'Signer 29'), isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+      expect(chosen, ['s29']);
+    });
+  });
 }
