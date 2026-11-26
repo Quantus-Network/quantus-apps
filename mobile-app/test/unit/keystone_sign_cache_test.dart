@@ -113,8 +113,11 @@ void main() {
       expect(keystoneSignCacheMaxAge(payload), Duration(seconds: expectedSeconds));
     });
 
-    test('the live era period keeps a positive usable window', () {
-      expect(AppConstants.txMortalEraPeriodBlocks, greaterThan(keystoneSignEraReserveBlocks));
+    test('a cold wallet request stays on screen for most of its era', () {
+      const era = AppConstants.coldWalletTxMortalEraPeriodBlocks;
+      expect(era & (era - 1), 0, reason: 'the era encoding rounds a period up to a power of two');
+      expect(keystoneSignEraReserveBlocks, lessThanOrEqualTo(era ~/ 4));
+      expect(keystoneSignEraReserveBlocks, greaterThan(keystoneSignSubmitEraMarginBlocks));
     });
   });
 

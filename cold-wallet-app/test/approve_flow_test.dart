@@ -76,6 +76,7 @@ void main() {
     expect(find.textContaining('If the amount or address on your phone is different'), findsOneWidget);
     expect(find.text('Approve and Sign'), findsOneWidget);
     expect(find.byType(Icon), findsNothing);
+    expect(find.textContaining('this wallet knows'), findsNothing);
 
     await tester.tap(find.text("It doesn't match"));
     await tester.pumpAndSettle();
@@ -87,6 +88,30 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(RejectedScreen), findsNothing);
     expect(find.text('open'), findsOneWidget);
+  });
+
+  testWidgets('a payload for another runtime gets one caption line and can still be signed', (tester) async {
+    const spec = AppConstants.bundledSpecVersion + 1;
+    await pumpFromHome(
+      tester,
+      () => SignTransactionScreen(
+        request: SigningRequest(
+          signer: signerAddress,
+          payload: DebugPayloads.payloadForCall(transfer.encode(), specVersion: spec),
+        ),
+      ),
+    );
+
+    expect(
+      find.text(
+        'Runtime spec $spec / tx ${AppConstants.bundledTransactionVersion}; this wallet knows spec '
+        '${AppConstants.bundledSpecVersion} / tx ${AppConstants.bundledTransactionVersion}. Update it when you can.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byType(QuantusBanner), findsOneWidget, reason: 'only the check-your-phone banner');
+    expect(find.text('SEND'), findsOneWidget);
+    expect(find.text('Approve and Sign'), findsOneWidget);
   });
 
   testWidgets('a refused request leads through Reject to Rejected', (tester) async {
