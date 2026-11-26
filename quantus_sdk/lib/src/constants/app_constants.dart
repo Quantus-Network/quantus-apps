@@ -105,10 +105,10 @@ class AppConstants {
   static const int ss58prefix = 189;
 
   // Runtime the bundled polkadart metadata (lib/generated/bell) was generated
-  // from. A signing payload declaring a different spec version may decode
-  // against shifted pallet/call indices, so signers warn loudly rather than
-  // present a decode they cannot vouch for. Bump both when regenerating.
-  static const int bundledSpecVersion = 152;
+  // from. Pallet and call indices are never reassigned, so a payload for
+  // another spec version still decodes; signers only note that the wallet is
+  // due an update. Bump both when regenerating.
+  static const int bundledSpecVersion = 153;
   static const int bundledTransactionVersion = 6;
 
   // Runtimes this build's metadata decodes correctly, beyond the one it was

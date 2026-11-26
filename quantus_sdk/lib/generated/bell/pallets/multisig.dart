@@ -248,13 +248,13 @@ class Constants {
 
   /// Fee charged for creating a multisig (non-refundable, burned).
   /// This prevents spam creation of multisig accounts.
-  final BigInt multisigFee = BigInt.from(30000000000);
+  final BigInt multisigFee = BigInt.from(3000000000);
 
   /// Deposit required per proposal (returned on execute or cancel)
-  final BigInt proposalDeposit = BigInt.from(10000000000);
+  final BigInt proposalDeposit = BigInt.from(1000000000);
 
   /// Fee charged for creating a proposal (non-refundable, paid always)
-  final BigInt proposalFee = BigInt.from(50000000000);
+  final BigInt proposalFee = BigInt.from(5000000000);
 
   /// Percentage increase in ProposalFee for each signer in the multisig.
   ///
