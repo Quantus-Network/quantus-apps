@@ -14,6 +14,8 @@ import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
+import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
+import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_address.dart' as multi_address;
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/activity/decoded_call_headline.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
@@ -186,6 +188,34 @@ void main() {
       expect(_inSheet(find.text(_l10n.sendReviewTo.toUpperCase())), findsOne);
       _expectAddressOverCheckphrase(tester, _sent.recipient!);
     });
+
+    for (final kind in [MultisigActionKind.approve, MultisigActionKind.execute]) {
+      testOnMac('${kind.name}, a ten-millionth of a token: the amount the cold wallet shows, not 0', (tester) async {
+        // 100000 of the chain's smallest unit: 0.0000001, past six decimals.
+        final bytes = const balances_pallet.Txs()
+            .transferAllowDeath(
+              dest: const multi_address.$MultiAddress().id(List<int>.filled(32, 7)),
+              value: BigInt.from(100000),
+            )
+            .encode();
+        final chain = FakeSendChain()..proposalCall = (_) async => bytes;
+        final proposal = kind == MultisigActionKind.approve
+            ? _proposal(callRaw: bytes)
+            : _proposal(
+                status: MultisigProposalStatus.approved,
+                approvals: const ['qzOther', 'qzSavings'],
+                callRaw: bytes,
+              );
+        await _open(tester, kind, proposal, chain: chain);
+
+        await _toScan(tester);
+
+        final shown = '${NumberFormattingService().formatAmount(BigInt.from(100000))} ${AppConstants.tokenSymbol}';
+        expect(shown, '0.0000001 QTC', reason: 'as the cold wallet says it');
+        expect(_inSheet(find.text(shown)), findsOne);
+        expect(_inSheet(find.text('0 QTC')), findsNothing);
+      });
+    }
 
     testOnMac('cancel: the cold wallet must show the action and the multisig, not an amount', (tester) async {
       await _open(tester, MultisigActionKind.cancel, _proposal(proposer: 'qzVault'));

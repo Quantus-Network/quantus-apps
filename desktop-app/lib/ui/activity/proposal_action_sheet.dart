@@ -185,10 +185,11 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
     };
   }
 
-  /// [value] in tokens, as said where no build watches it.
+  /// [value] in tokens as the cold wallet says it, to every decimal it needs:
+  /// what its screen must show.
   String _amountNow(BigInt value) {
     final formatting = ref.read(numberFormattingServiceProvider);
-    return ref.read(l10nProvider).commonAmountBalance(formatting.formatBalance(value), AppConstants.tokenSymbol);
+    return ref.read(l10nProvider).commonAmountBalance(formatting.formatAmount(value), AppConstants.tokenSymbol);
   }
 
   void _backFromSigning() => setState(() => _signing = null);
