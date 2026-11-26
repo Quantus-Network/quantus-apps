@@ -246,13 +246,13 @@ final sidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
 });
 
 /// The account that would create a new multisig, sign for it and pay: the
-/// active account, where its key signs in this app. Null on an Encrypted,
-/// Keystone or multisig account, and until the saved multisigs are known,
-/// which a new one must not collide with.
+/// active account, where its key signs in this app or on a cold wallet. Null
+/// on an Encrypted or multisig account, and until the saved multisigs are
+/// known, which a new one must not collide with.
 final multisigCreatorProvider = Provider<Account?>((ref) {
   if (!ref.watch(multisigAccountsProvider).hasValue) return null;
   return switch (ref.watch(activeAccountProvider).value) {
-    RegularAccount(:final account) when account.signsLocally => account,
+    RegularAccount(:final account) when account.signsLocally || account.signsWithHardware => account,
     _ => null,
   };
 });

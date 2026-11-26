@@ -589,6 +589,18 @@ class _FakeSubstrateService extends Fake implements SubstrateService {
 
   @override
   Future<int> getCurrentBlockNumber() => chain.currentBlock();
+
+  /// On desktop only a multisig's creation goes out this way: it answers as
+  /// [FakeSendChain.submitMultisig] does.
+  @override
+  Future<Uint8List> submitExtrinsicWithExternalSignature(
+    UnsignedTransactionData unsignedData,
+    Uint8List signatureWithPublicKey,
+  ) async {
+    final hash = await chain.submitMultisig();
+    chain.externallySignedCreations.add((unsigned: unsignedData, signature: signatureWithPublicKey));
+    return hash;
+  }
 }
 
 /// A transaction as a cold wallet is handed it, built at [blockNumber] and
@@ -839,6 +851,10 @@ class FakeSendChain {
 
   /// What handing a new multisig over answers; it may throw.
   Future<Uint8List> Function() submitMultisig = () async => Uint8List.fromList(const [1, 2, 3]);
+
+  /// Every multisig creation a cold wallet signed that was handed over: the
+  /// transaction signed and the signature.
+  final externallySignedCreations = <({UnsignedTransactionData unsigned, Uint8List signature})>[];
 
   /// Every new multisig handed over.
   final createdMultisigs = <({String creator, List<String> signers, int threshold, BigInt? nonce})>[];

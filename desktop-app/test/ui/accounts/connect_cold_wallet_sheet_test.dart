@@ -521,7 +521,7 @@ void main() {
       expect(_inSidebar(find.widgetWithText(SidebarRow, 'Cold Wallet 2')), findsOneWidget);
     });
 
-    testWidgets('a connected account can receive and send, but not swap or create a multisig', (tester) async {
+    testWidgets('a connected account can receive, send and create a multisig, but not swap', (tester) async {
       final harness = await _pump(tester);
       await _open(tester);
       await _readThreeTimes(tester, harness.source);
@@ -534,7 +534,7 @@ void main() {
       expect(isEnabled(AccountActionKind.receive), isTrue);
       expect(isEnabled(AccountActionKind.send), isTrue);
       expect(isEnabled(AccountActionKind.swap), isFalse);
-      expect(container.read(multisigCreatorProvider), isNull);
+      expect(container.read(multisigCreatorProvider)?.accountId, _cold);
     });
 
     testWidgets('an address added while confirming is refused on Connect', (tester) async {

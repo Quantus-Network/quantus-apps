@@ -224,7 +224,6 @@ void main() {
 
     for (final (kind, active) in <(String, DisplayAccount)>[
       ('an Encrypted account', const RegularAccount(encryptedAccount)),
-      ('a Keystone account', const RegularAccount(vaultAccount)),
       ('a multisig', MultisigDisplayAccount(teamMultisig)),
     ]) {
       testOnMac('with $kind active it is disabled in both menus and opens nothing', (tester) async {

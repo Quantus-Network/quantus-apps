@@ -217,7 +217,7 @@ void main() {
         ],
       ),
       (
-        // Its key signs on a cold wallet, which Send asks for the signature.
+        // Its key signs on a cold wallet, which Send and Create Multisig ask to sign.
         'a Keystone account',
         const RegularAccount(vaultAccount),
         [
@@ -227,7 +227,7 @@ void main() {
           ('New Account', true),
           ('Import Wallet…', true),
           ('Connect Cold Wallet…', true),
-          ('Create Multisig…', false),
+          ('Create Multisig…', true),
           ('Manage Multisigs…', true),
         ],
       ),
@@ -865,7 +865,7 @@ void main() {
           ('New Account', true),
           ('Import Wallet…', true),
           ('Connect Cold Wallet…', true),
-          ('Create Multisig…', false),
+          ('Create Multisig…', true),
           ('Manage Multisigs…', true),
           ('Main', true),
           ('Team', true),

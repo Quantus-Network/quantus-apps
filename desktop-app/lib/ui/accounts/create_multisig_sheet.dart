@@ -4,12 +4,14 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/approval_providers.dart';
+import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/keystone/keystone_signing_view.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_form_parts.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_styles.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -20,11 +22,13 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/send/keystone_signing_session.dart';
 import 'package:wallet_core/services/multisig_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/account_utils.dart';
 import 'package:wallet_core/utils/multisig_form.dart';
 
-enum _Step { form, review }
+enum _Step { form, review, signing }
 
 /// Creates a multisig: a form of its name, signers and approvals, then a
 /// review of its address and what it costs. The active account creates it,
@@ -78,6 +82,25 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
   /// Why the last press went no further.
   String? _problem;
 
+  /// The creator's cold wallet signing the creation, on the signing step.
+  KeystoneSigningSession? _signing;
+
+  /// Where a cold wallet's signature being handed over counts as work under
+  /// way, until the creation is known or came to nothing. Set and cleared
+  /// where that happens, not in a build: a closed window draws no frames.
+  WorkHoldsNotifier? _workHold;
+
+  void _onColdWalletSubmitting(bool isSubmitting) {
+    if (isSubmitting) {
+      final holds = ref.read(workHoldsProvider.notifier);
+      holds.hold(this);
+      _workHold = holds;
+    } else {
+      _workHold?.release(this);
+      _workHold = null;
+    }
+  }
+
   List<String> get _signers => multisigSigners(_creator.accountId, _others);
 
   @override
@@ -101,6 +124,9 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
 
   @override
   void dispose() {
+    // After this frame: no provider may change while the tree is being built.
+    final hold = _workHold;
+    if (hold != null) scheduleMicrotask(() => hold.release(this));
     _name.dispose();
     _signerField.dispose();
     _nameFocus.dispose();
@@ -258,6 +284,14 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
     });
   }
 
+  void _backFromSigning() {
+    _stepFocus.requestFocus();
+    setState(() {
+      _signing = null;
+      _step = _Step.review;
+    });
+  }
+
   void _backToForm() {
     if (_isSubmitting) return;
     _signerFocus.requestFocus();
@@ -283,6 +317,17 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
     final preflight = await _check(resolved);
     if (!mounted || preflight == null) return;
     setState(() => _preflight = preflight);
+
+    // A cold wallet approves on the cold wallet: the signing steps follow.
+    if (_creator.signsWithHardware) {
+      _stepFocus.requestFocus();
+      setState(() {
+        _isSubmitting = false;
+        _signing = submission.creationSigningSession(preflight: preflight, creator: _creator);
+        _step = _Step.signing;
+      });
+      return;
+    }
 
     final refusal = await askForApproval(
       ref.read(userApprovalProvider),
@@ -320,14 +365,27 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ShellSheetHeader(
-                title: isReview ? l10n.desktopSendReview : l10n.multisigAddTitle,
-                parent: isReview ? (title: l10n.multisigAddTitle, onBack: _backToForm) : null,
-              ),
-              const SizedBox(height: 14),
+              // The signing has its own headers: it has steps of its own.
+              if (_step != _Step.signing) ...[
+                ShellSheetHeader(
+                  title: isReview ? l10n.desktopSendReview : l10n.multisigAddTitle,
+                  parent: isReview ? (title: l10n.multisigAddTitle, onBack: _backToForm) : null,
+                ),
+                const SizedBox(height: 14),
+              ],
               ...switch (_step) {
                 _Step.form => _form(l10n),
                 _Step.review => _review(l10n),
+                _Step.signing => [
+                  KeystoneSigningView(
+                    session: _signing ?? (throw StateError('The signing step has no signing.')),
+                    account: _creator,
+                    parentTitle: l10n.multisigAddTitle,
+                    onLeave: _backFromSigning,
+                    onSubmitting: _onColdWalletSubmitting,
+                    onSigned: (_) => Navigator.of(context).pop(),
+                  ),
+                ],
               },
             ],
           ),
@@ -336,8 +394,10 @@ class _CreateMultisigSheetState extends ConsumerState<CreateMultisigSheet> {
     );
   }
 
-  /// Whether approval can be asked for, and what to say where it cannot.
+  /// Whether approval can be asked for, and what to say where it cannot. A
+  /// cold wallet's creation is approved on the cold wallet.
   ({bool isAvailable, String? note}) _approval(AppLocalizations l10n) {
+    if (_creator.signsWithHardware) return (isAvailable: true, note: null);
     final availability = ref.watch(approvalAvailabilityProvider);
     return (
       isAvailable: availability.value == ApprovalAvailability.available,

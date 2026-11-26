@@ -1512,6 +1512,10 @@
     "@keystoneSignActionLabel": {
       "description": "Label for a non-transfer action on the Keystone sign and verify screens"
     },
+    "keystoneSignCreateMultisig": "Create multisig",
+    "@keystoneSignCreateMultisig": {
+      "description": "The action a cold wallet creator signs, on the cold wallet signing screens; the new multisig's address is shown beside it"
+    },
     "keystoneSignEntireBalance": "Entire transferable balance",
     "@keystoneSignEntireBalance": {
       "description": "In place of the amount on the cold wallet signing screens for a maximum send: the cold wallet shows these words, since the transfer carries no amount"
