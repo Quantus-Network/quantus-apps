@@ -27,13 +27,23 @@ void _markPhraseSeen(ProviderContainer container, int walletIndex) {
 
 /// The caution before the recovery phrase of the wallet at [walletIndex].
 /// Continue asks for approval, then reads the phrase and hands its words to
-/// [onApproved].
+/// [onApproved]. With [onAlreadyBackedUp] it also offers to say the phrase is
+/// already backed up, as the phone does from its backup reminder: that
+/// records the phrase as seen, without asking or reading it, then calls
+/// [onAlreadyBackedUp].
 class RecoveryPhraseCaution extends ConsumerStatefulWidget {
-  const RecoveryPhraseCaution({super.key, required this.walletIndex, required this.onCancel, required this.onApproved});
+  const RecoveryPhraseCaution({
+    super.key,
+    required this.walletIndex,
+    required this.onCancel,
+    required this.onApproved,
+    this.onAlreadyBackedUp,
+  });
 
   final int walletIndex;
   final VoidCallback onCancel;
   final ValueChanged<List<String>> onApproved;
+  final VoidCallback? onAlreadyBackedUp;
 
   @override
   ConsumerState<RecoveryPhraseCaution> createState() => _RecoveryPhraseCautionState();
@@ -89,6 +99,13 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
     widget.onApproved(recoveryPhraseWords(phrase));
   }
 
+  void _alreadyBackedUp(VoidCallback done) {
+    // A request under way must not show the phrase after this.
+    _request++;
+    _markPhraseSeen(ProviderScope.containerOf(context), widget.walletIndex);
+    done();
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<bool>(windowClosedProvider, (_, isClosed) {
@@ -97,6 +114,7 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
       quantusPrint('The window closed while the recovery phrase was being asked for: the request is dropped');
     });
     final l10n = ref.watch(l10nProvider);
+    final onAlreadyBackedUp = widget.onAlreadyBackedUp;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -110,6 +128,15 @@ class _RecoveryPhraseCautionState extends ConsumerState<RecoveryPhraseCaution> {
         const SizedBox(height: 10),
         SettingsStepFooter(
           error: _error,
+          leading: [
+            if (onAlreadyBackedUp != null)
+              SheetButton(
+                key: SettingsSheet.alreadyBackedUpKey,
+                label: l10n.desktopRecoveryAlreadyBackedUp,
+                kind: SheetButtonKind.secondary,
+                onTap: () => _alreadyBackedUp(onAlreadyBackedUp),
+              ),
+          ],
           buttons: [
             SheetButton(
               key: SettingsSheet.cancelKey,

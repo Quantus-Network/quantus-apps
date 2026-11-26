@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
+import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
@@ -17,6 +18,7 @@ import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/boot_intro.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/shell/backup_reminder.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -546,6 +548,75 @@ void main() {
     final sheet = tester.getRect(find.byType(ShellSheetView));
     final icon = find.descendant(of: find.byKey(SettingsSheet.hideKey), matching: find.byType(Icon));
     expect(tester.getRect(icon).left, moreOrLessEquals(sheet.left + ShellSheetView.padding, epsilon: 0.5));
+  });
+
+  group('from the backup reminder', () {
+    /// Puts a wallet whose phrase was never seen on the device, holding more
+    /// than the reminder's threshold, and opens Settings from its reminder.
+    Future<FakeWalletDevice> openFromReminder(WidgetTester tester, {FakeUserApproval? approval}) async {
+      final device = FakeWalletDevice()..store([mainAccount], mnemonic: _words.join(' '));
+      await pumpShell(
+        tester,
+        overrides: [
+          ...device.overrides,
+          systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
+          sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
+        ],
+      );
+      await _tap(tester, find.byKey(BackupReminder.backUpKey));
+      return device;
+    }
+
+    testOnMac('the caution also offers Already Backed Up', (tester) async {
+      await openFromReminder(tester);
+
+      expect(_inSheet(find.text('Keep your Recovery Phrase Secret')), findsOneWidget);
+      expect(_inSheet(find.byKey(SettingsSheet.alreadyBackedUpKey)), findsOneWidget);
+      expect(_inSheet(find.text('Already Backed Up')), findsOneWidget);
+    });
+
+    testOnMac('opened from the Settings list or the account menu, the caution does not offer it', (tester) async {
+      await _openSettings(tester);
+      await _tap(tester, find.byKey(SettingsSheet.recoveryPhraseRowKey));
+      expect(_inSheet(find.text('Keep your Recovery Phrase Secret')), findsOneWidget);
+      expect(find.byKey(SettingsSheet.alreadyBackedUpKey), findsNothing);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+      final container = ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
+      await container.read(accountManagerProvider).openRecoveryPhrase(0);
+      await tester.pumpAndSettle();
+      expect(_inSheet(find.text('Keep your Recovery Phrase Secret')), findsOneWidget);
+      expect(find.byKey(SettingsSheet.alreadyBackedUpKey), findsNothing);
+    });
+
+    testOnMac('Already Backed Up records the phrase seen and closes Settings and the reminder, asking nothing', (
+      tester,
+    ) async {
+      final approval = FakeUserApproval();
+      final device = await openFromReminder(tester, approval: approval);
+      final reads = device.storage.mnemonicReads;
+
+      await _tap(tester, find.byKey(SettingsSheet.alreadyBackedUpKey));
+
+      expect(device.storage.viewedPhrases, {0});
+      expect(approval.reasons, isEmpty);
+      expect(device.storage.mnemonicReads, reads, reason: 'the phrase is not read');
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(find.byType(BackupReminder), findsNothing);
+    });
+
+    testOnMac('the reminder goes once the phrase has been shown', (tester) async {
+      final device = await openFromReminder(tester);
+
+      await _tap(tester, find.byKey(SettingsSheet.continueKey));
+      await _tap(tester, find.byKey(SettingsSheet.hideKey));
+      await _tap(tester, find.byKey(SettingsSheet.doneKey));
+
+      expect(device.storage.viewedPhrases, {0});
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(find.byType(BackupReminder), findsNothing);
+    });
   });
 
   group('keys', () {

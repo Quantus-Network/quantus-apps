@@ -3772,4 +3772,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopSidebarMultisigs => 'Multisigs';
+
+  @override
+  String get desktopBackupReminderButton => 'Back Up…';
+
+  @override
+  String get desktopRecoveryAlreadyBackedUp => 'Already Backed Up';
 }

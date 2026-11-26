@@ -133,17 +133,22 @@ class SidebarRenameNotifier extends Notifier<RenameTarget?> {
   }
 }
 
-/// The wallet whose recovery phrase Settings opens on, when it is opened for
-/// one: Settings takes it on opening, and clears it.
-final recoveryPhraseTargetProvider = NotifierProvider<RecoveryPhraseTargetNotifier, int?>(
+/// The wallet whose recovery phrase Settings opens on, and whether its backup
+/// reminder asked for it.
+typedef RecoveryPhraseTarget = ({int walletIndex, bool fromBackupReminder});
+
+/// The recovery phrase Settings opens on, when it is opened for one: Settings
+/// takes it on opening, and clears it.
+final recoveryPhraseTargetProvider = NotifierProvider<RecoveryPhraseTargetNotifier, RecoveryPhraseTarget?>(
   RecoveryPhraseTargetNotifier.new,
 );
 
-class RecoveryPhraseTargetNotifier extends Notifier<int?> {
+class RecoveryPhraseTargetNotifier extends Notifier<RecoveryPhraseTarget?> {
   @override
-  int? build() => null;
+  RecoveryPhraseTarget? build() => null;
 
-  void set(int walletIndex) => state = walletIndex;
+  void set(int walletIndex, {required bool fromBackupReminder}) =>
+      state = (walletIndex: walletIndex, fromBackupReminder: fromBackupReminder);
 
   void clear() => state = null;
 }
@@ -532,9 +537,10 @@ class AccountManager {
     };
   }
 
-  /// Opens Settings on the recovery phrase of the wallet at [walletIndex].
-  Future<void> openRecoveryPhrase(int walletIndex) {
-    _ref.read(recoveryPhraseTargetProvider.notifier).set(walletIndex);
+  /// Opens Settings on the recovery phrase of the wallet at [walletIndex];
+  /// [fromBackupReminder] when its backup reminder asks.
+  Future<void> openRecoveryPhrase(int walletIndex, {bool fromBackupReminder = false}) {
+    _ref.read(recoveryPhraseTargetProvider.notifier).set(walletIndex, fromBackupReminder: fromBackupReminder);
     return _ref.read(shellSheetProvider.notifier).open(ShellSheet.settings);
   }
 

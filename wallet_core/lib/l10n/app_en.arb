@@ -5535,5 +5535,13 @@
     "desktopSidebarMultisigs": "Multisigs",
     "@desktopSidebarMultisigs": {
       "description": "Desktop sidebar: the heading over every multisig, after the wallets. Drawn in capitals; screen readers read it as written"
+    },
+    "desktopBackupReminderButton": "Back Up…",
+    "@desktopBackupReminderButton": {
+      "description": "Desktop account pane: the button on the backup reminder that opens Settings on the wallet's recovery phrase"
+    },
+    "desktopRecoveryAlreadyBackedUp": "Already Backed Up",
+    "@desktopRecoveryAlreadyBackedUp": {
+      "description": "Desktop Settings: on the recovery phrase caution opened from the backup reminder, the button that records the phrase as backed up without showing it"
     }
 }

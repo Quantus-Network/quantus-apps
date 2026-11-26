@@ -6727,6 +6727,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Multisigs'**
   String get desktopSidebarMultisigs;
+
+  /// Desktop account pane: the button on the backup reminder that opens Settings on the wallet's recovery phrase
+  ///
+  /// In en, this message translates to:
+  /// **'Back Up…'**
+  String get desktopBackupReminderButton;
+
+  /// Desktop Settings: on the recovery phrase caution opened from the backup reminder, the button that records the phrase as backed up without showing it
+  ///
+  /// In en, this message translates to:
+  /// **'Already Backed Up'**
+  String get desktopRecoveryAlreadyBackedUp;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -3778,4 +3778,10 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopSidebarMultisigs => 'Multisig';
+
+  @override
+  String get desktopBackupReminderButton => 'Cadangkan…';
+
+  @override
+  String get desktopRecoveryAlreadyBackedUp => 'Sudah Dicadangkan';
 }

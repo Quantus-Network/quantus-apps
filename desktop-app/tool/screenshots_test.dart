@@ -38,6 +38,7 @@ import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
 import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/backup_reminder.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
@@ -826,6 +827,26 @@ void main() {
   _scene('settings_language_open', (tester) async {
     await _openSettings(tester);
     await _tapAndSettle(tester, find.text('English'));
+  });
+
+  _scene('backup_reminder', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('backup_reminder_smallest_window', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('backup_reminder_caution', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await _tapAndSettle(tester, find.byKey(BackupReminder.backUpKey));
   });
 
   _scene('settings_phrase_caution', (tester) async {
