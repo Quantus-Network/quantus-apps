@@ -135,7 +135,7 @@ void main() {
       expect(parsed.call.fields.whereType<ValueField>().firstWhere((f) => f.label == 'Vote').value, contains('Aye'));
       expect(parsed.call.summary, isNull, reason: 'a vote moves no value, so there is no amount hero');
       expect(parsed.network, 'Planck');
-      expect(parsed.specMatchesBundled, isTrue, reason: 'debug payloads must not trip the drift warning');
+      expect(parsed.specMatchesBundled, isTrue, reason: 'debug payloads must not show the runtime note');
       expect(parsed.extensions.era.toString(), '64 blocks');
       expect(parsed.extensions.tip, BigInt.zero);
     });
