@@ -41,7 +41,8 @@ void main() {
   );
 
   List<TransactionEvent> combine({
-    required List<PendingTransactionEvent> pending,
+    List<PendingTransactionEvent> pending = const [],
+    List<PendingMultisigApprovalEvent> approvals = const [],
     required List<TransactionEvent> otherTransfers,
   }) => container
       .read(transactionServiceProvider)
@@ -50,6 +51,7 @@ void main() {
         pendingTransactions: pending,
         pendingMultisigCreations: const [],
         pendingMultisigProposals: const [],
+        pendingMultisigApprovals: approvals,
         pendingMultisigExecutions: const [],
         pendingMultisigCancellations: const [],
         scheduledReversibleTransfers: const [],
@@ -75,5 +77,62 @@ void main() {
     final result = combine(pending: [failed], otherTransfers: const []);
 
     expect(result.map((tx) => tx.id), ['failed']);
+  });
+
+  group('an approval on its way', () {
+    PendingMultisigApprovalEvent approving({String? hash}) => PendingMultisigApprovalEvent(
+      id: 'approving',
+      multisigAddress: 'qzTeam',
+      proposalId: 3,
+      approverId: 'qzA',
+      recipient: 'qzC',
+      amount: BigInt.one,
+      fee: BigInt.one,
+      extrinsicHash: hash,
+      submittedAt: DateTime.utc(2026, 11, 20, 13),
+    );
+    MultisigProposalApprovedEvent approved({String? hash, String id = 'approved'}) => MultisigProposalApprovedEvent(
+      id: id,
+      approverId: 'qzA',
+      multisigAddress: 'qzTeam',
+      recipient: 'qzC',
+      amount: BigInt.one,
+      proposalId: 3,
+      approvalsCount: 2,
+      timestamp: DateTime.utc(2026, 11, 20, 13, 1),
+      blockNumber: 2,
+      blockHash: '0xblock',
+      extrinsicHash: hash,
+    );
+
+    test('is listed first, with what is settled after it', () {
+      final result = combine(
+        approvals: [approving(hash: '0xa')],
+        otherTransfers: [older],
+      );
+
+      expect(result.map((tx) => tx.id), ['approving', 'older']);
+    });
+
+    test('gives way to the indexed approval sent in the same transaction: never two rows', () {
+      final result = combine(
+        approvals: [approving(hash: '0xa')],
+        otherTransfers: [
+          approved(hash: '0xa'),
+          older,
+        ],
+      );
+
+      expect(result.map((tx) => tx.id), ['approved', 'older']);
+    });
+
+    test("stays beside another approval's indexed row", () {
+      final result = combine(
+        approvals: [approving(hash: '0xa')],
+        otherTransfers: [approved(hash: '0xb')],
+      );
+
+      expect(result.map((tx) => tx.id), ['approving', 'approved']);
+    });
   });
 }

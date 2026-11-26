@@ -8,6 +8,7 @@ import 'package:wallet_core/models/combined_transactions_list.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/active_swaps_provider.dart';
 import 'package:wallet_core/providers/active_account_transactions_provider.dart';
+import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/pending_multisig_proposals_provider.dart';
 import 'package:wallet_core/services/transaction_service.dart';
@@ -111,6 +112,14 @@ class OpenedActivityNotifier extends Notifier<OpenedActivity?> {
   OpenedActivity? build() {
     ref.listen(activeAccountProvider.select((active) => active.value?.account.accountId), (previous, next) {
       if (previous != next) state = null;
+    });
+    // A proposal opened while it was being sent learns the hash it went out
+    // in, by which it is followed once the network has created it.
+    ref.listen(pendingMultisigProposalsProvider, (_, proposing) {
+      if (state case OpenedTransaction(tx: final PendingMultisigProposalEvent opened)) {
+        final now = proposing.where((pending) => pending.id == opened.id).firstOrNull;
+        if (now != null && now.extrinsicHash != opened.extrinsicHash) state = OpenedTransaction(now);
+      }
     });
     return null;
   }
@@ -230,6 +239,7 @@ List<TransactionEvent> activityOf(
     pendingTransactions: data.pendingTransactions,
     pendingMultisigCreations: data.pendingMultisigCreations,
     pendingMultisigProposals: data.pendingMultisigProposals,
+    pendingMultisigApprovals: data.pendingMultisigApprovals,
     pendingMultisigExecutions: data.pendingMultisigExecutions,
     pendingMultisigCancellations: data.pendingMultisigCancellations,
     scheduledReversibleTransfers: data.scheduledReversibleTransfers,
@@ -293,15 +303,57 @@ final class OpenedSwap extends OpenedActivity {
 
 /// What is open, as the lists hold it now: a transaction by its id, or, once
 /// it settled under the indexer's own id, by its hash; a proposal among the
-/// open ones or the past ones; a swap while it is followed. Null when it is
-/// no longer there. While the lists load, what was opened of them stands.
+/// past ones or the open ones; a swap while it is followed. A multisig's
+/// proposal still being proposed is the pending one, then, once the network
+/// has created it, that proposal. Null when it is no longer there. While the
+/// lists load, what was opened of them stands.
+///
+/// A proposal is answered for by its own lists, not the activity, which also
+/// waits for the history: what an action did must show once the lists do,
+/// or that action is offered again.
 final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
   final opened = ref.watch(openedActivityProvider);
   if (opened == null) return null;
   if (opened is OpenedSwap) return ref.watch(activeSwapProvider(opened.swapId)) == null ? null : opened;
+  final account = ref.watch(activeAccountProvider).value?.account;
+
+  // Among the past proposals it is over, whatever the open ones last held.
+  OpenedProposal? proposalOf(String entityId) {
+    if (account is! MultisigAccount) return null;
+    bool same(MultisigProposal other) => other.entityId == entityId;
+    final found =
+        ref.watch(multisigPastProposalsProvider(account)).value?.where(same).firstOrNull ??
+        ref.watch(openProposalsViewProvider)?.value?.open.where(same).firstOrNull;
+    return found == null ? null : OpenedProposal(found);
+  }
+
+  if (opened case OpenedProposal(:final proposal)) {
+    if (account == null) return opened;
+    final found = proposalOf(proposal.entityId);
+    if (found != null) return found;
+    // Until the open proposals first answer, what was opened stands; read
+    // without it, or not read, it is no longer open here.
+    final open = ref.watch(openProposalsViewProvider);
+    return open != null && !open.hasValue && !open.hasError ? opened : null;
+  }
+
   final view = ref.watch(activityViewProvider).value;
   if (view == null) return opened;
   final activity = [...view.inProgress, ...view.settled];
+
+  // A multisig lists what it is proposing among its open proposals, not in
+  // its activity.
+  if (opened case OpenedTransaction(tx: final PendingMultisigProposalEvent pending)) {
+    final proposals = ref.watch(openProposalsViewProvider);
+    if (proposals != null) {
+      final proposing = proposals.value?.proposing.where((other) => other.id == pending.id).firstOrNull;
+      if (proposing != null) return OpenedTransaction(proposing);
+      final hash = pending.extrinsicHash;
+      final createdId = hash == null ? null : ref.watch(multisigCreatedProposalIdProvider(hash));
+      if (createdId == null) return null;
+      return proposalOf(createdId) ?? (proposals.isLoading ? opened : null);
+    }
+  }
 
   switch (opened) {
     case OpenedTransaction(:final tx):
@@ -313,13 +365,7 @@ final openedActivityViewProvider = Provider<OpenedActivity?>((ref) {
       return byHash == null ? null : OpenedTransaction(byHash);
     case OpenedSwap():
       throw StateError('A swap is answered for before the lists are read.');
-    case OpenedProposal(:final proposal):
-      final open = ref.watch(openProposalsViewProvider)?.value?.open ?? const <MultisigProposal>[];
-      final past = [
-        for (final tx in activity)
-          if (tx is MultisigProposalEvent) tx.proposal,
-      ];
-      final found = [...open, ...past].where((other) => other.entityId == proposal.entityId).firstOrNull;
-      return found == null ? null : OpenedProposal(found);
+    case OpenedProposal():
+      throw StateError('A proposal is answered for by its lists, before the activity is read.');
   }
 });

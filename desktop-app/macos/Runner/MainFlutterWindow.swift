@@ -37,7 +37,9 @@ class MainFlutterWindow: NSWindow {
   /// Whether the window is off the screen with the app still running.
   private(set) var isHiddenForWork = false
 
-  private lazy var statusItem = BackgroundStatusItem(onOpen: { [weak self] in self?.bringToFront() })
+  private lazy var statusItem = BackgroundStatusItem(
+    onOpen: { [weak self] in self?.bringToFront() },
+    onOpenSwap: { [weak self] swap in self?.openSwap(swap) })
 
   /// Held while something is under way that App Nap would make the app late
   /// for. The computer may still go to sleep.
@@ -86,6 +88,19 @@ class MainFlutterWindow: NSWindow {
         self?.isAppListening = true
         self?.statusItem.setLabels(openLabel: openLabel, quitLabel: quitLabel)
         result(nil)
+      case "setStatusItemSwaps":
+        guard let arguments = call.arguments as? [String: Any],
+          let swaps = MainFlutterWindow.statusItemSwaps(from: arguments["swaps"])
+        else {
+          result(
+            FlutterError(
+              code: "arguments",
+              message: "setStatusItemSwaps needs swaps, each with swapId, accountId, label, steps and current",
+              details: nil))
+          return
+        }
+        self?.statusItem.setSwaps(title: arguments["title"] as? String, swaps: swaps)
+        result(nil)
       case "hideWindow":
         self?.hideKeepingAppRunning()
         result(nil)
@@ -105,6 +120,10 @@ class MainFlutterWindow: NSWindow {
     SensitiveClipboard.shared.register(with: flutterViewController.engine.binaryMessenger)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
+
+    // After the plugins: it takes the notification center from the
+    // notifications plugin, which claims it as it is registered.
+    PushNotifications.shared.install(with: flutterViewController.engine.binaryMessenger)
 
     // The system lays the title bar out again on these events and puts the
     // traffic lights back where a standard title bar has them.
@@ -199,11 +218,43 @@ class MainFlutterWindow: NSWindow {
     super.performClose(sender)
   }
 
+  /// The swaps of a `setStatusItemSwaps` call, or nil if one is not as the
+  /// app sends it.
+  private static func statusItemSwaps(from value: Any?) -> [BackgroundStatusItem.Swap]? {
+    guard let entries = value as? [[String: Any]] else { return nil }
+    var swaps: [BackgroundStatusItem.Swap] = []
+    for entry in entries {
+      guard let swapId = entry["swapId"] as? String,
+        let accountId = entry["accountId"] as? String,
+        let label = entry["label"] as? String,
+        let steps = entry["steps"] as? [String],
+        let current = entry["current"] as? Int
+      else { return nil }
+      swaps.append(
+        BackgroundStatusItem.Swap(swapId: swapId, accountId: accountId, label: label, steps: steps, current: current))
+    }
+    return swaps
+  }
+
+  /// A swap picked from the menu bar icon's menu: the app brings the window
+  /// back and opens it.
+  private func openSwap(_ swap: BackgroundStatusItem.Swap) {
+    guard let windowChannel else {
+      NSLog("MainFlutterWindow: a swap was picked before the app could be told")
+      return
+    }
+    windowChannel.invokeMethod("openSwap", arguments: ["swapId": swap.swapId, "accountId": swap.accountId]) { answer in
+      if answer is FlutterError || (answer as? NSObject) === FlutterMethodNotImplemented {
+        NSLog("MainFlutterWindow: the app did not open the swap picked: \(String(describing: answer))")
+      }
+    }
+  }
+
   /// Takes the window off the screen, the app still running. A window in
   /// full screen comes out of it first, or its empty space would stay.
   private func hideKeepingAppRunning() {
     isHiddenForWork = true
-    statusItem.setShown(true)
+    statusItem.setHiddenForWork(true)
     if self.styleMask.contains(.fullScreen) {
       hidesAfterFullScreen = true
       self.toggleFullScreen(nil)
@@ -235,7 +286,7 @@ class MainFlutterWindow: NSWindow {
   func bringToFront() {
     isHiddenForWork = false
     hidesAfterFullScreen = false
-    statusItem.setShown(false)
+    statusItem.setHiddenForWork(false)
     NSApp.unhide(nil)
     if self.isMiniaturized {
       self.deminiaturize(nil)

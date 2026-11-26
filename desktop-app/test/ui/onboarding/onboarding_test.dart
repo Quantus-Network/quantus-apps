@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quantus_desktop_wallet/services/app_exit.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
@@ -141,23 +142,117 @@ void main() {
       expect(device.storage.hasWalletChecks, 1);
     });
 
-    testOnMac('a wallet whose recovery phrase is gone says so, and OK wipes it and shows Welcome', (tester) async {
-      final device = FakeWalletDevice()..store([_root, _encrypted], mnemonic: null);
-      await pumpShell(tester, overrides: device.overrides, settle: false);
-      await tester.pump();
-      await tester.pump();
+    group('a wallet whose recovery phrase cannot be read', () {
+      const notice = 'Unable to read your recovery phrase from this device.';
+      const confirmTitle = 'Remove all wallets from this device?';
 
-      expect(find.text('Wallet Error'), findsOneWidget);
-      expect(find.text('Unable to find secret phrase. Please restore your wallet.'), findsOneWidget);
-      expect(find.byType(Sidebar), findsNothing);
-      expect(device.logouts, 0);
+      // Behind the notice a spinner turns, which never settles.
+      Future<void> settle(WidgetTester tester) async {
+        await tester.pump();
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 500));
+      }
 
-      await tester.tap(_button('OK'));
-      await tester.pumpAndSettle();
+      Future<FakeWalletDevice> pumpWithoutPhrase(WidgetTester tester, {List<Object> exits = const []}) async {
+        final device = FakeWalletDevice()..store([_root, _encrypted], mnemonic: null);
+        await pumpShell(
+          tester,
+          overrides: [...device.overrides, forceAppExitProvider.overrideWithValue(() => exits.add('exit'))],
+          settle: false,
+        );
+        await settle(tester);
+        return device;
+      }
 
-      expect(device.logouts, 1);
-      expect(find.text('Wallet Error'), findsNothing);
-      expect(find.byType(WelcomePage), findsOneWidget);
+      testOnMac('says so with Remove Wallet…, Quit and Try Again, and wipes nothing', (tester) async {
+        final device = await pumpWithoutPhrase(tester);
+
+        expect(find.text('Wallet Error'), findsOneWidget);
+        expect(find.text(notice), findsOneWidget);
+        expect(_button('Remove Wallet…'), findsOneWidget);
+        expect(_button('Quit'), findsOneWidget);
+        expect(_button('Try Again'), findsOneWidget);
+        expect(_button('OK'), findsNothing);
+        expect(find.byType(Sidebar), findsNothing);
+        expect(device.logouts, 0);
+      });
+
+      testOnMac('Try Again with the phrase readable again opens the wallet and wipes nothing', (tester) async {
+        final device = await pumpWithoutPhrase(tester);
+        device.storage.mnemonics[0] = _twelveWords;
+
+        await tester.tap(_button('Try Again'));
+        await settle(tester);
+
+        expect(find.text(notice), findsNothing);
+        expect(_inSidebar('Account 1'), findsOneWidget);
+        expect(device.logouts, 0);
+      });
+
+      testOnMac('Try Again with the phrase still missing says so again and wipes nothing', (tester) async {
+        final device = await pumpWithoutPhrase(tester);
+        final reads = device.storage.mnemonicReads;
+
+        await tester.tap(_button('Try Again'));
+        await settle(tester);
+
+        expect(device.storage.mnemonicReads, greaterThan(reads));
+        expect(find.text(notice), findsOneWidget);
+        expect(find.byType(Sidebar), findsNothing);
+        expect(device.logouts, 0);
+      });
+
+      testOnMac('Quit quits the app and wipes nothing', (tester) async {
+        final exits = <Object>[];
+        final device = await pumpWithoutPhrase(tester, exits: exits);
+
+        await tester.tap(_button('Quit'));
+        await settle(tester);
+
+        expect(exits, ['exit']);
+        expect(device.logouts, 0);
+      });
+
+      testOnMac('Remove Wallet… asks first, and Cancel goes back to the notice, wiping nothing', (tester) async {
+        final device = await pumpWithoutPhrase(tester);
+
+        await tester.tap(_button('Remove Wallet…'));
+        await settle(tester);
+
+        expect(find.text(confirmTitle), findsOneWidget);
+        expect(find.text('This cannot be undone.'), findsOneWidget);
+        await tester.tap(_button('Cancel'));
+        await settle(tester);
+
+        expect(find.text(confirmTitle), findsNothing);
+        expect(find.text(notice), findsOneWidget);
+        expect(device.logouts, 0);
+      });
+
+      testOnMac('Remove, once confirmed, wipes the wallet once and shows Welcome', (tester) async {
+        final device = await pumpWithoutPhrase(tester);
+
+        await tester.tap(_button('Remove Wallet…'));
+        await settle(tester);
+        await tester.tap(_button('Remove'));
+        await settle(tester);
+
+        expect(device.logouts, 1);
+        expect(find.text('Wallet Error'), findsNothing);
+        expect(find.byType(WelcomePage), findsOneWidget);
+      });
+
+      testOnMac('Escape and a click outside leave the notice open and wipe nothing', (tester) async {
+        final device = await pumpWithoutPhrase(tester);
+
+        await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+        await settle(tester);
+        await tester.tapAt(const Offset(10, 790));
+        await settle(tester);
+
+        expect(find.text(notice), findsOneWidget);
+        expect(device.logouts, 0);
+      });
     });
 
     testOnMac('an account scan left unfinished is finished, and the accounts it finds are listed', (tester) async {

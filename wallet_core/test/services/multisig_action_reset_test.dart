@@ -9,6 +9,7 @@ import 'package:wallet_core/models/filtered_transactions_params.dart';
 import 'package:wallet_core/providers/account_id_list_cache.dart';
 import 'package:wallet_core/providers/filtered_all_transactions_provider.dart';
 import 'package:wallet_core/providers/global_toast_provider.dart';
+import 'package:wallet_core/providers/multisig_action_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_proposal_confirmations_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/notification_provider.dart';
@@ -68,6 +69,36 @@ class _Chain extends Fake implements MultisigService {
 
   /// How many times the member's balance was read.
   int balanceReads = 0;
+
+  /// How many times the multisig's open proposals were read; while
+  /// [heldOpen] is set, each read waits for it, then fails with [openError]
+  /// if set.
+  int openReads = 0;
+  Completer<void>? heldOpen;
+  Object? openError;
+
+  @override
+  Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
+    openReads++;
+    await heldOpen?.future;
+    if (openError case final error?) throw error;
+    return [?proposal].where((proposal) => !proposal.isTerminal).toList();
+  }
+
+  /// How many times the multisig's past proposals were read; while
+  /// [heldPast] is set, each read waits for it, then fails with [pastError]
+  /// if set.
+  int pastReads = 0;
+  Completer<void>? heldPast;
+  Object? pastError;
+
+  @override
+  Future<List<MultisigProposal>> getPastProposals(MultisigAccount msig) async {
+    pastReads++;
+    await heldPast?.future;
+    if (pastError case final error?) throw error;
+    return [?proposal].where((proposal) => proposal.isTerminal).toList();
+  }
 
   @override
   Future<Uint8List> submitApproveExtrinsic({
@@ -163,7 +194,7 @@ class _Action {
 
   /// How the session's log names what it dropped.
   final String word;
-  final Future<void> Function(ProviderContainer container, MultisigProposal proposal) send;
+  final Future<String> Function(ProviderContainer container, MultisigProposal proposal) send;
   final Future<String> Function(ProviderContainer container, MultisigProposal proposal) sendSigned;
   final List<String?> Function(ProviderContainer container) rows;
 
@@ -371,6 +402,9 @@ List<String> _history(ProviderContainer container) => container
 SendConfirmation _proposalOutcome(ProviderContainer container) =>
     container.read(multisigProposalConfirmationProvider(_proposalHash));
 
+MultisigActionConfirmation _actionOutcome(ProviderContainer container, [String hash = _hash]) =>
+    container.read(multisigActionConfirmationProvider(hash));
+
 Future<void> _close(WidgetTester tester, _Wallet wallet) async {
   await tester.pump();
   wallet.container.dispose();
@@ -404,17 +438,15 @@ void main() {
         final how = keystone ? 'signed on a Keystone' : 'signed here';
 
         /// Sends it, its broadcast answering when `chain.accepted` completes.
-        Future<String?> send(_Wallet wallet) {
+        Future<String> send(_Wallet wallet) {
           final proposal = _proposal(MultisigProposalStatus.active);
-          if (!keystone) return action.send(wallet.container, proposal).then((_) => null);
+          if (!keystone) return action.send(wallet.container, proposal);
           wallet.bed.substrate.holdExternalBroadcast = wallet.chain.accepted;
           return action.sendSigned(wallet.container, proposal);
         }
 
-        Future<void> expectItsAnswer(Future<String?> sent) async {
-          // Only the Keystone path returns the hash to its caller.
-          expect(await sent, keystone ? _hash : isNull);
-        }
+        /// Either path returns the hash it was sent in.
+        Future<void> expectItsAnswer(Future<String> sent) async => expect(await sent, _hash);
 
         testWidgets('${action.name} $how answering after a reset is not tracked', (tester) async {
           final wallet = await _wallet(tester);
@@ -703,5 +735,182 @@ void main() {
         await _close(tester, wallet);
       });
     });
+  });
+
+  testWidgets("an approval on its way is listed under the approver with the proposal's recipient and amount, "
+      'and the fee it was priced at', (tester) async {
+    final wallet = await _wallet(tester);
+    final proposal = _proposal(MultisigProposalStatus.active);
+    final sent = _service(
+      wallet.container,
+    ).approveProposal(msig: _msig, signer: _member, proposal: proposal, fee: BigInt.from(7));
+    await tester.pump();
+
+    final row = wallet.container.read(pendingMultisigApprovalsProvider).single;
+    expect(
+      (row.from, row.recipient, row.amount, row.fee),
+      (_member.accountId, proposal.recipient, proposal.amount, BigInt.from(7)),
+    );
+
+    wallet.chain.accepted.complete(Uint8List.fromList([1]));
+    await sent;
+    await _close(tester, wallet);
+  });
+
+  group('the open proposals are read again before the row of the action goes', () {
+    for (final action in _actions) {
+      for (final (path, wait) in [
+        ('the indexer shows', const Duration(seconds: 5)),
+        ('the chain shows done at the end of the watch', const Duration(minutes: 5, seconds: 7)),
+      ]) {
+        testWidgets('${action.name} $path: its row stays until the fresh list is in', (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          if (path == 'the indexer shows') wallet.indexer.event = action.event();
+          wallet.chain.proposal = action.resolved();
+          final reads = wallet.chain.openReads;
+          final held = wallet.chain.heldOpen = Completer<void>();
+
+          await tester.pump(wait);
+          await _settle(tester);
+
+          expect(wallet.chain.openReads, reads + 1);
+          expect(action.rows(wallet.container), hasLength(1));
+
+          held.complete();
+          await _settle(tester);
+
+          expect(action.rows(wallet.container), isEmpty);
+          expect(wallet.chain.openReads, reads + 1, reason: 'read once');
+          await _close(tester, wallet);
+        });
+
+        testWidgets('${action.name} $path: its row stays until the fresh past list is in as well', (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          if (path == 'the indexer shows') wallet.indexer.event = action.event();
+          wallet.chain.proposal = action.resolved();
+          final openReads = wallet.chain.openReads;
+          final pastReads = wallet.chain.pastReads;
+          final held = wallet.chain.heldPast = Completer<void>();
+
+          await tester.pump(wait);
+          await _settle(tester);
+
+          expect(wallet.chain.openReads, openReads + 1, reason: 'the open list is in');
+          expect(wallet.chain.pastReads, pastReads + 1);
+          expect(action.rows(wallet.container), hasLength(1));
+
+          held.complete();
+          await _settle(tester);
+
+          expect(action.rows(wallet.container), isEmpty);
+          expect(wallet.chain.pastReads, pastReads + 1, reason: 'read once');
+          await _close(tester, wallet);
+        });
+
+        // What the row stood for is then the proposal's view to keep from
+        // being offered again (the phone's detail sheet).
+        testWidgets('${action.name} $path: an open list that cannot be read again lets its row go', (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          if (path == 'the indexer shows') wallet.indexer.event = action.event();
+          wallet.chain.proposal = action.resolved();
+          wallet.chain.openError = StateError('the indexer is down');
+
+          await tester.pump(wait);
+          await _settle(tester);
+
+          expect(action.rows(wallet.container), isEmpty);
+          await _close(tester, wallet);
+        });
+
+        testWidgets('${action.name} $path: a past list that cannot be read again lets its row go', (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          if (path == 'the indexer shows') wallet.indexer.event = action.event();
+          wallet.chain.proposal = action.resolved();
+          wallet.chain.pastError = StateError('the indexer is down');
+
+          await tester.pump(wait);
+          await _settle(tester);
+
+          expect(action.rows(wallet.container), isEmpty);
+          await _close(tester, wallet);
+        });
+      }
+    }
+  });
+
+  group('what became of an action, by the hash it was sent in', () {
+    for (final action in _actions) {
+      testWidgets('${action.name} is pending while the indexer does not have it, and confirmed once it does', (
+        tester,
+      ) async {
+        final wallet = await _wallet(tester);
+        await _watchedAction(action).track(wallet);
+        await tester.pump(const Duration(seconds: 12));
+
+        expect(wallet.indexer.searches + wallet.chain.reads, greaterThan(1));
+        expect(_actionOutcome(wallet.container), MultisigActionConfirmation.pending);
+
+        wallet.chain.proposal = action.resolved();
+        wallet.indexer.event = action.event();
+        await tester.pump(const Duration(seconds: 5));
+        await _settle(tester);
+
+        expect(_actionOutcome(wallet.container), MultisigActionConfirmation.confirmed);
+        expect(action.rows(wallet.container), isEmpty);
+        await _close(tester, wallet);
+      });
+
+      testWidgets('${action.name} the wallet stops watching for is unconfirmed, and its toast still shows', (
+        tester,
+      ) async {
+        final wallet = await _wallet(tester);
+        await _watchedAction(action).track(wallet);
+        await tester.pump(const Duration(minutes: 4));
+        expect(_actionOutcome(wallet.container), MultisigActionConfirmation.pending);
+
+        await tester.pump(const Duration(minutes: 1, seconds: 10));
+        await _settle(tester);
+
+        expect(_actionOutcome(wallet.container), MultisigActionConfirmation.unconfirmed);
+        expect(wallet.container.read(globalToastProvider)?.type, ToastType.error);
+        expect(action.rows(wallet.container), isEmpty);
+        await _close(tester, wallet);
+      });
+
+      final (doneByChain, toast) = action == _execute
+          ? (MultisigActionConfirmation.executedByAnother, ToastType.info)
+          : (MultisigActionConfirmation.confirmed, null);
+      testWidgets(
+        '${action.name} the chain shows done at the end of the watch, the indexer not, is ${doneByChain.name}',
+        (tester) async {
+          final wallet = await _wallet(tester);
+          await _watchedAction(action).track(wallet);
+          await tester.pump(const Duration(minutes: 5, seconds: 2));
+          wallet.chain.proposal = action.resolved();
+          await tester.pump(const Duration(seconds: 5));
+          await _settle(tester);
+
+          expect(_actionOutcome(wallet.container), doneByChain);
+          expect(wallet.container.read(globalToastProvider)?.type, toast);
+          expect(action.rows(wallet.container), isEmpty);
+          await _close(tester, wallet);
+        },
+      );
+
+      testWidgets('what became of ${action.name} says nothing of another', (tester) async {
+        final wallet = await _wallet(tester);
+        await _watchedAction(action).track(wallet);
+        await tester.pump(const Duration(minutes: 5, seconds: 10));
+        await _settle(tester);
+
+        expect(_actionOutcome(wallet.container), MultisigActionConfirmation.unconfirmed);
+        expect(_actionOutcome(wallet.container, '0xother'), MultisigActionConfirmation.pending);
+        await _close(tester, wallet);
+      });
+    }
   });
 }

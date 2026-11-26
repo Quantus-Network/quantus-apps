@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:desktop_qr_camera/desktop_qr_camera.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -182,10 +183,22 @@ class MacQrScanSource implements QrScanSource {
       },
       handleError: (error, stackTrace, sink) {
         unawaited(_stopAfterFailure());
-        sink.addError(QrCameraException(QrCameraFailure.failed, detail: '$error'), stackTrace);
+        sink.addError(_scanningExceptionOf(error), stackTrace);
       },
     ),
   );
+
+  /// What the patched Swift sends when the camera is unplugged or its
+  /// session fails while running (`third_party/mobile_scanner/PATCHES.md`).
+  static const _cameraStoppedCode = 'MOBILE_SCANNER_CAMERA_STOPPED';
+
+  static QrCameraException _scanningExceptionOf(Object error) => switch (error) {
+    PlatformException(code: _cameraStoppedCode, :final message) => QrCameraException(
+      QrCameraFailure.stopped,
+      detail: message,
+    ),
+    _ => QrCameraException(QrCameraFailure.failed, detail: '$error'),
+  };
 
   /// The failure that started this is the one to report, so a second one is
   /// only logged.

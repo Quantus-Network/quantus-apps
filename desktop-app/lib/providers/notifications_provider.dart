@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/notification_click_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
+import 'package:quantus_desktop_wallet/utils/notification_id.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/models/notification_models.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
@@ -143,8 +144,7 @@ class DesktopLocalNotifications extends Notifier<NotificationStatus> implements 
     await ref
         .read(notificationPluginProvider)
         .show(
-          // The plugins take a 32-bit id.
-          id: notification.id.hashCode & 0x7fffffff,
+          id: notificationSystemId(notification.id),
           title: notification.title,
           body: notification.message,
           payload: notificationClickPayload(notification),

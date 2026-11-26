@@ -45,9 +45,10 @@ class EncryptedSendState {
   final BigInt submittedRecipientToken;
 
   /// The hash of each transaction the send handed to the chain, in the order
-  /// they went: all of them once it succeeded, those before the stop when it
-  /// was cancelled part way. A send draws on its inputs in batches, one
-  /// transaction each.
+  /// they went, each from the moment the chain took it: all of them once it
+  /// succeeded, those before the stop when it was cancelled or failed part
+  /// way. A send draws on its inputs in batches, one transaction each, and
+  /// proves the next after handing over the one before.
   final List<String> txHashes;
 
   EncryptedSendState({
@@ -149,6 +150,10 @@ class EncryptedSendController extends Notifier<EncryptedSendState> {
         recipientAddress: recipientAddress,
         circuitBinsDir: circuitDir,
         isCancelled: () => _stopRequested,
+        onTransactionSubmitted: (txHash) {
+          if (!ref.mounted) return;
+          state = state.copyWith(txHashes: [...state.txHashes, txHash]);
+        },
         onProgress: (progress) {
           if (!ref.mounted) return;
           state = state.copyWith(

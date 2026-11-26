@@ -124,12 +124,12 @@ void main() {
     ),
     (
       'Execute',
-      (context) => showMultisigExecuteConfirmSheet(context, msig: msig, proposal: proposal),
+      (context) => showMultisigExecuteConfirmSheet(context, msig: msig, proposal: proposal, signer: cold),
       _l10n.multisigExecuteConfirmYes,
     ),
     (
       'Cancel',
-      (context) => showMultisigCancelConfirmSheet(context, msig: msig, proposal: proposal),
+      (context) => showMultisigCancelConfirmSheet(context, msig: msig, proposal: proposal, signer: cold),
       _l10n.multisigCancelConfirmYes,
     ),
   ];

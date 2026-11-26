@@ -6,6 +6,7 @@ import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/activity/decoded_call_headline.dart';
 import 'package:wallet_core/activity/multisig_activity.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -75,6 +76,9 @@ class OpenProposalsPanel extends ConsumerWidget {
                   needed: multisig.threshold,
                   form: form,
                   l10n: l10n,
+                  isSelected: opened?.id == pending.id,
+                  hasFocus: rowsHaveKeys,
+                  onTap: () => ref.read(openedActivityProvider.notifier).open(OpenedTransaction(pending)),
                 ),
               for (final proposal in value.open)
                 OpenProposalRowView(
@@ -82,6 +86,8 @@ class OpenProposalsPanel extends ConsumerWidget {
                   id: proposal.entityId,
                   amount: proposal.amount,
                   recipient: proposal.recipient,
+                  call: proposal.hasUndecodableCall ? null : proposal.decodedCall,
+                  callUnreadable: proposal.hasUndecodableCall,
                   wait: proposalWaitOf(
                     proposal,
                     localSignerIds: localSignerIds,
@@ -127,6 +133,8 @@ class OpenProposalRowView extends StatefulWidget {
     required this.id,
     required this.amount,
     required this.recipient,
+    this.call,
+    this.callUnreadable = false,
     required this.wait,
     this.approved,
     required this.needed,
@@ -140,6 +148,13 @@ class OpenProposalRowView extends StatefulWidget {
   final String id;
   final BigInt amount;
   final String recipient;
+
+  /// What the proposal's call does, when the indexer gave its bytes and this
+  /// wallet could read them.
+  final DecodedCall? call;
+
+  /// Whether the indexer gave the call's bytes and this wallet could not read them.
+  final bool callUnreadable;
   final ProposalWait? wait;
 
   /// How many have approved; none is shown while it is being proposed.
@@ -230,10 +245,39 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
         final text = context.themeTextV3;
         final formatting = ref.watch(numberFormattingServiceProvider);
         final accent = _isUnderWay ? colors.semanticGlacier : colors.textContent;
-        final amount = Text(
-          '-${widget.l10n.commonAmountBalance(formatting.formatBalance(widget.amount), AppConstants.tokenSymbol)}',
-          style: text.amountRow.copyWith(color: accent, fontFeatures: const [FontFeature.tabularFigures()]),
+        final amountStyle = text.amountRow.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
+        final call = widget.call;
+        // A call that moves nothing is named where an amount would stand, and
+        // one this wallet cannot read says so; neither has a recipient.
+        final named = call != null && call.summary == null
+            ? DecodedCallHeadline.of(
+                call,
+                amountText: (_) => throw StateError('A call that moves nothing has no amount.'),
+              )
+            : null;
+        // Words where the amount stands take no more room than they need,
+        // and give way first, on one line, to the rest of the row; the panel
+        // at the right has them whole.
+        Widget words(String value, Color color) => Flexible(
+          flex: 2,
+          // A wide row has the room: they stand at its end as an amount does.
+          fit: widget.form == ActivityRowForm.wide ? FlexFit.tight : FlexFit.loose,
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: amountStyle.copyWith(color: color),
+          ),
         );
+        final amount = widget.callUnreadable
+            ? words(widget.l10n.multisigProposalInvalid, colors.semanticEmber)
+            : named != null
+            ? words(named.primary, accent)
+            : Text(
+                '-${widget.l10n.commonAmountBalance(formatting.formatBalance(widget.amount), AppConstants.tokenSymbol)}',
+                style: amountStyle.copyWith(color: accent),
+              );
         final icon = Container(
           width: 28,
           height: 28,
@@ -245,16 +289,23 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
           child: Center(child: Icon(Icons.how_to_vote_outlined, size: 14, color: accent)),
         );
         final approvals = _approvals(colors);
-        final who = Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: widget.form == ActivityRowForm.wide ? 58 : 52,
-              child: Text(widget.l10n.activityTxTo, style: text.body.copyWith(color: colors.textMuted)),
-            ),
-            Flexible(child: DesktopAddressCheckphrase(address: widget.recipient, isCompact: true)),
-          ],
-        );
+        final Widget? who = widget.callUnreadable
+            ? null
+            : named != null
+            ? Text(
+                call!.displayTitle,
+                style: text.dataAddress.copyWith(height: 1.3, letterSpacing: 0.3, color: colors.textMuted),
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: widget.form == ActivityRowForm.wide ? 58 : 52,
+                    child: Text(widget.l10n.activityTxTo, style: text.body.copyWith(color: colors.textMuted)),
+                  ),
+                  Flexible(child: DesktopAddressCheckphrase(address: widget.recipient, isCompact: true)),
+                ],
+              );
         final backing = widget.isSelected
             ? colors.textContent.useOpacity(widget.hasFocus ? 0.1 : 0.05)
             : _isHovered
@@ -283,7 +334,7 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Expanded(child: who),
+                Expanded(flex: 3, child: who ?? const SizedBox.shrink()),
                 const SizedBox(width: 16),
                 amount,
               ],
@@ -304,10 +355,12 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
                       SizedBox(
                         height: 28,
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             // Where it stands takes the line's room, the
                             // amount closes it.
                             Expanded(
+                              flex: 3,
                               child: Row(
                                 children: [
                                   _mark(colors),
@@ -320,7 +373,7 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
                           ],
                         ),
                       ),
-                      if (widget.form == ActivityRowForm.tight) ...[const SizedBox(height: 2), who],
+                      if (widget.form == ActivityRowForm.tight && who != null) ...[const SizedBox(height: 2), who],
                     ],
                   ),
                 ),
