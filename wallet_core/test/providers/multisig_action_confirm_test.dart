@@ -71,9 +71,11 @@ final _proposal = MultisigProposal(
 final _fee = BigInt.from(1000);
 
 /// The chain: it holds the proposal's call bytes until the test lets them go
-/// when [holdCall] is set, and fails reads or estimates when told to.
+/// when [holdCall] is set, and each fee estimate while [holdFee] is, and
+/// fails reads or estimates when told to.
 class _Chain extends Fake implements MultisigService {
   Completer<void>? holdCall;
+  Completer<void>? holdFee;
   Object? callError;
   Object? feeError;
   List<int> callBytes = _transferBytes;
@@ -94,6 +96,7 @@ class _Chain extends Fake implements MultisigService {
 
   Future<BigInt> _estimate(String action, Account signer, List<int>? callBytes) async {
     estimates.add((action, signer.accountId, callBytes));
+    await holdFee?.future;
     if (feeError case final error?) throw error;
     return _fee;
   }
@@ -315,6 +318,39 @@ void main() {
         expect(confirm.state().canConfirm, isFalse);
       });
     }
+
+    for (final kind in MultisigActionKind.values) {
+      testWidgets('${kind.name}: while the fee is being estimated, it cannot be confirmed', (tester) async {
+        chain.holdFee = Completer<void>();
+        final confirm = await open(tester, kind);
+        await tester.pump();
+
+        expect(chain.estimates, hasLength(1));
+        expect(confirm.state().loadingFee, isTrue);
+        expect(confirm.state().canConfirm, isFalse);
+
+        chain.holdFee!.complete();
+        await tester.pump();
+
+        expect(confirm.state().fee, _fee);
+        expect(confirm.state().canConfirm, isTrue);
+      });
+    }
+
+    testWidgets('a signer that cannot pay is never confirmable, not even before its fee is known', (tester) async {
+      holds[_two.accountId] = _fee - BigInt.one;
+      chain.holdFee = Completer<void>();
+      final confirm = await open(tester, MultisigActionKind.approve, signer: _two);
+      await tester.pump();
+
+      expect(confirm.state().canConfirm, isFalse);
+
+      chain.holdFee!.complete();
+      await tester.pump();
+
+      expect(confirm.state().cannotPayFee, isTrue);
+      expect(confirm.state().canConfirm, isFalse);
+    });
 
     testWidgets('a fee that cannot be estimated is said, and Confirm is still offered', (tester) async {
       chain.feeError = StateError('the node is down');

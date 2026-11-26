@@ -1820,6 +1820,24 @@ void _activityScenes() {
       await tester.pump(const Duration(milliseconds: 100));
     }
   });
+  // Another signer chosen: the fee before stands, turning beside it, until
+  // this one's is priced; Approve waits for it.
+  _scene('proposal_action_repricing', (tester) async {
+    var priced = true;
+    await openTeamProposal(
+      tester,
+      calls: [toApprove],
+      openId: 'proposal-7',
+      thirdSigner: _second.accountId,
+      actionFee: () async => priced ? FakeSendChain.usualFee : Completer<BigInt>().future,
+    );
+    await press(tester, ProposalActionsBar.primaryKey);
+    priced = false;
+    await tester.tap(find.byKey(ProposalActionSheet.signerKey(_second.accountId)));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  });
   _scene('proposal_action_cancel', (tester) async {
     await openTeamProposal(tester, calls: [toExecute], openId: 'proposal-8');
     await press(tester, ProposalActionsBar.cancelKey);

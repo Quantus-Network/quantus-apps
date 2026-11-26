@@ -97,8 +97,8 @@ class MultisigActionConfirmState {
   bool get cannotPayFee => _cannotPay(signerBalance, fee);
 
   /// Never while the call is not known to be the one stored on chain, nor
-  /// while the signer cannot pay the fee.
-  bool get canConfirm => !submitting && !loadingCall && !callUnavailable && !cannotPayFee;
+  /// while the fee is being estimated or the signer cannot pay it.
+  bool get canConfirm => !submitting && !loadingCall && !callUnavailable && !loadingFee && !cannotPayFee;
 
   MultisigActionConfirmState copyWith({
     bool? loadingCall,

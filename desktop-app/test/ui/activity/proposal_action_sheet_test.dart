@@ -205,8 +205,8 @@ void main() {
         _proposal(status: MultisigProposalStatus.approved, approvals: const ['qzOther', 'qzSavings']),
       ),
     ]) {
-      testOnMac('${kind.name}, choosing another signer: the call is not read again, no line says so, and the fee '
-          'and what is paid stand until the new fee is known', (tester) async {
+      testOnMac('${kind.name}, choosing another signer: the call is not read again, no line says so, the fee '
+          'and what is paid stand, turning beside them, and it waits until the new fee is known', (tester) async {
         var reads = 0;
         final chain = FakeSendChain()
           ..proposalCall = (_) async {
@@ -225,15 +225,74 @@ void main() {
 
         expect(reads, 1, reason: 'the call is the one already read');
         expect(_inSheet(find.text(_l10n.multisigProposalCallLoading)), findsNothing);
-        expect(_inSheet(find.byType(Loader)), findsNothing);
         expect(_inSheet(find.text(_money(tester, FakeSendChain.usualFee))), findsNWidgets(2));
+        // The user's pick (hand test, 2026-11-25): the fee before stands, a
+        // spinner beside it, in place of #827's still figure.
+        expect(_inSheet(find.byType(Loader)), findsNWidgets(2));
+        expect(_offered(tester, ProposalActionSheet.confirmKey), isFalse, reason: 'its fee is not known yet');
         expect(_buttons(tester), before);
 
         newFee.complete(FakeSendChain.usualFee * BigInt.two);
         await tester.pumpAndSettle();
 
         expect(_inSheet(find.text(_money(tester, FakeSendChain.usualFee * BigInt.two))), findsNWidgets(2));
+        expect(_inSheet(find.byType(Loader)), findsNothing);
+        expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
         expect(_buttons(tester), before);
+      });
+
+      testOnMac('${kind.name}, choosing a signer that cannot pay: never offered, before its fee is known or after', (
+        tester,
+      ) async {
+        final chain = FakeSendChain();
+        await _open(
+          tester,
+          kind,
+          proposal,
+          chain: chain,
+          accounts: const [mainAccount, savingsAccount],
+          balances: {...oneTokenEach, savingsAccount.accountId: BigInt.one},
+        );
+        final newFee = Completer<BigInt>();
+        chain.actionFee = () => newFee.future;
+
+        await tester.tap(_inSheet(find.byKey(ProposalActionSheet.signerKey('qzSavings'))));
+        await tester.pump();
+        await tester.pump();
+
+        expect(_offered(tester, ProposalActionSheet.confirmKey), isFalse);
+
+        newFee.complete(FakeSendChain.usualFee);
+        await tester.pumpAndSettle();
+
+        expect(_offered(tester, ProposalActionSheet.confirmKey), isFalse);
+        expect(_inSheet(find.text(_l10n.multisigProposeFeePayerInsufficient)), findsOne);
+      });
+    }
+
+    for (final (kind, proposal) in [
+      (MultisigActionKind.approve, _proposal()),
+      (
+        MultisigActionKind.execute,
+        _proposal(status: MultisigProposalStatus.approved, approvals: const ['qzOther', 'qzSavings']),
+      ),
+      (MultisigActionKind.cancel, _proposal(proposer: 'qzMain')),
+    ]) {
+      testOnMac('${kind.name}: while its first fee is estimated, the fee and what is paid turn and it waits', (
+        tester,
+      ) async {
+        final fee = Completer<BigInt>();
+        final chain = FakeSendChain()..actionFee = () => fee.future;
+        await _open(tester, kind, proposal, chain: chain, settle: false);
+
+        expect(_inSheet(find.byType(Loader)), findsNWidgets(2));
+        expect(_offered(tester, ProposalActionSheet.confirmKey), isFalse);
+
+        fee.complete(FakeSendChain.usualFee);
+        await tester.pumpAndSettle();
+
+        expect(_inSheet(find.byType(Loader)), findsNothing);
+        expect(_offered(tester, ProposalActionSheet.confirmKey), isTrue);
       });
     }
 

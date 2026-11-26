@@ -180,15 +180,23 @@ class SendSummary extends StatelessWidget {
 /// figure after [label], or after the name of the [signer] and [label] where
 /// another account than the one the send leaves pays it, a proposal's member.
 class SendTotal extends StatelessWidget {
-  const SendTotal({super.key, required this.rows, required this.label, this.signer}) : _loading = false;
+  const SendTotal({super.key, required this.rows, required this.label, this.signer, this.updating = false})
+    : _loading = false;
 
   /// What is paid, not known yet: its line, turning where the figure will
   /// stand.
-  const SendTotal.loading({super.key, required this.label, this.signer}) : rows = const [], _loading = true;
+  const SendTotal.loading({super.key, required this.label, this.signer})
+    : rows = const [],
+      _loading = true,
+      updating = false;
 
   final List<SendReviewRow> rows;
   final String label;
   final Account? signer;
+
+  /// What is paid is the figure before, standing while the new one is
+  /// worked out: it turns beside it.
+  final bool updating;
   final bool _loading;
 
   @override
@@ -211,7 +219,7 @@ class SendTotal extends StatelessWidget {
           if (signer == null)
             figure == null
                 ? FigureRow.loading(label: label, isStrong: true)
-                : FigureRow(label: label, value: figure, isStrong: true)
+                : FigureRow(label: label, value: figure, isStrong: true, updating: updating)
           else
             // The figure is whole whatever the account is called: the name
             // takes what is left of the line, and is cut short there.
@@ -238,7 +246,12 @@ class SendTotal extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: SummaryRow.gap),
-                  if (figure == null) const FigureLoader() else FigureText(figure, isStrong: true),
+                  if (figure == null)
+                    const FigureLoader()
+                  else if (updating)
+                    Flexible(child: UpdatingFigure(figure, isStrong: true))
+                  else
+                    FigureText(figure, isStrong: true),
                 ],
               ),
             ),

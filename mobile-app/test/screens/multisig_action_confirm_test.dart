@@ -93,6 +93,9 @@ class _FakeMultisigService extends Fake implements MultisigService {
 
   Object? feeError;
 
+  /// When set, each fee estimate waits for it.
+  Completer<void>? holdFee;
+
   /// Who each estimate was for, and the call bytes it was given.
   final estimates = <(String action, String signer, List<int>? callBytes)>[];
 
@@ -105,6 +108,7 @@ class _FakeMultisigService extends Fake implements MultisigService {
 
   Future<BigInt> _estimate(String action, Account signer, List<int>? callBytes) async {
     estimates.add((action, signer.accountId, callBytes));
+    await holdFee?.future;
     if (feeError case final error?) throw error;
     return _fee;
   }
@@ -282,6 +286,21 @@ void main() {
     expect(chain.callReads, 1);
     expect(chain.estimates, [('approve', _two.accountId, _callBytes)]);
     expect(find.text(_l10n.multisigProposalCallLoading), findsNothing);
+    expect(_isOffered(tester, _l10n.multisigApproveConfirmYes), isTrue);
+  });
+
+  // Before the hand test of 2026-11-25 Confirm was offered while the fee was
+  // still "…", so a signer that cannot pay it could press it.
+  testWidgets('while the fee is being estimated, Confirm is unavailable; once it is in, offered', (tester) async {
+    chain.holdFee = Completer();
+    await _open(tester, chain, submission, (context) => _approve(context, signer: _two));
+
+    expect(chain.estimates, hasLength(1));
+    expect(_isOffered(tester, _l10n.multisigApproveConfirmYes), isFalse);
+
+    chain.holdFee!.complete();
+    await tester.pumpAndSettle();
+
     expect(_isOffered(tester, _l10n.multisigApproveConfirmYes), isTrue);
   });
 

@@ -288,6 +288,8 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
       rows: [SendReviewText(l10n.swapReviewNetworkFee, _money(fee), kind: SendReviewRowKind.total)],
       label: label,
       signer: _signer,
+      // The fee of the signer chosen before, while this one's is estimated.
+      updating: loading,
     );
   }
 
@@ -359,7 +361,7 @@ class _ProposalActionSheetState extends ConsumerState<ProposalActionSheet> {
                 ),
               },
               if (fee != null)
-                FigureRow(label: l10n.swapReviewNetworkFee, value: _money(fee))
+                FigureRow(label: l10n.swapReviewNetworkFee, value: _money(fee), updating: confirm.loadingFee)
               else if (confirm.loadingFee)
                 FigureRow.loading(label: l10n.swapReviewNetworkFee),
               if (confirm.feeUnavailable)
