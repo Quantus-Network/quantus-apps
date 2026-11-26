@@ -421,6 +421,10 @@ class AppLocalizationsId extends AppLocalizations {
       'Tidak dapat membaca usulan ini dari rantai, jadi tidak ada yang bisa disetujui. Coba lagi setelah Anda kembali online.';
 
   @override
+  String get multisigProposalStateUnreadNote =>
+      'Tidak dapat memeriksa keadaan usulan ini sekarang, jadi belum ada yang bisa dilakukan di sini. Coba lagi setelah Anda kembali online.';
+
+  @override
   String get multisigProposalInvalid => 'Proposal tidak valid';
 
   @override

@@ -833,6 +833,18 @@ class FakeSendChain {
   /// When set, a read of open proposals waits for it.
   Completer<void>? holdOpenProposals;
 
+  /// The proposals the chain stores, by id, as a check of one reads them.
+  final proposalsById = <int, MultisigProposal>{};
+
+  /// Executions the indexer has, by the hash they were sent in.
+  final indexedExecutions = <String, MultisigProposalExecutedEvent>{};
+
+  /// Approvals the indexer has, by the hash they were sent in.
+  final indexedApprovals = <String, MultisigProposalApprovedEvent>{};
+
+  /// Cancellations the indexer has, by the hash they were sent in.
+  final indexedCancellations = <String, MultisigProposalCancelledEvent>{};
+
   /// The multisigs whose open proposals were read, in order.
   final openProposalReads = <String>[];
 
@@ -1019,6 +1031,9 @@ class _FakeMultisigService extends Fake implements MultisigService {
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
 
   @override
+  Future<MultisigProposal?> getProposal(MultisigAccount msig, int id) async => chain.proposalsById[id];
+
+  @override
   Future<List<MultisigProposal>> getOpenProposals(MultisigAccount msig) async {
     chain.openProposalReads.add(msig.accountId);
     await chain.holdOpenProposals?.future;
@@ -1039,6 +1054,18 @@ class _FakeChainHistoryService extends Fake implements ChainHistoryService {
   _FakeChainHistoryService(this.chain);
 
   final FakeSendChain chain;
+
+  @override
+  Future<MultisigProposalExecutedEvent?> searchExecutedByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedExecutions[extrinsicHash];
+
+  @override
+  Future<MultisigProposalApprovedEvent?> searchSignerApprovedByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedApprovals[extrinsicHash];
+
+  @override
+  Future<MultisigProposalCancelledEvent?> searchCancelledByExtrinsicHash({required String extrinsicHash}) async =>
+      chain.indexedCancellations[extrinsicHash];
 
   @override
   Future<TransactionEvent?> searchByExtrinsicHash({required String extrinsicHash, required bool isReversible}) async {

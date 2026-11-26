@@ -29,6 +29,8 @@ Future<bool> _confirmIndexedExecution(Ref ref, MultisigAccount msig, PendingMult
   if (indexed == null) return false;
   if (!await session.survivesReset(ticket, dropping: 'confirming execution ${pending.id}')) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: 'confirming execution ${pending.id}')) return true;
   removePendingMultisigExecution(ref, pending.id);
   _settle(ref, hash, MultisigActionConfirmation.confirmed);
   await reconcileIndexedExecution(ref, msig, indexed);
@@ -48,8 +50,9 @@ Future<bool> _tryResolveExecutionTimeout(Ref ref, MultisigAccount msig, PendingM
   }
   if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
   removePendingMultisigExecution(ref, pending.id);
-  invalidateMultisigProposals(ref, msig);
 
   final hash = pending.extrinsicHash;
   if (hash != null) {

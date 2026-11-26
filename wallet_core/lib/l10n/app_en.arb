@@ -574,6 +574,10 @@
     "@multisigProposalCallUnavailable": {
       "description": "Shown when the proposal's stored call bytes could not be fetched, blocking approval"
     },
+    "multisigProposalStateUnreadNote": "Could not check where this proposal stands now, so nothing can be done with it here. Try again when you are back online.",
+    "@multisigProposalStateUnreadNote": {
+      "description": "Proposal detail: the open proposals could not be read again, so its actions are held back"
+    },
     "multisigProposalInvalid": "Invalid proposal",
     "@multisigProposalInvalid": {
       "description": "Shown in place of the amount when the proposal's stored call bytes cannot be decoded, blocking approval"

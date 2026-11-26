@@ -28,6 +28,8 @@ Future<bool> _confirmIndexedApproval(Ref ref, MultisigAccount msig, PendingMulti
   if (indexed == null) return false;
   if (!await session.survivesReset(ticket, dropping: 'confirming approval ${pending.id}')) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: 'confirming approval ${pending.id}')) return true;
   removePendingMultisigApproval(ref, pending.id);
   _settle(ref, hash, MultisigActionConfirmation.confirmed);
   await reconcileIndexedApproval(ref, msig, indexed);
@@ -47,8 +49,9 @@ Future<bool> _tryResolveApprovalTimeout(Ref ref, MultisigAccount msig, PendingMu
   }
   if (!await session.survivesReset(ticket, dropping: dropping)) return true;
 
+  await rereadMultisigProposals(ref, msig);
+  if (!await session.survivesReset(ticket, dropping: dropping)) return true;
   removePendingMultisigApproval(ref, pending.id);
-  invalidateMultisigProposals(ref, msig);
 
   // The proposal shows this approver's approval, so it went through.
   final hash = pending.extrinsicHash;
