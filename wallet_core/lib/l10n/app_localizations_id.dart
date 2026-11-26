@@ -1325,6 +1325,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get activityDetailTitleCancelling => 'Membatalkan proposal';
 
   @override
+  String get activityDetailTitleApproving => 'Menyetujui proposal';
+
+  @override
   String get activityDetailTitleExecuting => 'Mengeksekusi proposal';
 
   @override

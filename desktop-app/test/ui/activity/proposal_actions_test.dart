@@ -140,7 +140,15 @@ String? _note(WidgetTester tester) {
 
 void _approving(ProviderContainer container, String approver) => container
     .read(pendingMultisigApprovalsProvider.notifier)
-    .add(PendingMultisigApprovalEvent.create(multisigAddress: _team.accountId, proposalId: 1, approverId: approver));
+    .add(
+      PendingMultisigApprovalEvent.create(
+        multisigAddress: _team.accountId,
+        proposalId: 1,
+        approverId: approver,
+        recipient: _bob,
+        amount: oneToken,
+      ),
+    );
 
 void _executing(ProviderContainer container) => container
     .read(pendingMultisigExecutionsProvider.notifier)
@@ -399,6 +407,8 @@ void main() {
                 multisigAddress: _team.accountId,
                 proposalId: 1,
                 approverId: 'qzMain',
+                recipient: _bob,
+                amount: oneToken,
               ).copyWith(extrinsicHash: hash);
               container.read(pendingMultisigApprovalsProvider.notifier).add(pending);
               container.read(multisigApprovalPollingServiceProvider).startPolling(_team, pending);

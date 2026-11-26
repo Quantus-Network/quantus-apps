@@ -2504,6 +2504,12 @@ abstract class AppLocalizations {
   /// **'Cancelling proposal'**
   String get activityDetailTitleCancelling;
 
+  /// Detail sheet title while the approver's approval of a multisig proposal is confirming on-chain
+  ///
+  /// In en, this message translates to:
+  /// **'Approving proposal'**
+  String get activityDetailTitleApproving;
+
   /// Detail sheet title while a multisig proposal execution is confirming on-chain
   ///
   /// In en, this message translates to:

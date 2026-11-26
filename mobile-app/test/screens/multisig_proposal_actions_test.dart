@@ -215,6 +215,8 @@ void _addApproval(ProviderContainer container, Account approver) => container
         multisigAddress: _msig.accountId,
         proposalId: 1,
         approverId: approver.accountId,
+        recipient: 'qzbob${'x' * 40}',
+        amount: BigInt.one,
       ),
     );
 

@@ -72,6 +72,8 @@ PendingMultisigApprovalEvent _approving(Account approver) => PendingMultisigAppr
   multisigAddress: _msig.accountId,
   proposalId: 1,
   approverId: approver.accountId,
+  recipient: 'qzbob${'x' * 40}',
+  amount: BigInt.one,
 );
 
 final _executing = PendingMultisigExecutionEvent.create(

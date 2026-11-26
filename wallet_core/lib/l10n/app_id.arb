@@ -368,6 +368,7 @@
   "activityDetailTitleProposalExecuted": "Proposal dieksekusi",
   "activityDetailTitleProposalCancelled": "Proposal dibatalkan",
   "activityDetailTitleCancelling": "Membatalkan proposal",
+  "activityDetailTitleApproving": "Menyetujui proposal",
   "activityDetailTitleExecuting": "Mengeksekusi proposal",
   "activityDetailTitleProposing": "Mengajukan",
   "activityDetailProposalTransferAmount": "JUMLAH TRANSFER",

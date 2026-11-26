@@ -79,6 +79,14 @@ void main() {
         deposit: BigInt.one,
         palletFee: BigInt.one,
       ),
+      PendingMultisigApprovalEvent.create(
+        multisigAddress: msig.accountId,
+        proposalId: 1,
+        approverId: me,
+        recipient: other,
+        amount: BigInt.from(500),
+        fee: BigInt.one,
+      ),
       PendingMultisigExecutionEvent.create(
         multisigAddress: msig.accountId,
         proposalId: 1,

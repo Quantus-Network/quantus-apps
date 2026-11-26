@@ -1230,7 +1230,8 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
     required Account signer,
     required MultisigProposal proposal,
     List<int>? callBytes,
-  }) => _action('approve', signer, null, callBytes);
+    BigInt? fee,
+  }) => _action('approve', signer, fee, callBytes);
 
   @override
   Future<String> executeProposal({

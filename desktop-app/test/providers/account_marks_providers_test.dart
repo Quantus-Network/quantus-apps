@@ -278,6 +278,8 @@ void main() {
             multisigAddress: teamMultisig.accountId,
             proposalId: 'approving'.hashCode,
             approverId: 'qzMain',
+            recipient: 'qzPayee',
+            amount: oneToken,
             submittedAt: now,
           ),
         );
@@ -285,6 +287,30 @@ void main() {
 
     expect(markOf(container, teamMultisig.accountId), const AccountMark(waitingForSignature: 1));
     expect(chain.openProposalReads, contains(teamMultisig.accountId));
+    await close(tester, container);
+  });
+
+  testWidgets('an approval on its way counts for the account approving, until it is confirmed', (tester) async {
+    final container = await wallet(tester, FakeSendChain(), multisigs: [teamMultisig]);
+    final approving = PendingMultisigApprovalEvent.create(
+      multisigAddress: teamMultisig.accountId,
+      proposalId: 1,
+      approverId: savingsAccount.accountId,
+      recipient: 'qzPayee',
+      amount: oneToken,
+      fee: FakeSendChain.usualFee,
+    );
+    container.read(pendingMultisigApprovalsProvider.notifier).add(approving);
+    await settle(tester);
+
+    expect(markOf(container, savingsAccount.accountId), const AccountMark(inProgress: 1));
+    expect(markOf(container, mainAccount.accountId), const AccountMark());
+    expect(markOf(container, teamMultisig.accountId).inProgress, 0);
+
+    container.read(pendingMultisigApprovalsProvider.notifier).remove(approving.id);
+    await settle(tester);
+
+    expect(markOf(container, savingsAccount.accountId), const AccountMark());
     await close(tester, container);
   });
 
