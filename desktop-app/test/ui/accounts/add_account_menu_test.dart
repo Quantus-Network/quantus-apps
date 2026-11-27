@@ -157,6 +157,7 @@ void main() {
 
       expect(_labels(tester, _menu), [
         'New Account',
+        'New Wallet',
         'Import Wallet…',
         'Connect Cold Wallet…',
         'Create Multisig…',

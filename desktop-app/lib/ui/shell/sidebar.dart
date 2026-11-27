@@ -43,7 +43,11 @@ import 'package:wallet_core/utils/hidden_amount.dart';
 /// The groups keep the order they were put in ([sidebarGroupsProvider])
 /// whichever account is active, so a row never moves when it is clicked.
 class Sidebar extends ConsumerWidget {
-  const Sidebar({super.key});
+  const Sidebar({super.key, required this.onNewWallet});
+
+  /// Creates another wallet, as the Add Account menu's New Wallet asks: the
+  /// shell's, as the wallet's Encrypted account is added on its ref.
+  final VoidCallback onNewWallet;
 
   /// The line that shows where a heading being dragged would land.
   static const dropLineKey = Key('sidebar-drop-line');
@@ -115,6 +119,7 @@ class Sidebar extends ConsumerWidget {
       ref.read(l10nProvider),
       ref.read(softwareWalletsProvider),
       ref.read(accountManagerProvider),
+      onNewWallet: onNewWallet,
       offersColdWallets: ref.read(remoteConfigProvider).enableKeystoneHardwareWallet,
       offersMultisigs: ref.read(remoteConfigProvider).enableMultisig,
       canCreateMultisig: ref.read(multisigCreatorProvider) != null,

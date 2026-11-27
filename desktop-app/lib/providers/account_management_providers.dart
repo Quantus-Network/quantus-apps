@@ -324,6 +324,27 @@ class AccountManager {
     }
   }
 
+  /// Makes another software wallet with [create], which stores it under a
+  /// new recovery phrase and returns its first account, after the navigation
+  /// asked for before, one at a time so two never take the same slot. It is
+  /// then shown as an imported one is ([finishImport]). One that cannot be
+  /// made says so on the active account, and nothing is added.
+  Future<void> createWallet(Future<Account> Function() create) =>
+      _ref.read(shellNavigationProvider.notifier).run(() async {
+        // A sheet is for the account it opened on, so nothing moves under it.
+        if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return;
+        final l10n = _ref.read(l10nProvider);
+        final Account root;
+        try {
+          root = await create();
+        } catch (e) {
+          _noteNotAdded(e, message: l10n.desktopNewWalletFailed);
+          return;
+        }
+        if (!_ref.mounted) return;
+        await _showAddedWallet(RegularAccount(root), sidebarHiddenNote: l10n.desktopNewWalletDone);
+      });
+
   /// Opens the Import Wallet sheet. Like any sheet, it does not open over
   /// another.
   Future<void> openImportWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.importWallet);
@@ -438,7 +459,15 @@ class AccountManager {
       return;
     }
     if (!_ref.mounted) return;
+    await _showAddedWallet(target, sidebarHiddenNote: _ref.read(l10nProvider).desktopImportDone);
+  });
 
+  /// Shows the wallet of [target], just added to the app: its group open and
+  /// [target] the active account, with the wallet's heading ready to be
+  /// named. With the sidebar hidden there is no heading, so
+  /// [sidebarHiddenNote] by the account's name says the wallet is in.
+  Future<void> _showAddedWallet(RegularAccount target, {required String sidebarHiddenNote}) async {
+    final walletIndex = target.account.walletIndex;
     _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
     await _ref.read(sidebarSelectionProvider.notifier).showInStep(target);
     if (!_ref.mounted) return;
@@ -450,18 +479,14 @@ class AccountManager {
     } else {
       _ref
           .read(accountNoteProvider.notifier)
-          .show(
-            AccountNote(
-              accountId: target.account.accountId,
-              message: _ref.read(l10nProvider).desktopImportDone,
-              isError: false,
-            ),
-          );
+          .show(AccountNote(accountId: target.account.accountId, message: sidebarHiddenNote, isError: false));
     }
-  });
+  }
 
-  void _noteNotAdded(Object error) {
-    quantusPrint('Adding an account failed: $error');
+  /// Says on the active account that what was being added is not: [message],
+  /// or that the account could not be added.
+  void _noteNotAdded(Object error, {String? message}) {
+    quantusPrint('Adding an account or a wallet failed: $error');
     if (!_ref.mounted) return;
     final active = _ref.read(activeAccountProvider).value?.account;
     if (active == null) return;
@@ -470,7 +495,7 @@ class AccountManager {
         .show(
           AccountNote(
             accountId: active.accountId,
-            message: _ref.read(l10nProvider).createAccountErrorCouldNotAdd,
+            message: message ?? _ref.read(l10nProvider).createAccountErrorCouldNotAdd,
             isError: true,
           ),
         );

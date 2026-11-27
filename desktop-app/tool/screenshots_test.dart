@@ -584,6 +584,14 @@ void main() {
     await tester.pumpAndSettle();
   });
 
+  _scene('new_wallet_name_it', (tester) async {
+    await _openAccounts(tester);
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Add Account')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byKey(ContextMenuRegion.menuKey), matching: find.text('New Wallet')));
+    await tester.pumpAndSettle();
+  });
+
   _scene('import_wallet_opened', (tester) async {
     await _openAccounts(tester);
     await ProviderScope.containerOf(

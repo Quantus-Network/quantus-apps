@@ -36,8 +36,9 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// none, no item has it. In the menus that answer a key press,
 /// [onNewAccountByKey] is given and that item acts on it instead, for the
 /// wallet of the account active when its turn comes. It is disabled with the
-/// items that open a sheet, as Import Wallet… and, when [offersColdWallets],
-/// Connect Cold Wallet…, in a group after it, are, and Create Multisig… and
+/// items that open a sheet, as New Wallet ([onNewWallet]), Import Wallet… and,
+/// when [offersColdWallets], Connect Cold Wallet…, in a group after it, are,
+/// and Create Multisig… and
 /// Manage Multisigs…, in a group after that when [offersMultisigs]. Create
 /// Multisig… is also disabled unless
 /// [canCreateMultisig].
@@ -57,6 +58,7 @@ List<PlatformMenu> buildAppMenus({
   required int? newAccountShortcutWallet,
   required ValueChanged<int> onNewAccount,
   required VoidCallback? onNewAccountByKey,
+  required VoidCallback? onNewWallet,
   required bool offersColdWallets,
   required bool coldWalletHasShortcut,
   required bool offersMultisigs,
@@ -181,6 +183,7 @@ List<PlatformMenu> buildAppMenus({
         ),
         PlatformMenuItemGroup(
           members: [
+            PlatformMenuItem(label: l10n.desktopMenuNewWallet, onSelected: canOpenSheet ? onNewWallet : null),
             PlatformMenuItem(label: l10n.desktopMenuImportWallet, onSelected: opens(ShellSheet.importWallet)),
             if (offersColdWallets)
               PlatformMenuItem(

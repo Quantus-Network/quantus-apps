@@ -126,7 +126,7 @@ PlatformMenuItem _menuBarItem(WidgetTester tester) =>
 
 void main() {
   group('where it is offered', () {
-    testOnMac('the Add Account menu has Import Wallet… after a separator', (tester) async {
+    testOnMac('the Add Account menu has Import Wallet… after a separator, under New Wallet', (tester) async {
       await _pump(tester);
 
       await tester.tap(_addRow);
@@ -140,6 +140,7 @@ void main() {
       ];
       expect(labels, [
         'New Account',
+        'New Wallet',
         'Import Wallet…',
         'Connect Cold Wallet…',
         'Create Multisig…',
@@ -152,7 +153,9 @@ void main() {
       );
     });
 
-    testOnMac('the Account menu has it in a group of its own after New Account, with no shortcut', (tester) async {
+    testOnMac('the Account menu has it in the group after New Account\'s, under New Wallet, with no shortcut', (
+      tester,
+    ) async {
       await _pump(tester);
 
       final menus = tester.widget<PlatformMenuBar>(find.byType(PlatformMenuBar)).menus.cast<PlatformMenu>();
@@ -160,7 +163,11 @@ void main() {
       final at = groups.indexWhere((group) => group.members.any((item) => item.label == 'New Account'));
 
       expect(groups[at].members, hasLength(1));
-      expect(groups[at + 1].members.map((item) => item.label), ['Import Wallet…', 'Connect Cold Wallet…']);
+      expect(groups[at + 1].members.map((item) => item.label), [
+        'New Wallet',
+        'Import Wallet…',
+        'Connect Cold Wallet…',
+      ]);
       expect(_menuBarItem(tester).shortcut, isNull);
     });
 

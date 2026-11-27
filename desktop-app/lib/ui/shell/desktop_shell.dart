@@ -99,6 +99,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     );
   }
 
+  /// Creates another wallet, on the shell's ref: the wallet's Encrypted
+  /// account is added after the menu that asked has gone.
+  void _createWallet() => unawaited(ref.read(accountManagerProvider).createWallet(() => createSoftwareWallet(ref)));
+
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
     final top = _sheetTop();
@@ -340,6 +344,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           : null,
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
       onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
+      onNewWallet: hasWallet ? _createWallet : null,
       offersColdWallets: offersColdWallets,
       coldWalletHasShortcut: coldWalletHasShortcut,
       offersMultisigs: read(remoteConfigProvider).enableMultisig,
@@ -404,7 +409,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (isSidebarVisible) ...[
-                  SizedBox(width: sidebarWidth, child: const Sidebar()),
+                  SizedBox(
+                    width: sidebarWidth,
+                    child: Sidebar(onNewWallet: _createWallet),
+                  ),
                   PanelResizeHandle(
                     width: sidebarWidth,
                     onResize: sidebar.resizeTo,
