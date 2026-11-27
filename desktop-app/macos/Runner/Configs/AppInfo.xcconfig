@@ -11,4 +11,4 @@ PRODUCT_NAME = Quantus Wallet
 PRODUCT_BUNDLE_IDENTIFIER = com.quantus.desktop-wallet
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.quantus. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Quantus Labs. All rights reserved.
