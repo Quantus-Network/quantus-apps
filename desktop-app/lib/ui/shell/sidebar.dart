@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/providers/account_balance.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -184,6 +185,7 @@ class Sidebar extends ConsumerWidget {
             canDrag: true,
             heading: _MultisigsHeader(
               key: const ValueKey('sidebar-multisigs'),
+              multisigs: multisigs,
               count: multisigs.length + creating.length,
               isOpen: multisigsOpen,
               holdsActiveAccount: ref.watch(activeIsMultisigProvider),
@@ -449,12 +451,19 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
     return WalletContextMenu(wallet: widget.wallet, child: heading);
   }
 
+  String _total(Iterable<BaseAccount> accounts) => balanceLine(
+    ref.watch(l10nProvider),
+    ref.watch(numberFormattingServiceProvider),
+    accountsTotalWith(ref.watch, accounts),
+  );
+
   /// The name, with the wallet's chevron and, while it is closed, how many
-  /// accounts it holds.
+  /// accounts it holds and what they hold together.
   Widget _heading(String name, AppLocalizations l10n) => _GroupHeading(
     name: name,
     count: widget.wallet.accountCount,
     countDescription: l10n.desktopWalletAccountCount(widget.wallet.accountCount),
+    total: widget.isOpen ? null : _total(walletAccountsInOrder(widget.wallet).map((d) => d.account)),
     isOpen: widget.isOpen,
     isControl: !widget.holdsActiveAccount,
     onToggle: _toggle,
@@ -465,7 +474,16 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
 /// and stays open while one of them is the active account. Its name is
 /// fixed, so it is always clear which group holds the multisigs.
 class _MultisigsHeader extends ConsumerWidget {
-  const _MultisigsHeader({super.key, required this.count, required this.isOpen, required this.holdsActiveAccount});
+  const _MultisigsHeader({
+    super.key,
+    required this.multisigs,
+    required this.count,
+    required this.isOpen,
+    required this.holdsActiveAccount,
+  });
+
+  /// The multisigs the chain has, whose balances its total adds up.
+  final List<MultisigAccount> multisigs;
 
   /// The multisigs, and those being created.
   final int count;
@@ -480,6 +498,9 @@ class _MultisigsHeader extends ConsumerWidget {
         name: l10n.desktopSidebarMultisigs,
         count: count,
         countDescription: l10n.desktopWalletAccountCount(count),
+        total: isOpen
+            ? null
+            : balanceLine(l10n, ref.watch(numberFormattingServiceProvider), accountsTotalWith(ref.watch, multisigs)),
         isOpen: isOpen,
         isControl: !holdsActiveAccount,
         onToggle: () {
@@ -493,13 +514,15 @@ class _MultisigsHeader extends ConsumerWidget {
 }
 
 /// A group's heading in the sidebar: its [name] in capitals with a chevron
-/// when it is a control, and [count] while it is closed. [onToggle] opens or
-/// closes the group where it [isControl].
+/// when it is a control, and [count] while it is closed, with the group's
+/// [total] on a line under the name. [onToggle] opens or closes the group
+/// where it [isControl].
 class _GroupHeading extends StatelessWidget {
   const _GroupHeading({
     required this.name,
     required this.count,
     required this.countDescription,
+    required this.total,
     required this.isOpen,
     required this.isControl,
     required this.onToggle,
@@ -510,6 +533,10 @@ class _GroupHeading extends StatelessWidget {
 
   /// [count] as a screen reader hears it.
   final String countDescription;
+
+  /// What the group's accounts hold together, in words, shown while it is
+  /// closed.
+  final String? total;
   final bool isOpen;
   final bool isControl;
   final VoidCallback onToggle;
@@ -525,7 +552,7 @@ class _GroupHeading extends StatelessWidget {
     // gets the name as it is written.
     return Semantics(
       label: name,
-      value: isOpen ? null : countDescription,
+      value: isOpen ? null : [countDescription, ?total].join(', '),
       button: isControl,
       expanded: isOpen,
       onTap: isControl ? onToggle : null,
@@ -540,22 +567,32 @@ class _GroupHeading extends StatelessWidget {
             borderRadius: radius,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(
-                      name.toUpperCase(),
-                      style: quiet.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.8),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name.toUpperCase(),
+                          style: quiet.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.8),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (!isOpen) ...[Text('$count', style: quiet), const SizedBox(width: 7)],
+                      if (isControl)
+                        Icon(
+                          isOpen ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
+                          size: 11,
+                          color: colors.textMuted2,
+                        ),
+                    ],
                   ),
-                  if (!isOpen) ...[Text('$count', style: quiet), const SizedBox(width: 7)],
-                  if (isControl)
-                    Icon(
-                      isOpen ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
-                      size: 11,
-                      color: colors.textMuted2,
+                  if (total case final total? when !isOpen)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(total, style: quiet, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                 ],
               ),

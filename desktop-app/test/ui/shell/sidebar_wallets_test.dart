@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton, PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
@@ -82,6 +85,17 @@ Future<void> _rightClick(WidgetTester tester, Finder target) async {
   await gesture.up();
   await tester.pumpAndSettle();
 }
+
+/// [count] tokens as the sidebar writes an amount.
+String _tokens(WidgetTester tester, int count) {
+  final container = ProviderScope.containerOf(tester.element(find.byType(Sidebar)));
+  final formatted = container.read(numberFormattingServiceProvider).formatBalance(oneToken * BigInt.from(count));
+  return '$formatted ${AppConstants.tokenSymbol}';
+}
+
+/// [text] in the heading keyed [headingKey].
+Finder _under(String headingKey, String text) =>
+    find.descendant(of: find.byKey(ValueKey(headingKey)), matching: find.text(text));
 
 String _selected(WidgetTester tester) =>
     tester.widgetList<SidebarRow>(_inSidebar(find.byType(SidebarRow))).singleWhere((row) => row.isSelected).title;
@@ -272,7 +286,7 @@ void main() {
       tester.getSemantics(find.bySemanticsLabel('Wallet 2')),
       isSemantics(
         label: 'Wallet 2',
-        value: '2 accounts',
+        value: '2 accounts, ${_tokens(tester, 2)}',
         isButton: true,
         hasExpandedState: true,
         isExpanded: false,
@@ -281,7 +295,7 @@ void main() {
     );
     expect(
       tester.getSemantics(find.bySemanticsLabel('Cold Wallet')),
-      isSemantics(label: 'Cold Wallet', value: '1 account', isButton: true, isExpanded: false),
+      isSemantics(label: 'Cold Wallet', value: '1 account, ${_tokens(tester, 1)}', isButton: true, isExpanded: false),
     );
     expect(
       tester.getSemantics(find.bySemanticsLabel('Wallet 1')),
@@ -420,7 +434,7 @@ void main() {
       tester.getSemantics(find.bySemanticsLabel('Multisigs')),
       isSemantics(
         label: 'Multisigs',
-        value: '2 accounts',
+        value: '2 accounts, ${_tokens(tester, 2)}',
         isButton: true,
         hasExpandedState: true,
         isExpanded: false,
@@ -434,6 +448,89 @@ void main() {
       isSemantics(label: 'Multisigs', isButton: true, hasExpandedState: true, isExpanded: true),
     );
     semantics.dispose();
+  });
+
+  group('a closed group\'s total', () {
+    testOnMac('a closed wallet shows its total under its name; the open one shows none', (tester) async {
+      await _pump(tester);
+
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsOneWidget, reason: 'Trading and its Encrypted');
+      expect(_under('sidebar-wallet-1', _tokens(tester, 1)), findsOneWidget, reason: 'the Cold Wallet holds Vault');
+      expect(
+        tester.getTopLeft(_under('sidebar-wallet-2', _tokens(tester, 2))).dy,
+        greaterThan(tester.getBottomLeft(_text('WALLET 2')).dy),
+        reason: 'on a line of its own under the name',
+      );
+      for (final amount in [1, 2, 3]) {
+        expect(_under('sidebar-wallet-0', _tokens(tester, amount)), findsNothing, reason: 'Wallet 1 is open');
+      }
+    });
+
+    testOnMac('opening a wallet hides its total; closing it shows the total again', (tester) async {
+      await _pump(tester);
+
+      await _click(tester, 'WALLET 2');
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsNothing);
+
+      await _click(tester, 'WALLET 2');
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsOneWidget);
+    });
+
+    testOnMac('a wallet\'s total leaves out the multisigs its accounts are members of', (tester) async {
+      await _pump(
+        tester,
+        multisigs: [
+          MultisigAccount(
+            name: 'Desk',
+            accountId: 'qzDesk',
+            signers: const ['qzTrading', 'qzOther'],
+            threshold: 2,
+            nonce: BigInt.zero,
+            myMemberAccountId: 'qzTrading',
+          ),
+        ],
+      );
+
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsOneWidget);
+    });
+
+    testOnMac('the closed multisigs\' heading shows the sum of its multisigs, and none while open', (tester) async {
+      await _pump(tester, multisigs: [teamMultisig, orphanMultisig]);
+
+      expect(_under('sidebar-multisigs', _tokens(tester, 2)), findsOneWidget);
+
+      await _click(tester, 'MULTISIGS');
+      expect(_under('sidebar-multisigs', _tokens(tester, 2)), findsNothing);
+    });
+
+    testOnMac('a closed heading says so while any of its balances loads', (tester) async {
+      final never = Completer<BigInt>();
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, tradingAccount, _travel],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balanceOf: (accountId) => accountId == 'qzTrading' ? never.future : Future.value(oneToken),
+        ),
+      );
+
+      expect(_under('sidebar-wallet-2', 'Loading...'), findsOneWidget);
+      expect(_under('sidebar-wallet-3', _tokens(tester, 1)), findsOneWidget);
+    });
+
+    testOnMac('a closed heading says the balance is unavailable when any of its balances fails', (tester) async {
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, tradingAccount, _travel],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balances: {'qzMain': oneToken, 'qzTravel': oneToken},
+        ),
+      );
+
+      expect(_under('sidebar-wallet-2', 'Balance unavailable'), findsOneWidget);
+      expect(_under('sidebar-wallet-3', _tokens(tester, 1)), findsOneWidget);
+    });
   });
 
   group('moving a group', () {

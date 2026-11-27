@@ -746,6 +746,21 @@ void main() {
     await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
   });
 
+  // A large amount in each account, so the totals are long.
+  final largeBalance = oneToken * BigInt.from(12345) + oneToken * BigInt.from(6789) ~/ BigInt.from(10000);
+
+  _scene('sidebar_wallet_totals', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false, balance: largeBalance);
+  });
+
+  _scene('sidebar_wallet_totals_narrow', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false, balance: largeBalance);
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(sidebarWidthProvider.notifier).resizeTo(SidebarWidthNotifier.minimum);
+    await tester.pumpAndSettle();
+  });
+
   _scene('wallets_one_opened', (tester) async {
     await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
     await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('WALLET 2')));
@@ -1154,11 +1169,13 @@ Future<void> _openCreateMultisig(WidgetTester tester, {required Iterable<String>
   }
 }
 
-/// Opens the window of a wallet with every kind of account. Its clipboard
-/// takes whatever is copied.
+/// Opens the window of a wallet with every kind of account, each transparent
+/// one holding [balance] when it is given. Its clipboard takes whatever is
+/// copied.
 Future<void> _openAccounts(
   WidgetTester tester, {
   int moreWallets = 0,
+  BigInt? balance,
   bool walletsLeftOpen = true,
   bool withColdWallet = true,
   Future<List<Account>> Function()? scan,
@@ -1170,6 +1187,7 @@ Future<void> _openAccounts(
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
   if (scan != null) device.scan = scan;
+  if (balance != null) device.balance = balance;
   if (discoverMultisigs != null) device.chain.discoverMultisigs = discoverMultisigs;
   device.storage.accounts.addAll([
     if (withColdWallet) _cold,
