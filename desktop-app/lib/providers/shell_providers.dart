@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/proposal_action_providers.dart';
-import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/utils/send_strategies.dart';
 import 'package:quantus_desktop_wallet/utils/serial_queue.dart';
@@ -163,78 +162,63 @@ class AccountSwitchFailureNotifier extends Notifier<AccountSwitchFailure?> {
   void clear() => state = null;
 }
 
-final sidebarSelectionProvider = NotifierProvider<SidebarSelectionNotifier, SidebarSelection>(
-  SidebarSelectionNotifier.new,
-);
+/// Moves the sidebar from one account to another, which the pane beside it
+/// then shows.
+final sidebarNavigatorProvider = Provider<SidebarNavigator>(SidebarNavigator.new);
 
-class SidebarSelectionNotifier extends Notifier<SidebarSelection> {
-  @override
-  SidebarSelection build() => SidebarSelection.account;
+class SidebarNavigator {
+  SidebarNavigator(this._ref);
 
-  /// Selects [selection], after the navigation asked for before
-  /// ([shellNavigationProvider]).
-  Future<void> select(SidebarSelection selection) => ref.read(shellNavigationProvider.notifier).run(() async {
-    if (!ref.mounted || _isUnderSheet) return;
-    state = selection;
-  });
+  final Ref _ref;
 
-  /// Makes [account] the active account and selects it, after the
-  /// navigation asked for before ([shellNavigationProvider]).
+  /// Makes [account] the active account and shows it, after the navigation
+  /// asked for before ([shellNavigationProvider]).
   Future<void> showAccount(DisplayAccount account) =>
-      ref.read(shellNavigationProvider.notifier).run(() => _show(account));
+      _ref.read(shellNavigationProvider.notifier).run(() => _show(account));
 
-  /// Makes [account] the active account and selects it, from a navigation
+  /// Makes [account] the active account and shows it, from a navigation
   /// step already running: [showAccount] would wait behind the steps asked
   /// for after it. A failure is reported as [showAccount]'s is.
   Future<void> showInStep(DisplayAccount account) => _show(account);
 
-  /// Selects the row [rows] down from the one selected when the navigation
+  /// Shows the account [rows] down from the active one when the navigation
   /// asked for before has finished ([shellNavigationProvider]), going round
-  /// at the ends. The rows are the accounts showing, then Mining Rewards.
-  Future<void> move(int rows) => ref.read(shellNavigationProvider.notifier).run(() => _move(rows));
+  /// at the ends of the accounts showing. With none showing, nothing moves.
+  Future<void> move(int rows) => _ref.read(shellNavigationProvider.notifier).run(() => _move(rows));
 
   /// Whether a sheet opened since this switch was asked for: a sheet is for
   /// the account it opened on, so nothing moves under it.
-  bool get _isUnderSheet => ref.read(shellSheetProvider) != null;
+  bool get _isUnderSheet => _ref.read(shellSheetProvider) != null;
 
   Future<void> _show(DisplayAccount account) async {
-    if (!ref.mounted || _isUnderSheet) return;
+    if (!_ref.mounted || _isUnderSheet) return;
     // Before the switch, so the wallet being left never closes under the
     // rows around the one clicked.
-    if (ref.read(activeIsMultisigProvider)) {
-      ref.read(keptOpenMultisigsProvider.notifier).keepOpen();
-    } else if (ref.read(activeRowWalletIndexProvider) case final wallet?) {
-      ref.read(keptOpenWalletsProvider.notifier).keepOpen(wallet);
+    if (_ref.read(activeIsMultisigProvider)) {
+      _ref.read(keptOpenMultisigsProvider.notifier).keepOpen();
+    } else if (_ref.read(activeRowWalletIndexProvider) case final wallet?) {
+      _ref.read(keptOpenWalletsProvider.notifier).keepOpen(wallet);
     }
     try {
-      await ref.read(activeAccountProvider.notifier).switchActiveAccount(account);
+      await _ref.read(activeAccountProvider.notifier).switchActiveAccount(account);
     } catch (e) {
       quantusPrint('Switching to ${account.account.name} failed: $e');
-      if (!ref.mounted) return;
+      if (!_ref.mounted) return;
       // What was pressed while the switch waited was meant for [account].
-      ref.read(shellNavigationProvider.notifier).cancelPending();
-      ref.read(accountSwitchFailureProvider.notifier).report(account, e);
-      return;
+      _ref.read(shellNavigationProvider.notifier).cancelPending();
+      _ref.read(accountSwitchFailureProvider.notifier).report(account, e);
     }
-    if (!ref.mounted) return;
-    state = SidebarSelection.account;
   }
 
   Future<void> _move(int rows) async {
-    if (!ref.mounted || _isUnderSheet) return;
-    final accounts = ref.read(visibleSidebarAccountsProvider);
-    final activeId = ref.read(activeAccountProvider).value?.account.accountId;
-    final selected = state == SidebarSelection.miningRewards
-        ? accounts.length
-        : accounts.indexWhere((account) => account.account.accountId == activeId);
+    if (!_ref.mounted || _isUnderSheet) return;
+    final accounts = _ref.read(visibleSidebarAccountsProvider);
+    if (accounts.isEmpty) return;
+    final activeId = _ref.read(activeAccountProvider).value?.account.accountId;
+    final selected = accounts.indexWhere((account) => account.account.accountId == activeId);
     // With no account active yet, the walk starts from outside the list.
     final from = selected >= 0 ? selected : (rows > 0 ? -1 : 0);
-    final to = (from + rows) % (accounts.length + 1);
-    if (to == accounts.length) {
-      state = SidebarSelection.miningRewards;
-    } else {
-      await _show(accounts[to]);
-    }
+    await _show(accounts[(from + rows) % accounts.length]);
   }
 }
 

@@ -141,7 +141,7 @@ Future<void> Function() _holdSwitchTo(WidgetTester tester, Account account) {
   final container = _container(tester);
   final gate = Completer<void>();
   unawaited(container.read(shellNavigationProvider.notifier).run(() => gate.future));
-  unawaited(container.read(sidebarSelectionProvider.notifier).showAccount(RegularAccount(account)));
+  unawaited(container.read(sidebarNavigatorProvider).showAccount(RegularAccount(account)));
   return () async {
     gate.complete();
     await tester.pumpAndSettle();

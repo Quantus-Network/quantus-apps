@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
-import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
@@ -28,7 +27,6 @@ import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu.dart';
 import 'package:quantus_desktop_wallet/ui/shell/app_menu_bar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/live_data_scope.dart';
-import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/missing_phrase_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/shell/panel_widths.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_footer.dart';
@@ -333,7 +331,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
     final hasSheet = read(shellSheetProvider) != null;
     // A sheet is for the account it opened on, so nothing moves under it.
     final canNavigate = hasWallet && !hasSheet;
-    final sidebar = ref.read(sidebarSelectionProvider.notifier);
+    final sidebar = ref.read(sidebarNavigatorProvider);
     final manager = ref.read(accountManagerProvider);
     final newAccountWallets = hasWallet ? read(softwareWalletsProvider) : const <SoftwareWallet>[];
     final activeWallet = read(activeWalletIndexProvider);
@@ -433,12 +431,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
                     onResizeEnd: () => unawaited(sidebar.save()),
                   ),
                 ],
-                Expanded(
-                  child: switch (ref.watch(sidebarSelectionProvider)) {
-                    SidebarSelection.account => const AccountPane(),
-                    SidebarSelection.miningRewards => const MiningRewardsPane(),
-                  },
-                ),
+                const Expanded(child: AccountPane()),
               ],
             ),
           ),

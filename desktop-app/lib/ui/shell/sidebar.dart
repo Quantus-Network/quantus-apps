@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
-import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/account_balance.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
@@ -35,8 +34,7 @@ import 'package:wallet_core/utils/accounts_grouping.dart';
 import 'package:wallet_core/utils/hidden_amount.dart';
 
 /// The Accounts panel: the accounts grouped by wallet, then the multisigs
-/// under a heading of their own, with Mining Rewards beneath them, and
-/// Settings and Add Account at the foot. Choosing an account
+/// under a heading of their own, and Settings and Add Account at the foot. Choosing an account
 /// makes it the active account. The shell sets its width
 /// ([sidebarWidthProvider]).
 ///
@@ -59,7 +57,6 @@ class Sidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = ref.watch(l10nProvider);
     final colors = context.colorsV3;
-    final selection = ref.watch(sidebarSelectionProvider);
 
     return Panel(
       title: l10n.accountsSheetTitle,
@@ -69,19 +66,7 @@ class Sidebar extends ConsumerWidget {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(10, 0, 10, 12),
-              children: [
-                ..._accounts(context, ref, l10n, selection),
-                const SizedBox(height: 10),
-                const MenuDivider(),
-                const SizedBox(height: 6),
-                SidebarRow(
-                  title: l10n.settingsMiningRewards,
-                  isSecondary: true,
-                  leading: Icon(Icons.hardware_outlined, size: _iconSize, color: colors.textMuted),
-                  isSelected: selection == SidebarSelection.miningRewards,
-                  onTap: () => ref.read(sidebarSelectionProvider.notifier).select(SidebarSelection.miningRewards),
-                ),
-              ],
+              children: [..._accounts(context, ref, l10n)],
             ),
           ),
           const MenuDivider(),
@@ -128,7 +113,7 @@ class Sidebar extends ConsumerWidget {
     unawaited(showPullDownMenu(row, anchor: box.localToGlobal(Offset.zero) & box.size, items: items));
   }
 
-  List<Widget> _accounts(BuildContext context, WidgetRef ref, AppLocalizations l10n, SidebarSelection selection) {
+  List<Widget> _accounts(BuildContext context, WidgetRef ref, AppLocalizations l10n) {
     final accounts = ref.watch(accountsProvider);
     final multisigs = ref.watch(multisigAccountsProvider);
     final active = ref.watch(activeAccountProvider);
@@ -149,7 +134,7 @@ class Sidebar extends ConsumerWidget {
     // Each where it will be once the chain has it: after the multisigs.
     final creating = ref.watch(creatingMultisigsProvider);
 
-    final selectedAccountId = selection == SidebarSelection.account ? active.value?.account.accountId : null;
+    final selectedAccountId = active.value?.account.accountId;
     // Keyed: a group opening or closing moves what is below it, and a row or
     // heading keeps what it holds, a name being typed or a failure, as it moves.
     Widget row(DisplayAccount display) => _AccountRow(
@@ -678,7 +663,7 @@ class _AccountRow extends ConsumerWidget {
       // being typed over only ends the typing.
       onTap: () {
         if (ContextMenuRegion.isControlClick || renaming) return;
-        ref.read(sidebarSelectionProvider.notifier).showAccount(display);
+        ref.read(sidebarNavigatorProvider).showAccount(display);
       },
     );
     return AccountContextMenu(account: account, child: row);

@@ -350,7 +350,7 @@ class AccountManager {
 
     _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
     // Before the list reloads: the switch reads which wallet is being left.
-    await _ref.read(sidebarSelectionProvider.notifier).showInStep(RegularAccount(account));
+    await _ref.read(sidebarNavigatorProvider).showInStep(RegularAccount(account));
     if (!_ref.mounted) return;
     _ref.invalidate(accountsProvider);
     unawaited(registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId));
@@ -449,7 +449,7 @@ class AccountManager {
     if (!_ref.mounted) return;
     _ref.read(keptOpenWalletsProvider.notifier).keepOpen(account.walletIndex);
     // Before the list reloads: the switch reads which wallet is being left.
-    await _ref.read(sidebarSelectionProvider.notifier).showInStep(RegularAccount(account));
+    await _ref.read(sidebarNavigatorProvider).showInStep(RegularAccount(account));
     if (!_ref.mounted) return;
     _ref.invalidate(accountsProvider);
     unawaited(registerForRemoteNotificationsBestEffort(_ref.read, insertAddress: account.accountId));
@@ -522,7 +522,7 @@ class AccountManager {
   Future<void> _showAddedWallet(RegularAccount target, {required String sidebarHiddenNote}) async {
     final walletIndex = target.account.walletIndex;
     _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
-    await _ref.read(sidebarSelectionProvider.notifier).showInStep(target);
+    await _ref.read(sidebarNavigatorProvider).showInStep(target);
     if (!_ref.mounted) return;
 
     // A switch that failed has said so, and the wallet is there all the same.

@@ -17,7 +17,6 @@ import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
-import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_desktop_wallet/ui/swap/swap_sheet.dart';
@@ -466,9 +465,6 @@ void main() {
 
     testOnMac('choosing an account in the Account menu makes it the active account and shows it', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
-      await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
-      await tester.pumpAndSettle();
-      expect(find.byType(MiningRewardsPane), findsOneWidget);
 
       _accountMenuAccounts(tester).singleWhere((item) => item.label == 'Vault').onSelected!();
       await tester.pumpAndSettle();
@@ -720,8 +716,9 @@ void main() {
       });
     });
 
-    testOnMac('View → Next and Previous Sidebar Item (⌥⌘↓, ⌥⌘↑) walk the sidebar, Mining Rewards included, and '
-        'go round at its ends', (tester) async {
+    testOnMac('View → Next and Previous Sidebar Item (⌥⌘↓, ⌥⌘↑) walk the accounts and go round at their ends', (
+      tester,
+    ) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       expect(
@@ -742,12 +739,10 @@ void main() {
       expect(_selected(tester), 'Main');
       expect(await choose('Next Sidebar Item'), 'Vault');
       expect(await choose('Next Sidebar Item'), 'Team');
-      expect(await choose('Next Sidebar Item'), 'Mining Rewards');
-      expect(find.byType(MiningRewardsPane), findsOneWidget);
       expect(await choose('Next Sidebar Item'), 'Main');
       expect(find.byType(AccountPane), findsOneWidget);
-      expect(await choose('Previous Sidebar Item'), 'Mining Rewards');
       expect(await choose('Previous Sidebar Item'), 'Team');
+      expect(await choose('Previous Sidebar Item'), 'Vault');
     });
 
     testOnMac('View → Refresh (⇧⌘R) reads the wallet again from the network, once', (tester) async {
@@ -1077,8 +1072,6 @@ void main() {
       await press(tester, LogicalKeyboardKey.digit9);
       expect(_selected(tester), 'Vault');
 
-      await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
-      await tester.pumpAndSettle();
       await press(tester, LogicalKeyboardKey.digit1);
 
       expect(_selected(tester), 'Main');
@@ -1089,7 +1082,7 @@ void main() {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       await previous(tester);
-      expect(_selected(tester), 'Mining Rewards');
+      expect(_selected(tester), 'Team');
 
       await next(tester);
       expect(_selected(tester), 'Main');
@@ -1231,27 +1224,24 @@ void main() {
       });
 
       testOnWindowsAndLinux('two presses of Ctrl+Alt+Down move two rows', (tester) async {
-        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
-        await pumpShell(tester, overrides: _withSlowSettings(settings));
+        final settings = SlowSettingsService(
+          activeAccount: const RegularAccount(mainAccount),
+          openWallets: const {0, 1},
+        );
+        await pumpShell(
+          tester,
+          overrides: shellOverrides(
+            accounts: const [mainAccount, savingsAccount, vaultAccount],
+            settings: settings,
+            balances: oneTokenEach,
+          ),
+        );
 
         await next(tester);
         await next(tester);
         await settings.finishWrites(tester);
 
-        expect(_selected(tester), 'Mining Rewards');
-      });
-
-      testOnWindowsAndLinux('Ctrl+2 then a click on Mining Rewards ends on Mining Rewards', (tester) async {
-        final settings = SlowSettingsService(activeAccount: const RegularAccount(mainAccount));
-        await pumpShell(tester, overrides: _withSlowSettings(settings));
-
-        await press(tester, LogicalKeyboardKey.digit2);
-        await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
-        await tester.pumpAndSettle();
-        await settings.finishWrites(tester);
-
-        expect(_selected(tester), 'Mining Rewards');
-        expect(find.byType(MiningRewardsPane), findsOneWidget);
+        expect(_selected(tester), 'Vault');
       });
 
       for (final (key, name, sheet) in [

@@ -504,7 +504,7 @@ void main() {
       testWidgets('pressed during a switch, goes to the wallet switched to', (tester) async {
         final (device, container) = await _device(tester);
 
-        final switching = container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_trading));
+        final switching = container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(_trading));
         final creating = _manager(container).createInActiveWallet();
         await Future.wait([switching, creating]);
         await _settle(tester, container);
@@ -518,7 +518,7 @@ void main() {
         final before = device.storage.accounts.length;
         device.storage.activeWriteError = StateError('disk full');
 
-        final switching = container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_trading));
+        final switching = container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(_trading));
         final creating = _manager(container).createInActiveWallet();
         await Future.wait([switching, creating]);
         await _settle(tester, container);
@@ -530,7 +530,7 @@ void main() {
       testWidgets('with a Cold Wallet account active, opens Connect Cold Wallet and adds nothing', (tester) async {
         final (device, container) = await _device(tester);
         final before = device.storage.accounts.length;
-        await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_cold));
+        await container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(_cold));
         await _settle(tester, container);
 
         await _manager(container).createInActiveWallet();
@@ -544,7 +544,7 @@ void main() {
 
       testWidgets('with a multisig active, goes to the wallet of its member here', (tester) async {
         final (device, container) = await _device(tester);
-        await container.read(sidebarSelectionProvider.notifier).showAccount(MultisigDisplayAccount(_team));
+        await container.read(sidebarNavigatorProvider).showAccount(MultisigDisplayAccount(_team));
         await _settle(tester, container);
 
         await _manager(container).createInActiveWallet();
@@ -570,7 +570,7 @@ void main() {
         container.invalidate(multisigAccountsProvider);
         await _settle(tester, container);
         final before = device.storage.accounts.length;
-        await container.read(sidebarSelectionProvider.notifier).showAccount(MultisigDisplayAccount(coldTeam));
+        await container.read(sidebarNavigatorProvider).showAccount(MultisigDisplayAccount(coldTeam));
         await _settle(tester, container);
 
         await _manager(container).createInActiveWallet();
@@ -584,7 +584,7 @@ void main() {
       testWidgets('with a Cold Wallet account active and cold wallets turned off, does nothing', (tester) async {
         final (device, container) = await _device(tester, offersColdWallets: false);
         final before = device.storage.accounts.length;
-        await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(_cold));
+        await container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(_cold));
         await _settle(tester, container);
 
         await _manager(container).createInActiveWallet();
@@ -638,7 +638,7 @@ void main() {
       device.storage.accounts.add(coldAt(3, 'qzColdThree'));
       container.invalidate(accountsProvider);
       await _settle(tester, container);
-      await container.read(sidebarSelectionProvider.notifier).showAccount(RegularAccount(coldAt(3, 'qzColdThree')));
+      await container.read(sidebarNavigatorProvider).showAccount(RegularAccount(coldAt(3, 'qzColdThree')));
       await _settle(tester, container);
 
       final saved = await _manager(container).connectColdWallet('qzScanned');

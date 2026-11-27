@@ -7,7 +7,6 @@ import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
-import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_footer.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -60,17 +59,6 @@ void main() {
 
     expect(_balance(tester).left, Panel.gap);
     expect(_handle, findsNothing);
-  });
-
-  testOnMac('Mining Rewards is a panel of its own, beside the sidebar', (tester) async {
-    await _open(tester);
-
-    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
-    await tester.pumpAndSettle();
-
-    final pane = tester.getRect(find.byType(MiningRewardsPane));
-    expect(pane.left, _sidebar(tester).right + Panel.gap);
-    expect(find.descendant(of: find.byType(MiningRewardsPane), matching: find.byType(Panel)), findsOneWidget);
   });
 
   testOnMac('dragging the gap beside the sidebar resizes it, stopping at 200 and 360, and saves the width', (

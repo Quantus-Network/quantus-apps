@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
-import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -253,27 +252,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_activeAccountId(container), savingsAccount.accountId);
-      expect(_opened(container), OpenedTransaction(row));
-    });
-
-    testOnMac('from Mining Rewards, back on the account', (tester) async {
-      final row = _transfer();
-      final notifications = FakeNotificationPlugin();
-      final container = await _openWallet(
-        tester,
-        notifications,
-        chain: FakeSendChain()
-          ..historyPages = [
-            [row],
-          ],
-      );
-      await container.read(sidebarSelectionProvider.notifier).select(SidebarSelection.miningRewards);
-      await tester.pumpAndSettle();
-
-      notifications.click(_aboutTransaction(mainAccount.accountId));
-      await tester.pumpAndSettle();
-
-      expect(container.read(sidebarSelectionProvider), SidebarSelection.account);
       expect(_opened(container), OpenedTransaction(row));
     });
 
@@ -843,7 +821,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(_activeAccountId(container), savingsAccount.accountId);
 
-      await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(mainAccount));
+      await container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(mainAccount));
       history.complete();
       await tester.pumpAndSettle();
 
@@ -869,35 +847,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
       expect(chain.historyReads, [0, 0], reason: 'the activity is being read again');
 
-      await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(savingsAccount));
+      await container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(savingsAccount));
       history.complete();
       await tester.pumpAndSettle();
-      await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(mainAccount));
+      await container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(mainAccount));
       await tester.pumpAndSettle();
 
       expect(_activeAccountId(container), mainAccount.accountId);
-      expect(container.read(openedActivityProvider), isNull);
-    });
-
-    testOnMac('going to Mining Rewards while it loads: the click does not pull back', (tester) async {
-      final history = Completer<void>();
-      final chain = FakeSendChain()
-        ..historyPages = [
-          [_transfer()],
-        ];
-      final notifications = FakeNotificationPlugin();
-      final container = await _openWallet(tester, notifications, chain: chain);
-      chain.holdHistory = history;
-
-      notifications.click(_aboutTransaction(savingsAccount.accountId));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(_activeAccountId(container), savingsAccount.accountId);
-
-      await container.read(sidebarSelectionProvider.notifier).select(SidebarSelection.miningRewards);
-      history.complete();
-      await tester.pumpAndSettle();
-
-      expect(container.read(sidebarSelectionProvider), SidebarSelection.miningRewards);
       expect(container.read(openedActivityProvider), isNull);
     });
 
@@ -1001,7 +957,6 @@ void main() {
         Completer<void> lookup,
       ) async {
         expect(_activeAccountId(container), teamMultisig.accountId);
-        expect(container.read(sidebarSelectionProvider), SidebarSelection.account);
         lookup.complete();
         await tester.pumpAndSettle();
         expect(container.read(openedActivityProvider), isNull);
@@ -1024,21 +979,9 @@ void main() {
         await lookupAnswersWithNothingOpened(tester, container, lookup);
       });
 
-      testOnMac('going to Mining Rewards and back drops the click', (tester) async {
-        final (:container, :lookup, proposal: _) = await clicked(tester);
-        final selection = container.read(sidebarSelectionProvider.notifier);
-
-        await selection.select(SidebarSelection.miningRewards);
-        await tester.pumpAndSettle();
-        await selection.select(SidebarSelection.account);
-        await tester.pumpAndSettle();
-
-        await lookupAnswersWithNothingOpened(tester, container, lookup);
-      });
-
       testOnMac('going to another account and back drops the click', (tester) async {
         final (:container, :lookup, proposal: _) = await clicked(tester);
-        final selection = container.read(sidebarSelectionProvider.notifier);
+        final selection = container.read(sidebarNavigatorProvider);
 
         await selection.showAccount(const RegularAccount(mainAccount));
         await tester.pumpAndSettle();

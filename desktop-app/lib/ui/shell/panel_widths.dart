@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
@@ -31,8 +30,7 @@ double shownSidebarWidth({required double windowWidth, required double made, dou
 /// The sidebar's width as shown now, as the window and what is open in the
 /// account have it.
 double shownSidebarWidthOf(BuildContext context, WidgetRef ref) {
-  final isInspectorOpen =
-      ref.watch(sidebarSelectionProvider) == SidebarSelection.account && ref.watch(openedActivityViewProvider) != null;
+  final isInspectorOpen = ref.watch(openedActivityViewProvider) != null;
   return shownSidebarWidth(
     windowWidth: MediaQuery.sizeOf(context).width,
     made: ref.watch(sidebarWidthProvider),
