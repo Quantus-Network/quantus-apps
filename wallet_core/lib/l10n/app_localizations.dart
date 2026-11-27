@@ -6787,6 +6787,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recents ({count})'**
   String desktopSendRecentsCount(int count);
+
+  /// Desktop activity inspector: the disclosure heading, drawn in capitals, that opens the list of an encrypted send's proof batches
+  ///
+  /// In en, this message translates to:
+  /// **'Batches ({count})'**
+  String desktopActivityBatches(int count);
+
+  /// Desktop activity inspector: label of the amount one batch of an encrypted send paid the recipient
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get desktopActivityBatchSent;
+
+  /// Desktop activity inspector: label of the amount one batch of an encrypted send returned to the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get desktopActivityBatchChange;
+
+  /// Desktop activity inspector: heading, drawn in capitals, over the wallet's inputs one batch of an encrypted send spent, each listed by amount and nullifier
+  ///
+  /// In en, this message translates to:
+  /// **'Inputs ({count})'**
+  String desktopActivityBatchInputs(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

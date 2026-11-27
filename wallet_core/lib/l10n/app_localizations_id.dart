@@ -3812,4 +3812,20 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopSendRecentsCount(int count) {
     return 'Terbaru ($count)';
   }
+
+  @override
+  String desktopActivityBatches(int count) {
+    return 'Batch ($count)';
+  }
+
+  @override
+  String get desktopActivityBatchSent => 'Terkirim';
+
+  @override
+  String get desktopActivityBatchChange => 'Kembalian';
+
+  @override
+  String desktopActivityBatchInputs(int count) {
+    return 'Input ($count)';
+  }
 }

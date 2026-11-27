@@ -3806,4 +3806,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopSendRecentsCount(int count) {
     return 'Recents ($count)';
   }
+
+  @override
+  String desktopActivityBatches(int count) {
+    return 'Batches ($count)';
+  }
+
+  @override
+  String get desktopActivityBatchSent => 'Sent';
+
+  @override
+  String get desktopActivityBatchChange => 'Change';
+
+  @override
+  String desktopActivityBatchInputs(int count) {
+    return 'Inputs ($count)';
+  }
 }

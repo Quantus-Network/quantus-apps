@@ -5585,5 +5585,31 @@
           "type": "int"
         }
       }
+    },
+    "desktopActivityBatches": "Batches ({count})",
+    "@desktopActivityBatches": {
+      "description": "Desktop activity inspector: the disclosure heading, drawn in capitals, that opens the list of an encrypted send's proof batches",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopActivityBatchSent": "Sent",
+    "@desktopActivityBatchSent": {
+      "description": "Desktop activity inspector: label of the amount one batch of an encrypted send paid the recipient"
+    },
+    "desktopActivityBatchChange": "Change",
+    "@desktopActivityBatchChange": {
+      "description": "Desktop activity inspector: label of the amount one batch of an encrypted send returned to the wallet"
+    },
+    "desktopActivityBatchInputs": "Inputs ({count})",
+    "@desktopActivityBatchInputs": {
+      "description": "Desktop activity inspector: heading, drawn in capitals, over the wallet's inputs one batch of an encrypted send spent, each listed by amount and nullifier",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
     }
 }
