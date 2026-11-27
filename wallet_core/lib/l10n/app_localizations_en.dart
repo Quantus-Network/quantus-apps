@@ -3819,4 +3819,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopAmountHidden => 'Hidden';
+
+  @override
+  String get desktopMenuNewWallet => 'New Wallet';
+
+  @override
+  String get desktopNewWalletDone => 'Wallet created';
+
+  @override
+  String get desktopNewWalletFailed => 'Couldn’t create the wallet';
+
+  @override
+  String get desktopWalletDisconnect => 'Disconnect Wallet…';
+
+  @override
+  String desktopDisconnectWalletAccounts(String wallet, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$wallet’s $count accounts leave this app',
+      one: '$wallet’s account leaves this app',
+    );
+    return '$_temp0';
+  }
 }

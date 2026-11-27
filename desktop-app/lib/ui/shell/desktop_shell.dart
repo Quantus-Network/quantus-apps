@@ -13,6 +13,7 @@ import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/wallet_slots_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
@@ -87,17 +88,25 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   Account? _connectedColdWallet;
 
   /// Imports a wallet into the next free slot, on the shell's ref: the
-  /// wallet's encrypted account is restored after the sheet has gone.
-  Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) async {
-    final accounts = await ref.read(settingsServiceProvider).getAccounts();
-    if (!mounted) return;
-    _imported = await importSoftwareWallet(
-      ref,
-      mnemonic: mnemonic,
-      walletIndex: nextWalletIndex(accounts),
-      onScanFailed: onScanFailed,
-    );
-  }
+  /// wallet's encrypted account is restored after the sheet has gone. The
+  /// slot is read once no wallet is being removed ([walletSlotsProvider]),
+  /// and the encrypted account is stored in a later turn of its own.
+  Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) =>
+      ref.read(walletSlotsProvider).run(() async {
+        final accounts = await ref.read(settingsServiceProvider).getAccounts();
+        if (!mounted) return;
+        _imported = await importSoftwareWallet(
+          ref,
+          mnemonic: mnemonic,
+          walletIndex: nextWalletIndex(accounts),
+          onScanFailed: onScanFailed,
+          inWalletQueue: ref.read(walletSlotsProvider).run,
+        );
+      });
+
+  /// Creates another wallet, on the shell's ref: the wallet's Encrypted
+  /// account is added after the menu that asked has gone.
+  void _createWallet() => unawaited(ref.read(accountManagerProvider).createWallet(() => createSoftwareWallet(ref)));
 
   void _present(ShellSheet? sheet) {
     if (sheet == null) return;
@@ -243,12 +252,16 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   /// Finishes what an earlier run left undone: an import's account scan that
-  /// was skipped or interrupted, and a software wallet's encrypted account.
+  /// was skipped or interrupted, and a software wallet's encrypted account,
+  /// stored once no wallet is being added or removed ([walletSlotsProvider])
+  /// so that a wallet removed meanwhile does not get it back.
   Future<void> _finishWalletSetup() async {
     try {
       final scanned = await ref.read(walletCreationServiceProvider).resumePendingAccountScans();
       if (!mounted) return;
-      final encryptedAdded = await ensureEncryptedAccounts(ref);
+      final encryptedAdded = await ref
+          .read(walletSlotsProvider)
+          .run(() async => mounted && await ensureEncryptedAccounts(ref));
       if (mounted && (scanned || encryptedAdded)) invalidateAccountProviders(ref);
     } catch (e) {
       quantusPrint('Finishing the wallet setup at start failed: $e');
@@ -293,8 +306,13 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
                     createWallet: () => createSoftwareWallet(ref),
                     // Onboarding runs only on a device with no wallet, so the
                     // wallet it imports is the first.
-                    importWallet: (mnemonic, {required onScanFailed}) =>
-                        importSoftwareWallet(ref, mnemonic: mnemonic, walletIndex: 0, onScanFailed: onScanFailed),
+                    importWallet: (mnemonic, {required onScanFailed}) => importSoftwareWallet(
+                      ref,
+                      mnemonic: mnemonic,
+                      walletIndex: 0,
+                      onScanFailed: onScanFailed,
+                      inWalletQueue: ref.read(walletSlotsProvider).run,
+                    ),
                     onFinished: () => ref.read(walletPresenceProvider.notifier).walletAdded(),
                   ),
           ),
@@ -340,6 +358,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           : null,
       onNewAccount: (walletIndex) => unawaited(manager.createAccount(walletIndex)),
       onNewAccountByKey: answersKeys ? () => unawaited(manager.createInActiveWallet()) : null,
+      onNewWallet: hasWallet ? _createWallet : null,
       offersColdWallets: offersColdWallets,
       coldWalletHasShortcut: coldWalletHasShortcut,
       offersMultisigs: read(remoteConfigProvider).enableMultisig,
@@ -404,7 +423,10 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (isSidebarVisible) ...[
-                  SizedBox(width: sidebarWidth, child: const Sidebar()),
+                  SizedBox(
+                    width: sidebarWidth,
+                    child: Sidebar(onNewWallet: _createWallet),
+                  ),
                   PanelResizeHandle(
                     width: sidebarWidth,
                     onResize: sidebar.resizeTo,

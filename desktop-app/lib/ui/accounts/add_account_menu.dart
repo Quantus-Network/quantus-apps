@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show VoidCallback;
 
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
@@ -7,13 +8,15 @@ import 'package:wallet_core/l10n/app_localizations.dart';
 /// What the sidebar's Add Account menu offers: New Account, which with
 /// several software [wallets] opens a submenu of them, so no screen has to
 /// list every wallet just to add an account (a Cold Wallet is not among
-/// them), then Import Wallet… after a separator, with Connect Cold Wallet…
-/// when [offersColdWallets], then, when [offersMultisigs], Create Multisig…,
-/// disabled unless [canCreateMultisig], and Manage Multisigs… after another.
+/// them), then, after a separator, New Wallet ([onNewWallet]) and Import
+/// Wallet…, with Connect Cold Wallet… when [offersColdWallets], then, when
+/// [offersMultisigs], Create Multisig…, disabled unless [canCreateMultisig],
+/// and Manage Multisigs… after another.
 List<ContextMenuItem?> addAccountMenuItems(
   AppLocalizations l10n,
   List<SoftwareWallet> wallets,
   AccountManager manager, {
+  required VoidCallback onNewWallet,
   required bool offersColdWallets,
   required bool offersMultisigs,
   required bool canCreateMultisig,
@@ -32,6 +35,7 @@ List<ContextMenuItem?> addAccountMenuItems(
       ],
     },
     if (wallets.isNotEmpty) null,
+    ContextMenuItem(l10n.desktopMenuNewWallet, onSelected: onNewWallet),
     ContextMenuItem(l10n.desktopMenuImportWallet, onSelected: () => unawaited(manager.openImportWallet())),
     if (offersColdWallets) connectColdWalletMenuItem(l10n, manager),
     if (offersMultisigs) ...[null, ...multisigMenuItems(l10n, manager, canCreateMultisig: canCreateMultisig)],

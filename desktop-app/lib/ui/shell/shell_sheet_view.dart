@@ -10,6 +10,7 @@ import 'package:quantus_desktop_wallet/ui/help/about_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/help/help_support_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/connect_cold_wallet_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/disconnect_wallet_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/import_wallet_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/manage_multisigs_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
@@ -55,6 +56,7 @@ class ShellSheetView extends ConsumerWidget {
     ShellSheet.connectColdWallet ||
     ShellSheet.createMultisig ||
     ShellSheet.manageMultisigs ||
+    ShellSheet.disconnectWallet ||
     ShellSheet.helpSupport ||
     ShellSheet.about => false,
   };
@@ -71,6 +73,7 @@ class ShellSheetView extends ConsumerWidget {
     ShellSheet.createMultisig ||
     ShellSheet.manageMultisigs ||
     ShellSheet.proposalAction => null,
+    ShellSheet.disconnectWallet => const DisconnectWalletSheet(),
     ShellSheet.helpSupport => const HelpSupportSheet(),
     ShellSheet.about => const AboutSheet(),
   };

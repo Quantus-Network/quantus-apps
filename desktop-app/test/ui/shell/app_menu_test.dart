@@ -277,6 +277,7 @@ void main() {
           ('Send', true),
           ('Swap', true),
           ('New Account', true),
+          ('New Wallet', true),
           ('Import Wallet…', true),
           ('Connect Cold Wallet…', true),
           ('Create Multisig…', true),
@@ -292,6 +293,7 @@ void main() {
           ('Send', true),
           ('Swap', false),
           ('New Account', true),
+          ('New Wallet', true),
           ('Import Wallet…', true),
           ('Connect Cold Wallet…', true),
           ('Create Multisig…', true),
@@ -305,6 +307,7 @@ void main() {
           ('Receive', true),
           ('Propose', true),
           ('New Account', true),
+          ('New Wallet', true),
           ('Import Wallet…', true),
           ('Connect Cold Wallet…', true),
           ('Create Multisig…', false),
@@ -321,6 +324,7 @@ void main() {
         final onToolbar = expected.where(
           (entry) => !const {
             'New Account',
+            'New Wallet',
             'Import Wallet…',
             'Connect Cold Wallet…',
             'Create Multisig…',
@@ -357,6 +361,7 @@ void main() {
 
       expect(_itemsOf(_nativeMenu(tester, 'Account')).map((item) => item.label), [
         'New Account',
+        'New Wallet',
         'Import Wallet…',
         'Connect Cold Wallet…',
         'Create Multisig…',
@@ -946,6 +951,7 @@ void main() {
           ('Rename…', true),
           ('Disconnect Hardware Account…', true),
           ('New Account', true),
+          ('New Wallet', true),
           ('Import Wallet…', true),
           ('Connect Cold Wallet…', true),
           ('Create Multisig…', true),

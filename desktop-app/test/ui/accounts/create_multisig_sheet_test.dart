@@ -193,6 +193,7 @@ void main() {
       ];
       expect(labels, [
         'New Account',
+        'New Wallet',
         'Import Wallet…',
         'Connect Cold Wallet…',
         'Create Multisig…',

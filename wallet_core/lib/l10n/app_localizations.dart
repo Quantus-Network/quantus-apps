@@ -6817,6 +6817,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hidden'**
   String get desktopAmountHidden;
+
+  /// Desktop: the item that creates another wallet with a new recovery phrase at once, in the Account menu and the sidebar's Add Account menu
+  ///
+  /// In en, this message translates to:
+  /// **'New Wallet'**
+  String get desktopMenuNewWallet;
+
+  /// Desktop: a short note by the account name in the top bar after creating a wallet with the sidebar hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet created'**
+  String get desktopNewWalletDone;
+
+  /// Desktop: a short note by the active account’s name when New Wallet could not create the wallet; nothing was added
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t create the wallet'**
+  String get desktopNewWalletFailed;
+
+  /// Desktop: the item on a software wallet’s heading that opens the step deleting the whole wallet from this app
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Wallet…'**
+  String get desktopWalletDisconnect;
+
+  /// Desktop Disconnect Wallet step: first line, how many of the wallet’s accounts go with it, its Encrypted account counted
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{wallet}’s account leaves this app} other{{wallet}’s {count} accounts leave this app}}'**
+  String desktopDisconnectWalletAccounts(String wallet, int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

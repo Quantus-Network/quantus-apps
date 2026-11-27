@@ -256,12 +256,15 @@ class InvalidRecoveryPhraseException implements Exception {
 ///
 /// The wallet's encrypted account is restored without being waited for, so
 /// the import never waits on it. It is added to [accountsProvider] only while
-/// the widget behind [ref] is still mounted.
+/// the widget behind [ref] is still mounted. [inWalletQueue], when given,
+/// runs the step that stores it, for a caller that makes changes to its
+/// wallets one at a time: a wallet removed meanwhile must not get it back.
 Future<Account> importSoftwareWallet(
   WidgetRef ref, {
   required String mnemonic,
   required int walletIndex,
   required Future<bool> Function(Object error) onScanFailed,
+  Future<bool> Function(Future<bool> Function() store)? inWalletQueue,
 }) async {
   final phrase = mnemonic.trim();
   final accounts = ref.read(accountsProvider).value ?? <Account>[];
@@ -312,7 +315,7 @@ Future<Account> importSoftwareWallet(
       },
     );
     invalidateAccountProviders(ref);
-    unawaited(_restoreEncryptedAccount(ref, walletIndex, telemetry));
+    unawaited(_restoreEncryptedAccount(ref, walletIndex, telemetry, inWalletQueue));
   }
   invalidateAccountProviders(ref);
   settings.setReferralCheckCompleted();
@@ -336,12 +339,18 @@ Future<bool> _isPhraseInAWallet(SettingsService settings, String phrase) async {
   return false;
 }
 
-/// Restores the wallet's encrypted account and warms its wormhole address
-/// discovery, so UTXOs across receive and change addresses are already found
-/// when the user first opens it.
-Future<void> _restoreEncryptedAccount(WidgetRef ref, int walletIndex, Telemetry telemetry) async {
+/// Restores the wallet's encrypted account, in [inWalletQueue] when given,
+/// and warms its wormhole address discovery, so UTXOs across receive and
+/// change addresses are already found when the user first opens it.
+Future<void> _restoreEncryptedAccount(
+  WidgetRef ref,
+  int walletIndex,
+  Telemetry telemetry,
+  Future<bool> Function(Future<bool> Function() store)? inWalletQueue,
+) async {
+  Future<bool> store() async => ref.context.mounted && await ensureEncryptedAccounts(ref);
   try {
-    final created = await ensureEncryptedAccounts(ref);
+    final created = await (inWalletQueue == null ? ensureEncryptedAccounts(ref) : inWalletQueue(store));
     if (!created || !ref.context.mounted) return;
     ref.invalidate(accountsProvider);
     await ref.read(encryptedStateProvider(walletIndex).future);

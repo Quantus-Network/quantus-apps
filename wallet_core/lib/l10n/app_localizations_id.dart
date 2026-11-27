@@ -3825,4 +3825,26 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopAmountHidden => 'Disembunyikan';
+
+  @override
+  String get desktopMenuNewWallet => 'Dompet Baru';
+
+  @override
+  String get desktopNewWalletDone => 'Dompet dibuat';
+
+  @override
+  String get desktopNewWalletFailed => 'Tidak dapat membuat dompet';
+
+  @override
+  String get desktopWalletDisconnect => 'Putuskan Dompet…';
+
+  @override
+  String desktopDisconnectWalletAccounts(String wallet, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count akun $wallet keluar dari aplikasi ini',
+    );
+    return '$_temp0';
+  }
 }

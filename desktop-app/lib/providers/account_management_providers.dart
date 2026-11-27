@@ -15,8 +15,10 @@ import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/wallet_slots_provider.dart';
 import 'package:quantus_desktop_wallet/utils/cold_wallet_target.dart';
 import 'package:quantus_desktop_wallet/utils/managed_multisigs.dart';
+import 'package:quantus_desktop_wallet/utils/wallet_disconnect.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
@@ -154,6 +156,19 @@ class RecoveryPhraseTargetNotifier extends Notifier<RecoveryPhraseTarget?> {
   void clear() => state = null;
 }
 
+/// The wallet the Disconnect Wallet sheet is about, by its index: the sheet
+/// takes it on opening.
+final disconnectWalletTargetProvider = NotifierProvider<DisconnectWalletTargetNotifier, int?>(
+  DisconnectWalletTargetNotifier.new,
+);
+
+class DisconnectWalletTargetNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void set(int walletIndex) => state = walletIndex;
+}
+
 /// A software wallet: what it is called, and its accounts' names.
 typedef SoftwareWallet = ({int walletIndex, String name, List<String> accounts});
 
@@ -199,6 +214,19 @@ final walletLabelProvider = Provider.family<String?, int>((ref, walletIndex) {
 /// wallet_core's ([accountMenuOf], [disconnectPlanOf], [nameEditOf]); this
 /// carries them out on the device's storage and refreshes what shows it.
 final accountManagerProvider = Provider<AccountManager>(AccountManager.new);
+
+/// How an account would be disconnected changed between its disconnect being
+/// agreed to and its turn coming: nothing was removed. [current] is how it
+/// would go now, for the user to be shown and asked again; null when it can
+/// no longer be disconnected, or is gone.
+class DisconnectPlanChanged implements Exception {
+  const DisconnectPlanChanged(this.current);
+
+  final DisconnectPlan? current;
+
+  @override
+  String toString() => 'DisconnectPlanChanged(now: $current)';
+}
 
 /// The address being connected is already an account or multisig in this app.
 class ColdWalletAlreadyInApp implements Exception {
@@ -248,8 +276,9 @@ class AccountManager {
   }
 
   /// Adds a Transparent account to the software wallet at [walletIndex],
-  /// after the navigation asked for before, one at a time so two never take
-  /// the same slot. It becomes the active account with its name ready to be
+  /// after the navigation asked for before and once no wallet is being
+  /// removed ([walletSlotsProvider]), one at a time so two never take the
+  /// same slot. It becomes the active account with its name ready to be
   /// typed over. One that cannot be added says so on the active account.
   Future<void> createAccount(int walletIndex) =>
       _ref.read(shellNavigationProvider.notifier).run(() => _create(walletIndex));
@@ -272,7 +301,7 @@ class AccountManager {
         multisigs: multisigs,
       ).wallets.where((w) => activeId != null && w.contains(activeId)).firstOrNull;
     } catch (e) {
-      _noteNotAdded(e);
+      await _noteNotAdded(e);
       return;
     }
     switch (wallet?.kind) {
@@ -285,25 +314,39 @@ class AccountManager {
     }
   });
 
+  /// [createAccount]'s work, once no wallet is being added or removed
+  /// ([walletSlotsProvider]): a wallet whose removal has dropped its accounts
+  /// still has its recovery phrase until the removal ends, and an account
+  /// stored in it then would lose its phrase. Only a software wallet that
+  /// storage still has by then gets the account.
   Future<void> _create(int walletIndex) async {
-    // A sheet is for the account it opened on, so nothing moves under it.
-    if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return;
+    if (!_ref.mounted) return;
     final l10n = _ref.read(l10nProvider);
     final service = _ref.read(accountsServiceProvider);
-    final Account account;
+    final Account? account;
     try {
-      final accounts = await service.getAccounts();
-      if (accounts.any((a) => a.walletIndex == walletIndex && a.accountType == AccountType.keystone)) {
-        throw StateError('Wallet $walletIndex is a hardware wallet');
-      }
-      final draft = await service.createNewAccount(walletIndex: walletIndex);
-      account = draft.copyWith(name: l10n.createAccountDefaultName(accounts.length + 1));
-      await service.addAccount(account);
+      account = await _ref.read(walletSlotsProvider).run(() async {
+        // A sheet is for the account it opened on, so nothing moves under
+        // it: asked once the removal waited for has finished.
+        if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return null;
+        final accounts = await service.getAccounts();
+        final inWallet = accounts.where((a) => a.walletIndex == walletIndex);
+        if (!inWallet.any((a) => a.accountType != AccountType.encrypted)) {
+          throw StateError('Wallet $walletIndex is no longer here');
+        }
+        if (inWallet.any((a) => a.accountType == AccountType.keystone)) {
+          throw StateError('Wallet $walletIndex is a hardware wallet');
+        }
+        final draft = await service.createNewAccount(walletIndex: walletIndex);
+        final account = draft.copyWith(name: l10n.createAccountDefaultName(accounts.length + 1));
+        await service.addAccount(account);
+        return account;
+      });
     } catch (e) {
-      _noteNotAdded(e);
+      await _noteNotAdded(e);
       return;
     }
-    if (!_ref.mounted) return;
+    if (account == null || !_ref.mounted) return;
 
     _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
     // Before the list reloads: the switch reads which wallet is being left.
@@ -324,6 +367,32 @@ class AccountManager {
     }
   }
 
+  /// Makes another software wallet with [create], which stores it under a
+  /// new recovery phrase and returns its first account, after the navigation
+  /// asked for before and once no wallet is being removed
+  /// ([walletSlotsProvider]), one at a time so two never take the same slot.
+  /// It is then shown as an imported one is ([finishImport]). One that cannot
+  /// be made says so on the active account, and nothing is added.
+  Future<void> createWallet(Future<Account> Function() create) =>
+      _ref.read(shellNavigationProvider.notifier).run(() async {
+        if (!_ref.mounted) return;
+        final l10n = _ref.read(l10nProvider);
+        final Account? root;
+        try {
+          root = await _ref.read(walletSlotsProvider).run(() async {
+            // A sheet is for the account it opened on, so nothing moves under
+            // it: asked once the removal waited for has finished.
+            if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return null;
+            return create();
+          });
+        } catch (e) {
+          await _noteNotAdded(e, message: l10n.desktopNewWalletFailed);
+          return;
+        }
+        if (root == null || !_ref.mounted) return;
+        await _showAddedWallet(RegularAccount(root), sidebarHiddenNote: l10n.desktopNewWalletDone);
+      });
+
   /// Opens the Import Wallet sheet. Like any sheet, it does not open over
   /// another.
   Future<void> openImportWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.importWallet);
@@ -333,38 +402,43 @@ class AccountManager {
   Future<void> openConnectColdWallet() => _ref.read(shellSheetProvider.notifier).open(ShellSheet.connectColdWallet);
 
   /// Saves [address] as an account of the cold wallet [coldWalletTarget]
-  /// picks, or of a new one, after the navigation asked for before, one at a
-  /// time so two never take the same slot. Throws [ColdWalletAlreadyInApp]
-  /// when the address is already here, checked against storage, and whatever
-  /// a failed write throws.
+  /// picks, or of a new one, after the navigation asked for before and once
+  /// no wallet is being removed ([walletSlotsProvider]), one at a time so two
+  /// never take the same slot. Throws [ColdWalletAlreadyInApp] when the
+  /// address is already here, checked against storage, and whatever a failed
+  /// write throws.
   Future<Account> connectColdWallet(String address) async {
     Account? saved;
-    await _ref.read(shellNavigationProvider.notifier).run(() async {
-      if (!_ref.mounted) return;
-      final service = _ref.read(accountsServiceProvider);
-      final settings = _ref.read(settingsServiceProvider);
-      final accounts = await service.getAccounts();
-      final multisigs = await settings.getMultisigAccounts();
-      if (!_ref.mounted) return;
-      if (accounts.any((account) => account.accountId == address) ||
-          multisigs.any((multisig) => multisig.accountId == address) ||
-          _ref.read(creatingMultisigsProvider).any((multisig) => multisig.accountId == address)) {
-        throw const ColdWalletAlreadyInApp();
-      }
-      final target = coldWalletTarget(
-        accounts,
-        activeAccountId: (await settings.getActiveAccount())?.account.accountId,
-      );
-      final account = Account(
-        walletIndex: target.walletIndex,
-        index: await settings.getNextFreeAccountIndex(target.walletIndex),
-        name: target.name,
-        accountId: address,
-        accountType: AccountType.keystone,
-      );
-      await service.addAccount(account);
-      saved = account;
-    });
+    await _ref
+        .read(shellNavigationProvider.notifier)
+        .run(
+          () => _ref.read(walletSlotsProvider).run(() async {
+            if (!_ref.mounted) return;
+            final service = _ref.read(accountsServiceProvider);
+            final settings = _ref.read(settingsServiceProvider);
+            final accounts = await service.getAccounts();
+            final multisigs = await settings.getMultisigAccounts();
+            if (!_ref.mounted) return;
+            if (accounts.any((account) => account.accountId == address) ||
+                multisigs.any((multisig) => multisig.accountId == address) ||
+                _ref.read(creatingMultisigsProvider).any((multisig) => multisig.accountId == address)) {
+              throw const ColdWalletAlreadyInApp();
+            }
+            final target = coldWalletTarget(
+              accounts,
+              activeAccountId: (await settings.getActiveAccount())?.account.accountId,
+            );
+            final account = Account(
+              walletIndex: target.walletIndex,
+              index: await settings.getNextFreeAccountIndex(target.walletIndex),
+              name: target.name,
+              accountId: address,
+              accountType: AccountType.keystone,
+            );
+            await service.addAccount(account);
+            saved = account;
+          }),
+        );
     return saved ?? (throw StateError('The cold wallet $address was not saved.'));
   }
 
@@ -438,7 +512,15 @@ class AccountManager {
       return;
     }
     if (!_ref.mounted) return;
+    await _showAddedWallet(target, sidebarHiddenNote: _ref.read(l10nProvider).desktopImportDone);
+  });
 
+  /// Shows the wallet of [target], just added to the app: its group open and
+  /// [target] the active account, with the wallet's heading ready to be
+  /// named. With the sidebar hidden there is no heading, so
+  /// [sidebarHiddenNote] by the account's name says the wallet is in.
+  Future<void> _showAddedWallet(RegularAccount target, {required String sidebarHiddenNote}) async {
+    final walletIndex = target.account.walletIndex;
     _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
     await _ref.read(sidebarSelectionProvider.notifier).showInStep(target);
     if (!_ref.mounted) return;
@@ -450,27 +532,29 @@ class AccountManager {
     } else {
       _ref
           .read(accountNoteProvider.notifier)
-          .show(
-            AccountNote(
-              accountId: target.account.accountId,
-              message: _ref.read(l10nProvider).desktopImportDone,
-              isError: false,
-            ),
-          );
+          .show(AccountNote(accountId: target.account.accountId, message: sidebarHiddenNote, isError: false));
     }
-  });
+  }
 
-  void _noteNotAdded(Object error) {
-    quantusPrint('Adding an account failed: $error');
-    if (!_ref.mounted) return;
-    final active = _ref.read(activeAccountProvider).value?.account;
-    if (active == null) return;
+  /// Says on the active account that what was being added is not: [message],
+  /// or that the account could not be added. The active account is read from
+  /// storage: just after a wallet's removal it is still being read again.
+  Future<void> _noteNotAdded(Object error, {String? message}) async {
+    quantusPrint('Adding an account or a wallet failed: $error');
+    final String? activeId;
+    try {
+      activeId = (await _ref.read(settingsServiceProvider).getActiveAccount())?.account.accountId;
+    } catch (e) {
+      quantusPrint('The active account could not be read to say so: $e');
+      return;
+    }
+    if (activeId == null || !_ref.mounted) return;
     _ref
         .read(accountNoteProvider.notifier)
         .show(
           AccountNote(
-            accountId: active.accountId,
-            message: _ref.read(l10nProvider).createAccountErrorCouldNotAdd,
+            accountId: activeId,
+            message: message ?? _ref.read(l10nProvider).createAccountErrorCouldNotAdd,
             isError: true,
           ),
         );
@@ -603,38 +687,100 @@ class AccountManager {
     return edit;
   }
 
-  /// Disconnects [account] as [disconnectPlanOf] has it, or a multisig.
-  /// Asking first, and asking for approval to delete a wallet, is the
-  /// caller's. A removal that fails is thrown, and nothing changes.
-  Future<void> disconnect(BaseAccount account) async {
+  /// Disconnects [account], or a multisig. Asking first, and asking for
+  /// approval to delete a wallet, is the caller's: [approved] is how the
+  /// account goes ([disconnectPlanOf]) as the user was shown it and agreed.
+  /// A caller that shows none leaves it out, and it is then the plan as
+  /// storage has the accounts when this is asked.
+  ///
+  /// An account is removed once no wallet is being added or removed
+  /// ([walletSlotsProvider]), and through to its end before one may be: the
+  /// last account of a wallet frees its number. If by its turn the account
+  /// would go another way than was agreed, as when it has become its
+  /// wallet's last and would take the recovery phrase with it, nothing is
+  /// removed and [DisconnectPlanChanged] is thrown. A removal that fails is
+  /// thrown, and nothing changes.
+  Future<void> disconnect(BaseAccount account, {DisconnectPlan? approved}) async {
     switch (account) {
       case MultisigAccount():
         await _ref.read(multisigAccountsProvider.notifier).remove(account.accountId);
         _ref.invalidate(activeAccountProvider);
       case Account():
-        final service = _ref.read(accountsServiceProvider);
-        final accounts = _ref.read(accountsProvider).requireValue;
-        switch (disconnectPlanOf(account, accounts)) {
-          case DisconnectAccount():
-            await service.removeAccount(account);
-          case DisconnectHardware():
-            await service.removeAccount(account);
-            // A hardware wallet goes with its last account, and its index
-            // goes to the next wallet added.
-            final walletRemains = accounts.any(
-              (a) => a.walletIndex == account.walletIndex && a.accountId != account.accountId,
-            );
-            if (!walletRemains) _forgetWallet(account.walletIndex);
-          case DisconnectWallet(:final walletIndex):
-            await service.removeWallet(walletIndex);
-            _forgetWallet(walletIndex);
-          case null:
-            throw StateError('${account.accountId} cannot be disconnected');
-        }
-        _refreshAccounts();
+        final agreed =
+            approved ??
+            disconnectPlanOf(account, await _ref.read(accountsServiceProvider).getAccounts()) ??
+            (throw StateError('${account.accountId} cannot be disconnected'));
+        await _ref.read(walletSlotsProvider).run(() => _disconnectAccount(account, agreed));
       default:
         throw StateError('${account.accountId} cannot be disconnected');
     }
+  }
+
+  /// [disconnect] for an account of a wallet, in [walletSlotsProvider]'s turn.
+  /// How it goes is read again then, from storage, as the accounts are once
+  /// the change before it has finished, and is carried out only if it is
+  /// still [agreed].
+  Future<void> _disconnectAccount(Account account, DisconnectPlan agreed) async {
+    final service = _ref.read(accountsServiceProvider);
+    final accounts = await service.getAccounts();
+    final current = accounts.any((a) => a.accountId == account.accountId) ? disconnectPlanOf(account, accounts) : null;
+    if (current != agreed) {
+      // What shows the accounts may have missed the change that caused this.
+      _refreshAccounts();
+      throw DisconnectPlanChanged(current);
+    }
+    switch (agreed) {
+      case DisconnectAccount():
+        await service.removeAccount(account);
+      case DisconnectHardware():
+        await service.removeAccount(account);
+        // A hardware wallet goes with its last account, and its index
+        // goes to the next wallet added.
+        final walletRemains = accounts.any(
+          (a) => a.walletIndex == account.walletIndex && a.accountId != account.accountId,
+        );
+        if (!walletRemains) _forgetWallet(account.walletIndex);
+      case DisconnectWallet(:final walletIndex):
+        await _removeWallet(walletIndex);
+    }
+    _refreshAccounts();
+  }
+
+  /// Opens the Disconnect Wallet sheet on the software wallet at
+  /// [walletIndex]. Like any sheet, it does not open over another.
+  Future<void> openDisconnectWallet(int walletIndex) {
+    _ref.read(disconnectWalletTargetProvider.notifier).set(walletIndex);
+    return _ref.read(shellSheetProvider.notifier).open(ShellSheet.disconnectWallet);
+  }
+
+  /// Disconnects the whole software wallet at [walletIndex]: every account
+  /// in it, its Encrypted account and its recovery phrase. Asking first, and
+  /// asking for approval, is the caller's. Only a wallet [canDisconnectWallet]
+  /// allows goes, once no wallet is being added or removed
+  /// ([walletSlotsProvider]), and through to its end before one may be. A
+  /// removal that fails is thrown, and nothing changes.
+  Future<void> disconnectWallet(int walletIndex) =>
+      _ref.read(walletSlotsProvider).run(() => _disconnectWallet(walletIndex));
+
+  Future<void> _disconnectWallet(int walletIndex) async {
+    final accounts = await _ref.read(accountsServiceProvider).getAccounts();
+    final multisigs = _ref.read(multisigAccountsProvider).value ?? const <MultisigAccount>[];
+    final wallet = groupWallets(
+      accounts: accounts,
+      multisigs: multisigs,
+    ).wallets.where((w) => w.walletIndex == walletIndex).firstOrNull;
+    if (wallet == null || !canDisconnectWallet(wallet)) {
+      throw StateError('Wallet $walletIndex cannot be disconnected');
+    }
+    await _removeWallet(walletIndex);
+    _refreshAccounts();
+  }
+
+  /// Removes the wallet at [walletIndex] from the device's storage, and what
+  /// this app kept for it ([_forgetWallet]).
+  Future<void> _removeWallet(int walletIndex) async {
+    await _ref.read(accountsServiceProvider).removeWallet(walletIndex);
+    _forgetWallet(walletIndex);
   }
 
   /// What this app kept for the wallet at [walletIndex], just removed, goes:

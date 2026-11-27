@@ -6,13 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
-import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
 import 'package:quantus_desktop_wallet/services/share_service.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/delete_wallet_step.dart';
 import 'package:quantus_desktop_wallet/ui/components/inline_name_field.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
-import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -25,7 +24,6 @@ import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
-import 'package:wallet_core/services/user_approval.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 
 /// The Info sheet ("Get Info"): an account's name, which can be typed over,
@@ -213,10 +211,12 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
 }
 
 /// Disconnecting: the caution for what goes, then Disconnect. The last
-/// account of a wallet takes the wallet and its recovery phrase: that waits
-/// for a tick that the phrase is backed up, and asks for the system's
-/// approval where the computer can ask, going ahead where it cannot, as the
-/// phone does.
+/// account of a wallet takes the wallet and its recovery phrase, as
+/// [DeleteWalletStep] has it: after a tick that the phrase is backed up, and
+/// the system's approval. What was agreed to is what is asked for
+/// ([AccountManager.disconnect]): if the account would go another way by the
+/// time its turn comes, nothing is removed and the step shows that way, to be
+/// agreed to in its turn.
 class _DisconnectStep extends ConsumerStatefulWidget {
   const _DisconnectStep({
     required this.account,
@@ -241,54 +241,52 @@ class _DisconnectStep extends ConsumerStatefulWidget {
 }
 
 class _DisconnectStepState extends ConsumerState<_DisconnectStep> {
-  bool _isBackedUp = false;
   bool _isBusy = false;
   String? _error;
 
-  /// How the account goes; null for a multisig.
-  late final DisconnectPlan? _plan = switch (widget.account) {
+  /// How the account goes, as the step shows it; null for a multisig.
+  late DisconnectPlan? _plan = switch (widget.account) {
     final Account account =>
       disconnectPlanOf(account, widget.accounts) ?? (throw StateError('${account.accountId} cannot be disconnected')),
     _ => null,
   };
 
-  bool get _isWallet => _plan is DisconnectWallet;
-
-  /// Null once the deletion may go ahead; otherwise why not.
-  Future<String?> _approveDeletion(String wallet) async {
-    final l10n = widget.l10n;
+  /// Disconnects the account as [_plan] has it. If it would now go another
+  /// way, that way is shown in the plan's place and the refusal thrown on;
+  /// one that can no longer be disconnected at all keeps the step as it is.
+  Future<void> _disconnectAsShown() async {
     try {
-      return switch (await ref.read(userApprovalProvider).approve(reason: l10n.desktopDisconnectWalletReason(wallet))) {
-        // A computer that cannot ask has nothing to enforce: the phone goes
-        // ahead on a device with no lock screen.
-        ApprovalResult.approved || ApprovalResult.notSetUp => null,
-        ApprovalResult.declined => l10n.desktopDisconnectWalletDeclined(wallet),
-      };
-    } on PamUnexpectedPromptException {
-      return l10n.desktopApprovalLoginAsksMore;
-    } catch (e) {
-      return l10n.desktopApprovalFailed('$e');
+      await ref.read(accountManagerProvider).disconnect(widget.account, approved: _plan);
+    } on DisconnectPlanChanged catch (e) {
+      quantusPrint('Disconnecting ${widget.account.accountId} would now go another way: $e');
+      if (mounted && e.current != null) {
+        setState(() {
+          _plan = e.current;
+          _isBusy = false;
+          _error = null;
+        });
+      }
+      rethrow;
     }
   }
 
   Future<void> _disconnect() async {
+    final shown = _plan;
     setState(() {
       _isBusy = true;
       _error = null;
     });
-    if (_isWallet) {
-      final refusal = await _approveDeletion(widget.wallet!);
-      if (!mounted) return;
-      if (refusal != null) {
+    try {
+      await _disconnectAsShown();
+    } on DisconnectPlanChanged {
+      // The step now shows how the account would go, to be agreed to.
+      if (mounted && _plan == shown) {
         setState(() {
           _isBusy = false;
-          _error = refusal;
+          _error = widget.l10n.accountMenuDisconnectError;
         });
-        return;
       }
-    }
-    try {
-      await ref.read(accountManagerProvider).disconnect(widget.account);
+      return;
     } catch (e) {
       quantusPrint('Disconnecting ${widget.account.accountId} failed: $e');
       if (mounted) {
@@ -309,6 +307,7 @@ class _DisconnectStepState extends ConsumerState<_DisconnectStep> {
     final wallet = widget.wallet;
 
     final caution = switch (_plan) {
+      DisconnectWallet() => null,
       null => SettingsCaution(
         eyebrow: l10n.desktopDisconnectMultisigEyebrow,
         headline: l10n.desktopDisconnectHeadline(name),
@@ -324,31 +323,28 @@ class _DisconnectStepState extends ConsumerState<_DisconnectStep> {
         headline: l10n.desktopDisconnectHeadline(name),
         lines: [l10n.desktopDisconnectAccountLine1(name), l10n.desktopDisconnectAccountLine2(name, wallet!)],
       ),
-      DisconnectWallet() => SettingsCaution(
-        eyebrow: l10n.desktopResetEyebrow,
-        headline: l10n.desktopDisconnectWalletHeadline(wallet!),
-        lines: [
-          l10n.desktopDisconnectWalletLine1(name, wallet),
-          l10n.desktopDisconnectWalletLine2(wallet),
-          l10n.desktopDisconnectWalletLine3,
-        ],
-      ),
     };
+    if (caution == null) {
+      return DeleteWalletStep(
+        // A deletion that comes to be shown another way starts unticked.
+        key: ValueKey(_plan),
+        wallet: wallet!,
+        firstLine: l10n.desktopDisconnectWalletLine1(name, wallet),
+        delete: _disconnectAsShown,
+        onCancel: widget.onCancel,
+        onDeleted: widget.onDisconnected,
+        l10n: l10n,
+        backedUpKey: AccountInfoSheet.backedUpKey,
+        cancelKey: AccountInfoSheet.disconnectCancelKey,
+        deleteKey: AccountInfoSheet.disconnectButtonKey,
+      );
+    }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         caution,
-        if (_isWallet) ...[
-          const SizedBox(height: 6),
-          DesktopCheckbox(
-            key: AccountInfoSheet.backedUpKey,
-            value: _isBackedUp,
-            label: l10n.desktopDisconnectWalletBackedUp(wallet!),
-            onChanged: _isBusy ? (_) {} : (value) => setState(() => _isBackedUp = value),
-          ),
-        ],
         const SizedBox(height: 22),
         SettingsStepFooter(
           error: _error,
@@ -361,9 +357,8 @@ class _DisconnectStepState extends ConsumerState<_DisconnectStep> {
             ),
             SheetButton(
               key: AccountInfoSheet.disconnectButtonKey,
-              label: _isWallet ? l10n.accountMenuDeleteWalletConfirm : l10n.accountMenuDisconnect,
+              label: l10n.accountMenuDisconnect,
               kind: SheetButtonKind.destructive,
-              isDisabled: _isWallet && !_isBackedUp,
               isLoading: _isBusy,
               onTap: _disconnect,
             ),

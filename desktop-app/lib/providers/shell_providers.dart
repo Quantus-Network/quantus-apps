@@ -317,6 +317,7 @@ class ShellSheetNotifier extends Notifier<ShellSheet?> {
       ShellSheet.connectColdWallet ||
       ShellSheet.createMultisig ||
       ShellSheet.manageMultisigs ||
+      ShellSheet.disconnectWallet ||
       ShellSheet.proposalAction ||
       ShellSheet.helpSupport ||
       ShellSheet.about => null,

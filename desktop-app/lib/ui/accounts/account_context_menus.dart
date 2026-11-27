@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
@@ -7,6 +9,7 @@ import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/add_account_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
+import 'package:quantus_desktop_wallet/utils/wallet_disconnect.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -42,7 +45,8 @@ class AccountContextMenu extends ConsumerWidget {
 /// The context menu of a wallet's heading: a software wallet's entries
 /// ([walletMenuEntries]); on a cold wallet's, Connect Cold Wallet… where cold
 /// wallets are offered; then, on every one, Move Up and Move Down
-/// ([moveGroupMenuItems]).
+/// ([moveGroupMenuItems]); and last, alone, Disconnect Wallet… on a wallet
+/// that can be disconnected whole ([canDisconnectWallet]).
 class WalletContextMenu extends ConsumerWidget {
   const WalletContextMenu({super.key, required this.wallet, required this.child});
 
@@ -66,6 +70,14 @@ class WalletContextMenu extends ConsumerWidget {
           ...own,
           if (own.isNotEmpty) null,
           ...moveGroupMenuItems(l10n, ref.read(sidebarGroupMoverProvider), SidebarWallet.keyOf(wallet.walletIndex)),
+          if (canDisconnectWallet(wallet)) ...[
+            null,
+            ContextMenuItem(
+              l10n.desktopWalletDisconnect,
+              isDestructive: true,
+              onSelected: () => unawaited(manager.openDisconnectWallet(wallet.walletIndex)),
+            ),
+          ],
         ];
       },
       child: child,
