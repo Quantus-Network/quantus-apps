@@ -218,6 +218,7 @@ class _KeyboardShortcutsStepState extends ConsumerState<KeyboardShortcutsStep> {
                   label: l10n.desktopMenuView,
                   rows: [
                     row(AppCommand.toggleSidebar),
+                    row(AppCommand.toggleBalances),
                     row(AppCommand.nextSidebarItem),
                     row(AppCommand.previousSidebarItem),
                     row(AppCommand.refresh),
@@ -318,6 +319,7 @@ String commandName(AppLocalizations l10n, AppCommand command) => switch (command
   AppCommand.getInfo => l10n.desktopAccountGetInfo,
   AppCommand.copyAddress => l10n.desktopAccountCopyAddress,
   AppCommand.toggleSidebar => l10n.desktopShortcutsToggleSidebar,
+  AppCommand.toggleBalances => l10n.desktopShortcutsToggleBalances,
   AppCommand.nextSidebarItem => l10n.desktopMenuNextSidebarItem,
   AppCommand.previousSidebarItem => l10n.desktopMenuPreviousSidebarItem,
   AppCommand.refresh => l10n.desktopMenuRefresh,

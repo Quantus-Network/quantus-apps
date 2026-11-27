@@ -107,6 +107,8 @@ void main() {
     expect(_inSheet(find.text('Propose')), findsOneWidget);
     expect(_capsOf(tester, AppCommand.addAccount), ['command', 'N']);
     expect(_capsOf(tester, AppCommand.toggleSidebar), ['command', 'B']);
+    expect(_capsOf(tester, AppCommand.toggleBalances), ['shift', 'command', 'B']);
+    expect(_inSheet(find.text('Show or Hide Balances')), findsOneWidget);
     expect(_capsOf(tester, AppCommand.nextSidebarItem), ['option', 'command', '↓']);
     expect(_capsOf(tester, AppCommand.previousSidebarItem), ['option', 'command', '↑']);
     expect(_capsOf(tester, AppCommand.refresh), ['shift', 'command', 'R']);

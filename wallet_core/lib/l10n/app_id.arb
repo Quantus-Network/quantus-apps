@@ -1066,5 +1066,13 @@
   "desktopMenuPrivacyPolicy": "Kebijakan Privasi",
   "desktopMenuWebsite": "Situs Web Quantus",
   "desktopMenuAbout": "Tentang {app}",
-  "desktopSendRecentsCount": "Terbaru ({count})"
+  "desktopSendRecentsCount": "Terbaru ({count})",
+  "desktopActivityBatches": "Batch ({count})",
+  "desktopActivityBatchSent": "Terkirim",
+  "desktopActivityBatchChange": "Kembalian",
+  "desktopActivityBatchInputs": "Input ({count})",
+  "desktopMenuHideBalances": "Sembunyikan Saldo",
+  "desktopMenuShowBalances": "Tampilkan Saldo",
+  "desktopShortcutsToggleBalances": "Tampilkan atau Sembunyikan Saldo",
+  "desktopAmountHidden": "Disembunyikan"
 }

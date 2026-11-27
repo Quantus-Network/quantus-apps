@@ -32,6 +32,7 @@ import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
+import 'package:wallet_core/utils/hidden_amount.dart';
 
 /// The Accounts panel: the accounts grouped by wallet, then the multisigs
 /// under a heading of their own, with Mining Rewards beneath them, and
@@ -451,19 +452,13 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
     return WalletContextMenu(wallet: widget.wallet, child: heading);
   }
 
-  String _total(Iterable<BaseAccount> accounts) => balanceLine(
-    ref.watch(l10nProvider),
-    ref.watch(numberFormattingServiceProvider),
-    accountsTotalWith(ref.watch, accounts),
-  );
-
   /// The name, with the wallet's chevron and, while it is closed, how many
   /// accounts it holds and what they hold together.
   Widget _heading(String name, AppLocalizations l10n) => _GroupHeading(
     name: name,
     count: widget.wallet.accountCount,
     countDescription: l10n.desktopWalletAccountCount(widget.wallet.accountCount),
-    total: widget.isOpen ? null : _total(walletAccountsInOrder(widget.wallet).map((d) => d.account)),
+    total: widget.isOpen ? null : _groupTotal(ref, walletAccountsInOrder(widget.wallet).map((d) => d.account)),
     isOpen: widget.isOpen,
     isControl: !widget.holdsActiveAccount,
     onToggle: _toggle,
@@ -498,9 +493,7 @@ class _MultisigsHeader extends ConsumerWidget {
         name: l10n.desktopSidebarMultisigs,
         count: count,
         countDescription: l10n.desktopWalletAccountCount(count),
-        total: isOpen
-            ? null
-            : balanceLine(l10n, ref.watch(numberFormattingServiceProvider), accountsTotalWith(ref.watch, multisigs)),
+        total: isOpen ? null : _groupTotal(ref, multisigs),
         isOpen: isOpen,
         isControl: !holdsActiveAccount,
         onToggle: () {
@@ -511,6 +504,16 @@ class _MultisigsHeader extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// What [accounts] hold together, as a closed group's heading shows it and as
+/// a screen reader hears it: masked, and heard as hidden, while balances are
+/// hidden.
+({String shown, String heard}) _groupTotal(WidgetRef ref, Iterable<BaseAccount> accounts) {
+  final l10n = ref.watch(l10nProvider);
+  if (ref.watch(isBalanceHiddenProvider)) return (shown: hiddenAmountText, heard: l10n.desktopAmountHidden);
+  final line = balanceLine(l10n, ref.watch(numberFormattingServiceProvider), accountsTotalWith(ref.watch, accounts));
+  return (shown: line, heard: line);
 }
 
 /// A group's heading in the sidebar: its [name] in capitals with a chevron
@@ -535,8 +538,8 @@ class _GroupHeading extends StatelessWidget {
   final String countDescription;
 
   /// What the group's accounts hold together, in words, shown while it is
-  /// closed.
-  final String? total;
+  /// closed, and as a screen reader hears it.
+  final ({String shown, String heard})? total;
   final bool isOpen;
   final bool isControl;
   final VoidCallback onToggle;
@@ -552,7 +555,7 @@ class _GroupHeading extends StatelessWidget {
     // gets the name as it is written.
     return Semantics(
       label: name,
-      value: isOpen ? null : [countDescription, ?total].join(', '),
+      value: isOpen ? null : [countDescription, ?total?.heard].join(', '),
       button: isControl,
       expanded: isOpen,
       onTap: isControl ? onToggle : null,
@@ -592,7 +595,7 @@ class _GroupHeading extends StatelessWidget {
                   if (total case final total? when !isOpen)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text(total, style: quiet, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      child: Text(total.shown, style: quiet, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                 ],
               ),

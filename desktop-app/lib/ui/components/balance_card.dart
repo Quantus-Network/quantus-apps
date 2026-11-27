@@ -1,18 +1,31 @@
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_balance.dart';
+import 'package:quantus_desktop_wallet/providers/balances_hidden.dart';
+import 'package:quantus_desktop_wallet/ui/components/hidden_amount_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
-/// [account]'s balance in a panel of its own: a small label, then the
-/// amount large with the token's symbol small after it. While the balance
-/// loads, or when it could not be read, it says so in place of the amount.
+/// [account]'s balance in a panel of its own: a small label with the eye
+/// that hides and shows the amounts, then the amount large with the token's
+/// symbol small after it, and under it what that is worth in the selected
+/// fiat currency once QTC has a price. While the balance loads, or when it
+/// could not be read, it says so in place of the amount; while balances are
+/// hidden, both amounts are masked.
 class BalanceCard extends ConsumerWidget {
   const BalanceCard({super.key, required this.account});
 
   final BaseAccount account;
+
+  /// The eye that hides and shows the amounts.
+  static const hideBalancesKey = Key('balance-card-hide-balances');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -21,6 +34,8 @@ class BalanceCard extends ConsumerWidget {
     final text = context.themeTextV3;
     final formatting = ref.watch(numberFormattingServiceProvider);
     final amountStyle = text.displayBalance.copyWith(color: colors.textContent);
+    final fiatStyle = text.body.copyWith(color: colors.textMuted);
+    final isHidden = ref.watch(isBalanceHiddenProvider);
 
     return Panel(
       fillsHeight: false,
@@ -30,35 +45,68 @@ class BalanceCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           spacing: 12,
           children: [
-            // Drawn in capitals, which is a look: a screen reader gets the word.
-            Semantics(
-              label: l10n.desktopBalanceLabel,
-              excludeSemantics: true,
-              child: Text(
-                l10n.desktopBalanceLabel.toUpperCase(),
-                style: text.dataAddress.copyWith(color: colors.textMuted2, letterSpacing: 1.4, height: 1),
-              ),
+            Row(
+              children: [
+                // Drawn in capitals, which is a look: a screen reader gets the word.
+                Expanded(
+                  child: Semantics(
+                    label: l10n.desktopBalanceLabel,
+                    excludeSemantics: true,
+                    child: Text(
+                      l10n.desktopBalanceLabel.toUpperCase(),
+                      style: text.dataAddress.copyWith(color: colors.textMuted2, letterSpacing: 1.4, height: 1),
+                    ),
+                  ),
+                ),
+                ToolbarAction.symbol(
+                  key: hideBalancesKey,
+                  symbol: isHidden ? CupertinoIcons.eye_slash : CupertinoIcons.eye,
+                  label: isHidden ? l10n.desktopMenuShowBalances : l10n.desktopMenuHideBalances,
+                  iconOnly: true,
+                  onPressed: () => unawaited(toggleBalancesHidden(ref)),
+                ),
+              ],
             ),
             watchAccountBalance(ref, account).when(
               loading: () => Text(l10n.commonLoading, style: amountStyle.copyWith(color: colors.textMuted)),
               error: (_, _) =>
                   Text(l10n.accountsSheetBalanceUnavailable, style: amountStyle.copyWith(color: colors.textMuted)),
-              data: (balance) => Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                spacing: 8,
-                children: [
-                  Flexible(
-                    child: Text(
-                      formatting.formatBalance(balance),
-                      style: amountStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              data: (balance) => isHidden
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 8,
+                      children: [
+                        HiddenAmountText(style: amountStyle),
+                        if (fiatAmountWith(ref.watch, balance) != null)
+                          HiddenAmountText(style: fiatStyle, prefix: '≈ '),
+                      ],
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      spacing: 8,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          spacing: 8,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                formatting.formatBalance(balance),
+                                style: amountStyle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            Text(
+                              AppConstants.tokenSymbol,
+                              style: text.dataAddressLarge.copyWith(color: colors.textMuted),
+                            ),
+                          ],
+                        ),
+                        if (fiatAmountWith(ref.watch, balance) case final fiat?) Text('≈ $fiat', style: fiatStyle),
+                      ],
                     ),
-                  ),
-                  Text(AppConstants.tokenSymbol, style: text.dataAddressLarge.copyWith(color: colors.textMuted)),
-                ],
-              ),
             ),
           ],
         ),

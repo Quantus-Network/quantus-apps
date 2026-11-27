@@ -8,6 +8,7 @@ import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
+import 'package:quantus_desktop_wallet/providers/balances_hidden.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
@@ -351,6 +352,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       onShowAccount: canNavigate ? (account) => unawaited(sidebar.showAccount(account)) : null,
       onMoveInSidebar: canNavigate ? (rows) => unawaited(sidebar.move(rows)) : null,
       onToggleSidebar: hasWallet ? () => ref.read(sidebarVisibleProvider.notifier).toggle() : null,
+      isBalanceHidden: read(isBalanceHiddenProvider),
+      onToggleBalances: hasWallet ? () => unawaited(toggleBalancesHidden(ref)) : null,
       onRefresh: hasWallet ? () => unawaited(refreshWallet(ref)) : null,
       onCloseWindow: () => unawaited(ref.read(backgroundModeProvider).closeWindow()),
       onOpenLink: (url) => unawaited(ref.read(openExternalUrlProvider)(url)),

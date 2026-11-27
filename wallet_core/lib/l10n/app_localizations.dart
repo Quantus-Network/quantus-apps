@@ -6769,6 +6769,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recents ({count})'**
   String desktopSendRecentsCount(int count);
+
+  /// Desktop activity inspector: the disclosure heading, drawn in capitals, that opens the list of an encrypted send's proof batches
+  ///
+  /// In en, this message translates to:
+  /// **'Batches ({count})'**
+  String desktopActivityBatches(int count);
+
+  /// Desktop activity inspector: label of the amount one batch of an encrypted send paid the recipient
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get desktopActivityBatchSent;
+
+  /// Desktop activity inspector: label of the amount one batch of an encrypted send returned to the wallet
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get desktopActivityBatchChange;
+
+  /// Desktop activity inspector: heading, drawn in capitals, over the wallet's inputs one batch of an encrypted send spent, each listed by amount and nullifier
+  ///
+  /// In en, this message translates to:
+  /// **'Inputs ({count})'**
+  String desktopActivityBatchInputs(int count);
+
+  /// Desktop View menu item, and the balance card's eye button, that masks the amounts shown at a glance
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Balances'**
+  String get desktopMenuHideBalances;
+
+  /// Desktop View menu item, and the balance card's eye button, that shows the amounts again after they were hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Show Balances'**
+  String get desktopMenuShowBalances;
+
+  /// Desktop Settings, Keyboard Shortcuts: the command that hides or shows the amounts shown at a glance
+  ///
+  /// In en, this message translates to:
+  /// **'Show or Hide Balances'**
+  String get desktopShortcutsToggleBalances;
+
+  /// Desktop: what a screen reader hears for an amount masked while balances are hidden
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get desktopAmountHidden;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

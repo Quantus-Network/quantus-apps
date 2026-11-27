@@ -21,7 +21,8 @@ import 'package:wallet_core/utils/account_actions.dart';
 ///
 /// An item whose `onSelected` is null is disabled. The items that open a sheet
 /// are disabled while [canOpenSheet] is false, the sidebar item while
-/// [onToggleSidebar] is null, those that change what the sidebar has selected
+/// [onToggleSidebar] is null, Hide or Show Balances (as [isBalanceHidden]
+/// says) while [onToggleBalances] is, those that change what the sidebar has selected
 /// while [onShowAccount] and [onMoveInSidebar] are, and Refresh while
 /// [onRefresh] is.
 ///
@@ -68,6 +69,8 @@ List<PlatformMenu> buildAppMenus({
   required ValueChanged<DisplayAccount>? onShowAccount,
   required ValueChanged<int>? onMoveInSidebar,
   required VoidCallback? onToggleSidebar,
+  required bool isBalanceHidden,
+  required VoidCallback? onToggleBalances,
   required VoidCallback? onRefresh,
   required VoidCallback onCloseWindow,
   required ValueChanged<Uri> onOpenLink,
@@ -221,6 +224,11 @@ List<PlatformMenu> buildAppMenus({
               label: isSidebarVisible ? l10n.desktopMenuHideSidebar : l10n.desktopMenuShowSidebar,
               shortcut: keysOf(AppCommand.toggleSidebar),
               onSelected: onToggleSidebar,
+            ),
+            PlatformMenuItem(
+              label: isBalanceHidden ? l10n.desktopMenuShowBalances : l10n.desktopMenuHideBalances,
+              shortcut: keysOf(AppCommand.toggleBalances),
+              onSelected: onToggleBalances,
             ),
           ],
         ),

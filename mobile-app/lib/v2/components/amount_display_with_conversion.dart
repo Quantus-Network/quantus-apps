@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/currency_display_provider.dart';
+import 'package:wallet_core/utils/hidden_amount.dart';
 
-/// Placeholder rendered in place of an amount the screen has chosen to hide.
-const String hiddenAmountText = '-----';
+export 'package:wallet_core/utils/hidden_amount.dart' show hiddenAmountText;
 
 class AmountDisplayWithConversion extends StatelessWidget {
   final CurrencyDisplayState amountDisplay;

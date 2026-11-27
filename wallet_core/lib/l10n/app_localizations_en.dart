@@ -3791,4 +3791,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopSendRecentsCount(int count) {
     return 'Recents ($count)';
   }
+
+  @override
+  String desktopActivityBatches(int count) {
+    return 'Batches ($count)';
+  }
+
+  @override
+  String get desktopActivityBatchSent => 'Sent';
+
+  @override
+  String get desktopActivityBatchChange => 'Change';
+
+  @override
+  String desktopActivityBatchInputs(int count) {
+    return 'Inputs ($count)';
+  }
+
+  @override
+  String get desktopMenuHideBalances => 'Hide Balances';
+
+  @override
+  String get desktopMenuShowBalances => 'Show Balances';
+
+  @override
+  String get desktopShortcutsToggleBalances => 'Show or Hide Balances';
+
+  @override
+  String get desktopAmountHidden => 'Hidden';
 }

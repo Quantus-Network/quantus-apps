@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/ui/components/hidden_amount_text.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/components/approval_marks.dart';
@@ -274,6 +275,8 @@ class _OpenProposalRowViewState extends State<OpenProposalRowView> {
             ? words(widget.l10n.multisigProposalInvalid, colors.semanticEmber)
             : named != null
             ? words(named.primary, accent)
+            : ref.watch(isBalanceHiddenProvider)
+            ? HiddenAmountText(style: amountStyle.copyWith(color: accent))
             : Text(
                 '-${widget.l10n.commonAmountBalance(formatting.formatBalance(widget.amount), AppConstants.tokenSymbol)}',
                 style: amountStyle.copyWith(color: accent),

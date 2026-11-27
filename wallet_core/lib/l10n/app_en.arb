@@ -5558,5 +5558,47 @@
           "type": "int"
         }
       }
+    },
+    "desktopActivityBatches": "Batches ({count})",
+    "@desktopActivityBatches": {
+      "description": "Desktop activity inspector: the disclosure heading, drawn in capitals, that opens the list of an encrypted send's proof batches",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopActivityBatchSent": "Sent",
+    "@desktopActivityBatchSent": {
+      "description": "Desktop activity inspector: label of the amount one batch of an encrypted send paid the recipient"
+    },
+    "desktopActivityBatchChange": "Change",
+    "@desktopActivityBatchChange": {
+      "description": "Desktop activity inspector: label of the amount one batch of an encrypted send returned to the wallet"
+    },
+    "desktopActivityBatchInputs": "Inputs ({count})",
+    "@desktopActivityBatchInputs": {
+      "description": "Desktop activity inspector: heading, drawn in capitals, over the wallet's inputs one batch of an encrypted send spent, each listed by amount and nullifier",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
+    },
+    "desktopMenuHideBalances": "Hide Balances",
+    "@desktopMenuHideBalances": {
+      "description": "Desktop View menu item, and the balance card's eye button, that masks the amounts shown at a glance"
+    },
+    "desktopMenuShowBalances": "Show Balances",
+    "@desktopMenuShowBalances": {
+      "description": "Desktop View menu item, and the balance card's eye button, that shows the amounts again after they were hidden"
+    },
+    "desktopShortcutsToggleBalances": "Show or Hide Balances",
+    "@desktopShortcutsToggleBalances": {
+      "description": "Desktop Settings, Keyboard Shortcuts: the command that hides or shows the amounts shown at a glance"
+    },
+    "desktopAmountHidden": "Hidden",
+    "@desktopAmountHidden": {
+      "description": "Desktop: what a screen reader hears for an amount masked while balances are hidden"
     }
 }
