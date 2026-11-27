@@ -4207,33 +4207,6 @@
         }
       }
     },
-    "desktopProposalKeystoneApprove": "{name} signs with a Keystone, which this app cannot sign with yet. Approve on your phone.",
-    "@desktopProposalKeystoneApprove": {
-      "description": "Desktop proposal panel: why Approve is unavailable when the only account that could approve is a Keystone",
-      "placeholders": {
-        "name": {
-          "type": "String"
-        }
-      }
-    },
-    "desktopProposalKeystoneExecute": "{name} signs with a Keystone, which this app cannot sign with yet. Execute on your phone.",
-    "@desktopProposalKeystoneExecute": {
-      "description": "Desktop proposal panel: why Execute is unavailable when the member that executes is a Keystone",
-      "placeholders": {
-        "name": {
-          "type": "String"
-        }
-      }
-    },
-    "desktopProposalKeystoneCancel": "{name} signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.",
-    "@desktopProposalKeystoneCancel": {
-      "description": "Desktop proposal panel: why Cancel Proposal is unavailable when the proposer is a Keystone",
-      "placeholders": {
-        "name": {
-          "type": "String"
-        }
-      }
-    },
     "desktopProposalApprovingTitle": "Approving {what}",
     "@desktopProposalApprovingTitle": {
       "description": "Desktop proposal action receipt headline while the approval is confirmed; what is the amount or the call's name",

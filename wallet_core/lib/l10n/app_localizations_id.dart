@@ -2945,21 +2945,6 @@ class AppLocalizationsId extends AppLocalizations {
   }
 
   @override
-  String desktopProposalKeystoneApprove(String name) {
-    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Setujui di ponsel Anda.';
-  }
-
-  @override
-  String desktopProposalKeystoneExecute(String name) {
-    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Jalankan di ponsel Anda.';
-  }
-
-  @override
-  String desktopProposalKeystoneCancel(String name) {
-    return '$name menandatangani dengan Keystone, yang belum dapat digunakan aplikasi ini untuk menandatangani. Batalkan di ponsel Anda.';
-  }
-
-  @override
   String desktopProposalApprovingTitle(String what) {
     return 'Menyetujui $what';
   }

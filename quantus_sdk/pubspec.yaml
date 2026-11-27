@@ -52,7 +52,8 @@ dependencies:
       ref: 0_7_3_quantus_2
       path: packages/ss58
   intl: ^0.20.2
-  flutter_secure_storage: ^10.1.0
+  # 10.x stays allowed for the desktop and miner apps, whose lockfiles have not moved to 11.
+  flutter_secure_storage: ">=10.1.0 <12.0.0"
   connectivity_plus: ^7.1.1
   path_provider: ^2.1.5
 

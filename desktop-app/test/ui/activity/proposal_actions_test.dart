@@ -491,16 +491,16 @@ void main() {
     }
   });
 
-  group('a Keystone account', () {
-    testOnMac('the only one still to approve: Approve unavailable, with the note naming it', (tester) async {
+  group('a cold wallet account', () {
+    testOnMac('the only one still to approve: Approve offered, with no note', (tester) async {
       await _openProposal(
         tester,
         _proposal(approvals: const ['qzOther', 'qzMain']),
         accounts: const [mainAccount, vaultAccount],
       );
 
-      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse);
-      expect(_note(tester), _l10n.desktopProposalKeystoneApprove(vaultAccount.name));
+      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
+      expect(_note(tester), isNull);
     });
 
     testOnMac('beside one that signs here: Approve offered', (tester) async {
@@ -510,15 +510,15 @@ void main() {
       expect(_note(tester), isNull);
     });
 
-    testOnMac('that proposed it, not the member: Cancel unavailable, with the note naming it', (tester) async {
+    testOnMac('that proposed it, not the member: Cancel offered, with no note', (tester) async {
       await _openProposal(tester, _proposal(proposer: 'qzVault'), accounts: const [mainAccount, vaultAccount]);
 
       expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
-      expect(_offered(_button(tester, ProposalActionsBar.cancelKey)), isFalse);
-      expect(_note(tester), _l10n.desktopProposalKeystoneCancel(vaultAccount.name));
+      expect(_offered(_button(tester, ProposalActionsBar.cancelKey)), isTrue);
+      expect(_note(tester), isNull);
     });
 
-    testOnMac('as this device\'s member, on an approved proposal: Execute unavailable, with its note', (tester) async {
+    testOnMac('as this device\'s member, on an approved proposal: Execute offered, with no note', (tester) async {
       final vaultTeam = MultisigAccount(
         name: 'Team',
         accountId: 'qzTeam',
@@ -540,8 +540,8 @@ void main() {
       await tester.tap(find.byType(OpenProposalRowView));
       await tester.pumpAndSettle();
 
-      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isFalse);
-      expect(_note(tester), _l10n.desktopProposalKeystoneExecute(vaultAccount.name));
+      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
+      expect(_note(tester), isNull);
     });
 
     testOnMac('as this device\'s member, beside an account that signs here: Execute offered', (tester) async {
@@ -568,6 +568,35 @@ void main() {
 
       expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
       expect(_note(tester), isNull);
+    });
+  });
+
+  group('no login password set up, a cold wallet among the signers', () {
+    testOnMac('the only one still to approve: Approve offered, with no note', (tester) async {
+      await _openProposal(
+        tester,
+        _proposal(approvals: const ['qzOther', 'qzMain']),
+        accounts: const [mainAccount, vaultAccount],
+        approval: ApprovalAvailability.notSetUp,
+      );
+
+      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
+      expect(_note(tester), isNull);
+    });
+
+    testOnMac('what it can do stays offered; what only this Mac could sign is not, with the note to set one', (
+      tester,
+    ) async {
+      await _openProposal(
+        tester,
+        _proposal(proposer: 'qzMain'),
+        accounts: const [mainAccount, vaultAccount],
+        approval: ApprovalAvailability.notSetUp,
+      );
+
+      expect(_offered(_button(tester, ProposalActionsBar.primaryKey)), isTrue);
+      expect(_offered(_button(tester, ProposalActionsBar.cancelKey)), isFalse);
+      expect(_note(tester), approvalNotSetUpNote(_l10n));
     });
   });
 

@@ -2939,21 +2939,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String desktopProposalKeystoneApprove(String name) {
-    return '$name signs with a Keystone, which this app cannot sign with yet. Approve on your phone.';
-  }
-
-  @override
-  String desktopProposalKeystoneExecute(String name) {
-    return '$name signs with a Keystone, which this app cannot sign with yet. Execute on your phone.';
-  }
-
-  @override
-  String desktopProposalKeystoneCancel(String name) {
-    return '$name signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.';
-  }
-
-  @override
   String desktopProposalApprovingTitle(String what) {
     return 'Approving $what';
   }

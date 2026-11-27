@@ -5366,24 +5366,6 @@ abstract class AppLocalizations {
   /// **'{before} → {after}'**
   String desktopProposalApprovalsChange(String before, String after);
 
-  /// Desktop proposal panel: why Approve is unavailable when the only account that could approve is a Keystone
-  ///
-  /// In en, this message translates to:
-  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Approve on your phone.'**
-  String desktopProposalKeystoneApprove(String name);
-
-  /// Desktop proposal panel: why Execute is unavailable when the member that executes is a Keystone
-  ///
-  /// In en, this message translates to:
-  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Execute on your phone.'**
-  String desktopProposalKeystoneExecute(String name);
-
-  /// Desktop proposal panel: why Cancel Proposal is unavailable when the proposer is a Keystone
-  ///
-  /// In en, this message translates to:
-  /// **'{name} signs with a Keystone, which this app cannot sign with yet. Cancel on your phone.'**
-  String desktopProposalKeystoneCancel(String name);
-
   /// Desktop proposal action receipt headline while the approval is confirmed; what is the amount or the call's name
   ///
   /// In en, this message translates to:

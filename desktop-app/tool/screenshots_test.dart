@@ -2005,7 +2005,9 @@ void _activityScenes() {
     );
     await press(tester, ProposalActionsBar.primaryKey);
     priced = false;
-    await tester.tap(find.byKey(ProposalActionSheet.signerKey(_second.accountId)));
+    await tester.tap(find.byKey(ProposalActionSheet.signerKey));
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byKey(PopUpButton.menuKey), matching: find.text(_second.name)));
     for (var i = 0; i < 5; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
