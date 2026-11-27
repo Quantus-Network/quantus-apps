@@ -303,7 +303,9 @@ void main() {
   _scene('send_form_many_recents', (tester) async {
     await _openSend(
       tester,
-      moreRecents: [for (final letter in ['E', 'F', 'G']) 'qz${letter * 44}'],
+      moreRecents: [
+        for (final letter in ['E', 'F', 'G']) 'qz${letter * 44}',
+      ],
     );
   });
 
