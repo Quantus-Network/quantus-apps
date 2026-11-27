@@ -17,6 +17,7 @@ import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/utils/cold_wallet_target.dart';
 import 'package:quantus_desktop_wallet/utils/managed_multisigs.dart';
+import 'package:quantus_desktop_wallet/utils/wallet_disconnect.dart';
 import 'package:quantus_desktop_wallet/utils/wallet_names.dart';
 import 'package:wallet_core/utils/account_menu.dart';
 import 'package:wallet_core/utils/accounts_grouping.dart';
@@ -152,6 +153,19 @@ class RecoveryPhraseTargetNotifier extends Notifier<RecoveryPhraseTarget?> {
       state = (walletIndex: walletIndex, fromBackupReminder: fromBackupReminder);
 
   void clear() => state = null;
+}
+
+/// The wallet the Disconnect Wallet sheet is about, by its index: the sheet
+/// takes it on opening.
+final disconnectWalletTargetProvider = NotifierProvider<DisconnectWalletTargetNotifier, int?>(
+  DisconnectWalletTargetNotifier.new,
+);
+
+class DisconnectWalletTargetNotifier extends Notifier<int?> {
+  @override
+  int? build() => null;
+
+  void set(int walletIndex) => state = walletIndex;
 }
 
 /// A software wallet: what it is called, and its accounts' names.
@@ -651,8 +665,7 @@ class AccountManager {
             );
             if (!walletRemains) _forgetWallet(account.walletIndex);
           case DisconnectWallet(:final walletIndex):
-            await service.removeWallet(walletIndex);
-            _forgetWallet(walletIndex);
+            await _removeWallet(walletIndex);
           case null:
             throw StateError('${account.accountId} cannot be disconnected');
         }
@@ -660,6 +673,38 @@ class AccountManager {
       default:
         throw StateError('${account.accountId} cannot be disconnected');
     }
+  }
+
+  /// Opens the Disconnect Wallet sheet on the software wallet at
+  /// [walletIndex]. Like any sheet, it does not open over another.
+  Future<void> openDisconnectWallet(int walletIndex) {
+    _ref.read(disconnectWalletTargetProvider.notifier).set(walletIndex);
+    return _ref.read(shellSheetProvider.notifier).open(ShellSheet.disconnectWallet);
+  }
+
+  /// Disconnects the whole software wallet at [walletIndex]: every account
+  /// in it, its Encrypted account and its recovery phrase. Asking first, and
+  /// asking for approval, is the caller's. Only a wallet [canDisconnectWallet]
+  /// allows goes; a removal that fails is thrown, and nothing changes.
+  Future<void> disconnectWallet(int walletIndex) async {
+    final accounts = await _ref.read(accountsServiceProvider).getAccounts();
+    final multisigs = _ref.read(multisigAccountsProvider).value ?? const <MultisigAccount>[];
+    final wallet = groupWallets(
+      accounts: accounts,
+      multisigs: multisigs,
+    ).wallets.where((w) => w.walletIndex == walletIndex).firstOrNull;
+    if (wallet == null || !canDisconnectWallet(wallet)) {
+      throw StateError('Wallet $walletIndex cannot be disconnected');
+    }
+    await _removeWallet(walletIndex);
+    _refreshAccounts();
+  }
+
+  /// Removes the wallet at [walletIndex] from the device's storage, and what
+  /// this app kept for it ([_forgetWallet]).
+  Future<void> _removeWallet(int walletIndex) async {
+    await _ref.read(accountsServiceProvider).removeWallet(walletIndex);
+    _forgetWallet(walletIndex);
   }
 
   /// What this app kept for the wallet at [walletIndex], just removed, goes:

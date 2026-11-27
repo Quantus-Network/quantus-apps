@@ -11,6 +11,10 @@ enum ShellSheet {
   createMultisig,
   manageMultisigs,
 
+  /// Deleting a whole software wallet from this app: which is
+  /// `disconnectWalletTargetProvider`'s.
+  disconnectWallet,
+
   /// Approving, executing or cancelling a multisig proposal: which, and of
   /// what, is `proposalActionTargetProvider`'s.
   proposalAction,

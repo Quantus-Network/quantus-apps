@@ -32,6 +32,7 @@ import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/disconnect_wallet_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
@@ -717,6 +718,29 @@ void main() {
   _scene('sidebar_group_menu', (tester) async {
     await _openAccounts(tester, walletsLeftOpen: false);
     await _rightClickInSidebar(tester, 'WALLET 2');
+  });
+
+  _scene('disconnect_wallet', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    await _rightClickInSidebar(tester, 'WALLET 2');
+    await tester.tap(
+      find.descendant(of: find.byKey(ContextMenuRegion.menuKey), matching: find.text('Disconnect Wallet…')),
+    );
+    await tester.pumpAndSettle();
+  });
+
+  _scene('disconnect_wallet_ticked_smallest_window', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    await _rightClickInSidebar(tester, 'WALLET 2');
+    await tester.tap(
+      find.descendant(of: find.byKey(ContextMenuRegion.menuKey), matching: find.text('Disconnect Wallet…')),
+    );
+    await tester.pumpAndSettle();
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+    // On the box: the row is wider than its label.
+    await tester.tapAt(tester.getTopLeft(find.byKey(DisconnectWalletSheet.backedUpKey)) + const Offset(16, 16));
+    await tester.pumpAndSettle();
   });
 
   _scene('sidebar_group_drag', (tester) async {

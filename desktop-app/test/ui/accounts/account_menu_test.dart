@@ -216,13 +216,12 @@ void main() {
       expect(_menuLabels(tester), ['Get Info', 'Copy Address', 'Rename…', 'Show Recovery Phrase…']);
     });
 
-    testOnMac('a software wallet\'s heading offers Rename, its recovery phrase, opened in Settings, and the moves', (
-      tester,
-    ) async {
+    testOnMac('a software wallet\'s heading offers Rename, its recovery phrase, opened in Settings, the moves and, on '
+        'any but the first, Disconnect Wallet…', (tester) async {
       await _pump(tester);
       await _rightClick(tester, find.descendant(of: find.byType(Sidebar), matching: find.text('WALLET 2')));
 
-      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…', 'Move Up', 'Move Down']);
+      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…', 'Move Up', 'Move Down', 'Disconnect Wallet…']);
       await _choose(tester, 'Show Recovery Phrase…');
       expect(find.byType(SettingsSheet), findsOneWidget);
       expect(find.byKey(SettingsSheet.continueKey), findsOneWidget);
@@ -242,7 +241,7 @@ void main() {
       await gesture.up();
       await tester.pumpAndSettle();
 
-      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…', 'Move Up', 'Move Down']);
+      expect(_menuLabels(tester), ['Rename…', 'Show Recovery Phrase…', 'Move Up', 'Move Down', 'Disconnect Wallet…']);
     });
 
     testOnMac('a cold wallet\'s heading offers only Connect Cold Wallet…, which opens it, and the moves', (
