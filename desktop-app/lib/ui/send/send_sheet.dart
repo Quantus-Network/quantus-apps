@@ -739,16 +739,19 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         // window leaves, so the fields and the buttons under it stay in the
         // sheet; the rest scroll in, each row built as it comes into view.
         Flexible(child: _recentsList()),
-      ] else if (_isChecking) ...[
+      ] else if (_isChecking || _recipientAccepted) ...[
         const SizedBox(height: 10),
-        Text(l10n.sendRecipientChecking, style: context.sendBody()),
-      ] else if (_recipientAccepted) ...[
-        const SizedBox(height: 10),
-        CheckphraseText(
-          _recipient,
-          style: context.sendMono(colors.semanticLilac),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        // In line with the address typed above it, not with the field's edge.
+        Padding(
+          padding: const EdgeInsets.only(left: SendField.textInset),
+          child: _isChecking
+              ? Text(l10n.sendRecipientChecking, style: context.sendBody())
+              : CheckphraseText(
+                  _recipient,
+                  style: context.sendMono(colors.semanticLilac),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
         ),
       ],
       const SizedBox(height: 18),
