@@ -15,6 +15,20 @@ const _networkClient = 'com.apple.security.network.client';
 const _camera = 'com.apple.security.device.camera';
 const _jit = 'com.apple.security.cs.allow-jit';
 const _networkServer = 'com.apple.security.network.server';
+const _push = 'com.apple.developer.aps-environment';
+
+const _team = '8BRRAHLVW5';
+
+/// The app target's build configurations (Debug, Profile, Release), each as
+/// the text of its build settings.
+Map<String, String> _appConfigurations() {
+  final project = File('macos/Runner.xcodeproj/project.pbxproj').readAsStringSync();
+  final blocks = RegExp(r'isa = XCBuildConfiguration;(.*?)name = (\w+);', dotAll: true).allMatches(project);
+  return {
+    for (final block in blocks)
+      if (block[1]!.contains('INFOPLIST_FILE = Runner/Info.plist')) block[2]!: block[1]!,
+  };
+}
 
 void main() {
   // The Mac App Store takes only sandboxed apps. Debug is sandboxed too, so
@@ -31,17 +45,49 @@ void main() {
       expect(debug[_sandbox], isTrue);
     });
 
-    // Push, the team and keychain groups are added when a build is signed:
-    // in these files they would need a provisioning profile, and an unsigned
-    // or CI build would no longer launch.
-    test('Release asks only for the network and the camera', () {
-      expect(release, {_sandbox: true, _networkClient: true, _camera: true});
+    // A Release build is signed by Xcode for the team, which can only grant
+    // push the app asks for here; the App Store export turns `development`
+    // into `production`.
+    test('Release asks for the network, the camera and push', () {
+      expect(release, {_sandbox: true, _networkClient: true, _camera: true, _push: 'development'});
     });
 
     // Flutter's debugger needs JIT and a local server; a release build needs
-    // neither.
-    test('Debug adds only JIT and the local server to Release', () {
-      expect(debug, {...release, _jit: true, _networkServer: true});
+    // neither. Push needs a provisioning profile, which an unsigned debug or
+    // CI build does not have: asking for it, the app would not launch.
+    test('Debug adds only JIT and the local server to Release, without push', () {
+      expect(debug, {...release, _jit: true, _networkServer: true}..remove(_push));
+    });
+  });
+
+  // As the phone's Runner: Xcode signs a Release build for the team with the
+  // Apple account it is signed into, and picks or makes the certificates and
+  // profiles. Debug and Profile need no account, for `flutter run` and CI.
+  group('macOS signing', () {
+    final configurations = _appConfigurations();
+
+    test('Release is signed automatically by team $_team', () {
+      final release = configurations['Release']!;
+      expect(release, contains('DEVELOPMENT_TEAM = $_team;'));
+      expect(release, contains('CODE_SIGN_STYLE = Automatic;'));
+      expect(release, contains('CODE_SIGN_IDENTITY = "Apple Development";'));
+    });
+
+    test('Debug and Profile are not tied to a team', () {
+      expect(configurations.keys, containsAll(['Debug', 'Profile']));
+      for (final name in ['Debug', 'Profile']) {
+        expect(configurations[name], isNot(contains('DEVELOPMENT_TEAM')), reason: name);
+      }
+    });
+
+    // upload_macos_build.sh exports the package; Transporter uploads it.
+    test('ExportOptions.plist exports for App Store Connect', () {
+      expect(_plist('macos/ExportOptions.plist'), {
+        'method': 'app-store-connect',
+        'destination': 'export',
+        'teamID': _team,
+        'signingStyle': 'automatic',
+      });
     });
   });
 
