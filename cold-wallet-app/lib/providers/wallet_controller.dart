@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart' show SealPolicy;
+import 'package:quantus_sdk/quantus_sdk.dart' show SealPolicy, SealedKeyError;
 import 'package:quantus_cold_wallet/models/cold_account.dart';
 import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
 import 'package:quantus_cold_wallet/services/cold_key_service.dart';
@@ -85,6 +85,19 @@ final sealPolicyProvider = FutureProvider.autoDispose<SealPolicy?>((ref) async {
     rethrow;
   }
 }, retry: (_, _) => null);
+
+extension SealPolicyAnswer on AsyncValue<SealPolicy?> {
+  /// Nothing can be sealed now: the device has no screen lock, or did not say
+  /// what it enforces. The screen offers to check again.
+  bool get cannotSeal => hasError || (hasValue && value == null);
+
+  /// What the screen shows when the device did not say what it enforces.
+  String? get failure => switch (error) {
+    null => null,
+    SealedKeyError(:final detail) => 'Secure storage failed.\n$detail',
+    final error => 'Secure storage failed.\n$error',
+  };
+}
 
 /// What every screen asks of the wallet, whichever way the device holds its
 /// recovery phrase.

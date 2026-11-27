@@ -17,6 +17,9 @@ class FakeColdKeys implements ColdKeyService {
   /// The strongest policy the device enforces now; null is no screen lock.
   SealPolicy? available = SealPolicy.biometry;
 
+  /// What the device answers instead of [available] when it cannot say.
+  SealedKeyFailure? unanswered;
+
   /// What each prompt said it was for.
   final prompted = <String>[];
 
@@ -57,7 +60,10 @@ class FakeColdKeys implements ColdKeyService {
   }
 
   @override
-  Future<SealPolicy?> availablePolicy() async => available;
+  Future<SealPolicy?> availablePolicy() async => switch (unanswered) {
+    null => available,
+    final failure => _refuse(failure),
+  };
 
   @override
   Future<SealPolicy?> sealedPolicy() async => sealed == null ? null : sealedUnder;

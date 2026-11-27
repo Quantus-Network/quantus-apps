@@ -136,8 +136,7 @@ class _UnlockMethodScreenState extends ConsumerState<UnlockMethodScreen> {
       AsyncError() => _Method.unavailable,
       _ => null,
     };
-    final error =
-        _error ?? (sealPolicy is AsyncError<SealPolicy?> ? 'Secure storage failed.\n${sealPolicy.error}' : null);
+    final error = _error ?? sealPolicy?.failure;
     const biometry = SealPolicy.biometry;
     const passcode = SealPolicy.devicePasscode;
 

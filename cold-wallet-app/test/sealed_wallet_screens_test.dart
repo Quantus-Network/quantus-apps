@@ -178,6 +178,23 @@ void main() {
       expect(find.text('Sign with your passcode'), findsOneWidget);
     }, variant: iphone);
 
+    testWidgets('is not created while the phone cannot tell what it enforces, and says why', (tester) async {
+      keys.unanswered = SealedKeyFailure.unavailable;
+      final container = await launch(tester);
+      await open(tester, container, screen);
+
+      expect(find.text('Set a passcode first'), findsOneWidget);
+      expect(find.text('Secure storage failed.\nfake device'), findsOneWidget);
+      expect(find.text('Enable Face ID'), findsNothing);
+
+      keys.unanswered = null;
+      await tester.tap(find.text('Check again'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Sign with Face ID'), findsOneWidget);
+      expect(keys.sealed, isNull);
+    }, variant: iphone);
+
     testWidgets('is not created by a dismissed prompt, which can be tried again', (tester) async {
       final container = await launch(tester);
       await open(tester, container, screen);
@@ -401,5 +418,49 @@ void main() {
       await tester.pumpAndSettle();
       expect(controller.passwords, ['']);
     });
+
+    testWidgets('says so when the phone cannot tell what it enforces, and moves once it can', (tester) async {
+      keys.unanswered = SealedKeyFailure.unavailable;
+      final controller = _OldVaultController();
+      final container = await launch(tester, controller: () => controller);
+      await pump(tester, container, const MigrateVaultScreen());
+
+      expect(find.text('Set a passcode first'), findsOneWidget);
+      expect(find.textContaining('Secure storage failed.\nfake device'), findsOneWidget);
+      expect(find.text('Continue'), findsNothing);
+
+      keys.unanswered = null;
+      await tester.tap(find.text('Check again'));
+      await tester.pumpAndSettle();
+      expect(find.text('Face ID for every signature'), findsOneWidget);
+      expect(find.textContaining('Secure storage failed.'), findsNothing);
+
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(controller.passwords, ['']);
+    }, variant: iphone);
+
+    testWidgets('does not move when the phone stops telling what it enforces, and says so', (tester) async {
+      final controller = _OldVaultController();
+      final container = await launch(tester, controller: () => controller);
+      await pump(tester, container, const MigrateVaultScreen());
+      keys.unanswered = SealedKeyFailure.unavailable;
+
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+
+      expect(controller.passwords, isEmpty);
+      expect(find.text('Set a passcode first'), findsOneWidget);
+      expect(find.text('Secure storage failed. Nothing was changed.'), findsOneWidget);
+
+      keys.unanswered = null;
+      await tester.tap(find.text('Check again'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Secure storage failed.'), findsNothing);
+
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
+      expect(controller.passwords, ['']);
+    }, variant: iphone);
   });
 }

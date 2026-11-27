@@ -52,13 +52,13 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
 
   Future<void> _submit(bool needsPassword) async {
     if (_busy) return;
-    final protected = await _chooseProtection();
-    if (protected == null || !mounted) return;
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
+      final protected = await _chooseProtection();
+      if (protected == null || !mounted) return;
       final moved = await ref
           .read(walletControllerProvider.notifier)
           .migrateLegacy(_password.text, protected: protected);
@@ -87,7 +87,8 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
     final text = context.themeTextV3;
     final sealed = ref.read(walletControllerProvider.notifier).sealed;
     final available = sealed ? ref.watch(sealPolicyProvider) : null;
-    final lockMissing = available != null && available.hasValue && available.value == null;
+    final lockMissing = available?.cannotSeal ?? false;
+    final error = _error ?? available?.failure;
     final policy = available?.value ?? SealPolicy.biometry;
     final credential = policy.credential;
     final needsPassword = !ref.watch(walletControllerProvider.select((s) => s.biometricEnabled));
@@ -135,10 +136,10 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
                 enabled: !_busy,
                 onSubmitted: (_) => _submit(needsPassword),
               ),
-            if (_error != null) ...[
+            if (error != null) ...[
               const SizedBox(height: 16),
               Text(
-                _error!,
+                error,
                 style: text.caption.copyWith(color: colors.semanticEmber),
                 textAlign: TextAlign.center,
               ),
@@ -156,7 +157,10 @@ class _MigrateVaultScreenState extends ConsumerState<MigrateVaultScreen> {
               onTap: _busy
                   ? null
                   : lockMissing
-                  ? () => ref.invalidate(sealPolicyProvider)
+                  ? () {
+                      setState(() => _error = null);
+                      ref.invalidate(sealPolicyProvider);
+                    }
                   : () => _submit(needsPassword),
             ),
             const SizedBox(height: 12),
