@@ -484,6 +484,18 @@ void main() {
       expect(_inSheet(find.text('CHECKPHRASE')), findsNothing);
     });
 
+    testOnMac('the checkphrase starts where the address starts inside the field', (tester) async {
+      await _openSend(tester);
+
+      await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getTopLeft(_inSheet(find.text('Phrase-qzPayee'))).dx,
+        tester.getTopLeft(_editable(SendSheet.addressFieldKey)).dx,
+      );
+    });
+
     testOnMac('what is not an address is said to be none, and cannot be reviewed', (tester) async {
       await _openSend(tester);
 
