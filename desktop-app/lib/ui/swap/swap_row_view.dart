@@ -1,6 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/ui/components/hidden_amount_text.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
@@ -12,6 +13,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/swap/swap_progress.dart';
+import 'package:wallet_core/utils/hidden_amount.dart';
 
 /// A followed [swap], as a row of its account's In progress: open when it is
 /// what the panel at the right shows, and a click opens it there.
@@ -88,8 +90,10 @@ class _SwapRowViewState extends ConsumerState<SwapRowView> {
     final view = swapProgressViewOf(swap, now);
     final words = _wordsOf(context, l10n, fmt, swap, view, now, preflight: preflight);
 
-    // The account's side of it: what it pays, or what it receives.
-    final (:amount, :what, foreignAmount: _, network: _) = swapAmountWords(l10n, fmt, swap);
+    // The account's side of it: what it pays, or what it receives; both
+    // amounts masked while balances are hidden.
+    final (:amount, :what, foreignAmount: _, :network) = swapAmountWords(l10n, fmt, swap);
+    final isHidden = ref.watch(isBalanceHiddenProvider);
 
     final ended = view == SwapProgressView.failed || view == SwapProgressView.expired;
     final muted = text.caption.copyWith(color: colors.textMuted, fontFeatures: const [FontFeature.tabularFigures()]);
@@ -110,23 +114,21 @@ class _SwapRowViewState extends ConsumerState<SwapRowView> {
       style: text.bodyEmphasis.copyWith(color: words.accent),
     );
     final time = words.time == null ? null : Text(words.time!, maxLines: 1, style: muted);
-    final amountText = Text(
-      amount,
-      style: text.amountRow.copyWith(
-        // What arrives is in sage; what was paid is plain once it is done,
-        // and what did not move is quiet.
-        color: ended
-            ? colors.textMuted
-            : !swapOut
-            ? colors.semanticSage
-            : view == SwapProgressView.complete
-            ? colors.textContent
-            : words.accent,
-        fontFeatures: const [FontFeature.tabularFigures()],
-      ),
+    final amountStyle = text.amountRow.copyWith(
+      // What arrives is in sage; what was paid is plain once it is done,
+      // and what did not move is quiet.
+      color: ended
+          ? colors.textMuted
+          : !swapOut
+          ? colors.semanticSage
+          : view == SwapProgressView.complete
+          ? colors.textContent
+          : words.accent,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
+    final amountText = isHidden ? HiddenAmountText(style: amountStyle) : Text(amount, style: amountStyle);
     final whatText = Text(
-      what,
+      isHidden ? l10n.desktopSwapAmountOnNetwork(hiddenAmountText, network) : what,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: text.body.copyWith(color: colors.textContent),

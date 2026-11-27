@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:quantus_desktop_wallet/ui/components/hidden_amount_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -48,6 +49,7 @@ class ActivityRowView extends StatefulWidget {
     required this.amountText,
     required this.form,
     required this.l10n,
+    this.isAmountHidden = false,
     this.ownCounterparty,
     this.isSelected = false,
     this.hasFocus = true,
@@ -59,6 +61,9 @@ class ActivityRowView extends StatefulWidget {
 
   final ActivityRow row;
   final String amountText;
+
+  /// While balances are hidden, the amount is masked, with no sign.
+  final bool isAmountHidden;
   final ActivityRowForm form;
   final AppLocalizations l10n;
 
@@ -133,6 +138,7 @@ class _ActivityRowViewState extends State<ActivityRowView> {
   Widget _amount(AppColorsV3 colors) {
     final text = context.themeTextV3.amountRow.copyWith(fontFeatures: const [FontFeature.tabularFigures()]);
     if (_row.hidesAmount) return Text('—', style: text.copyWith(color: colors.textMuted));
+    if (widget.isAmountHidden) return HiddenAmountText(style: text.copyWith(color: colors.textMuted));
     if (_row.movedNothing) return Text(widget.amountText, style: text.copyWith(color: colors.textMuted));
     return Text(
       '${_row.isSend ? '-' : '+'}${widget.amountText}',

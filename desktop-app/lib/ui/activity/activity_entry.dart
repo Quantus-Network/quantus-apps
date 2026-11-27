@@ -35,6 +35,7 @@ class ActivityEntry extends ConsumerWidget {
       id: tx.id,
       row: row,
       amountText: l10n.commonAmountBalance(formatting.formatBalance(row.amount), AppConstants.tokenSymbol),
+      isAmountHidden: ref.watch(isBalanceHiddenProvider),
       form: form,
       l10n: l10n,
       ownCounterparty: switch (row.counterparty) {

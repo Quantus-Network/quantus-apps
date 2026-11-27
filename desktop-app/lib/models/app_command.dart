@@ -9,6 +9,7 @@ enum AppCommand {
   getInfo,
   copyAddress,
   toggleSidebar,
+  toggleBalances,
   nextSidebarItem,
   previousSidebarItem,
   refresh,

@@ -214,6 +214,8 @@ class ShortcutBindings {
     // ⌘C is the system's Copy; Copy Address keeps beside it.
     AppCommand.copyAddress => KeyCombo(LogicalKeyboardKey.keyC, _commandShift),
     AppCommand.toggleSidebar => KeyCombo(LogicalKeyboardKey.keyB, _command),
+    // ⌘B is the sidebar's; hiding balances keeps beside it.
+    AppCommand.toggleBalances => KeyCombo(LogicalKeyboardKey.keyB, _commandShift),
     AppCommand.nextSidebarItem => KeyCombo(LogicalKeyboardKey.arrowDown, _commandAlt),
     AppCommand.previousSidebarItem => KeyCombo(LogicalKeyboardKey.arrowUp, _commandAlt),
     // ⌘R, which reloads elsewhere on the Mac, is Receive's.

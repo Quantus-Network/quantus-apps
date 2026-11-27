@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_balance.dart';
+import 'package:quantus_desktop_wallet/ui/components/hidden_amount_text.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/l10n/app_localizations.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
 /// [account]'s balance in tokens on one line, or a word for it while it loads
-/// or after it failed to.
+/// or after it failed to; masked while balances are hidden.
 class AccountBalanceText extends ConsumerWidget {
   const AccountBalanceText({super.key, required this.account, required this.style});
 
@@ -16,6 +17,7 @@ class AccountBalanceText extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (ref.watch(isBalanceHiddenProvider)) return HiddenAmountText(style: style);
     final l10n = ref.watch(l10nProvider);
     final balance = watchAccountBalance(ref, account);
     final formatting = ref.watch(numberFormattingServiceProvider);

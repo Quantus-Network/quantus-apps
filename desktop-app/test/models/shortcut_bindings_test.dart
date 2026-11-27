@@ -31,6 +31,7 @@ void main() {
       expect(mac[AppCommand.swap], _combo(LogicalKeyboardKey.keyS, _shiftCmd));
       expect(mac[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _cmd));
       expect(mac[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _cmd));
+      expect(mac[AppCommand.toggleBalances], _combo(LogicalKeyboardKey.keyB, _shiftCmd));
       expect(mac[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _optCmd));
       expect(mac[AppCommand.previousSidebarItem], _combo(LogicalKeyboardKey.arrowUp, _optCmd));
       expect(mac[AppCommand.refresh], _combo(LogicalKeyboardKey.keyR, _shiftCmd));
@@ -47,6 +48,7 @@ void main() {
       expect(pc[AppCommand.swap], _combo(LogicalKeyboardKey.keyS, _ctrlShift));
       expect(pc[AppCommand.addAccount], _combo(LogicalKeyboardKey.keyN, _ctrl));
       expect(pc[AppCommand.toggleSidebar], _combo(LogicalKeyboardKey.keyB, _ctrl));
+      expect(pc[AppCommand.toggleBalances], _combo(LogicalKeyboardKey.keyB, _ctrlShift));
       expect(pc[AppCommand.nextSidebarItem], _combo(LogicalKeyboardKey.arrowDown, _ctrlAlt));
       expect(pc[AppCommand.previousSidebarItem], _combo(LogicalKeyboardKey.arrowUp, _ctrlAlt));
       expect(pc[AppCommand.refresh], _combo(LogicalKeyboardKey.keyR, _ctrlShift));
@@ -347,6 +349,21 @@ void main() {
         expect(read.refusal(AppCommand.swap, _combo(LogicalKeyboardKey.keyJ, keys)), isNull);
         final freed = read.withShortcut(AppCommand.send, bindings[AppCommand.send]);
         expect(freed.refusal(AppCommand.swap, _combo(LogicalKeyboardKey.keyS, keys)), isNull);
+      }
+    });
+
+    test('from before Show or Hide Balances had its keys keep a command on them, and it has none', () {
+      for (final (bindings, keys) in [(mac, _shiftCmd), (pc, _ctrlShift)]) {
+        // Saved when no command shipped with Shift and B: Get Info moved there.
+        final json = {
+          'commands': {'getInfo': _combo(LogicalKeyboardKey.keyB, keys).toJson()},
+        };
+
+        final read = ShortcutBindings.fromJson(json, isMac: bindings.isMac);
+
+        expect(read[AppCommand.getInfo], _combo(LogicalKeyboardKey.keyB, keys));
+        expect(read[AppCommand.toggleBalances], isNull);
+        expect(ShortcutBindings.fromJson(_stored(read), isMac: bindings.isMac), read);
       }
     });
 

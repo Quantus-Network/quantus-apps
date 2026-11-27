@@ -76,6 +76,15 @@ class FakeSettingsService extends Fake implements SettingsService {
   /// so it plays only in the tests that are about it.
   final Map<String, bool> bools = {BootIntroSeenNotifier.settingsKey: true};
 
+  /// Whether the amounts shown at a glance are hidden.
+  bool balanceHidden = false;
+
+  @override
+  bool isBalanceHidden() => balanceHidden;
+
+  @override
+  Future<void> setBalanceHidden(bool hidden) async => balanceHidden = hidden;
+
   /// The wallets whose recovery phrase has been shown or copied.
   final Set<int> viewedPhrases = {};
 

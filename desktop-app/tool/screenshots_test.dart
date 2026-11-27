@@ -34,6 +34,7 @@ import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/create_multisig_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
+import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
 import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
@@ -897,6 +898,17 @@ void main() {
     await tester.pumpAndSettle();
     await _tapAndSettle(tester, find.descendant(of: find.byType(MenuBar), matching: find.text('Help')));
   }, platform: TargetPlatform.linux);
+
+  _scene('view_menu_linux', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _second, _encrypted]), reduceMotion: true);
+    await tester.pumpAndSettle();
+    await _tapAndSettle(tester, find.descendant(of: find.byType(MenuBar), matching: find.text('View')));
+  }, platform: TargetPlatform.linux);
+
+  _scene('balances_hidden', (tester) async {
+    await _openActivity(tester);
+    await _tapAndSettle(tester, find.byKey(BalanceCard.hideBalancesKey));
+  });
 
   _scene('backup_reminder', (tester) async {
     await _openSettings(tester);
