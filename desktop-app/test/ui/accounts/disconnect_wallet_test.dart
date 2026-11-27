@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:ui' show PointerDeviceKind;
 
 import 'package:flutter/gestures.dart' show kSecondaryButton;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show ProviderContainer, ProviderScope;
 import 'package:flutter_test/flutter_test.dart';
@@ -11,7 +13,9 @@ import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
+import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/disconnect_wallet_sheet.dart';
+import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
@@ -39,7 +43,8 @@ final _desk = MultisigAccount(
 );
 
 /// Main (active unless [active] says) and Savings in Wallet 1, Vault in the
-/// Cold Wallet, Trading and Hedge in Wallet 2, at wallet index 2, and the
+/// Cold Wallet unless [vault] is false, Trading and Hedge (unless [hedge] is
+/// false) in Wallet 2, at wallet index 2, and the
 /// multisig Desk, which Trading signs. Each software wallet gets its Encrypted
 /// account as the window opens, unless [remoteConfig] turns them off.
 Future<FakeWalletDevice> _pump(
@@ -48,9 +53,10 @@ Future<FakeWalletDevice> _pump(
   FakeUserApproval? approval,
   RemoteConfigModel? remoteConfig,
   bool hedge = true,
+  bool vault = true,
 }) async {
   final device = FakeWalletDevice()..store([mainAccount, savingsAccount]);
-  device.storage.accounts.addAll([vaultAccount, tradingAccount, if (hedge) _hedge]);
+  device.storage.accounts.addAll([if (vault) vaultAccount, tradingAccount, if (hedge) _hedge]);
   device.storage.mnemonics[2] = 'trading words';
   device.storage.multisigStore.add(_desk);
   if (active != null) device.storage.activeAccount = RegularAccount(active);
@@ -116,6 +122,31 @@ bool _deleteEnabled(WidgetTester tester) {
 Future<void> _delete(WidgetTester tester) async {
   await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
   await tester.pumpAndSettle();
+}
+
+/// The Account menu's New Wallet.
+PlatformMenuItem _newWalletItem(WidgetTester tester) {
+  final menus = tester.widget<PlatformMenuBar>(find.byType(PlatformMenuBar)).menus.cast<PlatformMenu>();
+  return [
+    for (final group in menus.singleWhere((menu) => menu.label == 'Account').menus.cast<PlatformMenuItemGroup>())
+      ...group.members,
+  ].singleWhere((item) => item.label == 'New Wallet');
+}
+
+/// Holds every wallet removal after its accounts are dropped and before its
+/// phrase is deleted; the function returned lets them finish.
+void Function() _holdRemovals(FakeWalletDevice device) {
+  final gate = Completer<void>();
+  device.storage.removeWalletGate = gate.future;
+  return gate.complete;
+}
+
+/// Lets Delete Wallet's approval answer and the removal reach the hold, and
+/// the sheet's busy spinner turn, without waiting for it to stop.
+Future<void> _pumpIntoRemoval(WidgetTester tester) async {
+  for (var i = 0; i < 5; i++) {
+    await tester.pump(const Duration(milliseconds: 50));
+  }
 }
 
 Iterable<Account> _inWallet2(FakeWalletDevice device) => device.storage.accounts.where((a) => a.walletIndex == 2);
@@ -383,6 +414,130 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ShellSheetView), findsNothing);
+    });
+  });
+
+  group('a wallet\'s number, freed while its removal finishes', () {
+    testOnMac('New Wallet chosen after the sheet is dismissed waits for the removal, and keeps its new phrase', (
+      tester,
+    ) async {
+      final device = await _pump(tester);
+      final release = _holdRemovals(device);
+      await _openSheet(tester);
+      await _tick(tester);
+      await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
+      await _pumpIntoRemoval(tester);
+      expect(_inWallet2(device), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
+
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(ShellSheetView), findsNothing);
+      _newWalletItem(tester).onSelected!();
+      await tester.pump();
+      release();
+      await tester.pumpAndSettle();
+
+      final made = device.storage.accounts.singleWhere((a) => a.accountId == 'qz(created)');
+      expect(device.storage.mnemonics[made.walletIndex], 'created wallet recovery phrase');
+      expect(_activeId(tester), 'qz(created)');
+    });
+
+    testOnMac('the same holds when the wallet goes with its last account, from Get Info', (tester) async {
+      final device = await _pump(tester, hedge: false);
+      final release = _holdRemovals(device);
+      await _container(tester).read(accountManagerProvider).openInfo(tradingAccount);
+      await tester.pumpAndSettle();
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectButtonKey));
+      await _pumpIntoRemoval(tester);
+      expect(_inWallet2(device), isEmpty);
+
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectCancelKey));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(ShellSheetView), findsNothing);
+      _newWalletItem(tester).onSelected!();
+      await tester.pump();
+      release();
+      await tester.pumpAndSettle();
+
+      final made = device.storage.accounts.singleWhere((a) => a.accountId == 'qz(created)');
+      expect(device.storage.mnemonics[made.walletIndex], 'created wallet recovery phrase');
+    });
+
+    testOnMac('an import started after the sheet is dismissed waits for the removal, and keeps its phrase', (
+      tester,
+    ) async {
+      const phrase = 'zebra abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+      final device = await _pump(tester);
+      final release = _holdRemovals(device);
+      await _openSheet(tester);
+      await _tick(tester);
+      await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
+      await _pumpIntoRemoval(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await _container(tester).read(accountManagerProvider).openImportWallet();
+      await tester.pumpAndSettle();
+      await tester.enterText(_inSheet(find.byType(EditableText)), phrase);
+      await tester.pump();
+      await tester.tap(_inSheet(find.widgetWithText(QuantusButton, 'Import Wallet')));
+      await tester.pump();
+      release();
+      await tester.pumpAndSettle();
+
+      final root = device.storage.accounts.singleWhere((a) => a.accountId == 'qz(zebra)');
+      expect(device.storage.mnemonics[root.walletIndex], phrase);
+      expect(find.descendant(of: find.byType(Sidebar), matching: find.widgetWithText(SidebarRow, root.name)), findsOne);
+    });
+
+    testOnMac('two removals asked for at once both go, the second after the first', (tester) async {
+      final device = await _pump(tester);
+      final manager = _container(tester).read(accountManagerProvider);
+
+      await Future.wait([manager.disconnect(savingsAccount), manager.disconnect(_hedge)]);
+      await tester.pumpAndSettle();
+
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzSavings')));
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzHedge')));
+    });
+
+    testOnMac('a cold wallet connected first after the sheet is dismissed is saved once the removal has finished', (
+      tester,
+    ) async {
+      final device = await _pump(tester, vault: false);
+      final release = _holdRemovals(device);
+      await _openSheet(tester);
+      await _tick(tester);
+      await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
+      await _pumpIntoRemoval(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      var saved = false;
+      unawaited(
+        _container(tester).read(accountManagerProvider).connectColdWallet('qzNewCold').then((_) => saved = true),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(saved, isFalse);
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzNewCold')));
+
+      release();
+      await tester.pumpAndSettle();
+
+      expect(saved, isTrue);
+      expect(device.storage.accounts.map((a) => a.accountId), contains('qzNewCold'));
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
     });
   });
 }

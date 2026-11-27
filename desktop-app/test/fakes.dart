@@ -418,6 +418,11 @@ class FakeWalletStorage extends FakeSettingsService {
     if (!remaining.any((a) => a.walletIndex == account.walletIndex)) names.remove(account.walletIndex);
   }
 
+  /// When set, removing a wallet waits for this after its accounts are
+  /// dropped and before its settings and recovery phrase go, as the device's
+  /// storage takes those steps one after another.
+  Future<void>? removeWalletGate;
+
   @override
   Future<void> removeWallet(int walletIndex) async {
     _checkWrite();
@@ -426,8 +431,9 @@ class FakeWalletStorage extends FakeSettingsService {
     accounts
       ..clear()
       ..addAll(remaining);
-    mnemonics.remove(walletIndex);
+    await removeWalletGate;
     names.remove(walletIndex);
+    mnemonics.remove(walletIndex);
   }
 
   @override

@@ -13,6 +13,7 @@ import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/password_prompt_provider.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/wallet_slots_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
 import 'package:quantus_desktop_wallet/services/external_links.dart';
@@ -87,17 +88,19 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   Account? _connectedColdWallet;
 
   /// Imports a wallet into the next free slot, on the shell's ref: the
-  /// wallet's encrypted account is restored after the sheet has gone.
-  Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) async {
-    final accounts = await ref.read(settingsServiceProvider).getAccounts();
-    if (!mounted) return;
-    _imported = await importSoftwareWallet(
-      ref,
-      mnemonic: mnemonic,
-      walletIndex: nextWalletIndex(accounts),
-      onScanFailed: onScanFailed,
-    );
-  }
+  /// wallet's encrypted account is restored after the sheet has gone. The
+  /// slot is read once no wallet is being removed ([walletSlotsProvider]).
+  Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) =>
+      ref.read(walletSlotsProvider).run(() async {
+        final accounts = await ref.read(settingsServiceProvider).getAccounts();
+        if (!mounted) return;
+        _imported = await importSoftwareWallet(
+          ref,
+          mnemonic: mnemonic,
+          walletIndex: nextWalletIndex(accounts),
+          onScanFailed: onScanFailed,
+        );
+      });
 
   /// Creates another wallet, on the shell's ref: the wallet's Encrypted
   /// account is added after the menu that asked has gone.
