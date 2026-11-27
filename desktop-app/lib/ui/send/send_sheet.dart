@@ -260,12 +260,16 @@ class _SendSheetState extends ConsumerState<SendSheet> {
 
   /// The addresses paid before, in a list that scrolls. Each row is as tall
   /// as its address and checkphrase need, as phrases wrap differently; hidden
-  /// copies of the first rows size the list to show just them.
+  /// copies of the first rows size the list to show just them. The copies
+  /// keep only their size: nothing focuses, presses or hears them.
   Widget _recentsList() {
     return Stack(
       children: [
-        Visibility.maintain(
+        Visibility(
           visible: false,
+          maintainState: true,
+          maintainAnimation: true,
+          maintainSize: true,
           child: SingleChildScrollView(
             physics: const NeverScrollableScrollPhysics(),
             child: Column(

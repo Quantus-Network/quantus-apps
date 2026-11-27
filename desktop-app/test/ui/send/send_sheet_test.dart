@@ -345,6 +345,38 @@ void main() {
       }
     });
 
+    testOnMac('a screen reader hears each address paid before once, as the button that picks it', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final five = [..._fourRecents, 'qz${'E' * 44}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = five);
+
+      for (final address in _fourRecents) {
+        expect(find.bySemanticsLabel(address), findsOneWidget, reason: address);
+      }
+      semantics.dispose();
+    });
+
+    testOnMac('Tab from the address goes through the rows in view, never through hidden ones', (tester) async {
+      final five = [..._fourRecents, 'qz${'E' * 44}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = five);
+      await tester.tap(_editable(SendSheet.addressFieldKey));
+      await tester.pump();
+
+      for (final address in _fourRecents) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        final focused = FocusManager.instance.primaryFocus?.context;
+        expect(
+          find.descendant(
+            of: find.byKey(SendSheet.recentKey(address)),
+            matching: find.byElementPredicate((element) => element == focused),
+          ),
+          findsOneWidget,
+          reason: 'Tab should reach $address in the list',
+        );
+      }
+    });
+
     testOnMac('of a hundred addresses paid before, only the rows in view are built', (tester) async {
       final hundred = [for (var i = 0; i < 100; i++) 'qz${i.toString().padLeft(44, '0')}'];
       await _openSend(tester, chain: FakeSendChain()..recents = hundred);
