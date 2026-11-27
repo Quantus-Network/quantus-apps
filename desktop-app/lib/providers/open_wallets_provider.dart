@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/utils/sidebar_order.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
@@ -161,18 +162,19 @@ final multisigsOpenProvider = Provider<bool>(
   (ref) => ref.watch(keptOpenMultisigsProvider) || ref.watch(activeIsMultisigProvider),
 );
 
-/// The accounts with a row showing in the sidebar, top to bottom: those of the
-/// open wallets, then the multisigs while they are open.
+/// The accounts with a row showing in the sidebar, top to bottom, group by
+/// group: those of the open wallets, and the multisigs while they are open.
 final visibleSidebarAccountsProvider = Provider<List<DisplayAccount>>((ref) {
-  final accounts = ref.watch(accountsProvider).value;
-  final multisigs = ref.watch(multisigAccountsProvider).value;
-  if (accounts == null || multisigs == null) return const [];
+  final groups = ref.watch(sidebarGroupsProvider);
+  if (groups == null) return const [];
   final open = ref.watch(openWalletsProvider);
-  final groups = groupSidebar(accounts: accounts, multisigs: multisigs);
+  final multisigsOpen = ref.watch(multisigsOpenProvider);
   return [
-    for (final wallet in groups.wallets)
-      if (open.contains(wallet.walletIndex)) ...walletAccountsInOrder(wallet),
-    if (ref.watch(multisigsOpenProvider))
-      for (final multisig in groups.multisigs) MultisigDisplayAccount(multisig),
+    for (final group in groups)
+      if (switch (group) {
+        SidebarWallet(:final wallet) => open.contains(wallet.walletIndex),
+        SidebarMultisigs() => multisigsOpen,
+      })
+        ...groupAccountsInOrder(group),
   ];
 });

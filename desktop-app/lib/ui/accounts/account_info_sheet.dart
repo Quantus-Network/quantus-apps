@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/background_mode_provider.dart';
 import 'package:quantus_desktop_wallet/services/pam/pam_session.dart';
+import 'package:quantus_desktop_wallet/services/share_service.dart';
 import 'package:quantus_desktop_wallet/ui/components/inline_name_field.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
@@ -10,6 +15,7 @@ import 'package:quantus_desktop_wallet/ui/components/desktop_address_checkphrase
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/settings/recovery_phrase_steps.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_caution.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
@@ -34,6 +40,9 @@ class AccountInfoSheet extends ConsumerStatefulWidget {
   static const nameFieldKey = Key('account-info-name');
   static const copyAddressKey = Key('account-info-copy-address');
   static const copyInnerHashKey = Key('account-info-copy-inner-hash');
+  static const copyCheckphraseKey = Key('account-info-copy-checkphrase');
+  static const shareAddressKey = Key('account-info-share-address');
+  static const shareInnerHashKey = Key('account-info-share-inner-hash');
   static const recoveryPhraseRowKey = Key('account-info-recovery-phrase');
   static const disconnectRowKey = Key('account-info-disconnect');
   static const disconnectButtonKey = Key('account-info-disconnect-button');
@@ -548,31 +557,34 @@ class _EncryptedInfoState extends ConsumerState<_EncryptedInfo> {
               ),
               _ => Text(l10n.commonLoading, style: text.body.copyWith(color: colors.textMuted)),
             };
+            // The actions sit on the title's line, so the hash has the
+            // row's whole width.
             return _RowPadding(
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 6,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      spacing: 6,
-                      children: [
-                        Text(l10n.desktopAccountInfoInnerHash, style: _titleStyle(context)),
-                        value,
-                        Text(
-                          l10n.desktopAccountInfoInnerHashCaption,
-                          style: text.body.copyWith(color: colors.textMuted),
-                        ),
-                      ],
-                    ),
+                  Row(
+                    children: [
+                      Expanded(child: Text(l10n.desktopAccountInfoInnerHash, style: _titleStyle(context))),
+                      ToolbarActionRow(
+                        edge: ToolbarActionEdge.trailing,
+                        spacing: 0,
+                        children: [
+                          if (_canShare)
+                            _ShareAction(actionKey: AccountInfoSheet.shareInnerHashKey, text: hash, l10n: l10n),
+                          CopyAction(
+                            actionKey: AccountInfoSheet.copyInnerHashKey,
+                            text: hash,
+                            copyLabel: l10n.receiveCopy,
+                            copiedLabel: l10n.desktopCopied,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  CopyAction(
-                    actionKey: AccountInfoSheet.copyInnerHashKey,
-                    text: hash,
-                    copyLabel: l10n.receiveCopy,
-                    copiedLabel: l10n.desktopCopied,
-                  ),
+                  value,
+                  Text(l10n.desktopAccountInfoInnerHashCaption, style: text.body.copyWith(color: colors.textMuted)),
                 ],
               ),
             );
@@ -674,28 +686,76 @@ class _NameRowState extends ConsumerState<_NameRow> {
   }
 }
 
-/// An address over its checkphrase, with Copy.
-class _AddressRow extends StatelessWidget {
+/// An address over its checkphrase: Share (where the system has a share
+/// picker) and Copy level with the address, Copy level with the checkphrase
+/// once it is known.
+class _AddressRow extends ConsumerStatefulWidget {
   const _AddressRow({required this.address, required this.l10n});
 
   final String address;
   final AppLocalizations l10n;
 
   @override
+  ConsumerState<_AddressRow> createState() => _AddressRowState();
+}
+
+class _AddressRowState extends ConsumerState<_AddressRow> {
+  String? _checkphrase;
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = widget.l10n;
     return _RowPadding(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(child: DesktopAddressCheckphrase(address: address)),
-          const SizedBox(width: 16),
+      child: DesktopAddressCheckphrase(
+        address: widget.address,
+        onCheckphrase: (phrase) {
+          if (mounted) setState(() => _checkphrase = phrase);
+        },
+        addressActions: [
+          if (_canShare) _ShareAction(actionKey: AccountInfoSheet.shareAddressKey, text: widget.address, l10n: l10n),
           CopyAction(
             actionKey: AccountInfoSheet.copyAddressKey,
-            text: address,
+            text: widget.address,
             copyLabel: l10n.receiveCopy,
             copiedLabel: l10n.desktopCopied,
           ),
         ],
+        checkphraseActions: [
+          CopyAction(
+            actionKey: AccountInfoSheet.copyCheckphraseKey,
+            text: _checkphrase,
+            copyLabel: l10n.receiveCopy,
+            copiedLabel: l10n.desktopCopied,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Whether the system has a share picker: macOS only, as Receive has it.
+bool get _canShare => defaultTargetPlatform == TargetPlatform.macOS;
+
+/// Share, offering [text] to the system's share picker beside it; dimmed
+/// while there is no [text] yet.
+class _ShareAction extends ConsumerWidget {
+  const _ShareAction({required this.actionKey, required this.text, required this.l10n});
+
+  final Key actionKey;
+  final String? text;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = this.text;
+    return Builder(
+      builder: (button) => ToolbarAction.symbol(
+        key: actionKey,
+        symbol: CupertinoIcons.square_arrow_up,
+        label: l10n.componentShare,
+        onPressed: text == null
+            ? null
+            : () => unawaited(ref.read(shareTextProvider)(text, origin: button.sharePositionRect())),
       ),
     );
   }

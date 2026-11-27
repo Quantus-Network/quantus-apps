@@ -13,8 +13,10 @@ import 'package:wallet_core/utils/account_actions.dart';
 /// The app's menus, defined once for every platform.
 ///
 /// With [useNativeMenuBar] (macOS) they include the items the system supplies
-/// (About, Hide, Quit, full screen, the Window menu). Elsewhere those items
-/// are left out. The items' keys are [shortcuts]; with none, as while a new
+/// (Hide, Quit, full screen, the Window menu). Elsewhere those items are left
+/// out. About opens the app's own About sheet: from the app menu on macOS, at
+/// the end of the Help menu elsewhere. The Help menu opens Help & Support and
+/// Quantus's pages, the last through [onOpenLink]. The items' keys are [shortcuts]; with none, as while a new
 /// shortcut is being recorded, no item has keys.
 ///
 /// An item whose `onSelected` is null is disabled. The items that open a sheet
@@ -68,6 +70,7 @@ List<PlatformMenu> buildAppMenus({
   required VoidCallback? onToggleSidebar,
   required VoidCallback? onRefresh,
   required VoidCallback onCloseWindow,
+  required ValueChanged<Uri> onOpenLink,
 }) {
   SingleActivator? keysOf(AppCommand command) => shortcuts?[command]?.activator;
 
@@ -93,11 +96,15 @@ List<PlatformMenu> buildAppMenus({
   PlatformMenuItemGroup provided(List<PlatformProvidedMenuItemType> types) =>
       PlatformMenuItemGroup(members: [for (final type in types) PlatformProvidedMenuItem(type: type)]);
 
+  final about = PlatformMenuItemGroup(
+    members: [PlatformMenuItem(label: l10n.desktopMenuAbout(appTitle), onSelected: opens(ShellSheet.about))],
+  );
+
   return [
     PlatformMenu(
       label: appTitle,
       menus: [
-        if (useNativeMenuBar) provided(const [PlatformProvidedMenuItemType.about]),
+        if (useNativeMenuBar) about,
         PlatformMenuItemGroup(
           members: [
             PlatformMenuItem(
@@ -251,5 +258,25 @@ List<PlatformMenu> buildAppMenus({
           provided(const [PlatformProvidedMenuItemType.arrangeWindowsInFront]),
         ],
       ),
+    PlatformMenu(
+      label: l10n.desktopMenuHelp,
+      menus: [
+        PlatformMenuItemGroup(
+          members: [PlatformMenuItem(label: l10n.desktopMenuHelpSupport, onSelected: opens(ShellSheet.helpSupport))],
+        ),
+        PlatformMenuItemGroup(
+          members: [
+            for (final (label, url) in [
+              (l10n.settingsAboutTerms, termsOfServiceUrl),
+              (l10n.desktopMenuPrivacyPolicy, privacyPolicyUrl),
+              (l10n.desktopMenuWebsite, websiteUrl),
+            ])
+              PlatformMenuItem(label: label, onSelected: () => onOpenLink(url)),
+          ],
+        ),
+        // On macOS, About is in the app menu, where the system puts it.
+        if (!useNativeMenuBar) about,
+      ],
+    ),
   ];
 }

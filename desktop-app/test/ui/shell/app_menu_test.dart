@@ -9,6 +9,7 @@ import 'package:quantus_desktop_wallet/providers/account_management_providers.da
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/services/app_exit.dart';
+import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/ui/onboarding/welcome_page.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -165,15 +166,24 @@ void main() {
 
       expect(find.byType(PlatformMenuBar), findsOneWidget);
       expect(find.byType(MenuBar), findsNothing);
-      expect(_nativeMenus(tester).map((menu) => menu.label), ['Quantus Wallet', 'File', 'Account', 'View', 'Window']);
+      expect(_nativeMenus(tester).map((menu) => menu.label), [
+        'Quantus Wallet',
+        'File',
+        'Account',
+        'View',
+        'Window',
+        'Help',
+      ]);
     });
 
-    testOnMac('the app menu has About, Settings…, Services, Hide, Hide Others, Show All and Quit', (tester) async {
+    testOnMac('the app menu has the app\'s own About, Settings…, Services, Hide, Hide Others, Show All and Quit', (
+      tester,
+    ) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
 
       final appMenu = _nativeMenu(tester, 'Quantus Wallet');
       expect(_itemsOf(appMenu).map((item) => item is PlatformProvidedMenuItem ? item.type.name : item.label), [
-        'about',
+        'About Quantus Wallet',
         'Settings…',
         'servicesSubmenu',
         'hide',
@@ -195,6 +205,57 @@ void main() {
         PlatformProvidedMenuItemType.minimizeWindow,
         PlatformProvidedMenuItemType.zoomWindow,
         PlatformProvidedMenuItemType.arrangeWindowsInFront,
+      ]);
+    });
+
+    testOnMac('the Help menu offers Help & Support…, then the terms, the privacy policy and the website', (
+      tester,
+    ) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      final help = _nativeMenu(tester, 'Help');
+      expect(
+        [for (final entry in help.menus) (entry as PlatformMenuItemGroup).members.map((item) => item.label)],
+        [
+          ['Help & Support…'],
+          ['Terms of Service', 'Privacy Policy', 'Quantus Website'],
+        ],
+      );
+    });
+
+    testOnMac('Help & Support… and About Quantus Wallet open their sheets', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      _nativeItem(tester, 'Help', 'Help & Support…').onSelected!();
+      await tester.pumpAndSettle();
+      expect(_sheetTitled('Help & Support'), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      _nativeItem(tester, 'Quantus Wallet', 'About Quantus Wallet').onSelected!();
+      await tester.pumpAndSettle();
+      expect(_sheetTitled('About'), findsOneWidget);
+    });
+
+    testOnMac('the terms, the privacy policy and the website open in the browser', (tester) async {
+      final opened = <Uri>[];
+      await pumpShell(
+        tester,
+        overrides: [
+          ..._withActive(const RegularAccount(mainAccount)),
+          openExternalUrlProvider.overrideWithValue((url) async => opened.add(url)),
+        ],
+      );
+
+      for (final label in ['Terms of Service', 'Privacy Policy', 'Quantus Website']) {
+        _nativeItem(tester, 'Help', label).onSelected!();
+      }
+      await tester.pumpAndSettle();
+
+      expect(opened, [
+        Uri.parse('https://www.quantus.com/terms'),
+        Uri.parse('https://www.quantus.com/privacy-policy'),
+        Uri.parse('https://www.quantus.com'),
       ]);
     });
 
@@ -821,7 +882,7 @@ void main() {
         tester
             .widgetList<SubmenuButton>(find.descendant(of: find.byType(MenuBar), matching: find.byType(SubmenuButton)))
             .map((button) => (button.child! as Text).data),
-        ['Quantus Wallet', 'File', 'Account', 'View'],
+        ['Quantus Wallet', 'File', 'Account', 'View', 'Help'],
       );
     });
 
@@ -840,6 +901,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(_sheetTitled('Settings'), findsOneWidget);
+    });
+
+    testOnWindowsAndLinux('the Help menu ends with About Quantus Wallet, which opens the About sheet', (tester) async {
+      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
+
+      await openMenu(tester, 'Help');
+      expect(
+        [for (final item in tester.widgetList<MenuItemButton>(find.byType(MenuItemButton))) (item.child! as Text).data],
+        ['Help & Support…', 'Terms of Service', 'Privacy Policy', 'Quantus Website', 'About Quantus Wallet'],
+      );
+
+      await tester.tap(find.widgetWithText(MenuItemButton, 'About Quantus Wallet'));
+      await tester.pumpAndSettle();
+
+      expect(_sheetTitled('About'), findsOneWidget);
     });
 
     testOnWindowsAndLinux('Ctrl+, opens the Settings sheet', (tester) async {

@@ -3757,4 +3757,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get desktopSidebarMultisigs => 'Multisigs';
+
+  @override
+  String get desktopBackupReminderButton => 'Back Up…';
+
+  @override
+  String get desktopRecoveryAlreadyBackedUp => 'Already Backed Up';
+
+  @override
+  String get desktopSidebarMoveUp => 'Move Up';
+
+  @override
+  String get desktopSidebarMoveDown => 'Move Down';
+
+  @override
+  String get desktopMenuHelp => 'Help';
+
+  @override
+  String get desktopMenuHelpSupport => 'Help & Support…';
+
+  @override
+  String get desktopMenuPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get desktopMenuWebsite => 'Quantus Website';
+
+  @override
+  String desktopMenuAbout(String app) {
+    return 'About $app';
+  }
+
+  @override
+  String desktopSendRecentsCount(int count) {
+    return 'Recents ($count)';
+  }
 }

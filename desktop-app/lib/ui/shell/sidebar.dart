@@ -6,9 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_marks_providers.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
+import 'package:quantus_desktop_wallet/providers/account_balance.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
+import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_context_menus.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_note_text.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/add_account_menu.dart';
@@ -37,10 +39,13 @@ import 'package:wallet_core/utils/accounts_grouping.dart';
 /// makes it the active account. The shell sets its width
 /// ([sidebarWidthProvider]).
 ///
-/// Wallets keep one order (software wallets by index, then Keystone) whichever
-/// account is active, so a row never moves when it is clicked.
+/// The groups keep the order they were put in ([sidebarGroupsProvider])
+/// whichever account is active, so a row never moves when it is clicked.
 class Sidebar extends ConsumerWidget {
   const Sidebar({super.key});
+
+  /// The line that shows where a heading being dragged would land.
+  static const dropLineKey = Key('sidebar-drop-line');
 
   /// The size of the icon before a row that is not an account.
   static const double _iconSize = 15;
@@ -133,10 +138,8 @@ class Sidebar extends ConsumerWidget {
     if (accounts.hasError || multisigs.hasError) return [_message(context, l10n.accountsSheetFailedLoadAccounts)];
     if (active.hasError) return [_message(context, l10n.accountsSheetFailedLoadActiveAccount)];
 
-    final groups = groupSidebar(accounts: accounts.value ?? [], multisigs: multisigs.value ?? []);
-    if (groups.wallets.isEmpty && groups.multisigs.isEmpty) {
-      return [_message(context, l10n.accountsSheetNoAccountsFound)];
-    }
+    final groups = ref.watch(sidebarGroupsProvider) ?? const [];
+    if (groups.isEmpty) return [_message(context, l10n.accountsSheetNoAccountsFound)];
     // Each where it will be once the chain has it: after the multisigs.
     final creating = ref.watch(creatingMultisigsProvider);
 
@@ -151,31 +154,51 @@ class Sidebar extends ConsumerWidget {
     final open = ref.watch(openWalletsProvider);
     final activeWallet = ref.watch(activeRowWalletIndexProvider);
     final multisigsOpen = ref.watch(multisigsOpenProvider);
+    final renaming = ref.watch(sidebarRenameProvider);
 
+    // Each group in a block of its own, keyed, so a group moved keeps what
+    // its heading and rows hold.
     return [
-      for (final wallet in groups.wallets) ...[
-        _WalletHeader(
-          key: ValueKey('sidebar-wallet-${wallet.walletIndex}'),
-          wallet: wallet,
-          isOpen: open.contains(wallet.walletIndex),
-          holdsActiveAccount: wallet.walletIndex == activeWallet,
-        ),
-        if (open.contains(wallet.walletIndex))
-          for (final account in walletAccountsInOrder(wallet)) row(account),
-      ],
-      if (groups.multisigs.isNotEmpty || creating.isNotEmpty) ...[
-        _MultisigsHeader(
-          key: const ValueKey('sidebar-multisigs'),
-          count: groups.multisigs.length + creating.length,
-          isOpen: multisigsOpen,
-          holdsActiveAccount: ref.watch(activeIsMultisigProvider),
-        ),
-        if (multisigsOpen) ...[
-          for (final multisig in groups.multisigs) row(MultisigDisplayAccount(multisig)),
-          for (final multisig in creating)
-            _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
-        ],
-      ],
+      for (final group in groups)
+        switch (group) {
+          SidebarWallet(:final wallet) => _GroupBlock(
+            key: ValueKey('sidebar-group-${group.orderKey}'),
+            groupKey: group.orderKey,
+            name: walletDisplayName(l10n, wallet, ref.watch(walletNameProvider(wallet.walletIndex))),
+            // A heading being renamed takes the pointer for its text.
+            canDrag: renaming != RenameWallet(wallet.walletIndex),
+            heading: _WalletHeader(
+              key: ValueKey('sidebar-wallet-${wallet.walletIndex}'),
+              wallet: wallet,
+              isOpen: open.contains(wallet.walletIndex),
+              holdsActiveAccount: wallet.walletIndex == activeWallet,
+            ),
+            rows: [
+              if (open.contains(wallet.walletIndex))
+                for (final account in walletAccountsInOrder(wallet)) row(account),
+            ],
+          ),
+          SidebarMultisigs(:final multisigs) => _GroupBlock(
+            key: ValueKey('sidebar-group-${group.orderKey}'),
+            groupKey: group.orderKey,
+            name: l10n.desktopSidebarMultisigs,
+            canDrag: true,
+            heading: _MultisigsHeader(
+              key: const ValueKey('sidebar-multisigs'),
+              multisigs: multisigs,
+              count: multisigs.length + creating.length,
+              isOpen: multisigsOpen,
+              holdsActiveAccount: ref.watch(activeIsMultisigProvider),
+            ),
+            rows: [
+              if (multisigsOpen) ...[
+                for (final multisig in multisigs) row(MultisigDisplayAccount(multisig)),
+                for (final multisig in creating)
+                  _CreatingRow(key: ValueKey('sidebar-creating-${multisig.accountId}'), multisig: multisig),
+              ],
+            ],
+          ),
+        },
     ];
   }
 
@@ -183,6 +206,138 @@ class Sidebar extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 24),
       child: Text(message, style: context.themeTextV3.body.copyWith(color: context.colorsV3.textMuted)),
+    );
+  }
+}
+
+/// A group of the sidebar: its [heading], which can be dragged onto another
+/// group to move the group before or after it, and its [rows]. While a
+/// heading is dragged over the group, a line shows where it would land.
+class _GroupBlock extends ConsumerStatefulWidget {
+  const _GroupBlock({
+    super.key,
+    required this.groupKey,
+    required this.name,
+    required this.canDrag,
+    required this.heading,
+    required this.rows,
+  });
+
+  /// The group's [SidebarGroup.orderKey].
+  final String groupKey;
+
+  /// The group's name, drawn on the heading as it is dragged.
+  final String name;
+  final bool canDrag;
+  final Widget heading;
+  final List<Widget> rows;
+
+  @override
+  ConsumerState<_GroupBlock> createState() => _GroupBlockState();
+}
+
+class _GroupBlockState extends ConsumerState<_GroupBlock> {
+  /// Where a heading dragged over the group would land: after it, before it,
+  /// or nowhere (null).
+  bool? _landsAfter;
+
+  bool _isDragged = false;
+
+  /// Whether a heading dropped at [offset] (its pointer, globally) lands
+  /// after this group: over its lower half.
+  bool _isAfter(Offset offset) {
+    final box = context.findRenderObject()! as RenderBox;
+    return box.globalToLocal(offset).dy > box.size.height / 2;
+  }
+
+  void _hover(DragTargetDetails<String> details) {
+    final after = _isAfter(details.offset);
+    final lands = ref.read(sidebarGroupMoverProvider).wouldPlace(details.data, beside: widget.groupKey, after: after);
+    final next = lands ? after : null;
+    if (next != _landsAfter) setState(() => _landsAfter = next);
+  }
+
+  void _drop(DragTargetDetails<String> details) {
+    setState(() => _landsAfter = null);
+    ref.read(sidebarGroupMoverProvider).place(details.data, beside: widget.groupKey, after: _isAfter(details.offset));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final landsAfter = _landsAfter;
+    final heading = LayoutBuilder(
+      builder: (context, constraints) => Draggable<String>(
+        data: widget.groupKey,
+        maxSimultaneousDrags: widget.canDrag ? 1 : 0,
+        // The pointer is where the heading lands, so the image hangs from it.
+        dragAnchorStrategy: pointerDragAnchorStrategy,
+        feedback: _DraggedHeading(name: widget.name, width: constraints.maxWidth),
+        onDragStarted: () => setState(() => _isDragged = true),
+        onDragEnd: (_) => setState(() => _isDragged = false),
+        child: widget.heading,
+      ),
+    );
+
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (details) => details.data != widget.groupKey,
+      onMove: _hover,
+      onLeave: (_) => setState(() => _landsAfter = null),
+      onAcceptWithDetails: _drop,
+      builder: (context, _, _) => Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Opacity(
+            opacity: _isDragged ? 0.4 : 1,
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [heading, ...widget.rows]),
+          ),
+          if (landsAfter != null)
+            Positioned(
+              key: Sidebar.dropLineKey,
+              left: 6,
+              right: 6,
+              top: landsAfter ? null : 2,
+              bottom: landsAfter ? -1 : null,
+              height: 2,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: colors.accentFlare, borderRadius: BorderRadius.circular(1)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A group's heading as it is dragged: its name in capitals on a raised strip
+/// [width] wide, the sidebar's.
+class _DraggedHeading extends StatelessWidget {
+  const _DraggedHeading({required this.name, required this.width});
+
+  final String name;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colorsV3;
+    final text = context.themeTextV3;
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        width: width,
+        padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+        decoration: BoxDecoration(
+          color: colors.bgSurface,
+          borderRadius: context.radiusV3.smBorder,
+          border: Border.all(color: colors.borderHairline),
+        ),
+        child: Text(
+          name.toUpperCase(),
+          style: text.caption.copyWith(color: colors.textMuted2, fontWeight: FontWeight.w500, letterSpacing: 0.8),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
     );
   }
 }
@@ -296,12 +451,19 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
     return WalletContextMenu(wallet: widget.wallet, child: heading);
   }
 
+  String _total(Iterable<BaseAccount> accounts) => balanceLine(
+    ref.watch(l10nProvider),
+    ref.watch(numberFormattingServiceProvider),
+    accountsTotalWith(ref.watch, accounts),
+  );
+
   /// The name, with the wallet's chevron and, while it is closed, how many
-  /// accounts it holds.
+  /// accounts it holds and what they hold together.
   Widget _heading(String name, AppLocalizations l10n) => _GroupHeading(
     name: name,
     count: widget.wallet.accountCount,
     countDescription: l10n.desktopWalletAccountCount(widget.wallet.accountCount),
+    total: widget.isOpen ? null : _total(walletAccountsInOrder(widget.wallet).map((d) => d.account)),
     isOpen: widget.isOpen,
     isControl: !widget.holdsActiveAccount,
     onToggle: _toggle,
@@ -312,7 +474,16 @@ class _WalletHeaderState extends ConsumerState<_WalletHeader> {
 /// and stays open while one of them is the active account. Its name is
 /// fixed, so it is always clear which group holds the multisigs.
 class _MultisigsHeader extends ConsumerWidget {
-  const _MultisigsHeader({super.key, required this.count, required this.isOpen, required this.holdsActiveAccount});
+  const _MultisigsHeader({
+    super.key,
+    required this.multisigs,
+    required this.count,
+    required this.isOpen,
+    required this.holdsActiveAccount,
+  });
+
+  /// The multisigs the chain has, whose balances its total adds up.
+  final List<MultisigAccount> multisigs;
 
   /// The multisigs, and those being created.
   final int count;
@@ -327,6 +498,9 @@ class _MultisigsHeader extends ConsumerWidget {
         name: l10n.desktopSidebarMultisigs,
         count: count,
         countDescription: l10n.desktopWalletAccountCount(count),
+        total: isOpen
+            ? null
+            : balanceLine(l10n, ref.watch(numberFormattingServiceProvider), accountsTotalWith(ref.watch, multisigs)),
         isOpen: isOpen,
         isControl: !holdsActiveAccount,
         onToggle: () {
@@ -340,13 +514,15 @@ class _MultisigsHeader extends ConsumerWidget {
 }
 
 /// A group's heading in the sidebar: its [name] in capitals with a chevron
-/// when it is a control, and [count] while it is closed. [onToggle] opens or
-/// closes the group where it [isControl].
+/// when it is a control, and [count] while it is closed, with the group's
+/// [total] on a line under the name. [onToggle] opens or closes the group
+/// where it [isControl].
 class _GroupHeading extends StatelessWidget {
   const _GroupHeading({
     required this.name,
     required this.count,
     required this.countDescription,
+    required this.total,
     required this.isOpen,
     required this.isControl,
     required this.onToggle,
@@ -357,6 +533,10 @@ class _GroupHeading extends StatelessWidget {
 
   /// [count] as a screen reader hears it.
   final String countDescription;
+
+  /// What the group's accounts hold together, in words, shown while it is
+  /// closed.
+  final String? total;
   final bool isOpen;
   final bool isControl;
   final VoidCallback onToggle;
@@ -372,7 +552,7 @@ class _GroupHeading extends StatelessWidget {
     // gets the name as it is written.
     return Semantics(
       label: name,
-      value: isOpen ? null : countDescription,
+      value: isOpen ? null : [countDescription, ?total].join(', '),
       button: isControl,
       expanded: isOpen,
       onTap: isControl ? onToggle : null,
@@ -387,22 +567,32 @@ class _GroupHeading extends StatelessWidget {
             borderRadius: radius,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(
-                      name.toUpperCase(),
-                      style: quiet.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.8),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          name.toUpperCase(),
+                          style: quiet.copyWith(fontWeight: FontWeight.w500, letterSpacing: 0.8),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (!isOpen) ...[Text('$count', style: quiet), const SizedBox(width: 7)],
+                      if (isControl)
+                        Icon(
+                          isOpen ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
+                          size: 11,
+                          color: colors.textMuted2,
+                        ),
+                    ],
                   ),
-                  if (!isOpen) ...[Text('$count', style: quiet), const SizedBox(width: 7)],
-                  if (isControl)
-                    Icon(
-                      isOpen ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
-                      size: 11,
-                      color: colors.textMuted2,
+                  if (total case final total? when !isOpen)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(total, style: quiet, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                 ],
               ),

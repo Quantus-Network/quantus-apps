@@ -71,7 +71,8 @@ Future<void> _open(
   overrides: [
     ...shellOverrides(
       accounts: const [mainAccount, savingsAccount, encryptedAccount],
-      settings: FakeSettingsService(activeAccount: active, multisigs: multisigs),
+      // The phrase has been seen: no backup reminder sits over the lists.
+      settings: FakeSettingsService(activeAccount: active, multisigs: multisigs)..viewedPhrases.add(0),
       balances: oneTokenEach,
       encryptedBalances: {0: oneToken},
       chain: chain,

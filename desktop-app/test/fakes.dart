@@ -74,6 +74,20 @@ class FakeSettingsService extends Fake implements SettingsService {
   /// so it plays only in the tests that are about it.
   final Map<String, bool> bools = {BootIntroSeenNotifier.settingsKey: true};
 
+  /// The wallets whose recovery phrase has been shown or copied.
+  final Set<int> viewedPhrases = {};
+
+  @override
+  bool recoveryPhraseViewed(int walletIndex) => viewedPhrases.contains(walletIndex);
+
+  @override
+  void setRecoveryPhraseViewed(int walletIndex) => viewedPhrases.add(walletIndex);
+
+  /// How the wallets came to exist: unknown, as for a wallet made before it
+  /// was recorded.
+  @override
+  WalletOrigin? getWalletOrigin(int walletIndex) => null;
+
   @override
   bool? getBool(String key) => bools[key];
 
@@ -462,15 +476,6 @@ class FakeWalletStorage extends FakeSettingsService {
     multisigStore.removeWhere((m) => m.accountId == accountId);
     if (activeAccount?.account.accountId == accountId) activeAccount = RegularAccount(accounts.first);
   }
-
-  /// The wallets whose recovery phrase has been shown or copied.
-  final Set<int> viewedPhrases = {};
-
-  @override
-  bool recoveryPhraseViewed(int walletIndex) => viewedPhrases.contains(walletIndex);
-
-  @override
-  void setRecoveryPhraseViewed(int walletIndex) => viewedPhrases.add(walletIndex);
 }
 
 class _StoredAccountsService extends Fake implements AccountsService {

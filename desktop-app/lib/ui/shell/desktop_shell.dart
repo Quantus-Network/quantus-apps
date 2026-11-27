@@ -14,6 +14,7 @@ import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shortcut_bindings_provider.dart';
 import 'package:quantus_desktop_wallet/providers/wallet_presence_provider.dart';
+import 'package:quantus_desktop_wallet/services/external_links.dart';
 import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_menu_entries.dart';
 import 'package:quantus_desktop_wallet/ui/approval/login_password_dialog.dart';
@@ -352,6 +353,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
       onToggleSidebar: hasWallet ? () => ref.read(sidebarVisibleProvider.notifier).toggle() : null,
       onRefresh: hasWallet ? () => unawaited(refreshWallet(ref)) : null,
       onCloseWindow: () => unawaited(ref.read(backgroundModeProvider).closeWindow()),
+      onOpenLink: (url) => unawaited(ref.read(openExternalUrlProvider)(url)),
     );
   }
 

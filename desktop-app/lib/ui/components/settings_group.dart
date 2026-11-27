@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 
-/// Rows grouped as macOS groups settings: a small capital [label] over a
-/// rounded card whose rows are split by hairlines.
+/// Rows grouped as macOS groups settings: a small capital [label], where
+/// there is one, over a rounded card whose rows are split by hairlines.
 class SettingsGroup extends StatelessWidget {
-  const SettingsGroup({super.key, required this.label, required this.rows});
+  const SettingsGroup({super.key, this.label, required this.rows});
 
-  final String label;
+  final String? label;
   final List<Widget> rows;
 
   @override
@@ -19,13 +19,14 @@ class SettingsGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 10),
-          child: CapsText(
-            label,
-            style: context.themeTextV3.dataAddress.copyWith(height: 1, letterSpacing: 1.4, color: colors.textMuted2),
+        if (label case final label?)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 10),
+            child: CapsText(
+              label,
+              style: context.themeTextV3.dataAddress.copyWith(height: 1, letterSpacing: 1.4, color: colors.textMuted2),
+            ),
           ),
-        ),
         DecoratedBox(
           position: DecorationPosition.foreground,
           decoration: BoxDecoration(

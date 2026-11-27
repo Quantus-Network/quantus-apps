@@ -11,10 +11,12 @@ import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel_resize_handle.dart';
+import 'package:quantus_desktop_wallet/ui/shell/backup_reminder.dart';
 import 'package:quantus_desktop_wallet/ui/shell/panel_widths.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
+import 'package:wallet_core/providers/wallet_providers.dart';
 
 /// The active account's panels: its balance; what of it is still under way
 /// and, for a multisig, its open proposals, each only as tall as it needs;
@@ -144,6 +146,7 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
       });
     });
     final account = active.account;
+    final backupWallet = ref.watch(backupReminderWalletIndexProvider);
     final view = ref.watch(activityViewProvider).value;
     final inProgress = view?.inProgress ?? const <TransactionEvent>[];
     final multisig = account is MultisigAccount ? account : null;
@@ -189,6 +192,10 @@ class _AccountPaneState extends ConsumerState<AccountPane> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 BalanceCard(account: account),
+                if (backupWallet != null) ...[
+                  const SizedBox(height: Panel.gap),
+                  BackupReminder(walletIndex: backupWallet),
+                ],
                 if (showsInProgress) ...[
                   const SizedBox(height: Panel.gap),
                   InProgressPanel(

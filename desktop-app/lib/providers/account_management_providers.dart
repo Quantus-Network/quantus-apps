@@ -11,6 +11,7 @@ import 'package:wallet_core/providers/pending_multisig_creations_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/providers/wallet_settings_providers.dart';
 import 'package:wallet_core/services/remote_notifications_registration.dart';
+import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
@@ -133,17 +134,22 @@ class SidebarRenameNotifier extends Notifier<RenameTarget?> {
   }
 }
 
-/// The wallet whose recovery phrase Settings opens on, when it is opened for
-/// one: Settings takes it on opening, and clears it.
-final recoveryPhraseTargetProvider = NotifierProvider<RecoveryPhraseTargetNotifier, int?>(
+/// The wallet whose recovery phrase Settings opens on, and whether its backup
+/// reminder asked for it.
+typedef RecoveryPhraseTarget = ({int walletIndex, bool fromBackupReminder});
+
+/// The recovery phrase Settings opens on, when it is opened for one: Settings
+/// takes it on opening, and clears it.
+final recoveryPhraseTargetProvider = NotifierProvider<RecoveryPhraseTargetNotifier, RecoveryPhraseTarget?>(
   RecoveryPhraseTargetNotifier.new,
 );
 
-class RecoveryPhraseTargetNotifier extends Notifier<int?> {
+class RecoveryPhraseTargetNotifier extends Notifier<RecoveryPhraseTarget?> {
   @override
-  int? build() => null;
+  RecoveryPhraseTarget? build() => null;
 
-  void set(int walletIndex) => state = walletIndex;
+  void set(int walletIndex, {required bool fromBackupReminder}) =>
+      state = (walletIndex: walletIndex, fromBackupReminder: fromBackupReminder);
 
   void clear() => state = null;
 }
@@ -532,9 +538,10 @@ class AccountManager {
     };
   }
 
-  /// Opens Settings on the recovery phrase of the wallet at [walletIndex].
-  Future<void> openRecoveryPhrase(int walletIndex) {
-    _ref.read(recoveryPhraseTargetProvider.notifier).set(walletIndex);
+  /// Opens Settings on the recovery phrase of the wallet at [walletIndex];
+  /// [fromBackupReminder] when its backup reminder asks.
+  Future<void> openRecoveryPhrase(int walletIndex, {bool fromBackupReminder = false}) {
+    _ref.read(recoveryPhraseTargetProvider.notifier).set(walletIndex, fromBackupReminder: fromBackupReminder);
     return _ref.read(shellSheetProvider.notifier).open(ShellSheet.settings);
   }
 
@@ -631,10 +638,11 @@ class AccountManager {
   }
 
   /// What this app kept for the wallet at [walletIndex], just removed, goes:
-  /// whether it was open, and its settings, so the next wallet added at its
-  /// index starts without them.
+  /// whether it was open, its place in the sidebar, and its settings, so the
+  /// next wallet added at its index starts without them.
   void _forgetWallet(int walletIndex) {
     _ref.read(keptOpenWalletsProvider.notifier).forget(walletIndex);
+    _ref.read(sidebarOrderProvider.notifier).forgetWallet(walletIndex);
     walletSettingsProviders(walletIndex).forEach(_ref.invalidate);
   }
 

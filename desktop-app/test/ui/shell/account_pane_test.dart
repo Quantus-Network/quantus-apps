@@ -15,7 +15,9 @@ import 'package:quantus_desktop_wallet/ui/components/balance_card.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
+import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/backup_reminder.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_header.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -353,6 +355,40 @@ void main() {
 
       expect(widthOf(tester, Sidebar), SidebarWidthNotifier.maximum);
       expect(widthOf(tester, ActivityInspector), InspectorWidthNotifier.maximum);
+    });
+  });
+
+  group('the backup reminder', () {
+    testOnMac('shows under the balance while the active wallet\'s phrase has not been seen', (tester) async {
+      await _pumpWithActive(tester, const RegularAccount(mainAccount));
+
+      final reminder = _inPane(find.byType(BackupReminder));
+      expect(reminder, findsOneWidget);
+      expect(_inPane(find.text('Back up your recovery phrase')), findsOneWidget);
+      expect(tester.getRect(reminder).top, greaterThan(tester.getRect(find.byType(BalanceCard)).bottom));
+    });
+
+    testOnMac('is not there once the wallet\'s phrase has been seen', (tester) async {
+      final device = FakeWalletDevice()..store([mainAccount]);
+      device.storage.viewedPhrases.add(0);
+      await pumpShell(tester, overrides: device.overrides);
+      expect(find.byType(BalanceCard), findsOneWidget);
+
+      expect(find.byType(BackupReminder), findsNothing);
+      expect(find.text('Back up your recovery phrase'), findsNothing);
+    });
+
+    testOnMac('opens Settings on the wallet\'s recovery phrase caution', (tester) async {
+      await _pumpWithActive(tester, const RegularAccount(mainAccount));
+
+      await tester.tap(find.byKey(BackupReminder.backUpKey));
+      await tester.pumpAndSettle();
+
+      expect(_sheetTitled('Recovery Phrase'), findsOneWidget);
+      expect(
+        find.descendant(of: find.byType(ShellSheetView), matching: find.byKey(SettingsSheet.continueKey)),
+        findsOneWidget,
+      );
     });
   });
 }

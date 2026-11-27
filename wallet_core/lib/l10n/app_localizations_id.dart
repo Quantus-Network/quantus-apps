@@ -3763,4 +3763,38 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get desktopSidebarMultisigs => 'Multisig';
+
+  @override
+  String get desktopBackupReminderButton => 'Cadangkan…';
+
+  @override
+  String get desktopRecoveryAlreadyBackedUp => 'Sudah Dicadangkan';
+
+  @override
+  String get desktopSidebarMoveUp => 'Pindah ke Atas';
+
+  @override
+  String get desktopSidebarMoveDown => 'Pindah ke Bawah';
+
+  @override
+  String get desktopMenuHelp => 'Bantuan';
+
+  @override
+  String get desktopMenuHelpSupport => 'Bantuan & Dukungan…';
+
+  @override
+  String get desktopMenuPrivacyPolicy => 'Kebijakan Privasi';
+
+  @override
+  String get desktopMenuWebsite => 'Situs Web Quantus';
+
+  @override
+  String desktopMenuAbout(String app) {
+    return 'Tentang $app';
+  }
+
+  @override
+  String desktopSendRecentsCount(int count) {
+    return 'Terbaru ($count)';
+  }
 }

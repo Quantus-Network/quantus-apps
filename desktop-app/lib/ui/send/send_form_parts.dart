@@ -64,6 +64,11 @@ class SendField extends StatelessWidget {
 
   static const double height = 36;
   static const double _suffixWidth = 44;
+  static const double _padding = 12;
+
+  /// How far in from the field's edge its text starts: the padding and the
+  /// field's 1 pt border.
+  static const double textInset = _padding + 1;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +91,7 @@ class SendField extends StatelessWidget {
         onChanged: onChanged,
         onSubmitted: onSubmitted,
         height: height,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: _padding),
         textStyle: style,
         fillColor: colors.bgVoid,
         borderRadius: context.radiusV3.smBorder,

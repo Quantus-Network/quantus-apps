@@ -38,6 +38,7 @@ import 'package:quantus_desktop_wallet/ui/components/hover_popover.dart';
 import 'package:quantus_desktop_wallet/ui/components/pop_up_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
+import 'package:quantus_desktop_wallet/ui/shell/backup_reminder.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/settings/keyboard_shortcuts_step.dart';
@@ -297,6 +298,15 @@ void main() {
 
   _scene('send_form_empty', (tester) async {
     await _openSend(tester);
+  });
+
+  _scene('send_form_many_recents', (tester) async {
+    await _openSend(
+      tester,
+      moreRecents: [
+        for (final letter in ['E', 'F', 'G']) 'qz${letter * 44}',
+      ],
+    );
   });
 
   _scene('send_form_smallest_window', (tester) async {
@@ -694,6 +704,24 @@ void main() {
     await _rightClickInSidebar(tester, 'Savings');
   });
 
+  _scene('sidebar_group_menu', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    await _rightClickInSidebar(tester, 'WALLET 2');
+  });
+
+  _scene('sidebar_group_drag', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false);
+    Finder heading(String text) => find.descendant(of: find.byType(Sidebar), matching: find.text(text)).first;
+    final from = tester.getCenter(heading('COLD WALLET'));
+    final to = tester.getTopLeft(heading('WALLET 2')) + const Offset(40, 2);
+    final gesture = await tester.startGesture(from, kind: PointerDeviceKind.mouse, buttons: kPrimaryButton);
+    for (var step = 1; step <= 10; step++) {
+      await gesture.moveTo(Offset.lerp(from, to, step / 10)!);
+      await tester.pump();
+    }
+    addTearDown(gesture.up);
+  });
+
   _scene('account_menu_encrypted', (tester) async {
     await _openAccounts(tester);
     await _rightClickInSidebar(tester, 'Encrypted Account');
@@ -716,6 +744,21 @@ void main() {
 
   _scene('wallets_closed', (tester) async {
     await _openAccounts(tester, moreWallets: 5, walletsLeftOpen: false);
+  });
+
+  // A large amount in each account, so the totals are long.
+  final largeBalance = oneToken * BigInt.from(12345) + oneToken * BigInt.from(6789) ~/ BigInt.from(10000);
+
+  _scene('sidebar_wallet_totals', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false, balance: largeBalance);
+  });
+
+  _scene('sidebar_wallet_totals_narrow', (tester) async {
+    await _openAccounts(tester, walletsLeftOpen: false, balance: largeBalance);
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(sidebarWidthProvider.notifier).resizeTo(SidebarWidthNotifier.minimum);
+    await tester.pumpAndSettle();
   });
 
   _scene('wallets_one_opened', (tester) async {
@@ -826,6 +869,52 @@ void main() {
   _scene('settings_language_open', (tester) async {
     await _openSettings(tester);
     await _tapAndSettle(tester, find.text('English'));
+  });
+
+  _scene('help_support', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(shellSheetProvider.notifier).open(ShellSheet.helpSupport);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('about', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    ProviderScope.containerOf(
+      tester.element(find.byType(DesktopShell)),
+    ).read(shellSheetProvider.notifier).open(ShellSheet.about);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('help_menu_linux', (tester) async {
+    await _open(tester, FakeWalletDevice()..store([_root, _second, _encrypted]), reduceMotion: true);
+    await tester.pumpAndSettle();
+    await _tapAndSettle(tester, find.descendant(of: find.byType(MenuBar), matching: find.text('Help')));
+  }, platform: TargetPlatform.linux);
+
+  _scene('backup_reminder', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+  });
+
+  _scene('backup_reminder_smallest_window', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    tester.view.physicalSize = const Size(960, 640) * _pixelRatio;
+    await tester.pumpAndSettle();
+  });
+
+  _scene('backup_reminder_caution', (tester) async {
+    await _openSettings(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+    await _tapAndSettle(tester, find.byKey(BackupReminder.backUpKey));
   });
 
   _scene('settings_phrase_caution', (tester) async {
@@ -1080,11 +1169,13 @@ Future<void> _openCreateMultisig(WidgetTester tester, {required Iterable<String>
   }
 }
 
-/// Opens the window of a wallet with every kind of account. Its clipboard
-/// takes whatever is copied.
+/// Opens the window of a wallet with every kind of account, each transparent
+/// one holding [balance] when it is given. Its clipboard takes whatever is
+/// copied.
 Future<void> _openAccounts(
   WidgetTester tester, {
   int moreWallets = 0,
+  BigInt? balance,
   bool walletsLeftOpen = true,
   bool withColdWallet = true,
   Future<List<Account>> Function()? scan,
@@ -1096,6 +1187,7 @@ Future<void> _openAccounts(
   addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
   final device = FakeWalletDevice()..store([_root, _savings, _encrypted], mnemonic: _phrase);
   if (scan != null) device.scan = scan;
+  if (balance != null) device.balance = balance;
   if (discoverMultisigs != null) device.chain.discoverMultisigs = discoverMultisigs;
   device.storage.accounts.addAll([
     if (withColdWallet) _cold,
@@ -1192,14 +1284,18 @@ const _recentPhrases = {
 
 /// Opens the wallet, holding 1,250 tokens, and its Send. The system approves
 /// unless [approval] says otherwise.
-Future<FakeWalletDevice> _openSend(WidgetTester tester, {FakeUserApproval? approval}) async {
+Future<FakeWalletDevice> _openSend(
+  WidgetTester tester, {
+  FakeUserApproval? approval,
+  List<String> moreRecents = const [],
+}) async {
   _useEmptyPreferences(tester);
   useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
   final device = FakeWalletDevice()
     ..store([_root, _second, _encrypted])
     ..balance = oneToken * BigInt.from(1250);
   device.chain
-    ..recents = _recentPhrases.keys.toList()
+    ..recents = [..._recentPhrases.keys, ...moreRecents]
     ..isValidAddress = (address) => address.startsWith('qz') && address.length == _depositAddress.length;
   await _open(
     tester,

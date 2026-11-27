@@ -1,12 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/gestures.dart' show kPrimaryButton, kSecondaryButton, PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
+import 'package:quantus_desktop_wallet/ui/components/menu_panel.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -81,6 +85,17 @@ Future<void> _rightClick(WidgetTester tester, Finder target) async {
   await gesture.up();
   await tester.pumpAndSettle();
 }
+
+/// [count] tokens as the sidebar writes an amount.
+String _tokens(WidgetTester tester, int count) {
+  final container = ProviderScope.containerOf(tester.element(find.byType(Sidebar)));
+  final formatted = container.read(numberFormattingServiceProvider).formatBalance(oneToken * BigInt.from(count));
+  return '$formatted ${AppConstants.tokenSymbol}';
+}
+
+/// [text] in the heading keyed [headingKey].
+Finder _under(String headingKey, String text) =>
+    find.descendant(of: find.byKey(ValueKey(headingKey)), matching: find.text(text));
 
 String _selected(WidgetTester tester) =>
     tester.widgetList<SidebarRow>(_inSidebar(find.byType(SidebarRow))).singleWhere((row) => row.isSelected).title;
@@ -271,7 +286,7 @@ void main() {
       tester.getSemantics(find.bySemanticsLabel('Wallet 2')),
       isSemantics(
         label: 'Wallet 2',
-        value: '2 accounts',
+        value: '2 accounts, ${_tokens(tester, 2)}',
         isButton: true,
         hasExpandedState: true,
         isExpanded: false,
@@ -280,7 +295,7 @@ void main() {
     );
     expect(
       tester.getSemantics(find.bySemanticsLabel('Cold Wallet')),
-      isSemantics(label: 'Cold Wallet', value: '1 account', isButton: true, isExpanded: false),
+      isSemantics(label: 'Cold Wallet', value: '1 account, ${_tokens(tester, 1)}', isButton: true, isExpanded: false),
     );
     expect(
       tester.getSemantics(find.bySemanticsLabel('Wallet 1')),
@@ -419,7 +434,7 @@ void main() {
       tester.getSemantics(find.bySemanticsLabel('Multisigs')),
       isSemantics(
         label: 'Multisigs',
-        value: '2 accounts',
+        value: '2 accounts, ${_tokens(tester, 2)}',
         isButton: true,
         hasExpandedState: true,
         isExpanded: false,
@@ -433,5 +448,232 @@ void main() {
       isSemantics(label: 'Multisigs', isButton: true, hasExpandedState: true, isExpanded: true),
     );
     semantics.dispose();
+  });
+
+  group('a closed group\'s total', () {
+    testOnMac('a closed wallet shows its total under its name; the open one shows none', (tester) async {
+      await _pump(tester);
+
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsOneWidget, reason: 'Trading and its Encrypted');
+      expect(_under('sidebar-wallet-1', _tokens(tester, 1)), findsOneWidget, reason: 'the Cold Wallet holds Vault');
+      expect(
+        tester.getTopLeft(_under('sidebar-wallet-2', _tokens(tester, 2))).dy,
+        greaterThan(tester.getBottomLeft(_text('WALLET 2')).dy),
+        reason: 'on a line of its own under the name',
+      );
+      for (final amount in [1, 2, 3]) {
+        expect(_under('sidebar-wallet-0', _tokens(tester, amount)), findsNothing, reason: 'Wallet 1 is open');
+      }
+    });
+
+    testOnMac('opening a wallet hides its total; closing it shows the total again', (tester) async {
+      await _pump(tester);
+
+      await _click(tester, 'WALLET 2');
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsNothing);
+
+      await _click(tester, 'WALLET 2');
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsOneWidget);
+    });
+
+    testOnMac('a wallet\'s total leaves out the multisigs its accounts are members of', (tester) async {
+      await _pump(
+        tester,
+        multisigs: [
+          MultisigAccount(
+            name: 'Desk',
+            accountId: 'qzDesk',
+            signers: const ['qzTrading', 'qzOther'],
+            threshold: 2,
+            nonce: BigInt.zero,
+            myMemberAccountId: 'qzTrading',
+          ),
+        ],
+      );
+
+      expect(_under('sidebar-wallet-2', _tokens(tester, 2)), findsOneWidget);
+    });
+
+    testOnMac('the closed multisigs\' heading shows the sum of its multisigs, and none while open', (tester) async {
+      await _pump(tester, multisigs: [teamMultisig, orphanMultisig]);
+
+      expect(_under('sidebar-multisigs', _tokens(tester, 2)), findsOneWidget);
+
+      await _click(tester, 'MULTISIGS');
+      expect(_under('sidebar-multisigs', _tokens(tester, 2)), findsNothing);
+    });
+
+    testOnMac('a closed heading says so while any of its balances loads', (tester) async {
+      final never = Completer<BigInt>();
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, tradingAccount, _travel],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balanceOf: (accountId) => accountId == 'qzTrading' ? never.future : Future.value(oneToken),
+        ),
+      );
+
+      expect(_under('sidebar-wallet-2', 'Loading...'), findsOneWidget);
+      expect(_under('sidebar-wallet-3', _tokens(tester, 1)), findsOneWidget);
+    });
+
+    testOnMac('a closed heading says the balance is unavailable when any of its balances fails', (tester) async {
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, tradingAccount, _travel],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balances: {'qzMain': oneToken, 'qzTravel': oneToken},
+        ),
+      );
+
+      expect(_under('sidebar-wallet-2', 'Balance unavailable'), findsOneWidget);
+      expect(_under('sidebar-wallet-3', _tokens(tester, 1)), findsOneWidget);
+    });
+  });
+
+  group('moving a group', () {
+    const headings = ['WALLET 1', 'WALLET 2', 'WALLET 3', 'COLD WALLET', 'MULTISIGS'];
+
+    /// The groups' headings shown, top to bottom.
+    List<String> order(WidgetTester tester) {
+      final shown = [
+        for (final heading in headings)
+          if (_text(heading).evaluate().isNotEmpty) heading,
+      ];
+      return shown..sort((a, b) => tester.getTopLeft(_text(a)).dy.compareTo(tester.getTopLeft(_text(b)).dy));
+    }
+
+    MenuPanelRow item(WidgetTester tester, String label) =>
+        tester.widget<MenuPanelRow>(find.descendant(of: _menu, matching: find.widgetWithText(MenuPanelRow, label)));
+
+    Future<void> chooseInMenu(WidgetTester tester, String heading, String label) async {
+      await _rightClick(tester, _text(heading));
+      await tester.tap(find.descendant(of: _menu, matching: find.text(label)));
+      await tester.pumpAndSettle();
+    }
+
+    double top(WidgetTester tester, Finder finder) => tester.getTopLeft(finder).dy;
+
+    testOnMac('each heading\'s menu offers Move Up and Move Down, the top one not up, the bottom one not down', (
+      tester,
+    ) async {
+      await _pump(tester, multisigs: [teamMultisig]);
+      expect(order(tester), ['WALLET 1', 'WALLET 2', 'WALLET 3', 'COLD WALLET', 'MULTISIGS']);
+
+      await _rightClick(tester, _text('WALLET 1'));
+      expect(item(tester, 'Move Up').isDisabled, isTrue);
+      expect(item(tester, 'Move Down').isDisabled, isFalse);
+      expect(find.descendant(of: _menu, matching: find.text('Rename…')), findsOneWidget);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      await _rightClick(tester, _text('COLD WALLET'));
+      expect(item(tester, 'Move Up').isDisabled, isFalse);
+      expect(item(tester, 'Move Down').isDisabled, isFalse);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pumpAndSettle();
+
+      await _rightClick(tester, _text('MULTISIGS'));
+      expect(item(tester, 'Move Up').isDisabled, isFalse);
+      expect(item(tester, 'Move Down').isDisabled, isTrue);
+      expect(find.descendant(of: _menu, matching: find.text('Create Multisig…')), findsOneWidget);
+    });
+
+    testOnMac('Move Down puts a wallet under the next one, its rows with it', (tester) async {
+      await _pump(tester);
+
+      await chooseInMenu(tester, 'WALLET 1', 'Move Down');
+
+      expect(order(tester), ['WALLET 2', 'WALLET 1', 'WALLET 3', 'COLD WALLET']);
+      expect(top(tester, _row('Main')), greaterThan(top(tester, _text('WALLET 1'))));
+      expect(top(tester, _row('Savings')), lessThan(top(tester, _text('WALLET 3'))));
+    });
+
+    testOnMac('the multisigs\' heading moves the whole group', (tester) async {
+      await _pump(tester, multisigs: [teamMultisig]);
+      await _click(tester, 'MULTISIGS');
+
+      await chooseInMenu(tester, 'MULTISIGS', 'Move Up');
+      await chooseInMenu(tester, 'MULTISIGS', 'Move Up');
+
+      expect(order(tester), ['WALLET 1', 'WALLET 2', 'MULTISIGS', 'WALLET 3', 'COLD WALLET']);
+      expect(top(tester, _row('Team')), greaterThan(top(tester, _text('MULTISIGS'))));
+      expect(top(tester, _row('Team')), lessThan(top(tester, _text('WALLET 3'))));
+    });
+
+    testOnMac('a heading dragged onto another group lands there, a line showing where while it is dragged', (
+      tester,
+    ) async {
+      await _pump(tester);
+      expect(find.byKey(Sidebar.dropLineKey), findsNothing);
+
+      final gesture = await tester.startGesture(
+        tester.getCenter(_text('COLD WALLET')),
+        kind: PointerDeviceKind.mouse,
+        buttons: kPrimaryButton,
+      );
+      final target = tester.getTopLeft(_text('WALLET 1')) + const Offset(4, 1);
+      for (var step = 1; step <= 10; step++) {
+        await gesture.moveTo(Offset.lerp(tester.getCenter(_text('COLD WALLET')), target, step / 10)!);
+        await tester.pump();
+      }
+      expect(find.byKey(Sidebar.dropLineKey), findsOneWidget);
+      expect(top(tester, find.byKey(Sidebar.dropLineKey)), lessThan(top(tester, _text('WALLET 1'))));
+
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(Sidebar.dropLineKey), findsNothing);
+      expect(order(tester), ['COLD WALLET', 'WALLET 1', 'WALLET 2', 'WALLET 3']);
+    });
+
+    testOnMac('a click on a heading still opens and closes it; a heading being renamed is not dragged', (tester) async {
+      await _pump(tester);
+      await _click(tester, 'WALLET 2');
+      expect(_row('Trading'), findsOneWidget);
+      await _click(tester, 'WALLET 2');
+      expect(_row('Trading'), findsNothing);
+
+      await chooseInMenu(tester, 'WALLET 3', 'Rename…');
+      expect(_field, findsOneWidget);
+      final from = tester.getCenter(_field);
+      final gesture = await tester.startGesture(from, kind: PointerDeviceKind.mouse, buttons: kPrimaryButton);
+      for (var step = 1; step <= 10; step++) {
+        await gesture.moveTo(from - Offset(0, 12.0 * step));
+        await tester.pump();
+      }
+      expect(find.byKey(Sidebar.dropLineKey), findsNothing);
+      await gesture.up();
+      await tester.pumpAndSettle();
+
+      expect(order(tester).where((heading) => heading != 'WALLET 3'), ['WALLET 1', 'WALLET 2', 'COLD WALLET']);
+      expect(_field, findsOneWidget);
+    });
+
+    testOnMac('after a move, ⌘1 is the top account and the Account menu lists them in the new order', (tester) async {
+      await _pump(tester);
+
+      await chooseInMenu(tester, 'WALLET 1', 'Move Down');
+
+      final accounts = [
+        for (final item in _itemsOf(tester, 'Account'))
+          if (['Main', 'Savings', 'Trading', 'Travel', 'Vault'].contains(item.label)) item,
+      ];
+      expect([for (final item in accounts) item.label], ['Trading', 'Main', 'Savings', 'Travel', 'Vault']);
+      expect((accounts.first.shortcut as SingleActivator?)?.trigger, LogicalKeyboardKey.digit1);
+    });
+
+    testOnMac('Next and Previous Sidebar Item follow the new order', (tester) async {
+      await _pump(tester);
+      await chooseInMenu(tester, 'WALLET 1', 'Move Down');
+      await _click(tester, 'WALLET 2');
+
+      await _choose(tester, 'View', 'Previous Sidebar Item');
+      await _choose(tester, 'View', 'Previous Sidebar Item');
+
+      expect(_selected(tester), 'Trading');
+    });
   });
 }

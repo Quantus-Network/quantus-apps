@@ -33,6 +33,7 @@ class SettingsSheet extends ConsumerStatefulWidget {
   static const keyboardShortcutsRowKey = Key('settings-keyboard-shortcuts');
   static const continueKey = Key('settings-continue');
   static const cancelKey = Key('settings-cancel');
+  static const alreadyBackedUpKey = Key('settings-already-backed-up');
   static const hideKey = Key('settings-phrase-hide');
   static const copyKey = Key('settings-phrase-copy');
   static const doneKey = Key('settings-phrase-done');
@@ -55,14 +56,19 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
   /// The recovery phrase's words, held only while they are on screen.
   List<String>? _words;
 
+  /// The wallet whose backup reminder opened Settings, if one did: its
+  /// caution also offers to say it is already backed up.
+  int? _reminderWallet;
+
   @override
   void initState() {
     super.initState();
     // Opened for one wallet's recovery phrase: start on its caution, and
     // clear the request once this frame is done (not while building).
-    final wallet = ref.read(recoveryPhraseTargetProvider);
-    if (wallet != null) {
-      _phraseWallet = wallet;
+    final target = ref.read(recoveryPhraseTargetProvider);
+    if (target != null) {
+      _phraseWallet = target.walletIndex;
+      if (target.fromBackupReminder) _reminderWallet = target.walletIndex;
       _step = _Step.phraseCaution;
       WidgetsBinding.instance.addPostFrameCallback((_) => ref.read(recoveryPhraseTargetProvider.notifier).clear());
     }
@@ -101,6 +107,7 @@ class _SettingsSheetState extends ConsumerState<SettingsSheet> {
         RecoveryPhraseCaution(
           walletIndex: _phraseWallet!,
           onCancel: _back,
+          onAlreadyBackedUp: _phraseWallet == _reminderWallet ? () => Navigator.of(context).pop() : null,
           onApproved: (words) => setState(() {
             _words = words;
             _step = _Step.phraseWords;

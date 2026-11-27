@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:quantus_desktop_wallet/providers/sidebar_order_provider.dart';
 import 'package:quantus_desktop_wallet/models/wallet_presence.dart';
 import 'package:quantus_desktop_wallet/providers/boot_intro_provider.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
@@ -62,10 +63,11 @@ class WalletPresenceNotifier extends AsyncNotifier<WalletPresence> {
     }
     // The changed keyboard shortcuts went with the settings.
     ref.invalidate(shortcutBindingsProvider);
-    // So did the wallets and the multisigs left open.
+    // So did the wallets and the multisigs left open, and the sidebar's order.
     ref
       ..invalidate(keptOpenWalletsProvider)
-      ..invalidate(keptOpenMultisigsProvider);
+      ..invalidate(keptOpenMultisigsProvider)
+      ..invalidate(sidebarOrderProvider);
     state = const AsyncData(WalletPresence.none);
   }
 }

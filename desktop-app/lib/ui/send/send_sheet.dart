@@ -93,8 +93,9 @@ class SendSheet extends ConsumerStatefulWidget {
   /// The row of [address] among the addresses paid before.
   static Key recentKey(String address) => ValueKey('send-recent-$address');
 
-  /// How many of the addresses paid before the form offers.
-  static const recentsShown = 4;
+  /// How many rows of the addresses paid before show at once; the rest
+  /// scroll in.
+  static const recentsInView = 4;
 
   @override
   ConsumerState<SendSheet> createState() => _SendSheetState();
@@ -253,8 +254,50 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     final all = await ref.read(recentAddressesServiceProvider).getAddresses();
     if (!mounted) return;
     setState(() {
-      _recents = all.where((a) => a != _strategy.sourceAccountId).take(SendSheet.recentsShown).toList();
+      _recents = all.where((a) => a != _strategy.sourceAccountId).toList();
     });
+  }
+
+  /// The addresses paid before, in a list that scrolls. Each row is as tall
+  /// as its address and checkphrase need, as phrases wrap differently; hidden
+  /// copies of the first rows size the list to show just them. The copies
+  /// keep only their size: nothing focuses, presses or hears them.
+  Widget _recentsList() {
+    return Stack(
+      children: [
+        Visibility(
+          visible: false,
+          maintainState: true,
+          maintainAnimation: true,
+          maintainSize: true,
+          child: SingleChildScrollView(
+            physics: const NeverScrollableScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final address in _recents.take(SendSheet.recentsInView))
+                  SendRecentRow(address: address, onPressed: () {}),
+              ],
+            ),
+          ),
+        ),
+        Positioned.fill(
+          child: ListView.builder(
+            key: SendSheet.recentsKey,
+            padding: EdgeInsets.zero,
+            itemCount: _recents.length,
+            itemBuilder: (context, index) {
+              final address = _recents[index];
+              return SendRecentRow(
+                key: SendSheet.recentKey(address),
+                address: address,
+                onPressed: () => _address.text = address,
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
   /// The controller also tells of selection changes, so an unchanged address
@@ -683,43 +726,32 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.only(bottom: 6),
-          child: CapsText(l10n.sendSelectRecipientRecents, style: context.sendCaps()),
-        ),
-        // The list takes the height the window leaves and scrolls within it,
-        // so the fields and the buttons under it stay in the sheet.
-        Flexible(
-          child: ListView(
-            key: SendSheet.recentsKey,
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            children: [
-              for (final address in _recents)
-                SendRecentRow(
-                  key: SendSheet.recentKey(address),
-                  address: address,
-                  onPressed: () => _address.text = address,
-                ),
-            ],
+          // With more than show at once, how many there are, as nothing
+          // else shows the list goes on.
+          child: CapsText(
+            _recents.length > SendSheet.recentsInView
+                ? l10n.desktopSendRecentsCount(_recents.length)
+                : l10n.sendSelectRecipientRecents,
+            style: context.sendCaps(),
           ),
         ),
-      ] else if (_isChecking) ...[
+        // Up to [SendSheet.recentsInView] rows tall, no taller than the
+        // window leaves, so the fields and the buttons under it stay in the
+        // sheet; the rest scroll in, each row built as it comes into view.
+        Flexible(child: _recentsList()),
+      ] else if (_isChecking || _recipientAccepted) ...[
         const SizedBox(height: 10),
-        Text(l10n.sendRecipientChecking, style: context.sendBody()),
-      ] else if (_recipientAccepted) ...[
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            CapsText(l10n.componentCheckphraseLabel, style: context.sendCaps()),
-            const SizedBox(width: 12),
-            Flexible(
-              child: CheckphraseText(
-                _recipient,
-                style: context.sendMono(colors.semanticLilac),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        // In line with the address typed above it, not with the field's edge.
+        Padding(
+          padding: const EdgeInsets.only(left: SendField.textInset),
+          child: _isChecking
+              ? Text(l10n.sendRecipientChecking, style: context.sendBody())
+              : CheckphraseText(
+                  _recipient,
+                  style: context.sendMono(colors.semanticLilac),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
         ),
       ],
       const SizedBox(height: 18),

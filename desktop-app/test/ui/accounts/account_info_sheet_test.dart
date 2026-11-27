@@ -9,6 +9,8 @@ import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_info_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
+import 'package:quantus_desktop_wallet/services/share_service.dart';
+import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
 import 'package:quantus_desktop_wallet/ui/settings/settings_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/components/settings_group.dart';
 import 'package:quantus_desktop_wallet/ui/shell/desktop_shell.dart';
@@ -47,6 +49,7 @@ Future<FakeWalletDevice> _pump(
   List<Account>? accounts,
   Future<String> Function()? innerHash,
   FakeUserApproval? approval,
+  List<(String, Rect?)>? shared,
 }) async {
   final device = FakeWalletDevice()..store(accounts ?? [mainAccount, savingsAccount, _encrypted]);
   if (accounts == null) {
@@ -60,6 +63,7 @@ Future<FakeWalletDevice> _pump(
       ...device.overrides,
       systemApprovalProvider.overrideWithValue(approval ?? FakeUserApproval()),
       sensitiveClipboardProvider.overrideWithValue(FakeSensitiveClipboard()),
+      if (shared != null) shareTextProvider.overrideWithValue((text, {origin}) async => shared.add((text, origin))),
       encryptedAccountServiceProvider.overrideWith(
         (ref, walletIndex) =>
             FakeEncryptedAccountService(() async => 'qzDeposit', innerHash: innerHash ?? () async => '0xinner'),
@@ -143,6 +147,99 @@ void main() {
 
       expect(copied, 'qzSavings');
       await tester.pump(const Duration(seconds: 3));
+    });
+
+    group('copy and share', () {
+      String? copied;
+      void recordClipboard(WidgetTester tester) {
+        copied = null;
+        final messenger = tester.binding.defaultBinaryMessenger;
+        messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String?;
+          return null;
+        });
+        addTearDown(() => messenger.setMockMethodCallHandler(SystemChannels.platform, null));
+      }
+
+      ToolbarAction action(WidgetTester tester, Key key) => tester.widget<ToolbarAction>(_inSheet(find.byKey(key)));
+
+      for (final (description, account, address) in [
+        ('an account', savingsAccount as BaseAccount, 'qzSavings'),
+        ('a multisig', _team as BaseAccount, 'qzTeam'),
+      ]) {
+        testOnMac('on $description, Copy beside the checkphrase copies it, and Copy beside the address the address', (
+          tester,
+        ) async {
+          recordClipboard(tester);
+          await _pump(tester);
+          await _openInfo(tester, account);
+
+          await tester.tap(_inSheet(find.byKey(AccountInfoSheet.copyCheckphraseKey)));
+          await tester.pump();
+          expect(copied, 'Phrase-$address');
+          expect(action(tester, AccountInfoSheet.copyCheckphraseKey).label, 'Copied');
+
+          await tester.tap(_inSheet(find.byKey(AccountInfoSheet.copyAddressKey)));
+          await tester.pump();
+          expect(copied, address);
+          await tester.pump(const Duration(seconds: 3));
+        });
+
+        testOnMac('on $description, Share beside the address offers it to the share picker beside the button', (
+          tester,
+        ) async {
+          final shared = <(String, Rect?)>[];
+          await _pump(tester, shared: shared);
+          await _openInfo(tester, account);
+
+          await tester.tap(_inSheet(find.byKey(AccountInfoSheet.shareAddressKey)));
+          await tester.pump();
+
+          expect(shared.map((share) => share.$1), [address]);
+          expect(shared.single.$2, tester.getRect(_inSheet(find.byKey(AccountInfoSheet.shareAddressKey))));
+        });
+
+        testOnMac('on $description, each action sits level with its line', (tester) async {
+          await _pump(tester);
+          await _openInfo(tester, account);
+
+          double middle(Finder finder) => tester.getCenter(finder).dy;
+          final addressLine = middle(_inSheet(find.text(address)));
+          final phraseLine = middle(_inSheet(find.text('Phrase-$address')));
+          for (final key in [AccountInfoSheet.shareAddressKey, AccountInfoSheet.copyAddressKey]) {
+            expect(middle(_inSheet(find.byKey(key))), moreOrLessEquals(addressLine, epsilon: 4), reason: '$key');
+          }
+          expect(
+            middle(_inSheet(find.byKey(AccountInfoSheet.copyCheckphraseKey))),
+            moreOrLessEquals(phraseLine, epsilon: 4),
+          );
+        });
+      }
+
+      testOnWindowsAndLinux('there is no Share where the system has no share picker', (tester) async {
+        await _pump(tester);
+        await _openInfo(tester, savingsAccount);
+        expect(find.byKey(AccountInfoSheet.shareAddressKey), findsNothing);
+        expect(find.byKey(AccountInfoSheet.copyCheckphraseKey), findsOneWidget);
+
+        await _openInfo(tester, _encrypted);
+        expect(find.byKey(AccountInfoSheet.shareInnerHashKey), findsNothing);
+      });
+
+      testOnMac('on the encrypted account, Share beside the inner hash offers it once it has loaded', (tester) async {
+        final loaded = Completer<String>();
+        final shared = <(String, Rect?)>[];
+        await _pump(tester, innerHash: () => loaded.future, shared: shared);
+        await _openInfo(tester, _encrypted);
+
+        expect(action(tester, AccountInfoSheet.shareInnerHashKey).onPressed, isNull);
+        loaded.complete('0xfeed');
+        await tester.pumpAndSettle();
+
+        await tester.tap(_inSheet(find.byKey(AccountInfoSheet.shareInnerHashKey)));
+        await tester.pump();
+        expect(shared.map((share) => share.$1), ['0xfeed']);
+      });
     });
 
     testOnMac('a Keystone account has no recovery phrase here, and disconnects as hardware', (tester) async {

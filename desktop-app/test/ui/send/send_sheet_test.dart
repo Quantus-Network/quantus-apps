@@ -12,6 +12,7 @@ import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_checkbox.dart';
 import 'package:quantus_desktop_wallet/ui/components/sheet_button.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
+import 'package:quantus_desktop_wallet/ui/send/send_form_parts.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_sheet.dart';
 import 'package:quantus_desktop_wallet/ui/send/send_summary.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_toolbar.dart';
@@ -73,7 +74,7 @@ final _opened = <Uri>[];
 final _shared = <(String, Rect?)>[];
 
 /// Opens the wallet on [active], holding [balance] tokens, and presses Send
-/// in the toolbar.
+/// in the toolbar. Checkphrases come from [checkphraseOf] when it is given.
 Future<FakeSendChain> _openSend(
   WidgetTester tester, {
   FakeSendChain? chain,
@@ -81,6 +82,7 @@ Future<FakeSendChain> _openSend(
   num balance = 1250,
   Future<BigInt> Function(String accountId)? balanceOf,
   Size? window,
+  Future<String?> Function(String address)? checkphraseOf,
 }) async {
   _opened.clear();
   _shared.clear();
@@ -101,6 +103,7 @@ Future<FakeSendChain> _openSend(
       shareTextProvider.overrideWithValue((text, {origin}) async => _shared.add((text, origin))),
     ],
   );
+  if (checkphraseOf != null) useFakeCheckphrases(checkphraseOf);
   if (window != null) {
     tester.view.physicalSize = window;
     await tester.pumpAndSettle();
@@ -252,18 +255,140 @@ void main() {
       expect(_inSheet(find.text('Network fee')), findsOneWidget);
     });
 
-    testOnMac('lists the four addresses paid last, never its own, each whole over its checkphrase', (tester) async {
+    testOnMac('lists every address paid before, newest first, never its own, each whole over its checkphrase', (
+      tester,
+    ) async {
       const long = 'qzpK3wXs9DfL2mVb7NcQ8rTy4HgJ6aZe1UoBi5WnRk7tYe';
       final chain = FakeSendChain()..recents = [long, 'qzMain', 'qzBo', 'qzCy', 'qzDee', 'qzEve'];
 
       await _openSend(tester, chain: chain);
 
-      expect(_inSheet(find.text('RECENTS')), findsOneWidget);
+      expect(_inSheet(find.text('RECENTS (5)')), findsOneWidget);
       for (final address in [long, 'qzBo', 'qzCy', 'qzDee']) {
         _expectAddressOverCheckphrase(tester, address, within: find.byKey(SendSheet.recentKey(address)));
       }
       expect(find.byKey(SendSheet.recentKey('qzMain')), findsNothing);
-      expect(find.byKey(SendSheet.recentKey('qzEve')), findsNothing);
+
+      // The fifth is under the fourth, out of view until the list is scrolled.
+      _recentsScroll(tester).position.jumpTo(_recentsScroll(tester).position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      _expectAddressOverCheckphrase(tester, 'qzEve', within: find.byKey(SendSheet.recentKey('qzEve')));
+      expect(
+        tester.getTopLeft(find.byKey(SendSheet.recentKey('qzEve'))).dy,
+        greaterThan(tester.getTopLeft(find.byKey(SendSheet.recentKey('qzDee'))).dy),
+      );
+    });
+
+    testOnMac('in a window with room, more than four addresses paid before: four rows show and the rest scroll in', (
+      tester,
+    ) async {
+      final six = [..._fourRecents, 'qz${'E' * 44}', 'qz${'F' * 44}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = six);
+
+      final row = tester.getRect(find.byKey(SendSheet.recentKey(six.first))).height;
+      expect(tester.getRect(find.byKey(SendSheet.recentsKey)).height, moreOrLessEquals(4 * row, epsilon: 0.5));
+      expect(find.byKey(SendSheet.recentKey(six.last)).hitTestable(), findsNothing);
+
+      final wheel = TestPointer(1, PointerDeviceKind.mouse)..hover(tester.getCenter(find.byKey(SendSheet.recentsKey)));
+      await tester.sendEventToBinding(wheel.scroll(Offset(0, _recentsScroll(tester).position.maxScrollExtent)));
+      await tester.pumpAndSettle();
+      await _tap(tester, SendSheet.recentKey(six.last));
+
+      expect(_typed(tester, SendSheet.addressFieldKey), six.last);
+    });
+
+    testOnMac('with more than four addresses paid before, the heading says how many there are', (tester) async {
+      final seven = [
+        ..._fourRecents,
+        for (final letter in ['E', 'F', 'G']) 'qz${letter * 44}',
+      ];
+      await _openSend(tester, chain: FakeSendChain()..recents = seven);
+
+      expect(_inSheet(find.text('RECENTS (7)')), findsOneWidget);
+    });
+
+    testOnMac('with four addresses paid before or fewer, the heading has no count', (tester) async {
+      await _openSend(tester, chain: FakeSendChain()..recents = _fourRecents);
+
+      expect(_inSheet(find.text('RECENTS')), findsOneWidget);
+      expect(_inSheet(find.textContaining('RECENTS (')), findsNothing);
+    });
+
+    testOnMac('each address paid before is as tall as its own checkphrase needs, however the phrases wrap', (
+      tester,
+    ) async {
+      // Addresses all of one length, the first with a short phrase and the
+      // rest with one that wraps onto more lines.
+      final six = [..._fourRecents, 'qz${'E' * 44}', 'qz${'F' * 44}'];
+      final longPhrase = List.filled(6, 'Renaissance-Sophisticated-Irreplaceable').join('-');
+      String phraseOf(String address) => address == six.first ? 'Able-Ace-Act-Add-Age' : longPhrase;
+      await _openSend(
+        tester,
+        chain: FakeSendChain()..recents = six,
+        checkphraseOf: (address) async => phraseOf(address),
+      );
+
+      Future<void> expectFits(String address) async {
+        final row = find.byKey(SendSheet.recentKey(address));
+        await tester.ensureVisible(row);
+        await tester.pumpAndSettle();
+        final phrase = find.descendant(of: row, matching: find.text(phraseOf(address)));
+        expect(tester.getRect(phrase).bottom, lessThanOrEqualTo(tester.getRect(row).bottom), reason: address);
+      }
+
+      expect(
+        tester.getRect(find.byKey(SendSheet.recentKey(six[1]))).height,
+        greaterThan(tester.getRect(find.byKey(SendSheet.recentKey(six.first))).height),
+      );
+      for (final address in six) {
+        await expectFits(address);
+      }
+    });
+
+    testOnMac('a screen reader hears each address paid before once, as the button that picks it', (tester) async {
+      final semantics = tester.ensureSemantics();
+      final five = [..._fourRecents, 'qz${'E' * 44}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = five);
+
+      for (final address in _fourRecents) {
+        expect(find.bySemanticsLabel(address), findsOneWidget, reason: address);
+      }
+      semantics.dispose();
+    });
+
+    testOnMac('Tab from the address goes through the rows in view, never through hidden ones', (tester) async {
+      final five = [..._fourRecents, 'qz${'E' * 44}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = five);
+      await tester.tap(_editable(SendSheet.addressFieldKey));
+      await tester.pump();
+
+      for (final address in _fourRecents) {
+        await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+        await tester.pump();
+        final focused = FocusManager.instance.primaryFocus?.context;
+        expect(
+          find.descendant(
+            of: find.byKey(SendSheet.recentKey(address)),
+            matching: find.byElementPredicate((element) => element == focused),
+          ),
+          findsOneWidget,
+          reason: 'Tab should reach $address in the list',
+        );
+      }
+    });
+
+    testOnMac('of a hundred addresses paid before, only the rows in view are built', (tester) async {
+      final hundred = [for (var i = 0; i < 100; i++) 'qz${i.toString().padLeft(44, '0')}'];
+      await _openSend(tester, chain: FakeSendChain()..recents = hundred);
+
+      // Every row built, those kept just out of view included.
+      final built = find.descendant(
+        of: find.byKey(SendSheet.recentsKey),
+        matching: find.byType(SendRecentRow, skipOffstage: false),
+        skipOffstage: false,
+      );
+      expect(built.evaluate().length, lessThan(20));
+      expect(find.byKey(SendSheet.recentKey(hundred.first)).hitTestable(), findsOneWidget);
     });
 
     testOnMac('in the smallest window, four addresses paid before leave the form whole and its buttons in reach', (
@@ -349,14 +474,26 @@ void main() {
       expect(_canPress(tester, SendSheet.reviewKey), isFalse);
     });
 
-    testOnMac('a valid address shows its checkphrase under the field', (tester) async {
+    testOnMac('a valid address shows its checkphrase alone under the field, with no label', (tester) async {
       await _openSend(tester);
 
       await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
       await tester.pumpAndSettle();
 
-      expect(_inSheet(find.text('CHECKPHRASE')), findsOneWidget);
       expect(_inSheet(find.text('Phrase-qzPayee')), findsOneWidget);
+      expect(_inSheet(find.text('CHECKPHRASE')), findsNothing);
+    });
+
+    testOnMac('the checkphrase starts where the address starts inside the field', (tester) async {
+      await _openSend(tester);
+
+      await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.getTopLeft(_inSheet(find.text('Phrase-qzPayee'))).dx,
+        tester.getTopLeft(_editable(SendSheet.addressFieldKey)).dx,
+      );
     });
 
     testOnMac('what is not an address is said to be none, and cannot be reviewed', (tester) async {
@@ -365,7 +502,7 @@ void main() {
       await _fill(tester, recipient: 'not an address');
 
       expect(_inSheet(find.text('This is not a Quantus address.')), findsOneWidget);
-      expect(_inSheet(find.text('CHECKPHRASE')), findsNothing);
+      expect(_inSheet(find.textContaining('Phrase-')), findsNothing);
       expect(_canPress(tester, SendSheet.reviewKey), isFalse);
     });
 

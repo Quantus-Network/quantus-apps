@@ -358,10 +358,14 @@ final _backupNudgeBalanceThreshold = BigInt.from(10).pow(AppConstants.decimals -
 /// Only nudges mnemonic-backed wallets created on this device (or legacy wallets
 /// of unknown origin). Never nudges multisig/entrusted accounts (not
 /// [RegularAccount]), hardware (keystone) wallets, or imported wallets.
+/// The phrase backs up the whole wallet, so every account of it (its
+/// Encrypted one too) shows the reminder once its accounts together hold
+/// more than the threshold; a balance not known yet counts as nothing.
 final backupReminderWalletIndexProvider = Provider<int?>((ref) {
   final active = ref.watch(activeAccountProvider).value;
   if (active is! RegularAccount) return null;
-  if (active.account.accountType != AccountType.local) return null;
+  final type = active.account.accountType;
+  if (type != AccountType.local && type != AccountType.encrypted) return null;
 
   final walletIndex = active.account.walletIndex;
   if (AppConstants.debugAlwaysShowBackupNudge) return walletIndex;
@@ -369,8 +373,15 @@ final backupReminderWalletIndexProvider = Provider<int?>((ref) {
   if (ref.watch(walletOriginProvider(walletIndex)) == WalletOrigin.imported) return null;
   if (ref.watch(recoveryPhraseViewedProvider(walletIndex))) return null;
 
-  final balance = ref.watch(balanceProvider).value ?? BigInt.zero;
-  return balance > _backupNudgeBalanceThreshold ? walletIndex : null;
+  final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
+  var total = BigInt.zero;
+  for (final account in accounts.where((a) => a.walletIndex == walletIndex)) {
+    final balance = isEncryptedAccount(account)
+        ? ref.watch(encryptedBalanceProvider(walletIndex))
+        : ref.watch(balanceProviderFamily(account.accountId));
+    total += balance.value ?? BigInt.zero;
+  }
+  return total > _backupNudgeBalanceThreshold ? walletIndex : null;
 });
 
 final isBalanceHiddenProvider = StateNotifierProvider<IsBalanceHiddenNotifier, bool>((ref) {

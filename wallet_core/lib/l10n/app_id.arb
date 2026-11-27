@@ -1056,5 +1056,15 @@
   "desktopKeystoneRejectStep2Title": "Jangan coba lagi dari komputer ini.",
   "desktopKeystoneRejectStep3Body": "Kunci tidak pernah meninggalkan perangkat. Pindah ke komputer tepercaya sebelum mengirim lagi.",
   "desktopKeystoneRejectStep2Body": "Jika komputer ini disusupi, mencoba ulang akan memberikan penyerang kesempatan lain.",
-  "desktopSidebarMultisigs": "Multisig"
+  "desktopSidebarMultisigs": "Multisig",
+  "desktopBackupReminderButton": "Cadangkan…",
+  "desktopRecoveryAlreadyBackedUp": "Sudah Dicadangkan",
+  "desktopSidebarMoveUp": "Pindah ke Atas",
+  "desktopSidebarMoveDown": "Pindah ke Bawah",
+  "desktopMenuHelp": "Bantuan",
+  "desktopMenuHelpSupport": "Bantuan & Dukungan…",
+  "desktopMenuPrivacyPolicy": "Kebijakan Privasi",
+  "desktopMenuWebsite": "Situs Web Quantus",
+  "desktopMenuAbout": "Tentang {app}",
+  "desktopSendRecentsCount": "Terbaru ({count})"
 }

@@ -15,3 +15,32 @@ AsyncValue<BigInt> accountBalanceWith(ProviderReader watch, BaseAccount account)
       ? watch(encryptedBalanceProvider(account.walletIndex))
       : watch(balanceProviderFamily(account.accountId));
 }
+
+/// The sum of [accounts]' balances, watched with [watch], as [totalOf] adds
+/// them up.
+AsyncValue<BigInt> accountsTotalWith(ProviderReader watch, Iterable<BaseAccount> accounts) =>
+    totalOf([for (final account in accounts) accountBalanceWith(watch, account)]);
+
+/// The sum of [balances]. It fails when any of them failed, as the sum cannot
+/// be right without it, and is loading while any is still loading. Each is
+/// read as a row reads its balance, so one being refreshed counts with the
+/// value it had.
+AsyncValue<BigInt> totalOf(Iterable<AsyncValue<BigInt>> balances) {
+  var total = BigInt.zero;
+  var loading = false;
+  for (final balance in balances) {
+    final failure = balance.when(
+      data: (value) {
+        total += value;
+        return null;
+      },
+      error: (error, stackTrace) => AsyncValue<BigInt>.error(error, stackTrace),
+      loading: () {
+        loading = true;
+        return null;
+      },
+    );
+    if (failure != null) return failure;
+  }
+  return loading ? const AsyncValue.loading() : AsyncValue.data(total);
+}
