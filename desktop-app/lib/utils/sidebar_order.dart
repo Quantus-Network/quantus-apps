@@ -58,14 +58,10 @@ List<SidebarGroup> groupSidebar({
       ? SidebarMultisigs([...multisigs]..sort(compareMultisigs))
       : null;
   final byKey = <String, SidebarGroup>{
-    for (final wallet in wallets) wallet.orderKey: wallet,
-    if (multisigsGroup != null) multisigsGroup.orderKey: multisigsGroup,
+    for (final group in [...wallets, ?multisigsGroup]) group.orderKey: group,
   };
 
-  final placed = <SidebarGroup>[
-    for (final key in order.toSet())
-      if (byKey[key] case final group?) group,
-  ];
+  final placed = <SidebarGroup>[for (final key in order.toSet()) ?byKey[key]];
   final unplacedWallets = [
     for (final wallet in wallets)
       if (!placed.contains(wallet)) wallet,
