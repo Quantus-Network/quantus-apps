@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
 import 'package:quantus_desktop_wallet/providers/location_recheck_provider.dart';
 import 'package:quantus_desktop_wallet/providers/notifications_provider.dart';
+import 'package:quantus_desktop_wallet/providers/telemetry_startup_provider.dart';
 import 'package:quantus_desktop_wallet/services/background_mode.dart';
 import 'package:quantus_desktop_wallet/services/incoming_activity_notifications.dart';
 import 'package:quantus_desktop_wallet/services/mac_push_registration.dart';
@@ -18,6 +19,7 @@ class QuantusDesktopApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(telemetryStartupProvider);
     ref.watch(notificationsStartupProvider);
     ref.watch(ownActivityNotificationsProvider);
     ref.watch(incomingActivityNotificationsProvider);

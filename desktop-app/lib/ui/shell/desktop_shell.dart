@@ -155,6 +155,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   void _onWalletPresence(AsyncValue<WalletPresence>? previous, AsyncValue<WalletPresence> next) {
     switch (next.value) {
       case WalletPresence.phraseMissing:
+        ref.read(telemetryProvider).sendEvent('user_lost_mnemonic');
         unawaited(_reportMissingPhrase());
       // Found by the check at start, or by checking again after the phrase
       // could not be read. A wallet that onboarding just added is complete

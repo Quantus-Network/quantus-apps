@@ -24,6 +24,7 @@ import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/send/keystone_signing_session.dart';
+import 'package:wallet_core/services/telemetry.dart';
 
 /// Where the signing is: the request shown, the cold wallet's screen checked
 /// while its signature is scanned back, or the guide for a cold wallet that
@@ -145,6 +146,8 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
     if (_isPreparing) return;
     _isPreparing = true;
     setState(() => _prepareFailed = false);
+    // Read now: the sheet may be gone when the request is built.
+    final telemetry = ref.read(telemetryProvider);
     try {
       final payload = await ensureKeystoneSignPayload(
         ref,
@@ -152,6 +155,7 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
         buildCall: widget.session.buildCall,
         cacheKey: widget.session.cacheKey,
       );
+      telemetry.sendEvent('${widget.session.telemetryPrefix}_payload_ready');
       if (!mounted) return;
       setState(() {
         _unsigned = payload.unsignedData;
@@ -160,6 +164,7 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
       });
     } catch (e, st) {
       quantusPrint('Preparing the cold wallet request failed: $e\n$st');
+      telemetry.sendError('Keystone payload preparation failed', error: e);
       if (mounted) setState(() => _prepareFailed = true);
     } finally {
       _isPreparing = false;
@@ -290,6 +295,7 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
       _scanError = null;
     });
     widget.onSubmitting(true);
+    final telemetry = ref.read(telemetryProvider);
     String? hash;
     try {
       // Checks its length; the signature's scheme is read back off it.
@@ -299,8 +305,10 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
         currentBlock: ref.read(substrateServiceProvider).getCurrentBlockNumber,
       );
       hash = await widget.session.submitSigned(ref, unsignedData: unsigned, signatureWithPublicKey: signature);
+      telemetry.sendEvent('${widget.session.telemetryPrefix}_submitted');
     } on KeystoneEraExpiredException catch (error) {
       quantusPrint('The cold wallet\'s signature came back too late: $error');
+      telemetry.sendError('Keystone signature processing failed', error: error);
       if (mounted) {
         unawaited(_stopCamera());
         setState(() {
@@ -311,6 +319,7 @@ class _KeystoneSigningViewState extends ConsumerState<KeystoneSigningView> {
       }
     } catch (e, st) {
       quantusPrint('Handing the cold wallet\'s signature over failed: $e\n$st');
+      telemetry.sendError('Keystone signature processing failed', error: e);
       _collector.reset();
       if (mounted) {
         setState(() {

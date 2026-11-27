@@ -25,6 +25,7 @@ import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/open_wallets_provider.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/providers/sync_status_provider.dart';
+import 'package:quantus_desktop_wallet/services/desktop_telemetry.dart';
 import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
@@ -114,6 +115,7 @@ Future<void> _openWith(
         ...overrides,
         ...liveDataOverrides(network: network),
         notificationPluginProvider.overrideWithValue(notifications ?? FakeNotificationPlugin()),
+        desktopTelemetryProvider.overrideWithValue(RecordingTelemetry()),
       ],
     ),
   );

@@ -43,7 +43,7 @@ void checkSwapHarnessDefine({required bool enabled, required bool isDebugBuild})
 /// [swapHarness] every swap runs through the test harness instead of 1Click.
 List<Override> desktopWalletCoreOverrides({bool swapHarness = swapHarnessDefine}) => [
   ...walletCoreOverrides(
-    telemetry: (_) => const DesktopTelemetry(),
+    telemetry: (ref) => ref.watch(desktopTelemetryProvider),
     // Only a Mac can be pushed to while the app is closed.
     pushRegistration: (ref) => defaultTargetPlatform == TargetPlatform.macOS
         ? ref.watch(macPushRegistrationProvider)
