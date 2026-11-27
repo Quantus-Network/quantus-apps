@@ -26,6 +26,7 @@ import 'package:quantus_sdk/generated/bell/types/sp_runtime/multiaddress/multi_a
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_sdk/src/testing/call_corpus.dart';
 import 'package:wallet_core/providers/connectivity_provider.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/encrypted_send_provider.dart';
 import 'package:wallet_core/providers/keystone_sign_cache.dart';
 import 'package:wallet_core/providers/one_click_provider.dart';
@@ -33,6 +34,7 @@ import 'package:wallet_core/providers/multisig_providers.dart';
 import 'package:wallet_core/providers/remote_config_provider.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
+import 'package:wallet_core/services/exchange_rate_service.dart';
 import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
@@ -1441,6 +1443,8 @@ class FakeWalletDevice {
     accountDiscoveryServiceProvider.overrideWithValue(_FakeAccountDiscoveryService(this)),
     if (!realLogout) logoutServiceProvider.overrideWithValue(_WipingLogoutService(this)),
     remoteConfigProvider.overrideWith((ref) => RemoteConfigNotifier(FakeRemoteConfigService(remoteConfig))),
+    // The app's own rates (a dollar is a dollar): no test reaches the service.
+    exchangeRatesProvider.overrideWith((ref) async => ExchangeRateService.fallbackRates),
     balanceProviderFamily.overrideWith((ref, accountId) => balance),
     encryptedBalanceProvider.overrideWith(
       (ref, walletIndex) =>
@@ -1737,6 +1741,8 @@ List<Override> shellOverrides({
         remoteConfig ?? FakeRemoteConfigService(swapAvailable ? RemoteConfigModel.defaults : swapsNotOffered),
       ),
     ),
+    // The app's own rates (a dollar is a dollar): no test reaches the service.
+    exchangeRatesProvider.overrideWith((ref) async => ExchangeRateService.fallbackRates),
     balanceProviderFamily.overrideWith((ref, accountId) {
       if (balanceOf != null) return balanceOf(accountId);
       final balance = balances[accountId];

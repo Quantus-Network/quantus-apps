@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/providers/account_balance.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
+import 'package:wallet_core/providers/currency_display_provider.dart';
 import 'package:wallet_core/providers/l10n_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 
 /// [account]'s balance in a panel of its own: a small label, then the
-/// amount large with the token's symbol small after it. While the balance
-/// loads, or when it could not be read, it says so in place of the amount.
+/// amount large with the token's symbol small after it, and under it what
+/// that is worth in the selected fiat currency once QTC has a price. While
+/// the balance loads, or when it could not be read, it says so in place of
+/// the amount.
 class BalanceCard extends ConsumerWidget {
   const BalanceCard({super.key, required this.account});
 
@@ -43,20 +46,28 @@ class BalanceCard extends ConsumerWidget {
               loading: () => Text(l10n.commonLoading, style: amountStyle.copyWith(color: colors.textMuted)),
               error: (_, _) =>
                   Text(l10n.accountsSheetBalanceUnavailable, style: amountStyle.copyWith(color: colors.textMuted)),
-              data: (balance) => Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
+              data: (balance) => Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 8,
                 children: [
-                  Flexible(
-                    child: Text(
-                      formatting.formatBalance(balance),
-                      style: amountStyle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    spacing: 8,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          formatting.formatBalance(balance),
+                          style: amountStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Text(AppConstants.tokenSymbol, style: text.dataAddressLarge.copyWith(color: colors.textMuted)),
+                    ],
                   ),
-                  Text(AppConstants.tokenSymbol, style: text.dataAddressLarge.copyWith(color: colors.textMuted)),
+                  if (fiatAmountWith(ref.watch, balance) case final fiat?)
+                    Text('≈ $fiat', style: text.body.copyWith(color: colors.textMuted)),
                 ],
               ),
             ),

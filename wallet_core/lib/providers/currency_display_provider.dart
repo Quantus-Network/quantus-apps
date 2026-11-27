@@ -10,6 +10,7 @@ import 'package:wallet_core/providers/app_lifecycle_state_provider.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/exchange_rate_service.dart';
 import 'package:wallet_core/providers/swap_providers.dart';
+import 'package:wallet_core/utils/provider_reader.dart';
 
 // ---------------------------------------------------------------------------
 // Exchange rate caching helpers
@@ -266,6 +267,20 @@ final balanceDisplayProvider = Provider<AsyncValue<CurrencyDisplayState>>((ref) 
     ),
   );
 });
+
+// ---------------------------------------------------------------------------
+// One amount in fiat
+// ---------------------------------------------------------------------------
+
+/// [amount] in the selected fiat currency at QTC's price, watched with
+/// [watch], e.g. "$3.00"; null while QTC has no price.
+String? fiatAmountWith(ProviderReader watch, BigInt amount) {
+  final fiatRate = watch(exchangeRateServiceProvider);
+  if (!fiatRate.hasTokenPrice) return null;
+  final selectedFiat = watch(selectedFiatCurrencyProvider);
+  final numeric = _toFiatNumeric(amount, selectedFiat, fiatRate, localeConfig: watch(localeNumberConfigProvider));
+  return selectedFiat.format(numeric);
+}
 
 // ---------------------------------------------------------------------------
 // Per-amount display provider (for transaction items)

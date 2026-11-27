@@ -91,6 +91,95 @@ void main() {
     expect(card.right, pane.right);
   });
 
+  group('the balance in dollars', () {
+    /// 1.5 QTC, which is $3.00 at $2.
+    final oneAndAHalf = oneToken * BigInt.from(3) ~/ BigInt.two;
+
+    /// 1Click listing QTC at [usdPrice], or not listing it when null.
+    FakeSwapService listing({double? usdPrice}) => FakeSwapService()
+      ..listedQuantus = usdPrice == null
+          ? null
+          : SwapToken(
+              assetId: listedQtc.assetId,
+              symbol: listedQtc.symbol,
+              network: listedQtc.network,
+              decimals: listedQtc.decimals,
+              usdPrice: usdPrice,
+              isQuantus: true,
+            );
+
+    testOnMac('once QTC has a price, the card shows the balance in dollars under the amount', (tester) async {
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balances: {'qzMain': oneAndAHalf},
+          swaps: listing(usdPrice: 2),
+        ),
+      );
+
+      final container = ProviderScope.containerOf(tester.element(find.byType(AccountPane)));
+      final amount = _inBalanceCard(
+        find.text(container.read(numberFormattingServiceProvider).formatBalance(oneAndAHalf)),
+      );
+      final fiat = _inBalanceCard(find.text(r'≈ $3.00'));
+      expect(fiat, findsOneWidget);
+      expect(tester.getTopLeft(fiat).dy, greaterThan(tester.getBottomLeft(amount).dy));
+    });
+
+    testOnMac('while QTC has no price, there is no line in dollars', (tester) async {
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balances: {'qzMain': oneAndAHalf},
+          swaps: listing(),
+        ),
+      );
+
+      expect(_inBalanceCard(find.textContaining('≈')), findsNothing);
+    });
+
+    testOnMac('while the balance loads, and when it failed, there is no line in dollars', (tester) async {
+      final arrives = Completer<BigInt>();
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+          balanceOf: (_) => arrives.future,
+          swaps: listing(usdPrice: 2),
+        ),
+        settle: false,
+      );
+      await tester.pump();
+      expect(_inBalanceCard(find.text('Loading...')), findsOneWidget);
+      expect(_inBalanceCard(find.textContaining('≈')), findsNothing);
+
+      arrives.completeError(StateError('offline'));
+      await tester.pumpAndSettle();
+      expect(_inBalanceCard(find.text('Balance unavailable')), findsOneWidget);
+      expect(_inBalanceCard(find.textContaining('≈')), findsNothing);
+    });
+
+    testOnMac('the Encrypted account\'s card prices its encrypted balance', (tester) async {
+      await pumpShell(
+        tester,
+        overrides: shellOverrides(
+          accounts: const [mainAccount, encryptedAccount],
+          settings: FakeSettingsService(activeAccount: const RegularAccount(encryptedAccount)),
+          balances: {'qzMain': oneToken * BigInt.from(10)},
+          encryptedBalances: {0: oneAndAHalf},
+          swaps: listing(usdPrice: 2),
+        ),
+      );
+
+      expect(_inBalanceCard(find.text(r'≈ $3.00')), findsOneWidget);
+    });
+  });
+
   testOnMac('while the balance loads the card says so, and it says when the balance is unavailable', (tester) async {
     final arrives = Completer<BigInt>();
     await pumpShell(
