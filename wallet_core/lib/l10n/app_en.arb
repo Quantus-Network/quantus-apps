@@ -5584,5 +5584,21 @@
           "type": "int"
         }
       }
+    },
+    "desktopMenuHideBalances": "Hide Balances",
+    "@desktopMenuHideBalances": {
+      "description": "Desktop View menu item, and the balance card's eye button, that masks the amounts shown at a glance"
+    },
+    "desktopMenuShowBalances": "Show Balances",
+    "@desktopMenuShowBalances": {
+      "description": "Desktop View menu item, and the balance card's eye button, that shows the amounts again after they were hidden"
+    },
+    "desktopShortcutsToggleBalances": "Show or Hide Balances",
+    "@desktopShortcutsToggleBalances": {
+      "description": "Desktop Settings, Keyboard Shortcuts: the command that hides or shows the amounts shown at a glance"
+    },
+    "desktopAmountHidden": "Hidden",
+    "@desktopAmountHidden": {
+      "description": "Desktop: what a screen reader hears for an amount masked while balances are hidden"
     }
 }

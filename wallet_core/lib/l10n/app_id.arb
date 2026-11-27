@@ -1070,5 +1070,9 @@
   "desktopActivityBatches": "Batch ({count})",
   "desktopActivityBatchSent": "Terkirim",
   "desktopActivityBatchChange": "Kembalian",
-  "desktopActivityBatchInputs": "Input ({count})"
+  "desktopActivityBatchInputs": "Input ({count})",
+  "desktopMenuHideBalances": "Sembunyikan Saldo",
+  "desktopMenuShowBalances": "Tampilkan Saldo",
+  "desktopShortcutsToggleBalances": "Tampilkan atau Sembunyikan Saldo",
+  "desktopAmountHidden": "Disembunyikan"
 }

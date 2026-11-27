@@ -3807,4 +3807,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopActivityBatchInputs(int count) {
     return 'Inputs ($count)';
   }
+
+  @override
+  String get desktopMenuHideBalances => 'Hide Balances';
+
+  @override
+  String get desktopMenuShowBalances => 'Show Balances';
+
+  @override
+  String get desktopShortcutsToggleBalances => 'Show or Hide Balances';
+
+  @override
+  String get desktopAmountHidden => 'Hidden';
 }
