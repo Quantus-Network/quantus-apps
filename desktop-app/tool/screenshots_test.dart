@@ -17,6 +17,7 @@ import 'package:quantus_desktop_wallet/bootstrap/app_bootstrap.dart';
 import 'package:wallet_core/providers/pending_transactions_provider.dart';
 import 'package:quantus_desktop_wallet/ui/activity/open_proposals_panel.dart';
 import 'package:quantus_desktop_wallet/ui/activity/activity_row_view.dart';
+import 'package:quantus_desktop_wallet/ui/activity/wormhole_batches.dart';
 import 'package:quantus_desktop_wallet/models/app_command.dart';
 import 'package:quantus_desktop_wallet/models/shell_sheet.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
@@ -1681,6 +1682,81 @@ void _activityScenes() {
     await tester.pumpAndSettle();
     await _openActivityRow(tester, 'in');
   });
+
+  /// The Encrypted account's private send of 40 QTC in two batches, opened
+  /// with its batches open, in a window [window] big.
+  Future<void> openEncryptedBatches(WidgetTester tester, {Size? window}) async {
+    useFakeCheckphrases((address) async => _recentPhrases[address] ?? 'Harbor-Velvet-Signal-Mirror-Canyon');
+    WormholeUtxo input(int tokens, String nullifier) {
+      final utxo = encryptedUtxo(tokens);
+      return WormholeUtxo(transfer: utxo.transfer, owner: utxo.owner, nullifierHex: nullifier);
+    }
+
+    final sentAt = _activityNow.subtract(const Duration(days: 1));
+    final send = WormholeTransferEvent(
+      id: 'out',
+      from: _encrypted.accountId,
+      to: 'qzT8vNc2LpQ7xWd4KsHj9RbY3mFa6ZeUo1GiBn5tVk4mQa',
+      amount: oneToken * BigInt.from(40),
+      timestamp: sentAt,
+      fee: FakeSendChain.usualFee,
+      extrinsicHash: '0x7f3c9a1e5b2d48c6a0f19e3b7d5c2a8e4f6b1d9c3a7e5f2b8d4c6a1e9f3b7d50',
+      blockNumber: 1,
+      batches: [
+        WormholeSendBatch(
+          extrinsicId: '0x7f3c9a1e5b2d48c6a0f19e3b7d5c2a8e4f6b1d9c3a7e5f2b8d4c6a1e9f3b7d50',
+          blockHeight: 1,
+          timestamp: sentAt.subtract(const Duration(minutes: 2)),
+          inputs: [
+            input(10, '0x91ab4c7e2f05d3a18b6c9e0f4a2d7b351e8c6f0a9d4b2e7c5a3f1d8b6e0c3e72'),
+            input(18, '0x5d2e8a1f4c7b0e3d6a9f2c5b8e1d4a7f0c3b6e9d2a5f8c1b4e7d0a3f6c9b2e5d'),
+          ],
+          sentToken: oneToken * BigInt.from(25),
+          changeToken: oneToken * BigInt.from(3),
+          feeToken: FakeSendChain.usualFee ~/ BigInt.two,
+        ),
+        WormholeSendBatch(
+          extrinsicId: '0x2b6d0f4a9c3e7b1d5f8a2c6e0b4d9f3a7c3f9a1e5b2d8c4f6a0e9b3d7f1c5a8e',
+          blockHeight: 2,
+          timestamp: sentAt,
+          inputs: [input(15, '0xc3e7b1d5f8a2c6e0b4d9f3a7c1e5b9d3f7a1c5e9b3d7f1a5c9e3b7d1f5a9c3e7')],
+          sentToken: oneToken * BigInt.from(15),
+          changeToken: BigInt.zero,
+          feeToken: FakeSendChain.usualFee ~/ BigInt.two,
+        ),
+      ],
+    );
+    await _open(
+      tester,
+      FakeWalletDevice()..store([_root, _second, _encrypted]),
+      reduceMotion: true,
+      overrides: [
+        encryptedHistoryProvider.overrideWith((ref, walletIndex) => AsyncValue.data([send])),
+      ],
+    );
+    if (window != null) tester.view.physicalSize = window * _pixelRatio;
+    await tester.pumpAndSettle();
+    await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Encrypted Account')));
+    await tester.pumpAndSettle();
+    await _openActivityRow(tester, 'out');
+    final heading = find.byKey(WormholeBatches.headingKey);
+    await tester.ensureVisible(heading);
+    await tester.pumpAndSettle();
+    await tester.tap(heading);
+    await tester.pumpAndSettle();
+  }
+
+  _scene('activity_encrypted_batches', openEncryptedBatches);
+  _scene('activity_encrypted_batches_end', (tester) async {
+    await openEncryptedBatches(tester);
+    final last = find.text('0xc3e7b1d5f8a2c6e0b4d9f3a7c1e5b9d3f7a1c5e9b3d7f1a5c9e3b7d1f5a9c3e7');
+    await tester.ensureVisible(last);
+    await tester.pumpAndSettle();
+  });
+  _scene(
+    'activity_encrypted_batches_smallest_window',
+    (tester) => openEncryptedBatches(tester, window: const Size(960, 640)),
+  );
 
   MultisigProposal proposal(
     int id, {

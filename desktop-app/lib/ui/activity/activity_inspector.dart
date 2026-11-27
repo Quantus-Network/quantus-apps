@@ -8,6 +8,7 @@ import 'package:quantus_desktop_wallet/ui/components/account_label.dart';
 import 'package:quantus_desktop_wallet/ui/components/caps_text.dart';
 import 'package:quantus_desktop_wallet/ui/components/copy_action.dart';
 import 'package:quantus_desktop_wallet/ui/components/panel.dart';
+import 'package:quantus_desktop_wallet/ui/activity/wormhole_batches.dart';
 import 'package:quantus_desktop_wallet/ui/components/summary_row.dart';
 import 'package:quantus_desktop_wallet/ui/components/terminal_line.dart';
 import 'package:quantus_desktop_wallet/ui/components/toolbar_action.dart';
@@ -207,6 +208,13 @@ class _TransactionDetail extends ConsumerWidget {
         ],
         const SizedBox(height: 20),
         InspectorPageActions(page: detail.status == ActivityStatus.inProcess ? null : detail.explorerUrl),
+        // A private send's proof batches, last, so all under their heading is
+        // theirs.
+        if (tx case final WormholeTransferEvent send when send.batches.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          // Keyed by the send, so another opens with its batches closed.
+          WormholeBatches(key: ValueKey('wormhole-batches-${send.id}'), send: send, feeLabel: feeLabel),
+        ],
       ],
     );
   }
