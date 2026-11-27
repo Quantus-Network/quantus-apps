@@ -744,19 +744,11 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         Text(l10n.sendRecipientChecking, style: context.sendBody()),
       ] else if (_recipientAccepted) ...[
         const SizedBox(height: 10),
-        Row(
-          children: [
-            CapsText(l10n.componentCheckphraseLabel, style: context.sendCaps()),
-            const SizedBox(width: 12),
-            Flexible(
-              child: CheckphraseText(
-                _recipient,
-                style: context.sendMono(colors.semanticLilac),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
+        CheckphraseText(
+          _recipient,
+          style: context.sendMono(colors.semanticLilac),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
       const SizedBox(height: 18),

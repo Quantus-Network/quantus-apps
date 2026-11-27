@@ -474,14 +474,14 @@ void main() {
       expect(_canPress(tester, SendSheet.reviewKey), isFalse);
     });
 
-    testOnMac('a valid address shows its checkphrase under the field', (tester) async {
+    testOnMac('a valid address shows its checkphrase alone under the field, with no label', (tester) async {
       await _openSend(tester);
 
       await _type(tester, SendSheet.addressFieldKey, 'qzPayee');
       await tester.pumpAndSettle();
 
-      expect(_inSheet(find.text('CHECKPHRASE')), findsOneWidget);
       expect(_inSheet(find.text('Phrase-qzPayee')), findsOneWidget);
+      expect(_inSheet(find.text('CHECKPHRASE')), findsNothing);
     });
 
     testOnMac('what is not an address is said to be none, and cannot be reviewed', (tester) async {
@@ -490,7 +490,7 @@ void main() {
       await _fill(tester, recipient: 'not an address');
 
       expect(_inSheet(find.text('This is not a Quantus address.')), findsOneWidget);
-      expect(_inSheet(find.text('CHECKPHRASE')), findsNothing);
+      expect(_inSheet(find.textContaining('Phrase-')), findsNothing);
       expect(_canPress(tester, SendSheet.reviewKey), isFalse);
     });
 
