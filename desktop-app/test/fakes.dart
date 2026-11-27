@@ -866,6 +866,12 @@ class FakeSendChain {
   /// transaction signed and the signature.
   final externallySignedCreations = <({UnsignedTransactionData unsigned, Uint8List signature})>[];
 
+  /// Every approval, execution or cancellation a cold wallet signed that was
+  /// handed over: the action, the account that signed it, its fee, the
+  /// transaction signed and the signature.
+  final signedActions =
+      <({String action, String signer, BigInt? fee, UnsignedTransactionData unsigned, Uint8List signature})>[];
+
   /// Every new multisig handed over.
   final createdMultisigs = <({String creator, List<String> signers, int threshold, BigInt? nonce})>[];
 
@@ -1088,6 +1094,27 @@ class _FakeMultisigService extends Fake implements MultisigService {
   @override
   Future<BigInt> estimateCancelFee({required MultisigAccount msig, required Account signer, required int proposalId}) =>
       _actionFee('cancel', signer, null);
+
+  /// Any call stands for an approval, execution or cancellation: the chain
+  /// tells calls apart by what it was told of each, here the action and its
+  /// proposal.
+  Multisig _actionCall(String action, int proposalId) {
+    final call = const multisig_pallet.Txs().cancel(multisigAddress: List<int>.filled(32, 0), proposalId: proposalId);
+    chain._calls[call] = (recipient: '$action proposal $proposalId', amount: null);
+    return call;
+  }
+
+  @override
+  Multisig buildApproveCall({required MultisigAccount msig, required int proposalId, required List<int> call}) =>
+      _actionCall('approve', proposalId);
+
+  @override
+  Multisig buildExecuteCall({required MultisigAccount msig, required int proposalId, required List<int> call}) =>
+      _actionCall('execute', proposalId);
+
+  @override
+  Multisig buildCancelCall({required MultisigAccount msig, required int proposalId}) =>
+      _actionCall('cancel', proposalId);
 
   @override
   DateTime blockToTime(int targetBlock, int currentBlock) => chain.blockTime;
@@ -1335,6 +1362,55 @@ class _FakeTransactionSubmissionService extends Fake implements TransactionSubmi
     required MultisigProposal proposal,
     BigInt? fee,
   }) => _action('cancel', proposer, fee, null);
+
+  Future<String> _signedAction(
+    String action,
+    Account signer,
+    BigInt? fee,
+    UnsignedTransactionData unsigned,
+    Uint8List signature,
+  ) async {
+    await chain.holdSignedSubmit?.future;
+    final hash = await chain.submitAction();
+    chain.signedActions.add((
+      action: action,
+      signer: signer.accountId,
+      fee: fee,
+      unsigned: unsigned,
+      signature: signature,
+    ));
+    return hash;
+  }
+
+  @override
+  Future<String> approveProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+    BigInt? fee,
+  }) => _signedAction('approve', signer, fee, unsignedData, signatureWithPublicKey);
+
+  @override
+  Future<String> executeProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account signer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+    BigInt? fee,
+  }) => _signedAction('execute', signer, fee, unsignedData, signatureWithPublicKey);
+
+  @override
+  Future<String> cancelProposalWithExternalSignature({
+    required MultisigAccount msig,
+    required Account proposer,
+    required MultisigProposal proposal,
+    required UnsignedTransactionData unsignedData,
+    required Uint8List signatureWithPublicKey,
+    BigInt? fee,
+  }) => _signedAction('cancel', proposer, fee, unsignedData, signatureWithPublicKey);
 }
 
 class _FakeRecentAddressesService extends Fake implements RecentAddressesService {
