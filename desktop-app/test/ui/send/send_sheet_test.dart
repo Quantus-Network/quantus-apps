@@ -74,7 +74,7 @@ final _opened = <Uri>[];
 final _shared = <(String, Rect?)>[];
 
 /// Opens the wallet on [active], holding [balance] tokens, and presses Send
-/// in the toolbar.
+/// in the toolbar. Checkphrases come from [checkphraseOf] when it is given.
 Future<FakeSendChain> _openSend(
   WidgetTester tester, {
   FakeSendChain? chain,
@@ -82,6 +82,7 @@ Future<FakeSendChain> _openSend(
   num balance = 1250,
   Future<BigInt> Function(String accountId)? balanceOf,
   Size? window,
+  Future<String?> Function(String address)? checkphraseOf,
 }) async {
   _opened.clear();
   _shared.clear();
@@ -102,6 +103,7 @@ Future<FakeSendChain> _openSend(
       shareTextProvider.overrideWithValue((text, {origin}) async => _shared.add((text, origin))),
     ],
   );
+  if (checkphraseOf != null) useFakeCheckphrases(checkphraseOf);
   if (window != null) {
     tester.view.physicalSize = window;
     await tester.pumpAndSettle();
@@ -310,6 +312,37 @@ void main() {
 
       expect(_inSheet(find.text('RECENTS')), findsOneWidget);
       expect(_inSheet(find.textContaining('RECENTS (')), findsNothing);
+    });
+
+    testOnMac('each address paid before is as tall as its own checkphrase needs, however the phrases wrap', (
+      tester,
+    ) async {
+      // Addresses all of one length, the first with a short phrase and the
+      // rest with one that wraps onto more lines.
+      final six = [..._fourRecents, 'qz${'E' * 44}', 'qz${'F' * 44}'];
+      final longPhrase = List.filled(6, 'Renaissance-Sophisticated-Irreplaceable').join('-');
+      String phraseOf(String address) => address == six.first ? 'Able-Ace-Act-Add-Age' : longPhrase;
+      await _openSend(
+        tester,
+        chain: FakeSendChain()..recents = six,
+        checkphraseOf: (address) async => phraseOf(address),
+      );
+
+      Future<void> expectFits(String address) async {
+        final row = find.byKey(SendSheet.recentKey(address));
+        await tester.ensureVisible(row);
+        await tester.pumpAndSettle();
+        final phrase = find.descendant(of: row, matching: find.text(phraseOf(address)));
+        expect(tester.getRect(phrase).bottom, lessThanOrEqualTo(tester.getRect(row).bottom), reason: address);
+      }
+
+      expect(
+        tester.getRect(find.byKey(SendSheet.recentKey(six[1]))).height,
+        greaterThan(tester.getRect(find.byKey(SendSheet.recentKey(six.first))).height),
+      );
+      for (final address in six) {
+        await expectFits(address);
+      }
     });
 
     testOnMac('of a hundred addresses paid before, only the rows in view are built', (tester) async {

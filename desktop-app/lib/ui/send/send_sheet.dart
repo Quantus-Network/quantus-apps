@@ -258,12 +258,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
     });
   }
 
-  /// The addresses paid before, in a list that scrolls. Every row is as tall
-  /// as the longest address's, as real addresses all are; hidden copies of it
-  /// size the list.
+  /// The addresses paid before, in a list that scrolls. Each row is as tall
+  /// as its address and checkphrase need, as phrases wrap differently; hidden
+  /// copies of the first rows size the list to show just them.
   Widget _recentsList() {
-    final longest = _recents.reduce((a, b) => b.length > a.length ? b : a);
-    final prototype = SendRecentRow(address: longest, onPressed: () {});
     return Stack(
       children: [
         Visibility.maintain(
@@ -272,7 +270,10 @@ class _SendSheetState extends ConsumerState<SendSheet> {
             physics: const NeverScrollableScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [for (var i = 0; i < _recents.length && i < SendSheet.recentsInView; i++) prototype],
+              children: [
+                for (final address in _recents.take(SendSheet.recentsInView))
+                  SendRecentRow(address: address, onPressed: () {}),
+              ],
             ),
           ),
         ),
@@ -280,7 +281,6 @@ class _SendSheetState extends ConsumerState<SendSheet> {
           child: ListView.builder(
             key: SendSheet.recentsKey,
             padding: EdgeInsets.zero,
-            prototypeItem: prototype,
             itemCount: _recents.length,
             itemBuilder: (context, index) {
               final address = _recents[index];
