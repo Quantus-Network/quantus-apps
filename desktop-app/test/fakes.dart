@@ -406,8 +406,12 @@ class FakeWalletStorage extends FakeSettingsService {
     activeAccount = RegularAccount(replacement);
   }
 
+  /// When set, removing an account waits for this before anything changes.
+  Future<void>? removeAccountGate;
+
   @override
   Future<void> removeAccount(Account account) async {
+    await removeAccountGate;
     _checkWrite();
     final remaining = accounts.where((a) => a.accountId != account.accountId).toList();
     _keepActiveIn(remaining);

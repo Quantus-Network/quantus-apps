@@ -215,6 +215,19 @@ final walletLabelProvider = Provider.family<String?, int>((ref, walletIndex) {
 /// carries them out on the device's storage and refreshes what shows it.
 final accountManagerProvider = Provider<AccountManager>(AccountManager.new);
 
+/// How an account would be disconnected changed between its disconnect being
+/// agreed to and its turn coming: nothing was removed. [current] is how it
+/// would go now, for the user to be shown and asked again; null when it can
+/// no longer be disconnected, or is gone.
+class DisconnectPlanChanged implements Exception {
+  const DisconnectPlanChanged(this.current);
+
+  final DisconnectPlan? current;
+
+  @override
+  String toString() => 'DisconnectPlanChanged(now: $current)';
+}
+
 /// The address being connected is already an account or multisig in this app.
 class ColdWalletAlreadyInApp implements Exception {
   const ColdWalletAlreadyInApp();
@@ -653,32 +666,49 @@ class AccountManager {
     return edit;
   }
 
-  /// Disconnects [account] as [disconnectPlanOf] has it, or a multisig.
-  /// Asking first, and asking for approval to delete a wallet, is the
-  /// caller's. An account is removed once no wallet is being added or removed
+  /// Disconnects [account], or a multisig. Asking first, and asking for
+  /// approval to delete a wallet, is the caller's: [approved] is how the
+  /// account goes ([disconnectPlanOf]) as the user was shown it and agreed.
+  /// A caller that shows none leaves it out, and it is then the plan as
+  /// storage has the accounts when this is asked.
+  ///
+  /// An account is removed once no wallet is being added or removed
   /// ([walletSlotsProvider]), and through to its end before one may be: the
-  /// last account of a wallet frees its number. A removal that fails is
+  /// last account of a wallet frees its number. If by its turn the account
+  /// would go another way than was agreed, as when it has become its
+  /// wallet's last and would take the recovery phrase with it, nothing is
+  /// removed and [DisconnectPlanChanged] is thrown. A removal that fails is
   /// thrown, and nothing changes.
-  Future<void> disconnect(BaseAccount account) async {
+  Future<void> disconnect(BaseAccount account, {DisconnectPlan? approved}) async {
     switch (account) {
       case MultisigAccount():
         await _ref.read(multisigAccountsProvider.notifier).remove(account.accountId);
         _ref.invalidate(activeAccountProvider);
       case Account():
-        await _ref.read(walletSlotsProvider).run(() => _disconnectAccount(account));
+        final agreed =
+            approved ??
+            disconnectPlanOf(account, await _ref.read(accountsServiceProvider).getAccounts()) ??
+            (throw StateError('${account.accountId} cannot be disconnected'));
+        await _ref.read(walletSlotsProvider).run(() => _disconnectAccount(account, agreed));
       default:
         throw StateError('${account.accountId} cannot be disconnected');
     }
   }
 
-  /// [disconnect] for an account of a wallet, in [walletSlotsProvider]'s turn:
-  /// the plan is read then, from the accounts as they are once the change
-  /// before it has finished.
-  Future<void> _disconnectAccount(Account account) async {
+  /// [disconnect] for an account of a wallet, in [walletSlotsProvider]'s turn.
+  /// How it goes is read again then, from storage, as the accounts are once
+  /// the change before it has finished, and is carried out only if it is
+  /// still [agreed].
+  Future<void> _disconnectAccount(Account account, DisconnectPlan agreed) async {
     final service = _ref.read(accountsServiceProvider);
-    // From storage: the list may still be reloading after the change before.
     final accounts = await service.getAccounts();
-    switch (disconnectPlanOf(account, accounts)) {
+    final current = accounts.any((a) => a.accountId == account.accountId) ? disconnectPlanOf(account, accounts) : null;
+    if (current != agreed) {
+      // What shows the accounts may have missed the change that caused this.
+      _refreshAccounts();
+      throw DisconnectPlanChanged(current);
+    }
+    switch (agreed) {
       case DisconnectAccount():
         await service.removeAccount(account);
       case DisconnectHardware():
@@ -691,8 +721,6 @@ class AccountManager {
         if (!walletRemains) _forgetWallet(account.walletIndex);
       case DisconnectWallet(:final walletIndex):
         await _removeWallet(walletIndex);
-      case null:
-        throw StateError('${account.accountId} cannot be disconnected');
     }
     _refreshAccounts();
   }

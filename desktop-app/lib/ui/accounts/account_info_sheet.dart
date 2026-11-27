@@ -213,7 +213,10 @@ class _AccountInfoSheetState extends ConsumerState<AccountInfoSheet> {
 /// Disconnecting: the caution for what goes, then Disconnect. The last
 /// account of a wallet takes the wallet and its recovery phrase, as
 /// [DeleteWalletStep] has it: after a tick that the phrase is backed up, and
-/// the system's approval.
+/// the system's approval. What was agreed to is what is asked for
+/// ([AccountManager.disconnect]): if the account would go another way by the
+/// time its turn comes, nothing is removed and the step shows that way, to be
+/// agreed to in its turn.
 class _DisconnectStep extends ConsumerStatefulWidget {
   const _DisconnectStep({
     required this.account,
@@ -241,20 +244,49 @@ class _DisconnectStepState extends ConsumerState<_DisconnectStep> {
   bool _isBusy = false;
   String? _error;
 
-  /// How the account goes; null for a multisig.
-  late final DisconnectPlan? _plan = switch (widget.account) {
+  /// How the account goes, as the step shows it; null for a multisig.
+  late DisconnectPlan? _plan = switch (widget.account) {
     final Account account =>
       disconnectPlanOf(account, widget.accounts) ?? (throw StateError('${account.accountId} cannot be disconnected')),
     _ => null,
   };
 
+  /// Disconnects the account as [_plan] has it. If it would now go another
+  /// way, that way is shown in the plan's place and the refusal thrown on;
+  /// one that can no longer be disconnected at all keeps the step as it is.
+  Future<void> _disconnectAsShown() async {
+    try {
+      await ref.read(accountManagerProvider).disconnect(widget.account, approved: _plan);
+    } on DisconnectPlanChanged catch (e) {
+      quantusPrint('Disconnecting ${widget.account.accountId} would now go another way: $e');
+      if (mounted && e.current != null) {
+        setState(() {
+          _plan = e.current;
+          _isBusy = false;
+          _error = null;
+        });
+      }
+      rethrow;
+    }
+  }
+
   Future<void> _disconnect() async {
+    final shown = _plan;
     setState(() {
       _isBusy = true;
       _error = null;
     });
     try {
-      await ref.read(accountManagerProvider).disconnect(widget.account);
+      await _disconnectAsShown();
+    } on DisconnectPlanChanged {
+      // The step now shows how the account would go, to be agreed to.
+      if (mounted && _plan == shown) {
+        setState(() {
+          _isBusy = false;
+          _error = widget.l10n.accountMenuDisconnectError;
+        });
+      }
+      return;
     } catch (e) {
       quantusPrint('Disconnecting ${widget.account.accountId} failed: $e');
       if (mounted) {
@@ -294,9 +326,11 @@ class _DisconnectStepState extends ConsumerState<_DisconnectStep> {
     };
     if (caution == null) {
       return DeleteWalletStep(
+        // A deletion that comes to be shown another way starts unticked.
+        key: ValueKey(_plan),
         wallet: wallet!,
         firstLine: l10n.desktopDisconnectWalletLine1(name, wallet),
-        delete: () => ref.read(accountManagerProvider).disconnect(widget.account),
+        delete: _disconnectAsShown,
         onCancel: widget.onCancel,
         onDeleted: widget.onDisconnected,
         l10n: l10n,

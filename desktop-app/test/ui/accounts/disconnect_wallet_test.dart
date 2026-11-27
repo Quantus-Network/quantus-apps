@@ -27,6 +27,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:wallet_core/providers/account_providers.dart';
 import 'package:wallet_core/providers/wallet_providers.dart';
 import 'package:wallet_core/services/user_approval.dart';
+import 'package:wallet_core/utils/account_menu.dart';
 
 import '../../fakes.dart';
 
@@ -538,6 +539,124 @@ void main() {
       expect(saved, isTrue);
       expect(device.storage.accounts.map((a) => a.accountId), contains('qzNewCold'));
       expect(device.storage.mnemonics.containsKey(2), isFalse);
+    });
+  });
+
+  group('an account\'s disconnect, queued behind another', () {
+    /// Opens Get Info on [account], goes to its Disconnect step and confirms,
+    /// without waiting for the removal.
+    Future<void> confirmDisconnect(WidgetTester tester, Account account) async {
+      await _container(tester).read(accountManagerProvider).openInfo(account);
+      await tester.pumpAndSettle();
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+      await tester.pumpAndSettle();
+      expect(_inSheet(find.text('Stop showing ${account.name}?')), findsOneWidget);
+      expect(find.byKey(AccountInfoSheet.backedUpKey), findsNothing);
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectButtonKey));
+      await _pumpIntoRemoval(tester);
+    }
+
+    testOnMac('two accounts of a wallet disconnected one over the other: the second, now the wallet\'s last, is '
+        'not removed, and its step asks again as Delete Wallet does', (tester) async {
+      final approval = FakeUserApproval();
+      final device = await _pump(tester, approval: approval);
+      final gate = Completer<void>();
+      device.storage.removeAccountGate = gate.future;
+
+      await confirmDisconnect(tester, tradingAccount);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(ShellSheetView), findsNothing);
+      await confirmDisconnect(tester, _hedge);
+      gate.complete();
+      await tester.pumpAndSettle();
+
+      // Trading went, as agreed; Hedge and the wallet's phrase are still here.
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzTrading')));
+      expect(device.storage.accounts.map((a) => a.accountId), contains('qzHedge'));
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
+      expect(approval.reasons, isEmpty);
+      // The step now shows what disconnecting Hedge would do.
+      expect(_inSheet(find.text('This removes Wallet 2')), findsOneWidget);
+      expect(find.byKey(AccountInfoSheet.backedUpKey), findsOneWidget);
+      final delete = tester.widget<QuantusButton>(
+        find.descendant(of: find.byKey(AccountInfoSheet.disconnectButtonKey), matching: find.byType(QuantusButton)),
+      );
+      expect(delete.isDisabled, isTrue);
+
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(approval.reasons, ['Delete Wallet 2 and its recovery phrase']);
+      expect(_inWallet2(device), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+      expect(find.byType(ShellSheetView), findsNothing);
+    });
+
+    testOnMac('a wallet\'s deletion agreed to for its last account is refused once the wallet has another', (
+      tester,
+    ) async {
+      final device = await _pump(tester, hedge: false);
+      final manager = _container(tester).read(accountManagerProvider);
+      final agreed = disconnectPlanOf(tradingAccount, await device.storage.getAccounts());
+      expect(agreed, isA<DisconnectWallet>());
+      device.storage.accounts.add(_hedge);
+
+      await expectLater(
+        manager.disconnect(tradingAccount, approved: agreed),
+        throwsA(isA<DisconnectPlanChanged>().having((e) => e.current, 'current', isA<DisconnectAccount>())),
+      );
+
+      expect(device.storage.accounts.map((a) => a.accountId), containsAll(['qzTrading', 'qzHedge']));
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
+    });
+
+    testOnMac('a wallet\'s deletion agreed to under one name is asked again, unticked, once the wallet is called '
+        'another', (tester) async {
+      final approval = FakeUserApproval();
+      final device = await _pump(tester, approval: approval, hedge: false, vault: false);
+      await _container(tester).read(accountManagerProvider).openInfo(tradingAccount);
+      await tester.pumpAndSettle();
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+      await tester.pumpAndSettle();
+      expect(_inSheet(find.text('This removes Wallet 2')), findsOneWidget);
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      // A wallet arrives at the free index before Trading's, behind the sheet.
+      device.storage.accounts.add(const Account(walletIndex: 1, index: 0, name: 'Earlier', accountId: 'qzEarlier'));
+      device.storage.mnemonics[1] = 'earlier words';
+
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(device.storage.accounts.map((a) => a.accountId), contains('qzTrading'));
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
+      expect(_inSheet(find.text('This removes Wallet 3')), findsOneWidget);
+      final delete = tester.widget<QuantusButton>(
+        find.descendant(of: find.byKey(AccountInfoSheet.disconnectButtonKey), matching: find.byType(QuantusButton)),
+      );
+      expect(delete.isDisabled, isTrue);
+    });
+
+    testOnMac('asked for with no plan shown, it goes as the accounts stand then, and not otherwise', (tester) async {
+      final device = await _pump(tester);
+      final manager = _container(tester).read(accountManagerProvider);
+      final gate = Completer<void>();
+      device.storage.removeAccountGate = gate.future;
+
+      final first = manager.disconnect(tradingAccount);
+      final second = manager.disconnect(_hedge);
+      final refused = expectLater(second, throwsA(isA<DisconnectPlanChanged>()));
+      gate.complete();
+      await first;
+      await refused;
+      await tester.pumpAndSettle();
+
+      expect(device.storage.accounts.map((a) => a.accountId), contains('qzHedge'));
+      expect(device.storage.mnemonics.containsKey(2), isTrue);
     });
   });
 }
