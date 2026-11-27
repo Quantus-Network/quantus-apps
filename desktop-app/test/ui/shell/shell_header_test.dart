@@ -112,22 +112,6 @@ void main() {
       expect(find.byType(AccountToolbar), findsOneWidget);
     });
 
-    testOnMac('with Mining Rewards selected there are no account actions, and with the sidebar hidden the bar says '
-        'Mining Rewards', (tester) async {
-      await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
-
-      await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.text('Mining Rewards')));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(AccountToolbar), findsNothing);
-      expect(_inTopBar(find.text('Mining Rewards')), findsNothing);
-
-      await _hideSidebar(tester);
-
-      expect(_inTopBar(find.text('Mining Rewards')), findsOneWidget);
-      expect(_inTopBar(find.text('Main')), findsNothing);
-    });
-
     testOnMac('the sidebar\'s switch hides the sidebar and brings it back, staying in place', (tester) async {
       await pumpShell(tester, overrides: _withActive(const RegularAccount(mainAccount)));
       final where = tester.getTopLeft(_inTopBar(find.byTooltip('Hide Sidebar')));

@@ -8,7 +8,6 @@ import 'package:quantus_desktop_wallet/ui/components/context_menu.dart';
 import 'package:quantus_desktop_wallet/ui/components/desktop_account_badge.dart';
 import 'package:quantus_desktop_wallet/ui/components/sidebar_row.dart';
 import 'package:quantus_desktop_wallet/ui/shell/account_pane.dart';
-import 'package:quantus_desktop_wallet/ui/shell/mining_rewards_pane.dart';
 import 'package:quantus_desktop_wallet/ui/shell/shell_sheet_view.dart';
 import 'package:quantus_desktop_wallet/ui/shell/sidebar.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
@@ -311,43 +310,39 @@ void main() {
     expect(find.descendant(of: _row('Main'), matching: find.byType(EncryptedLockBadge)), findsNothing);
   });
 
-  testOnMac('Mining Rewards sits below the accounts; selecting it shows its pane and keeps the active account', (
+  testOnMac('the list holds only the accounts: no Mining Rewards row, and Settings and Add Account follow', (
     tester,
   ) async {
-    final settings = FakeSettingsService(activeAccount: const RegularAccount(mainAccount));
     await pumpShell(
       tester,
-      overrides: shellOverrides(accounts: const [mainAccount], settings: settings, balances: oneTokenEach),
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: oneTokenEach,
+      ),
     );
 
-    expect(_top(tester, 'Main'), lessThan(_top(tester, 'Mining Rewards')));
+    expect(_inSidebar(find.text('Mining Rewards')), findsNothing);
+    expect(
+      tester
+          .widgetList<SidebarRow>(find.descendant(of: find.byType(Sidebar), matching: find.byType(SidebarRow)))
+          .map((row) => row.title),
+      ['Main', 'Settings', 'Add Account'],
+    );
     expect(find.byType(AccountPane), findsOneWidget);
-    expect(find.byType(MiningRewardsPane), findsNothing);
-
-    await tester.tap(_row('Mining Rewards'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(MiningRewardsPane), findsOneWidget);
-    expect(find.byType(AccountPane), findsNothing);
-    expect(_isSelected(tester, 'Mining Rewards'), isTrue);
-    expect(_isSelected(tester, 'Main'), isFalse);
-    expect(settings.activeAccount?.account.accountId, 'qzMain');
-
-    await tester.tap(_row('Main'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(AccountPane), findsOneWidget);
-    expect(_isSelected(tester, 'Main'), isTrue);
-    expect(_isSelected(tester, 'Mining Rewards'), isFalse);
   });
 
   testOnMac('Add Account sits at the bottom and opens its menu', (tester) async {
     await pumpShell(
       tester,
-      overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: oneTokenEach,
+      ),
     );
 
-    expect(_top(tester, 'Mining Rewards'), lessThan(_top(tester, 'Add Account')));
+    expect(_top(tester, 'Main'), lessThan(_top(tester, 'Add Account')));
 
     await tester.tap(_inSidebar(find.text('Add Account')));
     await tester.pumpAndSettle();
@@ -361,12 +356,16 @@ void main() {
   ) async {
     await pumpShell(
       tester,
-      overrides: shellOverrides(accounts: const [mainAccount], balances: oneTokenEach),
+      overrides: shellOverrides(
+        accounts: const [mainAccount],
+        settings: FakeSettingsService(activeAccount: const RegularAccount(mainAccount)),
+        balances: oneTokenEach,
+      ),
     );
 
     final settings = tester.getRect(_row('Settings'));
     final addAccount = tester.getRect(_row('Add Account'));
-    expect(_top(tester, 'Mining Rewards'), lessThan(settings.top));
+    expect(_top(tester, 'Main'), lessThan(settings.top));
     expect(settings.bottom, lessThanOrEqualTo(addAccount.top));
     expect(addAccount.top - settings.bottom, lessThan(6));
     expect(settings.left, addAccount.left);

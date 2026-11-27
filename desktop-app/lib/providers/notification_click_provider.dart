@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
-import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/activity_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
@@ -116,7 +115,7 @@ class NotificationClick {
     if (swapId != null) return _openSwap(click, account, swapId);
     if (account == null) return;
 
-    await _ref.read(sidebarSelectionProvider.notifier).showAccount(account);
+    await _ref.read(sidebarNavigatorProvider).showAccount(account);
     if ((hash == null && proposalId == null) || !_isShowing(click, accountId)) return;
 
     final leaving = _dropWhenLeft(click, accountId);
@@ -142,7 +141,7 @@ class NotificationClick {
   Future<void> _openSwap(Object click, DisplayAccount? account, String swapId) async {
     final showing = account ?? _ref.read(activeAccountProvider).value;
     if (showing == null) return;
-    await _ref.read(sidebarSelectionProvider.notifier).showAccount(showing);
+    await _ref.read(sidebarNavigatorProvider).showAccount(showing);
     if (!_isShowing(click, showing.account.accountId)) return;
     if (_ref.read(activeSwapProvider(swapId)) == null) return;
     _ref.read(openedActivityProvider.notifier).open(OpenedSwap(swapId));
@@ -158,11 +157,7 @@ class NotificationClick {
     }
 
     return [
-      for (final provider in <ProviderListenable<Object?>>[
-        activeAccountProvider,
-        sidebarSelectionProvider,
-        shellSheetProvider,
-      ])
+      for (final provider in <ProviderListenable<Object?>>[activeAccountProvider, shellSheetProvider])
         _ref.listen(provider, (_, _) => check()),
     ];
   }
@@ -231,7 +226,6 @@ class NotificationClick {
       _ref.mounted &&
       identical(_current, click) &&
       _ref.read(shellSheetProvider) == null &&
-      _ref.read(sidebarSelectionProvider) == SidebarSelection.account &&
       _ref.read(activeAccountProvider).value?.account.accountId == accountId;
 
   /// The id of the proposal created in the transaction [hash], which is what

@@ -166,11 +166,9 @@ void main() {
     await _choose(tester, 'View', 'Next Sidebar Item');
     expect(_selected(tester), 'Encrypted Account');
     await _choose(tester, 'View', 'Next Sidebar Item');
-    expect(_selected(tester), 'Mining Rewards');
-    await _choose(tester, 'View', 'Next Sidebar Item');
     expect(_selected(tester), 'Main');
     await _choose(tester, 'View', 'Previous Sidebar Item');
-    expect(_selected(tester), 'Mining Rewards');
+    expect(_selected(tester), 'Encrypted Account');
   });
 
   testOnMac('the accounts keep their ⌘ numbers while their wallets are closed', (tester) async {
@@ -385,15 +383,17 @@ void main() {
     await _pump(tester, multisigs: [teamMultisig, orphanMultisig]);
 
     await _choose(tester, 'View', 'Previous Sidebar Item');
-    expect(_selected(tester), 'Mining Rewards', reason: 'the multisigs are closed');
+    expect(_selected(tester), 'Encrypted Account', reason: 'the multisigs are closed');
 
     await _click(tester, 'MULTISIGS');
+    await _choose(tester, 'View', 'Next Sidebar Item');
+    expect(_selected(tester), 'Orphan');
+    await _choose(tester, 'View', 'Next Sidebar Item');
+    expect(_selected(tester), 'Team');
+    await _choose(tester, 'View', 'Next Sidebar Item');
+    expect(_selected(tester), 'Main');
     await _choose(tester, 'View', 'Previous Sidebar Item');
     expect(_selected(tester), 'Team');
-    await _choose(tester, 'View', 'Previous Sidebar Item');
-    expect(_selected(tester), 'Orphan');
-    await _choose(tester, 'View', 'Previous Sidebar Item');
-    expect(_selected(tester), 'Encrypted Account');
   });
 
   testOnMac('the multisigs take the ⌘ numbers after the wallets\' accounts', (tester) async {

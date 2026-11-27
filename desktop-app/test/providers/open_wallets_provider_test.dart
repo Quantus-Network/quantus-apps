@@ -155,7 +155,7 @@ void main() {
   testWidgets('a wallet stays open after its account stops being the active one', (tester) async {
     final device = _walletDevice();
     final (container, _) = await _open(tester, device);
-    final sidebar = container.read(sidebarSelectionProvider.notifier);
+    final sidebar = container.read(sidebarNavigatorProvider);
 
     await sidebar.showAccount(const RegularAccount(tradingAccount));
     await _settle(tester, container);
@@ -252,7 +252,7 @@ void main() {
     device.storage.activeAccount = MultisigDisplayAccount(_ownedTeam);
     final (container, _) = await _open(tester, device);
 
-    await container.read(sidebarSelectionProvider.notifier).showAccount(const RegularAccount(mainAccount));
+    await container.read(sidebarNavigatorProvider).showAccount(const RegularAccount(mainAccount));
     await _settle(tester, container);
 
     expect(container.read(multisigsOpenProvider), isTrue);

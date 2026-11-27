@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_desktop_wallet/constants.dart';
-import 'package:quantus_desktop_wallet/models/sidebar_selection.dart';
 import 'package:quantus_desktop_wallet/providers/account_management_providers.dart';
 import 'package:quantus_desktop_wallet/providers/shell_providers.dart';
 import 'package:quantus_desktop_wallet/ui/accounts/account_note_text.dart';
@@ -18,8 +17,7 @@ import 'package:wallet_core/providers/l10n_provider.dart';
 /// switch and, at the right, the active account's actions.
 ///
 /// With the sidebar shown the bar names no account: the sidebar's selected
-/// row does. With it hidden nothing else would, so the bar names the account,
-/// or Mining Rewards when that is shown.
+/// row does. With it hidden nothing else would, so the bar names the account.
 class ShellTopBar extends ConsumerWidget {
   const ShellTopBar({super.key});
 
@@ -33,7 +31,6 @@ class ShellTopBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isSidebarVisible = ref.watch(sidebarVisibleProvider);
     final active = ref.watch(activeAccountProvider).value;
-    final showsAccount = ref.watch(sidebarSelectionProvider) == SidebarSelection.account;
     final titleStyle = context.themeTextV3.headingRow.copyWith(color: context.colorsV3.textContent);
     // With the sidebar hidden, a note about the account shows beside its name.
     final note = ref.watch(accountNoteProvider);
@@ -55,29 +52,22 @@ class ShellTopBar extends ConsumerWidget {
           child: isSidebarVisible
               ? const SizedBox.shrink()
               : IgnorePointer(
-                  child: showsAccount
-                      ? active == null
-                            ? const SizedBox.shrink()
-                            : Row(
-                                children: [
-                                  Flexible(
-                                    child: AccountLabel(account: active.account, style: titleStyle),
-                                  ),
-                                  if (note != null && note.accountId == active.account.accountId) ...[
-                                    const SizedBox(width: 14),
-                                    Flexible(child: AccountNoteText(note: note)),
-                                  ],
-                                ],
-                              )
-                      : Text(
-                          ref.watch(l10nProvider).settingsMiningRewards,
-                          style: titleStyle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  child: active == null
+                      ? const SizedBox.shrink()
+                      : Row(
+                          children: [
+                            Flexible(
+                              child: AccountLabel(account: active.account, style: titleStyle),
+                            ),
+                            if (note != null && note.accountId == active.account.accountId) ...[
+                              const SizedBox(width: 14),
+                              Flexible(child: AccountNoteText(note: note)),
+                            ],
+                          ],
                         ),
                 ),
         ),
-        if (showsAccount && active != null) const AccountToolbar(),
+        if (active != null) const AccountToolbar(),
       ],
     );
   }
