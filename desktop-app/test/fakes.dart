@@ -298,7 +298,8 @@ class FakeWalletStorage extends FakeSettingsService {
   /// When set, saving a recovery phrase fails with this.
   Object? mnemonicWriteError;
 
-  /// When set, deriving a wallet's encrypted account waits for this first.
+  /// When set, deriving a wallet's encrypted account waits for this, after
+  /// its recovery phrase has been read.
   Future<void>? encryptedAccountsGate;
 
   /// When set, adding an account waits for this first.
@@ -542,14 +543,21 @@ class _StoredAccountsService extends Fake implements AccountsService {
   @override
   Future<void> updateAccountName(Account account, String name) => storage.updateAccount(account.copyWith(name: name));
 
+  /// As the real service does it: the wallets are listed first, then each
+  /// one without its encrypted account has its phrase read, the account
+  /// derived from it ([FakeWalletStorage.encryptedAccountsGate]) and added.
   @override
   Future<bool> ensureEncryptedAccountsForSoftwareWallets({required String name}) async {
-    await storage.encryptedAccountsGate;
+    final accounts = await storage.getAccounts();
     var created = false;
-    for (final walletIndex in storage.accounts.map((a) => a.walletIndex).toSet()) {
-      final wallet = storage.accounts.where((a) => a.walletIndex == walletIndex);
+    for (final walletIndex in accounts.map((a) => a.walletIndex).toSet()) {
+      final wallet = accounts.where((a) => a.walletIndex == walletIndex);
       if (wallet.every((a) => a.accountType == AccountType.keystone)) continue;
       if (wallet.any((a) => a.accountType == AccountType.encrypted)) continue;
+      if (await storage.getMnemonic(walletIndex) == null) {
+        throw Exception('Mnemonic not found. Cannot create encrypted account.');
+      }
+      await storage.encryptedAccountsGate;
       await storage.addAccount(
         Account(
           walletIndex: walletIndex,

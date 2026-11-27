@@ -47,7 +47,9 @@ final _desk = MultisigAccount(
 /// Cold Wallet unless [vault] is false, Trading and Hedge (unless [hedge] is
 /// false) in Wallet 2, at wallet index 2, and the
 /// multisig Desk, which Trading signs. Each software wallet gets its Encrypted
-/// account as the window opens, unless [remoteConfig] turns them off.
+/// account as the window opens, unless [remoteConfig] turns them off. With
+/// [restoringWallet2], Wallet 1 has its Encrypted account already and Wallet
+/// 2's is held, once its phrase has been read, until that completes.
 Future<FakeWalletDevice> _pump(
   WidgetTester tester, {
   Account? active,
@@ -55,9 +57,22 @@ Future<FakeWalletDevice> _pump(
   RemoteConfigModel? remoteConfig,
   bool hedge = true,
   bool vault = true,
+  Future<void>? restoringWallet2,
 }) async {
   final device = FakeWalletDevice()..store([mainAccount, savingsAccount]);
   device.storage.accounts.addAll([if (vault) vaultAccount, tradingAccount, if (hedge) _hedge]);
+  if (restoringWallet2 != null) {
+    device.storage.accounts.add(
+      const Account(
+        walletIndex: 0,
+        index: AppConstants.encryptedAccountIndex,
+        name: 'Encrypted Account',
+        accountId: 'qzEncrypted0',
+        accountType: AccountType.encrypted,
+      ),
+    );
+    device.storage.encryptedAccountsGate = restoringWallet2;
+  }
   device.storage.mnemonics[2] = 'trading words';
   device.storage.multisigStore.add(_desk);
   if (active != null) device.storage.activeAccount = RegularAccount(active);
@@ -768,6 +783,75 @@ void main() {
 
       expect(device.storage.accounts.map((a) => a.accountId), contains('qzHedge'));
       expect(device.storage.mnemonics.containsKey(2), isTrue);
+    });
+  });
+  group('a wallet\'s Encrypted account, restored while the wallet is removed', () {
+    testOnMac('restored as the window opens, it does not bring back a wallet Disconnect Wallet… removed', (
+      tester,
+    ) async {
+      final restoring = Completer<void>();
+      final device = await _pump(tester, restoringWallet2: restoring.future);
+      expect(
+        device.storage.accounts.where((a) => a.accountType == AccountType.encrypted && a.walletIndex == 2),
+        isEmpty,
+      );
+
+      await _openSheet(tester);
+      await _tick(tester);
+      await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
+      await _pumpIntoRemoval(tester);
+      restoring.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ShellSheetView), findsNothing);
+      expect(_inWallet2(device), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+    });
+
+    testOnMac('the same when the wallet goes with its last account, from Get Info', (tester) async {
+      final restoring = Completer<void>();
+      final device = await _pump(tester, hedge: false, restoringWallet2: restoring.future);
+
+      await _container(tester).read(accountManagerProvider).openInfo(tradingAccount);
+      await tester.pumpAndSettle();
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectButtonKey));
+      await _pumpIntoRemoval(tester);
+      restoring.complete();
+      await tester.pumpAndSettle();
+
+      expect(_inWallet2(device), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+    });
+
+    testOnMac('restored after an import, it does not bring back the imported wallet once disconnected', (tester) async {
+      const phrase = 'zebra abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+      final device = await _pump(tester);
+      final restoring = Completer<void>();
+      device.storage.encryptedAccountsGate = restoring.future;
+      final manager = _container(tester).read(accountManagerProvider);
+      await manager.openImportWallet();
+      await tester.pumpAndSettle();
+      await tester.enterText(_inSheet(find.byType(EditableText)), phrase);
+      await tester.pump();
+      await tester.tap(_inSheet(find.widgetWithText(QuantusButton, 'Import Wallet')));
+      await tester.pumpAndSettle();
+      final imported = device.storage.accounts.singleWhere((a) => a.accountId == 'qz(zebra)').walletIndex;
+      expect(device.storage.mnemonics[imported], phrase);
+
+      await manager.openDisconnectWallet(imported);
+      await tester.pumpAndSettle();
+      await _tick(tester);
+      await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
+      await _pumpIntoRemoval(tester);
+      restoring.complete();
+      await tester.pumpAndSettle();
+
+      expect(device.storage.accounts.where((a) => a.walletIndex == imported), isEmpty);
+      expect(device.storage.mnemonics.containsKey(imported), isFalse);
     });
   });
 }

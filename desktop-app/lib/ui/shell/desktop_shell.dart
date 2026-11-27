@@ -89,7 +89,8 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
 
   /// Imports a wallet into the next free slot, on the shell's ref: the
   /// wallet's encrypted account is restored after the sheet has gone. The
-  /// slot is read once no wallet is being removed ([walletSlotsProvider]).
+  /// slot is read once no wallet is being removed ([walletSlotsProvider]),
+  /// and the encrypted account is stored in a later turn of its own.
   Future<void> _importWallet(String mnemonic, {required Future<bool> Function(Object error) onScanFailed}) =>
       ref.read(walletSlotsProvider).run(() async {
         final accounts = await ref.read(settingsServiceProvider).getAccounts();
@@ -99,6 +100,7 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
           mnemonic: mnemonic,
           walletIndex: nextWalletIndex(accounts),
           onScanFailed: onScanFailed,
+          inWalletQueue: ref.read(walletSlotsProvider).run,
         );
       });
 
@@ -250,12 +252,16 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
   }
 
   /// Finishes what an earlier run left undone: an import's account scan that
-  /// was skipped or interrupted, and a software wallet's encrypted account.
+  /// was skipped or interrupted, and a software wallet's encrypted account,
+  /// stored once no wallet is being added or removed ([walletSlotsProvider])
+  /// so that a wallet removed meanwhile does not get it back.
   Future<void> _finishWalletSetup() async {
     try {
       final scanned = await ref.read(walletCreationServiceProvider).resumePendingAccountScans();
       if (!mounted) return;
-      final encryptedAdded = await ensureEncryptedAccounts(ref);
+      final encryptedAdded = await ref
+          .read(walletSlotsProvider)
+          .run(() async => mounted && await ensureEncryptedAccounts(ref));
       if (mounted && (scanned || encryptedAdded)) invalidateAccountProviders(ref);
     } catch (e) {
       quantusPrint('Finishing the wallet setup at start failed: $e');
@@ -300,8 +306,13 @@ class _DesktopShellState extends ConsumerState<DesktopShell> {
                     createWallet: () => createSoftwareWallet(ref),
                     // Onboarding runs only on a device with no wallet, so the
                     // wallet it imports is the first.
-                    importWallet: (mnemonic, {required onScanFailed}) =>
-                        importSoftwareWallet(ref, mnemonic: mnemonic, walletIndex: 0, onScanFailed: onScanFailed),
+                    importWallet: (mnemonic, {required onScanFailed}) => importSoftwareWallet(
+                      ref,
+                      mnemonic: mnemonic,
+                      walletIndex: 0,
+                      onScanFailed: onScanFailed,
+                      inWalletQueue: ref.read(walletSlotsProvider).run,
+                    ),
                     onFinished: () => ref.read(walletPresenceProvider.notifier).walletAdded(),
                   ),
           ),
