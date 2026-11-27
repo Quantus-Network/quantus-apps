@@ -5600,5 +5600,33 @@
     "desktopAmountHidden": "Hidden",
     "@desktopAmountHidden": {
       "description": "Desktop: what a screen reader hears for an amount masked while balances are hidden"
+    },
+    "desktopMenuNewWallet": "New Wallet",
+    "@desktopMenuNewWallet": {
+      "description": "Desktop: the item that creates another wallet with a new recovery phrase at once, in the Account menu and the sidebar's Add Account menu"
+    },
+    "desktopNewWalletDone": "Wallet created",
+    "@desktopNewWalletDone": {
+      "description": "Desktop: a short note by the account name in the top bar after creating a wallet with the sidebar hidden"
+    },
+    "desktopNewWalletFailed": "Couldn’t create the wallet",
+    "@desktopNewWalletFailed": {
+      "description": "Desktop: a short note by the active account’s name when New Wallet could not create the wallet; nothing was added"
+    },
+    "desktopWalletDisconnect": "Disconnect Wallet…",
+    "@desktopWalletDisconnect": {
+      "description": "Desktop: the item on a software wallet’s heading that opens the step deleting the whole wallet from this app"
+    },
+    "desktopDisconnectWalletAccounts": "{count, plural, =1{{wallet}’s account leaves this app} other{{wallet}’s {count} accounts leave this app}}",
+    "@desktopDisconnectWalletAccounts": {
+      "description": "Desktop Disconnect Wallet step: first line, how many of the wallet’s accounts go with it, its Encrypted account counted",
+      "placeholders": {
+        "wallet": {
+          "type": "String"
+        },
+        "count": {
+          "type": "int"
+        }
+      }
     }
 }

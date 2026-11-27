@@ -1074,5 +1074,10 @@
   "desktopMenuHideBalances": "Sembunyikan Saldo",
   "desktopMenuShowBalances": "Tampilkan Saldo",
   "desktopShortcutsToggleBalances": "Tampilkan atau Sembunyikan Saldo",
-  "desktopAmountHidden": "Disembunyikan"
+  "desktopAmountHidden": "Disembunyikan",
+  "desktopMenuNewWallet": "Dompet Baru",
+  "desktopNewWalletDone": "Dompet dibuat",
+  "desktopNewWalletFailed": "Tidak dapat membuat dompet",
+  "desktopWalletDisconnect": "Putuskan Dompet…",
+  "desktopDisconnectWalletAccounts": "{count, plural, other{{count} akun {wallet} keluar dari aplikasi ini}}"
 }
