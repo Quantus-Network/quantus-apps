@@ -134,6 +134,35 @@ PlatformMenuItem _newWalletItem(WidgetTester tester) {
   ].singleWhere((item) => item.label == 'New Wallet');
 }
 
+/// The Account menu's New Account item for the wallet called [wallet].
+PlatformMenuItem _menuBarNewAccountIn(WidgetTester tester, String wallet) {
+  final menus = tester.widget<PlatformMenuBar>(find.byType(PlatformMenuBar)).menus.cast<PlatformMenu>();
+  final newAccount = [
+    for (final group in menus.singleWhere((menu) => menu.label == 'Account').menus.cast<PlatformMenuItemGroup>())
+      ...group.members,
+  ].singleWhere((item) => item.label == 'New Account');
+  return (newAccount as PlatformMenu).menus.singleWhere((item) => item.label == wallet);
+}
+
+/// Chooses New Account → [wallet] in the sidebar's Add Account menu.
+Future<void> _sidebarNewAccountIn(WidgetTester tester, String wallet) async {
+  await tester.tap(find.descendant(of: find.byType(Sidebar), matching: find.widgetWithText(SidebarRow, 'Add Account')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.descendant(of: _menu, matching: find.text('New Account')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.descendant(of: find.byKey(ContextMenuRegion.submenuKey), matching: find.text(wallet)));
+  await tester.pump();
+}
+
+/// The notes shown on accounts from now on, each kept after it clears.
+List<AccountNote> _notesShown(WidgetTester tester) {
+  final notes = <AccountNote>[];
+  _container(tester).listen<AccountNote?>(accountNoteProvider, (_, note) {
+    if (note != null) notes.add(note);
+  });
+  return notes;
+}
+
 /// Holds every wallet removal after its accounts are dropped and before its
 /// phrase is deleted; the function returned lets them finish.
 void Function() _holdRemovals(FakeWalletDevice device) {
@@ -539,6 +568,88 @@ void main() {
       expect(saved, isTrue);
       expect(device.storage.accounts.map((a) => a.accountId), contains('qzNewCold'));
       expect(device.storage.mnemonics.containsKey(2), isFalse);
+    });
+
+    testOnMac('New Account into the wallet being removed, from the menu bar, adds nothing and says so', (tester) async {
+      final device = await _pump(tester);
+      final release = _holdRemovals(device);
+      await _openSheet(tester);
+      await _tick(tester);
+      await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
+      await _pumpIntoRemoval(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(ShellSheetView), findsNothing);
+
+      final notes = _notesShown(tester);
+      _menuBarNewAccountIn(tester, 'Wallet 2').onSelected!();
+      await tester.pump();
+      release();
+      await tester.pumpAndSettle();
+
+      expect(_inWallet2(device), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+      expect(_activeId(tester), mainAccount.accountId);
+      expect(notes.map((note) => (note.accountId, note.message, note.isError)), [
+        (mainAccount.accountId, 'Could not add account.', true),
+      ]);
+    });
+
+    testOnMac('New Account into a wallet going with its last account, from the sidebar, adds nothing', (tester) async {
+      final device = await _pump(tester, hedge: false);
+      final release = _holdRemovals(device);
+      await _container(tester).read(accountManagerProvider).openInfo(tradingAccount);
+      await tester.pumpAndSettle();
+      await tester.tap(_inSheet(find.byKey(AccountInfoSheet.disconnectRowKey)));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountInfoSheet.backedUpKey));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectButtonKey));
+      await _pumpIntoRemoval(tester);
+      expect(_inWallet2(device), isEmpty);
+      await tester.tap(find.byKey(AccountInfoSheet.disconnectCancelKey));
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(ShellSheetView), findsNothing);
+
+      final notes = _notesShown(tester);
+      await _sidebarNewAccountIn(tester, 'Wallet 2');
+      release();
+      await tester.pumpAndSettle();
+
+      expect(_inWallet2(device), isEmpty);
+      expect(device.storage.mnemonics.containsKey(2), isFalse);
+      expect(notes.map((note) => (note.accountId, note.message, note.isError)), [
+        (mainAccount.accountId, 'Could not add account.', true),
+      ]);
+    });
+
+    testOnMac('New Account into another wallet during a removal is added once the removal has finished', (
+      tester,
+    ) async {
+      final device = await _pump(tester);
+      final release = _holdRemovals(device);
+      await _openSheet(tester);
+      await _tick(tester);
+      await tester.tap(find.byKey(DisconnectWalletSheet.deleteKey));
+      await _pumpIntoRemoval(tester);
+      await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      _menuBarNewAccountIn(tester, 'Wallet 1').onSelected!();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(device.storage.accounts.map((a) => a.accountId), isNot(contains('qzNew0-2')));
+
+      release();
+      await tester.pumpAndSettle();
+
+      expect(device.storage.accounts.singleWhere((a) => a.accountId == 'qzNew0-2').walletIndex, 0);
+      expect(device.storage.mnemonics.containsKey(0), isTrue);
+      expect(_activeId(tester), 'qzNew0-2');
     });
   });
 

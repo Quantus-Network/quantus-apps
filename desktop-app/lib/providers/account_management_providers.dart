@@ -276,8 +276,9 @@ class AccountManager {
   }
 
   /// Adds a Transparent account to the software wallet at [walletIndex],
-  /// after the navigation asked for before, one at a time so two never take
-  /// the same slot. It becomes the active account with its name ready to be
+  /// after the navigation asked for before and once no wallet is being
+  /// removed ([walletSlotsProvider]), one at a time so two never take the
+  /// same slot. It becomes the active account with its name ready to be
   /// typed over. One that cannot be added says so on the active account.
   Future<void> createAccount(int walletIndex) =>
       _ref.read(shellNavigationProvider.notifier).run(() => _create(walletIndex));
@@ -300,7 +301,7 @@ class AccountManager {
         multisigs: multisigs,
       ).wallets.where((w) => activeId != null && w.contains(activeId)).firstOrNull;
     } catch (e) {
-      _noteNotAdded(e);
+      await _noteNotAdded(e);
       return;
     }
     switch (wallet?.kind) {
@@ -313,25 +314,39 @@ class AccountManager {
     }
   });
 
+  /// [createAccount]'s work, once no wallet is being added or removed
+  /// ([walletSlotsProvider]): a wallet whose removal has dropped its accounts
+  /// still has its recovery phrase until the removal ends, and an account
+  /// stored in it then would lose its phrase. Only a software wallet that
+  /// storage still has by then gets the account.
   Future<void> _create(int walletIndex) async {
-    // A sheet is for the account it opened on, so nothing moves under it.
-    if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return;
+    if (!_ref.mounted) return;
     final l10n = _ref.read(l10nProvider);
     final service = _ref.read(accountsServiceProvider);
-    final Account account;
+    final Account? account;
     try {
-      final accounts = await service.getAccounts();
-      if (accounts.any((a) => a.walletIndex == walletIndex && a.accountType == AccountType.keystone)) {
-        throw StateError('Wallet $walletIndex is a hardware wallet');
-      }
-      final draft = await service.createNewAccount(walletIndex: walletIndex);
-      account = draft.copyWith(name: l10n.createAccountDefaultName(accounts.length + 1));
-      await service.addAccount(account);
+      account = await _ref.read(walletSlotsProvider).run(() async {
+        // A sheet is for the account it opened on, so nothing moves under
+        // it: asked once the removal waited for has finished.
+        if (!_ref.mounted || _ref.read(shellSheetProvider) != null) return null;
+        final accounts = await service.getAccounts();
+        final inWallet = accounts.where((a) => a.walletIndex == walletIndex);
+        if (!inWallet.any((a) => a.accountType != AccountType.encrypted)) {
+          throw StateError('Wallet $walletIndex is no longer here');
+        }
+        if (inWallet.any((a) => a.accountType == AccountType.keystone)) {
+          throw StateError('Wallet $walletIndex is a hardware wallet');
+        }
+        final draft = await service.createNewAccount(walletIndex: walletIndex);
+        final account = draft.copyWith(name: l10n.createAccountDefaultName(accounts.length + 1));
+        await service.addAccount(account);
+        return account;
+      });
     } catch (e) {
-      _noteNotAdded(e);
+      await _noteNotAdded(e);
       return;
     }
-    if (!_ref.mounted) return;
+    if (account == null || !_ref.mounted) return;
 
     _ref.read(keptOpenWalletsProvider.notifier).keepOpen(walletIndex);
     // Before the list reloads: the switch reads which wallet is being left.
@@ -371,7 +386,7 @@ class AccountManager {
             return create();
           });
         } catch (e) {
-          _noteNotAdded(e, message: l10n.desktopNewWalletFailed);
+          await _noteNotAdded(e, message: l10n.desktopNewWalletFailed);
           return;
         }
         if (root == null || !_ref.mounted) return;
@@ -522,17 +537,23 @@ class AccountManager {
   }
 
   /// Says on the active account that what was being added is not: [message],
-  /// or that the account could not be added.
-  void _noteNotAdded(Object error, {String? message}) {
+  /// or that the account could not be added. The active account is read from
+  /// storage: just after a wallet's removal it is still being read again.
+  Future<void> _noteNotAdded(Object error, {String? message}) async {
     quantusPrint('Adding an account or a wallet failed: $error');
-    if (!_ref.mounted) return;
-    final active = _ref.read(activeAccountProvider).value?.account;
-    if (active == null) return;
+    final String? activeId;
+    try {
+      activeId = (await _ref.read(settingsServiceProvider).getActiveAccount())?.account.accountId;
+    } catch (e) {
+      quantusPrint('The active account could not be read to say so: $e');
+      return;
+    }
+    if (activeId == null || !_ref.mounted) return;
     _ref
         .read(accountNoteProvider.notifier)
         .show(
           AccountNote(
-            accountId: active.accountId,
+            accountId: activeId,
             message: message ?? _ref.read(l10nProvider).createAccountErrorCouldNotAdd,
             isError: true,
           ),
