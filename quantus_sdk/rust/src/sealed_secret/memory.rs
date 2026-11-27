@@ -1,5 +1,6 @@
 //! The sealed store of the unit tests: one thread's memory standing in for a
-//! device, with its prompts counted and its next reads refusable.
+//! device, with its prompts counted, its next reads refusable, and its process
+//! able to end between two writes.
 
 use super::{refusal, Failure, Refusal, SealPolicy};
 use crate::sensitive::SensitiveVec;
@@ -15,6 +16,10 @@ pub(crate) struct Device {
     pub(crate) refusals: Vec<Failure>,
     /// Reads that release normally before `refusals` starts to apply.
     pub(crate) prompts_before_refusal: u32,
+    /// Writes that complete before the process ends; `None` ends it never.
+    pub(crate) writes_before_crash: Option<u32>,
+    /// The process has ended: every call fails and changes nothing.
+    pub(crate) crashed: bool,
     slots: HashMap<String, (SealPolicy, Vec<u8>)>,
 }
 
@@ -26,23 +31,40 @@ pub(crate) fn device<T>(change: impl FnOnce(&mut Device) -> T) -> T {
     DEVICE.with(|device| change(&mut device.borrow_mut()))
 }
 
-fn enforces(enrolled: Option<SealPolicy>, policy: SealPolicy) -> bool {
-    enrolled == Some(SealPolicy::Biometry) || enrolled == Some(policy)
+fn running(d: &Device) -> Result<(), Refusal> {
+    if d.crashed {
+        return Err(refusal(Failure::Platform, "The process has ended"));
+    }
+    Ok(())
 }
 
-pub(crate) fn available() -> Result<Option<SealPolicy>, Refusal> {
-    Ok(device(|d| d.enrolled))
+fn write(d: &mut Device) -> Result<(), Refusal> {
+    running(d)?;
+    match &mut d.writes_before_crash {
+        Some(0) => d.crashed = true,
+        Some(left) => *left -= 1,
+        None => {}
+    }
+    running(d)
+}
+
+pub(crate) fn enforces(policy: SealPolicy) -> Result<bool, Refusal> {
+    device(|d| {
+        running(d)?;
+        Ok(d.enrolled == Some(SealPolicy::Biometry) || d.enrolled == Some(policy))
+    })
 }
 
 pub(crate) fn stored(slot: &str) -> Result<Option<SealPolicy>, Refusal> {
-    Ok(device(|d| d.slots.get(slot).map(|sealed| sealed.0)))
+    device(|d| {
+        running(d)?;
+        Ok(d.slots.get(slot).map(|sealed| sealed.0))
+    })
 }
 
 pub(crate) fn store(slot: &str, secret: &[u8], policy: SealPolicy) -> Result<(), Refusal> {
     device(|d| {
-        if !enforces(d.enrolled, policy) {
-            return Err(refusal(Failure::Unavailable, "Not enforceable"));
-        }
+        write(d)?;
         d.slots.insert(slot.to_string(), (policy, secret.to_vec()));
         Ok(())
     })
@@ -50,6 +72,7 @@ pub(crate) fn store(slot: &str, secret: &[u8], policy: SealPolicy) -> Result<(),
 
 pub(crate) fn read(slot: &str, _prompt: &str) -> Result<SensitiveVec<u8>, Refusal> {
     device(|d| {
+        running(d)?;
         let Some((_, secret)) = d.slots.get(slot) else {
             return Err(refusal(Failure::Missing, "Empty slot"));
         };
@@ -64,6 +87,9 @@ pub(crate) fn read(slot: &str, _prompt: &str) -> Result<SensitiveVec<u8>, Refusa
 }
 
 pub(crate) fn delete(slot: &str) -> Result<(), Refusal> {
-    device(|d| d.slots.remove(slot));
-    Ok(())
+    device(|d| {
+        write(d)?;
+        d.slots.remove(slot);
+        Ok(())
+    })
 }

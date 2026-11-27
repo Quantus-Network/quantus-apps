@@ -10,7 +10,7 @@ fn unsupported<T>() -> Result<T, Refusal> {
     ))
 }
 
-pub(crate) fn available() -> Result<Option<SealPolicy>, Refusal> {
+pub(crate) fn enforces(_policy: SealPolicy) -> Result<bool, Refusal> {
     unsupported()
 }
 

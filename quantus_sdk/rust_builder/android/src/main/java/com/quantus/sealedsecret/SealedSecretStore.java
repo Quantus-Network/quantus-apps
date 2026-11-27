@@ -30,8 +30,8 @@ import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * The Android half of the Rust module {@code sealed_secret}, which is its only caller.
@@ -51,7 +51,7 @@ public final class SealedSecretStore {
     private static final int TAG_BITS = 128;
 
     // Operations, policies and statuses, numbered as sealed_secret/android.rs numbers them.
-    private static final int AVAILABLE = 0, STORED = 1, STORE = 2, READ = 3, DELETE = 4;
+    private static final int CAN_AUTHENTICATE = 0, STORED = 1, STORE = 2, READ = 3, DELETE = 4;
     private static final int NONE = 0, BIOMETRY = 1, DEVICE_PASSCODE = 2;
     private static final int OK = 0, CANCELLED = 1, NOT_RECOGNISED = 2, MISSING = 3, UNAVAILABLE = 4, PLATFORM = 5;
 
@@ -108,8 +108,8 @@ public final class SealedSecretStore {
 
     private byte[] run(int operation, String slot, int policy, String prompt, byte[] secret) throws Exception {
         switch (operation) {
-            case AVAILABLE:
-                return new byte[] {(byte) available()};
+            case CAN_AUTHENTICATE:
+                return new byte[] {(byte) canAuthenticate(policy)};
             case STORED:
                 return new byte[] {(byte) stored(slot)};
             case STORE:
@@ -137,20 +137,19 @@ public final class SealedSecretStore {
         return reply(status, detail.getBytes(StandardCharsets.UTF_8));
     }
 
-    private int available() {
-        return enforces(BIOMETRY) ? BIOMETRY : enforces(DEVICE_PASSCODE) ? DEVICE_PASSCODE : NONE;
-    }
-
-    /** Before Android 11 the Keystore authorises a single use of a key by a biometric only. */
-    private boolean enforces(int policy) {
+    /**
+     * What BiometricManager answers for {@code policy}, which sealed_secret reads. Before Android 11 the Keystore
+     * authorises a single use of a key by a biometric only, so the screen lock is unsupported there.
+     */
+    private int canAuthenticate(int policy) {
         BiometricManager manager = BiometricManager.from(context);
         switch (policy) {
             case BIOMETRY:
-                return manager.canAuthenticate(Authenticators.BIOMETRIC_STRONG) == BiometricManager.BIOMETRIC_SUCCESS;
+                return manager.canAuthenticate(Authenticators.BIOMETRIC_STRONG);
             case DEVICE_PASSCODE:
                 return Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-                        && manager.canAuthenticate(Authenticators.DEVICE_CREDENTIAL)
-                                == BiometricManager.BIOMETRIC_SUCCESS;
+                        ? manager.canAuthenticate(Authenticators.DEVICE_CREDENTIAL)
+                        : BiometricManager.BIOMETRIC_ERROR_UNSUPPORTED;
             default:
                 throw new IllegalArgumentException("Unknown policy " + policy);
         }
@@ -210,8 +209,36 @@ public final class SealedSecretStore {
         return sealed[0];
     }
 
+    /**
+     * A raw AES key that hands out the one array it holds. SecretKeySpec copies its input and hands out further
+     * copies, none of which can be wiped. This one lets wiping {@code key} wipe what the cipher and the Keystore
+     * import were given.
+     */
+    private static final class SealingKey implements SecretKey {
+        private final byte[] key;
+
+        SealingKey(byte[] key) {
+            this.key = key;
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return KeyProperties.KEY_ALGORITHM_AES;
+        }
+
+        @Override
+        public String getFormat() {
+            return "RAW";
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            return key;
+        }
+    }
+
+    /** The policy has been checked by sealed_secret; only the item of {@code slot} is replaced. */
     private void store(String slot, int policy, byte[] secret) throws Exception {
-        if (!enforces(policy)) throw new Refusal(UNAVAILABLE, "This device cannot enforce policy " + policy + " now");
         delete(slot);
         byte[] key = new byte[32];
         byte[] sealed = new byte[1 + IV_BYTES + secret.length + TAG_BITS / 8];
@@ -220,7 +247,7 @@ public final class SealedSecretStore {
         random.nextBytes(sealed);
         sealed[0] = (byte) policy;
         try {
-            SecretKeySpec aes = new SecretKeySpec(key, KeyProperties.KEY_ALGORITHM_AES);
+            SecretKey aes = new SealingKey(key);
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, aes, new GCMParameterSpec(TAG_BITS, sealed, 1, IV_BYTES));
             cipher.doFinal(secret, 0, secret.length, sealed, 1 + IV_BYTES);

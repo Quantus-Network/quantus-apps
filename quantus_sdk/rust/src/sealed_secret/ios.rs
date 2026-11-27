@@ -7,8 +7,8 @@
 //! account attribute names its policy, so [`stored`] is answered from
 //! attributes alone, which iOS gives without a prompt.
 
-use super::{refusal, Failure, Refusal, SealPolicy};
-use crate::sensitive::{wipe, SensitiveVec};
+use super::{enrolment, refusal, Failure, Refusal, SealPolicy, POLICIES};
+use crate::sensitive::SensitiveVec;
 use std::ffi::{c_char, c_void, CStr};
 use std::ptr;
 
@@ -23,20 +23,8 @@ const AUTH_FAILED: i32 = -25293;
 /// `errSecItemNotFound`
 const ITEM_NOT_FOUND: i32 = -25300;
 const UTF8: u32 = 0x0800_0100;
-/// `LAErrorBiometryLockout`: enrolled, but locked until the passcode is entered.
-const BIOMETRY_LOCKOUT: isize = -8;
-
-const POLICIES: [SealPolicy; 2] = [SealPolicy::Biometry, SealPolicy::DevicePasscode];
 
 impl SealPolicy {
-    /// The account attribute of an item sealed under this policy.
-    fn account(self) -> &'static str {
-        match self {
-            SealPolicy::Biometry => "biometry",
-            SealPolicy::DevicePasscode => "passcode",
-        }
-    }
-
     /// `kSecAccessControlBiometryCurrentSet` or `kSecAccessControlDevicePasscode`.
     fn access_control(self) -> usize {
         match self {
@@ -186,7 +174,7 @@ fn item(
     extra: &[(CFTypeRef, CFTypeRef)],
 ) -> Result<Owned, Refusal> {
     let service = string(slot)?;
-    let account = policy.map(|policy| string(policy.account())).transpose()?;
+    let account = policy.map(|policy| string(policy.name())).transpose()?;
     let mut pairs = unsafe {
         vec![
             (kSecClass, kSecClassGenericPassword),
@@ -212,9 +200,9 @@ fn item(
 }
 
 /// Asks LocalAuthentication whether the owner can be authenticated the way
-/// `policy` needs. A biometric that is enrolled but locked out still counts:
-/// the keychain accepts the item, and the next read says it is locked.
-fn enforces(policy: SealPolicy) -> Result<bool, Refusal> {
+/// `policy` needs, and reads its answer with
+/// [`enrolment::local_authentication`].
+pub(crate) fn enforces(policy: SealPolicy) -> Result<bool, Refusal> {
     unsafe {
         let class = objc_getClass(c"LAContext".as_ptr());
         if class.is_null() {
@@ -224,7 +212,7 @@ fn enforces(policy: SealPolicy) -> Result<bool, Refusal> {
         let create: unsafe extern "C" fn(Id, Id) -> Id = std::mem::transmute(send);
         let can_evaluate: unsafe extern "C" fn(Id, Id, isize, *mut Id) -> bool =
             std::mem::transmute(send);
-        let code: unsafe extern "C" fn(Id, Id) -> isize = std::mem::transmute(send);
+        let integer: unsafe extern "C" fn(Id, Id) -> isize = std::mem::transmute(send);
         let release: unsafe extern "C" fn(Id, Id) = std::mem::transmute(send);
 
         let pool = objc_autoreleasePoolPush();
@@ -236,25 +224,20 @@ fn enforces(policy: SealPolicy) -> Result<bool, Refusal> {
             policy.owner_check(),
             &mut error,
         );
-        let locked_out =
-            !able && !error.is_null() && code(error, selector(c"code")) == BIOMETRY_LOCKOUT;
+        let code = if error.is_null() {
+            0
+        } else {
+            integer(error, selector(c"code"))
+        };
+        let biometry = integer(context, selector(c"biometryType"));
         release(context, selector(c"release"));
         objc_autoreleasePoolPop(pool);
-        Ok(able || (policy == SealPolicy::Biometry && locked_out))
+        enrolment::local_authentication(policy, able, code, biometry)
     }
 }
 
 fn selector(name: &CStr) -> Id {
     unsafe { sel_registerName(name.as_ptr()) }
-}
-
-pub(crate) fn available() -> Result<Option<SealPolicy>, Refusal> {
-    for policy in POLICIES {
-        if enforces(policy)? {
-            return Ok(Some(policy));
-        }
-    }
-    Ok(None)
 }
 
 pub(crate) fn stored(slot: &str) -> Result<Option<SealPolicy>, Refusal> {
@@ -270,12 +253,6 @@ pub(crate) fn stored(slot: &str) -> Result<Option<SealPolicy>, Refusal> {
 
 /// The data object borrows `secret`, so no copy of it is left in this process.
 pub(crate) fn store(slot: &str, secret: &[u8], policy: SealPolicy) -> Result<(), Refusal> {
-    if !enforces(policy)? {
-        return Err(refusal(
-            Failure::Unavailable,
-            format!("This device cannot enforce {policy:?} now"),
-        ));
-    }
     delete(slot)?;
     let mut error: CFTypeRef = ptr::null();
     let access = unsafe {
@@ -313,8 +290,8 @@ pub(crate) fn store(slot: &str, secret: &[u8], policy: SealPolicy) -> Result<(),
 }
 
 /// The passcode sheet and Touch ID show `prompt`; Face ID shows no text. The
-/// keychain's buffer is wiped before it is released; the copy returned wipes
-/// itself on drop.
+/// keychain hands back an immutable buffer, which is copied and released
+/// without being wiped; the copy returned wipes itself on drop.
 pub(crate) fn read(slot: &str, prompt: &str) -> Result<SensitiveVec<u8>, Refusal> {
     let reason = string(prompt)?;
     let query = unsafe {
@@ -332,14 +309,9 @@ pub(crate) fn read(slot: &str, prompt: &str) -> Result<SensitiveVec<u8>, Refusal
     check(unsafe { SecItemCopyMatching(query.0, &mut result) })?;
     let data = Owned::new(result)?;
     let released = unsafe {
-        std::slice::from_raw_parts_mut(
-            CFDataGetBytePtr(data.0) as *mut u8,
-            CFDataGetLength(data.0) as usize,
-        )
+        std::slice::from_raw_parts(CFDataGetBytePtr(data.0), CFDataGetLength(data.0) as usize)
     };
-    let secret = SensitiveVec(released.to_vec());
-    wipe(released);
-    Ok(secret)
+    Ok(SensitiveVec(released.to_vec()))
 }
 
 pub(crate) fn delete(slot: &str) -> Result<(), Refusal> {

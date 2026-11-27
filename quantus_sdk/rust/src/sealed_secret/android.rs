@@ -7,7 +7,7 @@
 //! the Keystore to Rust without passing through Dart. Both byte arrays that
 //! carried it across are zeroed before they are let go.
 
-use super::{refusal, Failure, Refusal, SealPolicy};
+use super::{enrolment, refusal, Failure, Refusal, SealPolicy, POLICIES};
 use crate::sensitive::SensitiveVec;
 use jni_sys::{
     jbyteArray, jint, jobject, jvalue, JNIEnv, JavaVM, JNI_EDETACHED, JNI_OK, JNI_VERSION_1_6,
@@ -16,13 +16,11 @@ use std::ffi::{c_void, CStr, CString};
 use std::ptr;
 use std::sync::OnceLock;
 
-const AVAILABLE: jint = 0;
+const CAN_AUTHENTICATE: jint = 0;
 const STORED: jint = 1;
 const STORE: jint = 2;
 const READ: jint = 3;
 const DELETE: jint = 4;
-
-const POLICIES: [SealPolicy; 2] = [SealPolicy::Biometry, SealPolicy::DevicePasscode];
 
 impl SealPolicy {
     /// What `SealedSecretStore.java` calls this policy; zero is none.
@@ -210,8 +208,13 @@ fn policy_in(reply: &[u8]) -> Result<Option<SealPolicy>, Refusal> {
     }
 }
 
-pub(crate) fn available() -> Result<Option<SealPolicy>, Refusal> {
-    policy_in(&call(AVAILABLE, "", 0, "", &[])?)
+/// Asks `BiometricManager` whether the owner can be authenticated the way
+/// `policy` needs, and reads its answer with [`enrolment::biometric_manager`].
+pub(crate) fn enforces(policy: SealPolicy) -> Result<bool, Refusal> {
+    match &call(CAN_AUTHENTICATE, "", policy.code(), "", &[])?[..] {
+        [status] => enrolment::biometric_manager(policy, *status as i8),
+        _ => Err(platform("SealedSecretStore answered no status")),
+    }
 }
 
 pub(crate) fn stored(slot: &str) -> Result<Option<SealPolicy>, Refusal> {
