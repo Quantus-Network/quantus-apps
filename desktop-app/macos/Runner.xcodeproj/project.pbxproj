@@ -26,6 +26,7 @@
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
 		33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F42044A3C60003C045 /* MainMenu.xib */; };
+		4A7E2C1D2F7A4B0C00C0FFEE /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 4A7E2C1D2F7A4B0B00C0FFEE /* AppIcon.icon */; };
 		33CC11132044BFA00003C045 /* MainFlutterWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC11122044BFA00003C045 /* MainFlutterWindow.swift */; };
 		4A7E2C1D2F7A4B0200C0FFEE /* SensitiveClipboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7E2C1D2F7A4B0100C0FFEE /* SensitiveClipboard.swift */; };
 		4A7E2C1D2F7A4B0400C0FFEE /* BackgroundStatusItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7E2C1D2F7A4B0300C0FFEE /* BackgroundStatusItem.swift */; };
@@ -74,6 +75,7 @@
 		33CC10ED2044A3C60003C045 /* Quantus Wallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Quantus Wallet.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		33CC10F02044A3C60003C045 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		33CC10F22044A3C60003C045 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Assets.xcassets; path = Runner/Assets.xcassets; sourceTree = "<group>"; };
+		4A7E2C1D2F7A4B0B00C0FFEE /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; name = AppIcon.icon; path = Runner/AppIcon.icon; sourceTree = "<group>"; };
 		33CC10F52044A3C60003C045 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		33CC10F72044A3C60003C045 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = Runner/Info.plist; sourceTree = "<group>"; };
 		33CC11122044BFA00003C045 /* MainFlutterWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainFlutterWindow.swift; sourceTree = "<group>"; };
@@ -166,6 +168,7 @@
 			isa = PBXGroup;
 			children = (
 				33CC10F22044A3C60003C045 /* Assets.xcassets */,
+				4A7E2C1D2F7A4B0B00C0FFEE /* AppIcon.icon */,
 				33CC10F42044A3C60003C045 /* MainMenu.xib */,
 				4A7E2C1D2F7A4B0700C0FFEE /* Localizable.strings */,
 				33CC10F72044A3C60003C045 /* Info.plist */,
@@ -340,6 +343,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */,
+				4A7E2C1D2F7A4B0C00C0FFEE /* AppIcon.icon in Resources */,
 				33CC10F62044A3C60003C045 /* MainMenu.xib in Resources */,
 				4A7E2C1D2F7A4B0800C0FFEE /* Localizable.strings in Resources */,
 			);
