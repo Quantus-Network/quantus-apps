@@ -722,7 +722,14 @@ class _SendSheetState extends ConsumerState<SendSheet> {
         const SizedBox(height: 16),
         Padding(
           padding: const EdgeInsets.only(bottom: 6),
-          child: CapsText(l10n.sendSelectRecipientRecents, style: context.sendCaps()),
+          // With more than show at once, how many there are, as nothing
+          // else shows the list goes on.
+          child: CapsText(
+            _recents.length > SendSheet.recentsInView
+                ? l10n.desktopSendRecentsCount(_recents.length)
+                : l10n.sendSelectRecipientRecents,
+            style: context.sendCaps(),
+          ),
         ),
         // Up to [SendSheet.recentsInView] rows tall, no taller than the
         // window leaves, so the fields and the buttons under it stay in the

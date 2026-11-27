@@ -3807,4 +3807,9 @@ class AppLocalizationsId extends AppLocalizations {
   String desktopMenuAbout(String app) {
     return 'Tentang $app';
   }
+
+  @override
+  String desktopSendRecentsCount(int count) {
+    return 'Terbaru ($count)';
+  }
 }

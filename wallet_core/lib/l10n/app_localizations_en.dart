@@ -3801,4 +3801,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String desktopMenuAbout(String app) {
     return 'About $app';
   }
+
+  @override
+  String desktopSendRecentsCount(int count) {
+    return 'Recents ($count)';
+  }
 }

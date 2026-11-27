@@ -261,7 +261,7 @@ void main() {
 
       await _openSend(tester, chain: chain);
 
-      expect(_inSheet(find.text('RECENTS')), findsOneWidget);
+      expect(_inSheet(find.text('RECENTS (5)')), findsOneWidget);
       for (final address in [long, 'qzBo', 'qzCy', 'qzDee']) {
         _expectAddressOverCheckphrase(tester, address, within: find.byKey(SendSheet.recentKey(address)));
       }
@@ -293,6 +293,23 @@ void main() {
       await _tap(tester, SendSheet.recentKey(six.last));
 
       expect(_typed(tester, SendSheet.addressFieldKey), six.last);
+    });
+
+    testOnMac('with more than four addresses paid before, the heading says how many there are', (tester) async {
+      final seven = [
+        ..._fourRecents,
+        for (final letter in ['E', 'F', 'G']) 'qz${letter * 44}',
+      ];
+      await _openSend(tester, chain: FakeSendChain()..recents = seven);
+
+      expect(_inSheet(find.text('RECENTS (7)')), findsOneWidget);
+    });
+
+    testOnMac('with four addresses paid before or fewer, the heading has no count', (tester) async {
+      await _openSend(tester, chain: FakeSendChain()..recents = _fourRecents);
+
+      expect(_inSheet(find.text('RECENTS')), findsOneWidget);
+      expect(_inSheet(find.textContaining('RECENTS (')), findsNothing);
     });
 
     testOnMac('of a hundred addresses paid before, only the rows in view are built', (tester) async {

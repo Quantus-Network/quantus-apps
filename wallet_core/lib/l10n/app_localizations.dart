@@ -6781,6 +6781,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'About {app}'**
   String desktopMenuAbout(String app);
+
+  /// Desktop Send: the heading over the addresses paid before when there are more than the list shows at once; drawn in capitals
+  ///
+  /// In en, this message translates to:
+  /// **'Recents ({count})'**
+  String desktopSendRecentsCount(int count);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

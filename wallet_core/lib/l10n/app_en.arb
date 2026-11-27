@@ -5576,5 +5576,14 @@
           "type": "String"
         }
       }
+    },
+    "desktopSendRecentsCount": "Recents ({count})",
+    "@desktopSendRecentsCount": {
+      "description": "Desktop Send: the heading over the addresses paid before when there are more than the list shows at once; drawn in capitals",
+      "placeholders": {
+        "count": {
+          "type": "int"
+        }
+      }
     }
 }
