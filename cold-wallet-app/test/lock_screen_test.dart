@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 enum _Outcome { unlocks, cancelled, keyLost }
 
-class _LockedController extends WalletController {
+class _LockedController extends VaultWalletController {
   _LockedController(this.outcome);
 
   final _Outcome outcome;

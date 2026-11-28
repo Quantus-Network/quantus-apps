@@ -13,12 +13,12 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 const owner = 'qzmNaLjPU7hcvkjHpGmrVDPD9y12vdAFimCSrP1GkhVFJMaUq';
 
-class _UnlockedController extends WalletController {
+class _UnlockedController extends VaultWalletController {
   @override
   WalletState build() => const WalletState(status: WalletStatus.unlocked, mnemonic: 'unused in these tests');
 }
 
-class _LockedController extends WalletController {
+class _LockedController extends VaultWalletController {
   @override
   WalletState build() => const WalletState(status: WalletStatus.locked);
 }

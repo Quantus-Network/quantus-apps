@@ -15,7 +15,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 
 import 'fakes/wallet_fakes.dart';
 
-class _SetupController extends WalletController {
+class _SetupController extends VaultWalletController {
   @override
   WalletState build() => const WalletState(status: WalletStatus.needsSetup);
 }

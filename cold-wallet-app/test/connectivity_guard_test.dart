@@ -14,7 +14,7 @@ import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quantus_cold_wallet/components/cold_dialog.dart';
 
-class _StatusController extends WalletController {
+class _StatusController extends VaultWalletController {
   final WalletStatus status;
 
   _StatusController(this.status);

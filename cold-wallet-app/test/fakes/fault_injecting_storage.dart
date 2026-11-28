@@ -5,6 +5,7 @@ const vaultEntry = 'cold_vault';
 const vaultBackupEntry = 'cold_vault_backup';
 const plainKeyEntry = 'cold_unlock_key';
 const protectedKeyEntry = 'cold_unlock_key_protected';
+const heldAccountsEntry = 'cold_held_accounts';
 
 /// In-memory secure storage with fault injection. The vault's plain and
 /// protected stores land in the same map; their entry names differ.

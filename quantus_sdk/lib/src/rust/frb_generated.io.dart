@@ -4,6 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'api/airdrop.dart';
+import 'api/cold_key.dart';
 import 'api/crypto.dart';
 import 'api/multisig.dart';
 import 'api/near.dart';
@@ -15,6 +16,7 @@ import 'dart:ffi' as ffi;
 import 'frb_generated.dart';
 import 'lib.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
+import 'sealed_secret.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({
@@ -42,16 +44,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt dco_decode_U128(dynamic raw);
 
   @protected
+  AccountPath dco_decode_account_path(dynamic raw);
+
+  @protected
+  AccountPublicKey dco_decode_account_public_key(dynamic raw);
+
+  @protected
   AirdropMatch dco_decode_airdrop_match(dynamic raw);
 
   @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
+  AccountPath dco_decode_box_autoadd_account_path(dynamic raw);
+
+  @protected
   Keypair dco_decode_box_autoadd_keypair(dynamic raw);
 
   @protected
   ProofInput dco_decode_box_autoadd_proof_input(dynamic raw);
+
+  @protected
+  SealPolicy dco_decode_box_autoadd_seal_policy(dynamic raw);
 
   @protected
   int dco_decode_box_autoadd_u_32(dynamic raw);
@@ -76,6 +90,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
+  List<AccountPath> dco_decode_list_account_path(dynamic raw);
+
+  @protected
+  List<AccountPublicKey> dco_decode_list_account_public_key(dynamic raw);
 
   @protected
   List<AirdropMatch> dco_decode_list_airdrop_match(dynamic raw);
@@ -114,6 +134,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt? dco_decode_opt_U128(dynamic raw);
 
   @protected
+  SealPolicy? dco_decode_opt_box_autoadd_seal_policy(dynamic raw);
+
+  @protected
   int? dco_decode_opt_box_autoadd_u_32(dynamic raw);
 
   @protected
@@ -130,6 +153,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ProofOutput dco_decode_proof_output(dynamic raw);
+
+  @protected
+  SealPolicy dco_decode_seal_policy(dynamic raw);
+
+  @protected
+  SealedKeyError dco_decode_sealed_key_error(dynamic raw);
+
+  @protected
+  SealedKeyFailure dco_decode_sealed_key_failure(dynamic raw);
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -175,16 +207,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt sse_decode_U128(SseDeserializer deserializer);
 
   @protected
+  AccountPath sse_decode_account_path(SseDeserializer deserializer);
+
+  @protected
+  AccountPublicKey sse_decode_account_public_key(SseDeserializer deserializer);
+
+  @protected
   AirdropMatch sse_decode_airdrop_match(SseDeserializer deserializer);
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
+  AccountPath sse_decode_box_autoadd_account_path(SseDeserializer deserializer);
+
+  @protected
   Keypair sse_decode_box_autoadd_keypair(SseDeserializer deserializer);
 
   @protected
   ProofInput sse_decode_box_autoadd_proof_input(SseDeserializer deserializer);
+
+  @protected
+  SealPolicy sse_decode_box_autoadd_seal_policy(SseDeserializer deserializer);
 
   @protected
   int sse_decode_box_autoadd_u_32(SseDeserializer deserializer);
@@ -209,6 +253,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
+  List<AccountPath> sse_decode_list_account_path(SseDeserializer deserializer);
+
+  @protected
+  List<AccountPublicKey> sse_decode_list_account_public_key(SseDeserializer deserializer);
 
   @protected
   List<AirdropMatch> sse_decode_list_airdrop_match(SseDeserializer deserializer);
@@ -247,6 +297,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   BigInt? sse_decode_opt_U128(SseDeserializer deserializer);
 
   @protected
+  SealPolicy? sse_decode_opt_box_autoadd_seal_policy(SseDeserializer deserializer);
+
+  @protected
   int? sse_decode_opt_box_autoadd_u_32(SseDeserializer deserializer);
 
   @protected
@@ -263,6 +316,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ProofOutput sse_decode_proof_output(SseDeserializer deserializer);
+
+  @protected
+  SealPolicy sse_decode_seal_policy(SseDeserializer deserializer);
+
+  @protected
+  SealedKeyError sse_decode_sealed_key_error(SseDeserializer deserializer);
+
+  @protected
+  SealedKeyFailure sse_decode_sealed_key_failure(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_16(SseDeserializer deserializer);
@@ -310,16 +372,28 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_U128(BigInt self, SseSerializer serializer);
 
   @protected
+  void sse_encode_account_path(AccountPath self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_account_public_key(AccountPublicKey self, SseSerializer serializer);
+
+  @protected
   void sse_encode_airdrop_match(AirdropMatch self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
+  void sse_encode_box_autoadd_account_path(AccountPath self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_keypair(Keypair self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_proof_input(ProofInput self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_box_autoadd_seal_policy(SealPolicy self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_u_32(int self, SseSerializer serializer);
@@ -344,6 +418,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_account_path(List<AccountPath> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_account_public_key(List<AccountPublicKey> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_airdrop_match(List<AirdropMatch> self, SseSerializer serializer);
@@ -382,6 +462,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_opt_U128(BigInt? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_seal_policy(SealPolicy? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_box_autoadd_u_32(int? self, SseSerializer serializer);
 
   @protected
@@ -398,6 +481,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_proof_output(ProofOutput self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_seal_policy(SealPolicy self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sealed_key_error(SealedKeyError self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_sealed_key_failure(SealedKeyFailure self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);

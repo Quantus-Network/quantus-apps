@@ -42,15 +42,21 @@ Import the account
    "Override for Testing" button on that screen lifts the lock.
 2. Tap Import Key, type the 24 words separated by spaces, tap Import Key.
    Leave Advanced untouched: it already selects ML-DSA-87, account 0.
-3. Tap Enable Face ID or Use Passcode only, then Go To Wallet.
+3. Tap Enable Face ID, then Go To Wallet. An iPhone keeps the key behind Face
+   ID; with a passcode but no Face ID set up it offers Use your passcode
+   instead, and with no passcode it asks for one first. An Android phone does
+   the same with its fingerprint and its screen lock: Enable biometrics, or
+   Use your screen lock.
 4. The wallet shows the address and checkphrase above.
 
 Sign a request
 --------------
 Tap Scan Transaction and point the camera at a code in qr/. A request too
 large for one code has one image per part; scan the parts one after the
-other. Check the review screen, tap Approve and Sign, and the wallet shows the
-signature as a QR code for the hot wallet to scan. Tap Done.
+other. Check the review screen and tap Approve and Sign; the phone asks for
+Face ID or the fingerprint, or for the passcode it keeps the key behind, at
+every signature. The wallet shows the signature as a QR code for the hot
+wallet to scan. Tap Done.
 
 A code in qr/refused/ opens a screen saying why the wallet will not sign it,
 with the reason listed below.

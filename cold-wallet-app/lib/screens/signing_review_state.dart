@@ -2,10 +2,10 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/signature_qr_view.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
+import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 /// The approve and reject half of a signing review, the same for every
 /// chain. Back from the signature QR returns to the review, so the review
@@ -16,30 +16,38 @@ mixin SigningReviewState<T extends ConsumerStatefulWidget> on ConsumerState<T> {
   bool signatureShown = false;
   String? signError;
 
-  /// Derives [signer]'s key at the point of use and shows what [sign] makes
-  /// of it.
-  void approve(String signer, Uint8List Function(Keypair keypair) sign) {
-    final keypair = keypairFor(ref, signer);
-    if (keypair == null) {
-      setState(() => signError = 'Wallet is locked — unlock and try again. Nothing was signed.');
-      return;
-    }
+  /// Has the wallet [sign], which uses the key at that point only, and shows
+  /// the signature. A wallet that seals its key prompts here.
+  Future<void> approve(Future<Uint8List> Function(WalletController wallet) sign) async {
     setState(() {
       signing = true;
       signError = null;
     });
     final Uint8List signed;
     try {
-      signed = sign(keypair);
-    } catch (e) {
-      setState(() {
-        signing = false;
-        signError = 'Signing failed: $e';
-      });
+      signed = await sign(ref.read(walletControllerProvider.notifier));
+    } on VaultAccessCancelled {
+      _refuse('Cancelled. Nothing was signed.');
+      return;
+    } on KeyRefused catch (e) {
+      _refuse(e.message);
+      return;
+    } catch (e, st) {
+      debugPrint('Signing failed: $e\n$st');
+      _refuse('Signing failed: $e');
       return;
     }
+    if (!mounted) return;
     setState(() => signing = false);
     showSignature(signed);
+  }
+
+  void _refuse(String message) {
+    if (!mounted) return;
+    setState(() {
+      signing = false;
+      signError = message;
+    });
   }
 
   /// Step 3. From here on, this device has handed out a signature.

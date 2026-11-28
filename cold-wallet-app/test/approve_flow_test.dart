@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quantus_sdk/generated/bell/pallets/balances.dart' as balances_pallet;
@@ -14,6 +13,7 @@ import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
 import 'package:quantus_cold_wallet/screens/rejected_screen.dart';
 import 'package:quantus_cold_wallet/screens/sign_transaction_screen.dart';
 import 'package:quantus_cold_wallet/screens/signing_review_state.dart';
+import 'package:quantus_cold_wallet/services/vault_service.dart';
 
 const signerAddress = AppConstants.debugTestAddress;
 const otherAddress = 'qzmNaLjPU7hcvkjHpGmrVDPD9y12vdAFimCSrP1GkhVFJMaUq';
@@ -23,12 +23,31 @@ final transfer = const balances_pallet.Txs().transferAllowDeath(
   value: BigInt.from(1000000000000),
 );
 
+/// Stands in for the key: counts what it is asked to sign and answers with
+/// [failure] when one is set.
+class _SigningController extends VaultWalletController {
+  Object? failure;
+  int requests = 0;
+
+  @override
+  WalletState build() => const WalletState(status: WalletStatus.unlocked);
+
+  @override
+  Future<Uint8List> signExtrinsic(String address, Uint8List message, {required int specVersion}) async {
+    requests++;
+    final failure = this.failure;
+    if (failure != null) throw failure;
+    return Uint8List.fromList([1, 2, 3]);
+  }
+}
+
 /// A home route with a button that pushes [screen], so the flow's `popUntil
 /// first` has somewhere to land.
-Future<void> pumpFromHome(WidgetTester tester, Widget Function() screen) async {
+Future<void> pumpFromHome(WidgetTester tester, Widget Function() screen, {WalletController? wallet}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        if (wallet != null) walletControllerProvider.overrideWith(() => wallet),
         addressesProvider.overrideWith(
           (ref) => {signerAddress: ColdAccount(label: 'Main key', index: 0, scheme: DilithiumScheme.mlDsa87)},
         ),
@@ -169,5 +188,54 @@ void main() {
     expect(find.byType(RejectedScreen), findsOneWidget);
     expect(find.text('The signature was shown'), findsOneWidget);
     expect(find.text('Nothing was signed'), findsNothing);
+  });
+
+  testWidgets('Approve asks the wallet to sign: a refusal signs nothing, and says why', (tester) async {
+    final wallet = _SigningController();
+    await pumpFromHome(
+      tester,
+      () => SignTransactionScreen(
+        request: SigningRequest(signer: signerAddress, payload: DebugPayloads.payloadForCall(transfer.encode())),
+      ),
+      wallet: wallet,
+    );
+    Future<void> approve() async {
+      await tester.ensureVisible(find.text('Approve and Sign'));
+      await tester.tap(find.text('Approve and Sign'));
+      await tester.pumpAndSettle();
+    }
+
+    wallet.failure = VaultAccessCancelled(PlatformException(code: 'cancel'));
+    await approve();
+    expect(find.text('Cancelled. Nothing was signed.'), findsOneWidget);
+    expect(find.byType(SignatureQrView), findsNothing);
+
+    wallet.failure = const KeyRefused('Face ID did not match.');
+    await approve();
+    expect(find.text('Face ID did not match.'), findsOneWidget);
+    expect(find.text('Cancelled. Nothing was signed.'), findsNothing);
+
+    await tester.tap(find.text("It doesn't match"));
+    await tester.pumpAndSettle();
+    expect(find.text('Nothing was signed'), findsOneWidget);
+    expect(wallet.requests, 2);
+  });
+
+  testWidgets('Approve shows the signature the wallet made', (tester) async {
+    final wallet = _SigningController();
+    await pumpFromHome(
+      tester,
+      () => SignTransactionScreen(
+        request: SigningRequest(signer: signerAddress, payload: DebugPayloads.payloadForCall(transfer.encode())),
+      ),
+      wallet: wallet,
+    );
+
+    await tester.ensureVisible(find.text('Approve and Sign'));
+    await tester.tap(find.text('Approve and Sign'));
+    await tester.pumpAndSettle();
+
+    expect(wallet.requests, 1);
+    expect(find.byType(SignatureQrView), findsOneWidget);
   });
 }

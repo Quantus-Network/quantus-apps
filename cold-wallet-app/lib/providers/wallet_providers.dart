@@ -1,59 +1,16 @@
+import 'dart:io';
+
 import 'package:convert/convert.dart';
 import 'package:cryptography/cryptography.dart' show SecretBoxAuthenticationError;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/models/cold_account.dart';
-import 'package:quantus_cold_wallet/services/cold_auth_service.dart';
+import 'package:quantus_cold_wallet/providers/sealed_wallet_controller.dart';
+import 'package:quantus_cold_wallet/providers/wallet_controller.dart';
 import 'package:quantus_cold_wallet/services/vault_service.dart';
 
-enum WalletStatus { initializing, needsSetup, needsMigration, locked, unlocked }
-
-/// What the device key entry is behind. [upgradePending] is a plain entry on
-/// a device that can now protect it: the next read moves it behind user
-/// presence, and that move's prompt gates the read. [legacyPrompt] is a plain
-/// entry the previous app version kept behind its own device prompt, which
-/// stays in front of it. [none] was accepted on the no-lock warning.
-enum KeyProtection { userPresence, upgradePending, legacyPrompt, none }
-
-/// [WalletState.error] after the user dismissed the device prompt.
-const unlockCancelledError = 'cancelled';
-
-@immutable
-class WalletState {
-  final WalletStatus status;
-  final String? mnemonic;
-  final List<ColdAccount> accounts;
-
-  /// A device key entry exists, so the vault opens without a password.
-  final bool biometricEnabled;
-  final String? error;
-
-  const WalletState({
-    required this.status,
-    this.mnemonic,
-    this.accounts = const [],
-    this.biometricEnabled = false,
-    this.error,
-  });
-
-  WalletState copyWith({
-    WalletStatus? status,
-    String? mnemonic,
-    List<ColdAccount>? accounts,
-    bool? biometricEnabled,
-    String? error,
-  }) => WalletState(
-    status: status ?? this.status,
-    mnemonic: mnemonic ?? this.mnemonic,
-    accounts: accounts ?? this.accounts,
-    biometricEnabled: biometricEnabled ?? this.biometricEnabled,
-    error: error,
-  );
-}
-
-/// Injectable so a test can stand in for the platform biometric prompt.
-final coldAuthServiceProvider = Provider<ColdAuthService>((ref) => ColdAuthService());
+export 'package:quantus_cold_wallet/providers/wallet_controller.dart';
 
 /// Injectable so a test can stand in for the Rust key derivation.
 final hdWalletServiceProvider = Provider<HdWalletService>((ref) => HdWalletService());
@@ -66,88 +23,106 @@ final keyProtectionProvider = FutureProvider.autoDispose<KeyProtection>((ref) {
   return ref.watch(walletControllerProvider.notifier).keyProtection();
 });
 
-class WalletController extends Notifier<WalletState> {
+/// The wallet on a device that keeps the recovery phrase in an encrypted
+/// vault and opens it for the session with a device key.
+class VaultWalletController extends WalletController {
   static const _keyLostMessage =
       'This device can no longer open the wallet. Reset it and restore the key from your recovery phrase.';
+  static const _lockedMessage = 'Wallet is locked — unlock and try again. Nothing was signed.';
 
   final VaultService _vault = VaultService();
 
   List<int>? _keyBytes;
 
   VaultService get vault => _vault;
-  ColdAuthService get auth => ref.read(coldAuthServiceProvider);
+  HdWalletService get _hd => ref.read(hdWalletServiceProvider);
 
   @override
-  WalletState build() {
-    _init();
-    return const WalletState(status: WalletStatus.initializing);
-  }
+  bool get sealed => false;
 
-  Future<void> _init() async {
-    try {
-      if (!await _vault.hasWallet()) {
-        state = const WalletState(status: WalletStatus.needsSetup);
-        return;
-      }
-      final canProtect = await auth.deviceCanProtect();
-      if (await _vault.restoreVaultBackupIfPresent()) {
-        // A migration died between its vault write and a verified key entry:
-        // the password vault is back, so any entry it left is for a vault
-        // that no longer exists.
-        debugPrint('Restored the vault backup of an interrupted migration');
-        await _vault.deleteKeyEntry(protected: false);
-        if (canProtect) await _vault.deleteKeyEntry(protected: true);
-        state = const WalletState(status: WalletStatus.needsMigration);
-        return;
-      }
-      final plainKey = await _vault.plainKeyKind();
-      if (plainKey != PlainKeyKind.none) {
-        // A legacy entry without any device lock has lost the prompt the
-        // previous app version kept it behind; the password and the no-lock
-        // warning decide what replaces it.
-        if (plainKey == PlainKeyKind.legacy && !canProtect && !await auth.isDeviceSecure()) {
-          state = const WalletState(status: WalletStatus.needsMigration);
-          return;
-        }
-        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
-        return;
-      }
-      if (auth.storeAuthenticatesOncePerProcess) {
-        // Even an existence check opens the store and prompts there; the
-        // first unlock opens it instead, and one that finds no entry moves
-        // the wallet to migration. Without a device lock the store cannot be
-        // opened at all, so only a password can open this vault.
-        state = canProtect
-            ? const WalletState(status: WalletStatus.locked, biometricEnabled: true)
-            : const WalletState(status: WalletStatus.needsMigration);
-        return;
-      }
-      final bool protectedKey;
-      try {
-        protectedKey = await _vault.hasProtectedKey();
-      } on VaultAccessCancelled {
-        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true);
-        return;
-      } catch (e, st) {
-        // The OS can no longer open the store (lock removed, key invalidated).
-        // The vault stays; the lock screen offers the reset.
-        debugPrint('Protected key store unavailable at startup: $e\n$st');
-        state = const WalletState(status: WalletStatus.locked, biometricEnabled: true, error: _keyLostMessage);
-        return;
-      }
-      state = WalletState(
-        status: protectedKey ? WalletStatus.locked : WalletStatus.needsMigration,
-        biometricEnabled: protectedKey,
-      );
-    } catch (e, st) {
-      debugPrint('Wallet init failed reading secure storage: $e\n$st');
-      state = WalletState(status: WalletStatus.initializing, error: 'Could not read secure storage.\n$e');
+  @override
+  Future<WalletState> load() async {
+    if (!await _vault.hasWallet()) return const WalletState(status: WalletStatus.needsSetup);
+    final canProtect = await auth.deviceCanProtect();
+    if (await _vault.undoInterruptedMigration(canProtect: canProtect)) {
+      return const WalletState(status: WalletStatus.needsMigration);
     }
+    final plainKey = await _vault.plainKeyKind();
+    if (plainKey != PlainKeyKind.none) {
+      // A legacy entry without any device lock has lost the prompt the
+      // previous app version kept it behind; the password and the no-lock
+      // warning decide what replaces it.
+      if (plainKey == PlainKeyKind.legacy && !canProtect && !await auth.isDeviceSecure()) {
+        return const WalletState(status: WalletStatus.needsMigration);
+      }
+      return const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+    }
+    if (auth.storeAuthenticatesOncePerProcess) {
+      // Even an existence check opens the store and prompts there; the
+      // first unlock opens it instead, and one that finds no entry moves
+      // the wallet to migration. Without a device lock the store cannot be
+      // opened at all, so only a password can open this vault.
+      return canProtect
+          ? const WalletState(status: WalletStatus.locked, biometricEnabled: true)
+          : const WalletState(status: WalletStatus.needsMigration);
+    }
+    final bool protectedKey;
+    try {
+      protectedKey = await _vault.hasProtectedKey();
+    } on VaultAccessCancelled {
+      return const WalletState(status: WalletStatus.locked, biometricEnabled: true);
+    } catch (e, st) {
+      // The OS can no longer open the store (lock removed, key invalidated).
+      // The vault stays; the lock screen offers the reset.
+      debugPrint('Protected key store unavailable at startup: $e\n$st');
+      return const WalletState(status: WalletStatus.locked, biometricEnabled: true, error: _keyLostMessage);
+    }
+    return WalletState(
+      status: protectedKey ? WalletStatus.locked : WalletStatus.needsMigration,
+      biometricEnabled: protectedKey,
+    );
   }
 
-  Future<void> retryInit() async {
-    state = const WalletState(status: WalletStatus.initializing);
-    await _init();
+  /// The key pair of the account at [address], derived at the point of use
+  /// and never cached.
+  Keypair _keypairFor(String address) {
+    final mnemonic = state.mnemonic;
+    final account = ref.read(addressesProvider)[address];
+    if (mnemonic == null || account == null) throw const KeyRefused(_lockedMessage);
+    return _hd.keyPairAtPath(mnemonic, account.derivationPath, account.scheme);
+  }
+
+  @override
+  Map<String, ColdAccount> get addresses {
+    final mnemonic = state.mnemonic;
+    if (mnemonic == null) return const {};
+    return {
+      for (final account in state.accounts)
+        _hd.addressOf(_hd.keyPairAtPath(mnemonic, account.derivationPath, account.scheme)): account,
+    };
+  }
+
+  @override
+  Uint8List publicKeyOf(String address) => _keypairFor(address).publicKey;
+
+  @override
+  int get phraseWords => (state.mnemonic ?? (throw StateError('Wallet is locked'))).split(' ').length;
+
+  @override
+  Future<Uint8List> signExtrinsic(String address, Uint8List message, {required int specVersion}) async =>
+      signMessageWithPubkey(keypair: _keypairFor(address), message: message, specVersion: specVersion);
+
+  @override
+  Future<Uint8List> signNear(String address, List<int> transaction) async => _keypairFor(address).signNear(transaction);
+
+  @override
+  Future<String?> revealPhrase() async => await confirmPresence() ? state.mnemonic : null;
+
+  @override
+  Future<void> checkPhrase(String phrase, List<ColdAccount> accounts) async {
+    for (final account in accounts) {
+      _hd.keyPairAtPath(phrase, account.derivationPath, account.scheme);
+    }
   }
 
   /// Creates the vault under an internal random secret and keeps its derived
@@ -156,6 +131,7 @@ class WalletController extends Notifier<WalletState> {
   /// storage error) removes the vault again and rethrows, so a vault without
   /// a readable key never survives creation, even when the cleanup's own
   /// prompt is cancelled as well.
+  @override
   Future<void> createWallet({
     required String mnemonic,
     required List<ColdAccount> accounts,
@@ -167,7 +143,7 @@ class WalletController extends Notifier<WalletState> {
       await _vault.storeBiometricKey(keyBytes, protected: protected);
     } catch (e, st) {
       debugPrint('Create wallet failed, removing the vault: $e\n$st');
-      await _vault.discardIncompleteVault();
+      await _vault.discardVault();
       rethrow;
     }
     _keyBytes = keyBytes;
@@ -197,12 +173,16 @@ class WalletController extends Notifier<WalletState> {
   /// at startup, since the device lock can be added or removed while the app
   /// runs. Never opens the protected store: a vault without a plain entry
   /// keeps its key there by construction.
+  @override
   Future<KeyProtection> keyProtection() async {
     final plainKey = await _vault.plainKeyKind();
     if (plainKey == PlainKeyKind.none) return KeyProtection.userPresence;
     if (await auth.deviceCanProtect()) return KeyProtection.upgradePending;
     return plainKey == PlainKeyKind.legacy ? KeyProtection.legacyPrompt : KeyProtection.none;
   }
+
+  @override
+  Future<void> sealBehindBiometrics() => throw StateError('A vault key is never sealed');
 
   /// The one way to the key: the prompt its protection needs, the read, and
   /// for a plain entry the device can now protect, the move behind user
@@ -213,6 +193,7 @@ class WalletController extends Notifier<WalletState> {
     final passed = switch (protection) {
       KeyProtection.none => true,
       KeyProtection.legacyPrompt => await auth.authenticate(reason),
+      KeyProtection.biometryEachUse || KeyProtection.passcodeEachUse => throw StateError('A vault key is never sealed'),
       // Android's store answers silently once it has prompted in this
       // process; the first read of a process and every iOS read are gated by
       // the store itself.
@@ -268,6 +249,7 @@ class WalletController extends Notifier<WalletState> {
   /// password keeps working; the plain entry is never a fallback for that.
   /// A legacy vault has no key entry, so the protected store is not probed:
   /// on a device that cannot protect it cannot even be opened.
+  @override
   Future<bool> migrateLegacy(String password, {required bool protected}) async {
     final UnlockResult legacy;
     try {
@@ -314,28 +296,8 @@ class WalletController extends Notifier<WalletState> {
     }
   }
 
-  /// Adds an account derived from the seed already in the vault.
-  Future<void> addAccount(ColdAccount account) => _saveAccounts([...state.accounts, account]);
-
-  Future<void> renameAccount(ColdAccount account, String label) {
-    _requireHeld(account);
-    return _saveAccounts([for (final a in state.accounts) a.derivesSameKey(account) ? a.withLabel(label) : a]);
-  }
-
-  /// Drops [account] from the vault. The seed still derives it, so adding the
-  /// same derivation path again brings it back.
-  Future<void> removeAccount(ColdAccount account) {
-    _requireHeld(account);
-    final accounts = state.accounts.where((a) => !a.derivesSameKey(account)).toList();
-    if (accounts.isEmpty) throw StateError('The last account cannot be removed');
-    return _saveAccounts(accounts);
-  }
-
-  void _requireHeld(ColdAccount account) {
-    if (!state.accounts.any(account.derivesSameKey)) throw StateError('Account ${account.label} is not in this wallet');
-  }
-
-  Future<void> _saveAccounts(List<ColdAccount> accounts) async {
+  @override
+  Future<void> saveAccounts(List<ColdAccount> accounts) async {
     final mnemonic = state.mnemonic;
     final keyBytes = _keyBytes;
     if (mnemonic == null || keyBytes == null) throw StateError('Wallet is locked');
@@ -355,6 +317,7 @@ class WalletController extends Notifier<WalletState> {
 
   /// The lifecycle re-lock. Android's system prompt for the protected store
   /// pauses the activity; that is not the user leaving the app.
+  @override
   void lockOnBackground() {
     if (_vault.promptInProgress || auth.promptInProgress) return;
     lock();
@@ -362,6 +325,7 @@ class WalletController extends Notifier<WalletState> {
 
   /// A wipe the user cancels at its system prompt leaves the vault, and with
   /// it the key the session holds.
+  @override
   Future<void> wipe() async {
     await _vault.wipe();
     _keyBytes = null;
@@ -369,44 +333,33 @@ class WalletController extends Notifier<WalletState> {
   }
 }
 
-final walletControllerProvider = NotifierProvider<WalletController, WalletState>(WalletController.new);
+/// A phone seals the phrase; the host the tests run on, which has no sealed
+/// store, keeps the vault.
+final walletControllerProvider = NotifierProvider<WalletController, WalletState>(
+  () => Platform.isIOS || Platform.isAndroid ? SealedWalletController() : VaultWalletController(),
+);
 
 /// Every account, in the order they were added to the wallet.
 final accountsProvider = Provider<List<ColdAccount>>((ref) => ref.watch(walletControllerProvider).accounts);
 
-/// Every account's address, resolved once per unlock so a scanned request can
-/// be matched to the account that must sign it. Addresses only — key pairs are
-/// derived at the point of use and never cached.
+/// Every account's address, resolved once per change of the wallet so a
+/// scanned request can be matched to the account that must sign it. Addresses
+/// only — key pairs are derived at the point of use and never cached.
 final addressesProvider = Provider<Map<String, ColdAccount>>((ref) {
-  final mnemonic = ref.watch(walletControllerProvider).mnemonic;
-  if (mnemonic == null) return const {};
-  final service = HdWalletService();
-  return {
-    for (final account in ref.watch(accountsProvider))
-      service.keyPairAtPath(mnemonic, account.derivationPath, account.scheme).ss58Address: account,
-  };
+  ref.watch(walletControllerProvider.select((s) => (s.status, s.mnemonic, s.accounts)));
+  return ref.watch(walletControllerProvider.notifier).addresses;
 });
-
-Keypair? keypairFor(WidgetRef ref, String address) {
-  final mnemonic = ref.read(walletControllerProvider).mnemonic;
-  final account = ref.read(addressesProvider)[address];
-  if (mnemonic == null || account == null) return null;
-  return HdWalletService().keyPairAtPath(mnemonic, account.derivationPath, account.scheme);
-}
 
 /// The address of the account whose ML-DSA-65 public key is [publicKeyHex],
 /// or null when no account in this wallet holds it. A NEAR transaction names
 /// its key rather than a Quantus address, and the address is a hash of the
-/// key, so each ML-DSA-65 account's key pair is derived and compared. Keyed
-/// by hex so equal keys resolve to the same provider instance.
+/// key, so each ML-DSA-65 account's key is compared. Keyed by hex so equal
+/// keys resolve to the same provider instance.
 final nearKeyOwnerProvider = Provider.family<String?, String>((ref, publicKeyHex) {
-  final mnemonic = ref.watch(walletControllerProvider).mnemonic;
-  if (mnemonic == null) return null;
-  final service = HdWalletService();
+  final wallet = ref.watch(walletControllerProvider.notifier);
   for (final entry in ref.watch(addressesProvider).entries) {
     if (entry.value.scheme != DilithiumScheme.mlDsa65) continue;
-    final keypair = service.keyPairAtPath(mnemonic, entry.value.derivationPath, entry.value.scheme);
-    if (hex.encode(keypair.publicKey) == publicKeyHex) return entry.key;
+    if (hex.encode(wallet.publicKeyOf(entry.key)) == publicKeyHex) return entry.key;
   }
   return null;
 });

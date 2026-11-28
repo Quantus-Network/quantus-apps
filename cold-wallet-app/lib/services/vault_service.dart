@@ -345,6 +345,17 @@ class VaultService {
     return true;
   }
 
+  /// Undoes a migration that died between its vault write and a verified key
+  /// entry: the password vault is put back, and any entry the migration left
+  /// is for a vault that no longer exists. Returns whether there was one.
+  Future<bool> undoInterruptedMigration({required bool canProtect}) async {
+    if (!await restoreVaultBackupIfPresent()) return false;
+    debugPrint('Restored the vault backup of an interrupted migration');
+    await deleteKeyEntry(protected: false);
+    if (canProtect) await deleteKeyEntry(protected: true);
+    return true;
+  }
+
   Future<void> deleteVaultBackup() => _storage.delete(key: _backupKey);
 
   /// Removes everything. The protected entry goes first so a cancelled prompt
@@ -357,11 +368,12 @@ class VaultService {
     await _deletePlainEntries();
   }
 
-  /// Removes a vault whose creation did not finish. Nothing can open it, so
-  /// it goes first; the protected entry follows as far as the store allows,
-  /// since its prompt may be cancelled too, and an entry left behind is
-  /// overwritten by the next creation.
-  Future<void> discardIncompleteVault() async {
+  /// Removes a vault nothing should open again: one whose creation did not
+  /// finish, or one whose phrase has moved to the sealed store. The vault goes
+  /// first; the protected entry follows as far as the store allows, since its
+  /// prompt may be cancelled too, and an entry left behind opens nothing and
+  /// is overwritten by the next creation.
+  Future<void> discardVault() async {
     await _deletePlainEntries();
     await _deleteProtectedEntry(keepOnCancel: false);
   }

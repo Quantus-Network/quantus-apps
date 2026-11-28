@@ -33,15 +33,15 @@ void main() {
     storage.data[plainKeyEntry] = paired ? jsonEncode({'salt': salt, 'key': key}) : key;
   }
 
-  Future<(ProviderContainer, WalletController)> bootWith(FakeColdAuth auth) async {
+  Future<(ProviderContainer, VaultWalletController)> bootWith(FakeColdAuth auth) async {
     final container = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(auth)]);
     addTearDown(container.dispose);
-    final controller = container.read(walletControllerProvider.notifier);
+    final controller = vaultController(container);
     await awaitInit(container);
     return (container, controller);
   }
 
-  Future<(ProviderContainer, WalletController)> boot({bool canProtect = true, bool storePromptsOnce = false}) =>
+  Future<(ProviderContainer, VaultWalletController)> boot({bool canProtect = true, bool storePromptsOnce = false}) =>
       bootWith(FakeColdAuth(canProtect: canProtect, storePromptsOnce: storePromptsOnce));
 
   WalletStatus statusOf(ProviderContainer c) => c.read(walletControllerProvider).status;
@@ -278,7 +278,7 @@ void main() {
     // The protected store cannot be opened there, entry or no entry.
     setUp(() => storage.unavailableKey = protectedKeyEntry);
 
-    Future<(ProviderContainer, WalletController)> bootAndroid() => boot(canProtect: false, storePromptsOnce: true);
+    Future<(ProviderContainer, VaultWalletController)> bootAndroid() => boot(canProtect: false, storePromptsOnce: true);
 
     test('a password wallet reaches migration without the protected store', () async {
       await legacyVault();
@@ -318,7 +318,7 @@ void main() {
   });
 
   group('a plain key on a device that can protect', () {
-    Future<WalletController> plainWalletRelaunched() async {
+    Future<VaultWalletController> plainWalletRelaunched() async {
       final (_, created) = await boot(canProtect: false);
       await created.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: false);
       final (relaunched, controller) = await boot();

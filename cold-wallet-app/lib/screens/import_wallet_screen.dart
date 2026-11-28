@@ -10,7 +10,11 @@ import 'package:quantus_cold_wallet/ui/cold_theme.dart';
 /// Import Key: a recovery phrase and the account it should derive. Never
 /// shows the phrase back; a valid phrase goes straight to the unlock method.
 class ImportWalletScreen extends ConsumerStatefulWidget {
-  const ImportWalletScreen({super.key});
+  /// The accounts of a wallet whose key this device lost. The phrase then has
+  /// to be theirs, and puts the key back without choosing an account.
+  final List<ColdAccount>? restoring;
+
+  const ImportWalletScreen({super.key, this.restoring});
 
   @override
   ConsumerState<ImportWalletScreen> createState() => _ImportWalletScreenState();
@@ -26,6 +30,8 @@ class _ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
 
   bool get _hasInput => _controller.text.trim().isNotEmpty;
 
+  String get _title => widget.restoring == null ? 'Import Key' : 'Restore Key';
+
   Future<void> _import() async {
     final mnemonic = _controller.text.trim();
 
@@ -38,10 +44,14 @@ class _ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     }
 
     final account = _account;
-    if (account == null) {
+    final restoring = widget.restoring;
+    if (restoring == null && account == null) {
       setState(() => _derivationError = 'Enter a valid account index or derivation path');
       return;
     }
+    // The scheme is chosen in the derivation field (ADVANCED), so import the
+    // one account it names.
+    final accounts = restoring ?? [account!.withLabel('Main key')];
 
     setState(() {
       _isLoading = true;
@@ -50,17 +60,17 @@ class _ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     });
 
     try {
-      // The scheme is chosen in the derivation field (ADVANCED), so import the
-      // one account it names. Throws on an invalid phrase.
-      ref.read(hdWalletServiceProvider).keyPairAtPath(mnemonic, account.derivationPath, account.scheme);
+      await ref.read(walletControllerProvider.notifier).checkPhrase(mnemonic, accounts);
 
       if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => UnlockMethodScreen(mnemonic: mnemonic, accounts: [account.withLabel('Main key')]),
+          builder: (_) => UnlockMethodScreen(mnemonic: mnemonic, accounts: accounts, restoring: restoring != null),
         ),
       );
+    } on KeyRefused catch (e) {
+      if (mounted) setState(() => _phraseError = e.message);
     } catch (e) {
       debugPrint('Import rejected: $e');
       if (mounted) setState(() => _phraseError = 'Not a valid recovery phrase');
@@ -75,7 +85,7 @@ class _ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
     final text = context.themeTextV3;
 
     return ScaffoldBase(
-      appBar: const V2AppBar(title: 'Import Key'),
+      appBar: V2AppBar(title: _title),
       mainContent: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.opaque,
@@ -84,7 +94,9 @@ class _ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Restore an existing key with its 12 or 24 word recovery phrase.',
+                widget.restoring == null
+                    ? 'Restore an existing key with its 12 or 24 word recovery phrase.'
+                    : "Enter this wallet's 12 or 24 word recovery phrase to put its signing key back on this device.",
                 style: text.body.copyWith(color: colors.textMuted),
               ),
               const SizedBox(height: 16),
@@ -95,13 +107,15 @@ class _ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
                 onChanged: (_) => setState(() => _phraseError = null),
                 scrollToOnFocus: _buttonKey,
               ),
-              const SizedBox(height: 20),
-              DerivationField(
-                onChanged: (a) => setState(() {
-                  _account = a;
-                  _derivationError = null;
-                }),
-              ),
+              if (widget.restoring == null) ...[
+                const SizedBox(height: 20),
+                DerivationField(
+                  onChanged: (a) => setState(() {
+                    _account = a;
+                    _derivationError = null;
+                  }),
+                ),
+              ],
               if (_derivationError != null) ...[
                 const SizedBox(height: 16),
                 Text(
@@ -117,7 +131,7 @@ class _ImportWalletScreenState extends ConsumerState<ImportWalletScreen> {
       bottomContent: ScaffoldBaseBottomContent(
         child: QuantusButton.simple(
           key: _buttonKey,
-          label: 'Import Key',
+          label: _title,
           padding: coldButtonPadding,
           onTap: _import,
           isLoading: _isLoading,

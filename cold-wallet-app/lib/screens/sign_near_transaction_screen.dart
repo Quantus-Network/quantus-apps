@@ -43,7 +43,7 @@ class _SignNearTransactionScreenState extends ConsumerState<SignNearTransactionS
 
   /// Pure ML-DSA-65 over SHA-256 of the transaction, no Quantus context: this
   /// is what the NEAR runtime verifies. Returns signature ++ public key.
-  void _sign(String owner) => approve(owner, (keypair) => keypair.signNear(widget.request.transaction));
+  void _sign(String owner) => approve((wallet) => wallet.signNear(owner, widget.request.transaction));
 
   @override
   Widget build(BuildContext context) {

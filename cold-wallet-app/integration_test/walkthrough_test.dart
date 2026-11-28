@@ -5,10 +5,11 @@ import 'package:integration_test/integration_test.dart';
 import 'package:quantus_cold_wallet/app.dart';
 import 'package:quantus_cold_wallet/providers/connectivity_provider.dart';
 import 'package:quantus_cold_wallet/providers/wallet_providers.dart';
-import 'package:quantus_cold_wallet/services/vault_service.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:quantus_cold_wallet/components/cold_icon.dart';
+
+import '../test/fakes/wallet_fakes.dart' show awaitInit;
 
 /// Walks every screen of the redesign on a device or simulator and saves a
 /// screenshot of each, named after the Figma frame it implements. Run with:
@@ -28,9 +29,13 @@ void main() {
 
   setUpAll(QuantusSdk.init);
 
+  /// Wipes the wallet through the controller that holds it on this device.
   Future<void> reset() async {
     await (await SharedPreferences.getInstance()).clear();
-    await VaultService().wipe();
+    final container = ProviderContainer();
+    await awaitInit(container);
+    await container.read(walletControllerProvider.notifier).wipe();
+    container.dispose();
   }
 
   testWidgets('offline gate', (tester) async {
@@ -204,10 +209,13 @@ void main() {
     await tap(find.widgetWithText(QuantusButton, 'Import Key'));
     await finishCreate();
 
-    container.read(walletControllerProvider.notifier).lock();
+    // Only a wallet that opens a vault for the session has a lock screen.
+    final wallet = container.read(walletControllerProvider.notifier);
+    if (wallet is! VaultWalletController) return;
+    wallet.lock();
     await waitFor('Unlock');
     await shot('x-lock-screen');
-    await container.read(walletControllerProvider.notifier).unlockWithBiometric();
+    await wallet.unlockWithBiometric();
     await waitFor('Ready to sign');
     await shot('x-home-after-unlock');
   });

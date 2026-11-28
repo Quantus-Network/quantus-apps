@@ -1964,6 +1964,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "jni-sys"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8eaf4bc02d17cbdd7ff4c7438cafcdf7fb9a4613313ad11b4f8fefe7d3fa0130"
+
+[[package]]
 name = "js-sys"
 version = "0.3.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3392,6 +3398,7 @@ dependencies = [
  "bs58",
  "flutter_rust_bridge",
  "hex",
+ "jni-sys",
  "nam-tiny-hderive",
  "p3-field",
  "p3-goldilocks",

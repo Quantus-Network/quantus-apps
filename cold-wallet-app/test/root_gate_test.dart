@@ -7,7 +7,7 @@ import 'package:quantus_cold_wallet/screens/root_gate.dart';
 import 'package:quantus_sdk/quantus_sdk.dart';
 import 'package:quantus_cold_wallet/components/cold_icon.dart';
 
-class _InitErrorController extends WalletController {
+class _InitErrorController extends VaultWalletController {
   @override
   WalletState build() => const WalletState(status: WalletStatus.initializing, error: 'Could not read secure storage.');
 }

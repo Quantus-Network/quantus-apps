@@ -10,7 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'fakes/wallet_fakes.dart';
 
-class _PresenceController extends WalletController {
+class _PresenceController extends VaultWalletController {
   _PresenceController({required this.confirms});
 
   final bool confirms;
@@ -114,7 +114,10 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: Builder(
-          builder: (context) => MaterialApp(theme: AppTheme.darkTheme(context), home: const ShowSecretPhraseScreen()),
+          builder: (context) => MaterialApp(
+            theme: AppTheme.darkTheme(context),
+            home: const ShowSecretPhraseScreen(phrase: testMnemonic),
+          ),
         ),
       ),
     );

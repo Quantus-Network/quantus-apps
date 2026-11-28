@@ -41,13 +41,13 @@ void main() {
   CheckphraseText.resolveOverride = (_) async => 'check phrase';
   group('the vault stays openable across a session', () {
     late ProviderContainer container;
-    late WalletController controller;
+    late VaultWalletController controller;
 
     setUp(() async {
       FlutterSecureStorage.setMockInitialValues({});
       container = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth())]);
       addTearDown(container.dispose);
-      controller = container.read(walletControllerProvider.notifier);
+      controller = vaultController(container);
       await awaitInit(container);
     });
 
@@ -59,7 +59,7 @@ void main() {
       );
       final migrated = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth())]);
       addTearDown(migrated.dispose);
-      final legacy = migrated.read(walletControllerProvider.notifier);
+      final legacy = vaultController(migrated);
       await awaitInit(migrated);
 
       expect(await legacy.migrateLegacy('alpha', protected: true), isTrue);

@@ -8,7 +8,7 @@ import '../lib.dart';
 import 'crypto.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `bytes`, `check_account_id`, `decode_wire`, `require_ml_dsa_65`, `text`
+// These functions are ignored because they are not marked as `pub`: `bytes`, `check_account_id`, `decode_wire`, `require_ml_dsa_65_key`, `sign_declared_transaction`, `text`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `WireAccessKeyPermission`, `WireAccessKey`, `WireAction`, `WireFunctionCallPermission`, `WirePublicKey`, `WireTransaction`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `assert_receiver_is_total_eq`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `clone`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_reader`, `deserialize_variant`, `deserialize_variant`, `deserialize_variant`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `fmt`, `from`, `serialize`, `serialize`, `serialize`, `serialize`, `serialize`, `serialize`
 
@@ -40,13 +40,13 @@ bool verifyNearSignature({
 
 /// The account's key in NEAR text form, `ml-dsa-65:<base58>`. This is the
 /// `--signer-public-key` near-cli-rs takes and what an `AddKey` carries.
-String nearPublicKeyText({required Keypair keypair}) =>
-    RustLib.instance.api.crateApiNearNearPublicKeyText(keypair: keypair);
+String nearPublicKeyText({required List<int> publicKey}) =>
+    RustLib.instance.api.crateApiNearNearPublicKeyText(publicKey: publicKey);
 
 /// The on-chain handle of the key, `ml-dsa-65-hash:<base58>`: what
 /// `view_access_key_list` shows, SHA3-256 of a domain tag and the key.
-String nearPublicKeyHandle({required Keypair keypair}) =>
-    RustLib.instance.api.crateApiNearNearPublicKeyHandle(keypair: keypair);
+String nearPublicKeyHandle({required List<int> publicKey}) =>
+    RustLib.instance.api.crateApiNearNearPublicKeyHandle(publicKey: publicKey);
 
 /// One action of a NEAR transaction, flattened for display. Which fields are
 /// set depends on [`NearAction::kind`]; amounts are yoctoNEAR (24 decimals)

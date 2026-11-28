@@ -14,7 +14,7 @@ void main() {
 
   late FaultInjectingStorage storage;
   late ProviderContainer container;
-  late WalletController controller;
+  late VaultWalletController controller;
   final vault = VaultService();
 
   setUp(() async {
@@ -22,7 +22,7 @@ void main() {
     FlutterSecureStoragePlatform.instance = storage;
     container = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(FakeColdAuth())]);
     addTearDown(container.dispose);
-    controller = container.read(walletControllerProvider.notifier);
+    controller = vaultController(container);
     await awaitInit(container);
   });
 
@@ -32,11 +32,11 @@ void main() {
       controller.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: true);
 
   /// A new process over the same storage: its own controller and vault.
-  Future<(ProviderContainer, WalletController)> fresh(FakeColdAuth auth) async {
+  Future<(ProviderContainer, VaultWalletController)> fresh(FakeColdAuth auth) async {
     final c = ProviderContainer(overrides: [coldAuthServiceProvider.overrideWithValue(auth)]);
     addTearDown(c.dispose);
     await awaitInit(c);
-    return (c, c.read(walletControllerProvider.notifier));
+    return (c, vaultController(c));
   }
 
   test('starts in needsSetup without a vault', () {
@@ -173,7 +173,7 @@ void main() {
   });
 
   group('a device lock added while the app runs', () {
-    Future<(ProviderContainer, WalletController, FakeColdAuth)> plainWallet() async {
+    Future<(ProviderContainer, VaultWalletController, FakeColdAuth)> plainWallet() async {
       final auth = FakeColdAuth(canProtect: false);
       final (c, ctl) = await fresh(auth);
       await ctl.createWallet(mnemonic: testMnemonic, accounts: testAccounts, protected: false);

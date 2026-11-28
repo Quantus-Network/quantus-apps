@@ -13,7 +13,7 @@ import 'fakes/account_fixtures.dart' show coldApp;
 import 'fakes/fault_injecting_storage.dart';
 import 'fakes/wallet_fakes.dart';
 
-class _MigrationController extends WalletController {
+class _MigrationController extends VaultWalletController {
   _MigrationController({this.failure});
 
   final Object? failure;
@@ -102,7 +102,7 @@ void main() {
 
     await submit(tester, 'alpha');
 
-    expect(find.text('Face ID is needed to finish moving your wallet.'), findsOneWidget);
+    expect(find.text('Cancelled. Your wallet has not moved yet.'), findsOneWidget);
   });
 
   testWidgets('a storage failure says nothing changed', (tester) async {
