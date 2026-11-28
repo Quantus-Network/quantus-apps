@@ -1,6 +1,6 @@
 name: quantus_desktop_wallet
 description: Quantus desktop wallet for macOS, Windows and Linux.
-version: 0.1.0+1
+version: 0.1.0+2
 publish_to: none
 
 environment:
