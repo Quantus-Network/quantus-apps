@@ -17,6 +17,7 @@ import 'package:quantus_desktop_wallet/services/login_password.dart';
 import 'package:quantus_desktop_wallet/services/mac_push.dart';
 import 'package:quantus_desktop_wallet/services/notification_plugin.dart';
 import 'package:quantus_desktop_wallet/services/qr_scan_source.dart';
+import 'package:quantus_desktop_wallet/services/desktop_telemetry.dart';
 import 'package:quantus_desktop_wallet/services/sensitive_clipboard.dart';
 import 'package:quantus_desktop_wallet/services/user_approval.dart';
 import 'package:quantus_desktop_wallet/services/window_chrome.dart';
@@ -38,6 +39,7 @@ import 'package:wallet_core/services/exchange_rate_service.dart';
 import 'package:wallet_core/services/history_polling_manager.dart';
 import 'package:wallet_core/services/logout_service.dart';
 import 'package:wallet_core/services/remote_config_service.dart';
+import 'package:wallet_core/services/telemetry.dart';
 import 'package:wallet_core/services/transaction_submission_service.dart';
 import 'package:wallet_core/services/user_approval.dart';
 
@@ -1669,6 +1671,24 @@ class FakeUserApproval implements UserApproval {
   }
 }
 
+/// The app's analytics, kept here instead of sent.
+class RecordingTelemetry implements Telemetry {
+  /// Every event sent, in order, with its parameters.
+  final events = <({String name, Map<String, String>? parameters})>[];
+
+  /// The name of every error sent, in order.
+  final errors = <String>[];
+
+  List<String> get eventNames => [for (final event in events) event.name];
+
+  @override
+  void sendEvent(String eventName, {Map<String, String>? parameters}) =>
+      events.add((name: eventName, parameters: parameters));
+
+  @override
+  void sendError(String errorName, {required Object error}) => errors.add(errorName);
+}
+
 /// The system's check of the login password, answering as a test says.
 class FakeLoginPassword implements LoginPassword {
   bool isSetUpAnswer = true;
@@ -2277,6 +2297,9 @@ class FakeEncryptedSendController extends EncryptedSendController {
 ///
 /// The system's notifications are always a fake one: [notifications] when a
 /// test looks at them.
+///
+/// Nothing is sent to TelemetryDeck: [telemetry] keeps what the app would
+/// send.
 Future<void> pumpShell(
   WidgetTester tester, {
   required List<Override> overrides,
@@ -2286,6 +2309,7 @@ Future<void> pumpShell(
   FakeNetwork? network,
   FakeNotificationPlugin? notifications,
   FakeBackgroundWindow? backgroundWindow,
+  RecordingTelemetry? telemetry,
   bool settle = true,
   bool reduceMotion = true,
 }) async {
@@ -2309,6 +2333,8 @@ Future<void> pumpShell(
         // pushes, which registers nothing.
         macPushProvider.overrideWithValue(FakeMacPush(environmentOfBuild: null)),
         backgroundWindowProvider.overrideWithValue(backgroundWindow ?? FakeBackgroundWindow()),
+        // Never TelemetryDeck.
+        desktopTelemetryProvider.overrideWithValue(telemetry ?? RecordingTelemetry()),
       ],
     ),
   );

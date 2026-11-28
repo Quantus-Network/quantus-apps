@@ -26,6 +26,11 @@ dependencies:
 
   # Time, so that tests can set it.
   clock: ^1.1.1
+  # TelemetryDeck has no SDK for Windows or Linux: its HTTP API is called
+  # directly. The hash of the user, a session's ID, and the request.
+  crypto: ^3.0.7
+  http: ^1.6.0
+  uuid: ^4.6.0
   # Token logos come as SVG as often as not.
   flutter_svg: ^2.3.0
 
@@ -51,8 +56,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  # MockClient, for the push service's requests.
-  http: ^1.6.0
   # The screenshot tool's in-memory preferences.
   shared_preferences: ^2.5.5
   yaml: ^3.1.3

@@ -24,5 +24,9 @@ enum ShellSheet {
 
   /// What Quantus is, its terms, privacy policy and website, and the app's
   /// version.
-  about,
+  about;
+
+  /// The name analytics reports the sheet by when it opens: [name] in snake
+  /// case, as the phone names its screens.
+  String get telemetryName => name.replaceAllMapped(RegExp('[A-Z]'), (match) => '_${match[0]!.toLowerCase()}');
 }

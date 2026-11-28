@@ -153,11 +153,16 @@ void main() {
         await tester.pump(const Duration(milliseconds: 500));
       }
 
-      Future<FakeWalletDevice> pumpWithoutPhrase(WidgetTester tester, {List<Object> exits = const []}) async {
+      Future<FakeWalletDevice> pumpWithoutPhrase(
+        WidgetTester tester, {
+        List<Object> exits = const [],
+        RecordingTelemetry? telemetry,
+      }) async {
         final device = FakeWalletDevice()..store([_root, _encrypted], mnemonic: null);
         await pumpShell(
           tester,
           overrides: [...device.overrides, forceAppExitProvider.overrideWithValue(() => exits.add('exit'))],
+          telemetry: telemetry,
           settle: false,
         );
         await settle(tester);
@@ -175,6 +180,30 @@ void main() {
         expect(_button('OK'), findsNothing);
         expect(find.byType(Sidebar), findsNothing);
         expect(device.logouts, 0);
+      });
+
+      testOnMac('is reported as user_lost_mnemonic, as on the phone, once however often Try Again finds it missing', (
+        tester,
+      ) async {
+        final telemetry = RecordingTelemetry();
+        await pumpWithoutPhrase(tester, telemetry: telemetry);
+
+        expect(telemetry.eventNames, ['user_lost_mnemonic']);
+        expect(telemetry.events.single.parameters, isNull);
+
+        await tester.tap(_button('Try Again'));
+        await settle(tester);
+
+        expect(find.text(notice), findsOneWidget);
+        expect(telemetry.eventNames, ['user_lost_mnemonic']);
+      });
+
+      testOnMac('a readable phrase is not reported lost', (tester) async {
+        final telemetry = RecordingTelemetry();
+        final device = FakeWalletDevice()..store([_root, _encrypted], mnemonic: _twelveWords);
+        await pumpShell(tester, overrides: device.overrides, telemetry: telemetry);
+
+        expect(telemetry.eventNames, isNot(contains('user_lost_mnemonic')));
       });
 
       testOnMac('Try Again with the phrase readable again opens the wallet and wipes nothing', (tester) async {

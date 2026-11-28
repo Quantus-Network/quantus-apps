@@ -54,12 +54,13 @@ void _expectAddressOverCheckphrase(WidgetTester tester, String address) {
 }
 
 class _Harness {
-  _Harness(this.chain, this.approval, this.camera, this.opened);
+  _Harness(this.chain, this.approval, this.camera, this.opened, this.telemetry);
 
   final FakeSendChain chain;
   final FakeUserApproval approval;
   final FakeScanSource camera;
   final List<Uri> opened;
+  final RecordingTelemetry telemetry;
 
   ProviderContainer container(WidgetTester tester) =>
       ProviderScope.containerOf(tester.element(find.byType(DesktopShell)));
@@ -71,8 +72,10 @@ Future<_Harness> _openSend(WidgetTester tester, {FakeUserApproval? approval}) as
   approval ??= FakeUserApproval();
   final camera = FakeScanSource();
   final opened = <Uri>[];
+  final telemetry = RecordingTelemetry();
   await pumpShell(
     tester,
+    telemetry: telemetry,
     overrides: [
       ...shellOverrides(
         accounts: const [mainAccount, vaultAccount],
@@ -87,7 +90,7 @@ Future<_Harness> _openSend(WidgetTester tester, {FakeUserApproval? approval}) as
   );
   await tester.tap(_toolbarSend());
   await tester.pumpAndSettle();
-  return _Harness(chain, approval, camera, opened);
+  return _Harness(chain, approval, camera, opened, telemetry);
 }
 
 Future<void> _tap(WidgetTester tester, Key key) async {
@@ -497,6 +500,63 @@ void main() {
       expect(_qrParts(tester), ['UR:QUANTUS-SIGN-REQUEST/qzVault/1249990']);
       expect(harness.chain.signRequests, hasLength(1));
       expect(harness.camera.isOn, isFalse);
+    });
+  });
+
+  group('analytics, as on the phone', () {
+    /// What the signing reported, apart from the sheets opened.
+    List<String> signingEvents(_Harness harness) => [
+      for (final name in harness.telemetry.eventNames)
+        if (name != 'screen_view') name,
+    ];
+
+    testOnMac('a request built is reported as send_transfer_hardware_payload_ready', (tester) async {
+      final harness = await _openSend(tester);
+      await _toShow(tester);
+
+      expect(signingEvents(harness), ['send_transfer_hardware_payload_ready']);
+      expect(harness.telemetry.errors, isEmpty);
+    });
+
+    testOnMac('a request that cannot be built is reported as an error, and not as ready', (tester) async {
+      final harness = await _openSend(tester);
+      harness.chain.unsigned = (_) async => throw StateError('no chain');
+      await _toShow(tester);
+
+      expect(signingEvents(harness), isEmpty);
+      expect(harness.telemetry.errors, ['Keystone payload preparation failed']);
+    });
+
+    testOnMac('a signature handed over is reported as send_transfer_hardware_submitted', (tester) async {
+      final harness = await _openSend(tester);
+      await _toScan(tester);
+
+      await _readSignature(tester, harness.camera);
+
+      expect(signingEvents(harness), ['send_transfer_hardware_payload_ready', 'send_transfer_hardware_submitted']);
+      expect(harness.telemetry.errors, isEmpty);
+    });
+
+    testOnMac('a hand-over that fails is reported as an error, and not as submitted', (tester) async {
+      final harness = await _openSend(tester);
+      await _toScan(tester);
+      harness.chain.submit = () async => throw StateError('refused');
+
+      await _readSignature(tester, harness.camera);
+
+      expect(signingEvents(harness), ['send_transfer_hardware_payload_ready']);
+      expect(harness.telemetry.errors, ['Keystone signature processing failed']);
+    });
+
+    testOnMac('a signature back too late is reported as an error, and not as submitted', (tester) async {
+      final harness = await _openSend(tester);
+      await _toScan(tester);
+      harness.chain.currentBlock = () async => 1250052;
+
+      await _readSignature(tester, harness.camera);
+
+      expect(signingEvents(harness), ['send_transfer_hardware_payload_ready']);
+      expect(harness.telemetry.errors, ['Keystone signature processing failed']);
     });
   });
 
