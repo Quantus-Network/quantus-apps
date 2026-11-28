@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -43,6 +44,10 @@ class DesktopTelemetry implements Telemetry {
 
   static final _endpoint = Uri.parse('https://nom.telemetrydeck.com/v2/');
 
+  /// How long a signal may take to be sent. A request still unanswered then
+  /// is aborted and its signal dropped: the signals after it wait for it.
+  static const requestTimeout = Duration(seconds: 30);
+
   final String appId;
   final String salt;
 
@@ -84,11 +89,18 @@ class DesktopTelemetry implements Telemetry {
         'isTestMode': '$isTestMode',
         'payload': {..._parameters, ...parameters},
       };
-      final response = await _client.post(
-        _endpoint,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode([signal]),
-      );
+      final abort = Completer<void>();
+      final request = http.AbortableRequest('POST', _endpoint, abortTrigger: abort.future)
+        ..headers['Content-Type'] = 'application/json'
+        ..body = jsonEncode([signal]);
+      final http.Response response;
+      try {
+        response = await _client.send(request).then(http.Response.fromStream).timeout(requestTimeout);
+      } on TimeoutException {
+        // Frees the connection; the request's own late failure is ignored.
+        abort.complete();
+        rethrow;
+      }
       if (response.statusCode != 200) quantusPrint('Telemetry signal $type refused: ${response.statusCode}');
     } catch (e) {
       quantusPrint('Telemetry signal $type not sent: $e');

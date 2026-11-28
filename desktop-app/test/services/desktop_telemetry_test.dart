@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -42,6 +43,24 @@ class _Collector {
 
   /// The signals sent after the session's start.
   List<Map<String, dynamic>> get events => signals.where((s) => s['type'] != 'TelemetryDeck.Session.started').toList();
+}
+
+/// A server that takes the first request and never answers it, and answers
+/// every later one at once.
+class _StallingClient extends http.BaseClient {
+  final types = <String>[];
+
+  /// Whether the first request was aborted.
+  var firstAborted = false;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final body = await request.finalize().bytesToString();
+    types.addAll([for (final signal in jsonDecode(body) as List) (signal as Map)['type'] as String]);
+    if (types.length > 1) return http.StreamedResponse(Stream.value(utf8.encode('OK')), 200);
+    if (request case http.Abortable(:final abortTrigger?)) unawaited(abortTrigger.then((_) => firstAborted = true));
+    return Completer<http.StreamedResponse>().future;
+  }
 }
 
 const _appId = '56C8354B-882C-4A7E-A50C-971B41F8010E';
@@ -206,6 +225,32 @@ void main() {
   });
 
   group('a signal that cannot be sent', () {
+    testWidgets('a response that never comes is given up after 30 seconds, its request aborted, and the next goes', (
+      tester,
+    ) async {
+      final client = _StallingClient();
+      DesktopTelemetry(
+        client: client,
+        userStore: _MemoryUserStore('ABC'),
+        appId: _appId,
+        salt: 'QDay',
+        isTestMode: false,
+        parameters: const {},
+      ).sendEvent('next');
+      await tester.pump();
+      expect(client.types, ['TelemetryDeck.Session.started']);
+
+      await tester.pump(const Duration(seconds: 29));
+      expect(client.types, ['TelemetryDeck.Session.started']);
+      expect(client.firstAborted, isFalse);
+
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+
+      expect(client.types, ['TelemetryDeck.Session.started', 'next']);
+      expect(client.firstAborted, isTrue);
+    });
+
     test('a send that fails to connect raises nothing, and the next signal still goes', () async {
       final collector = _Collector();
       collector.answer = (request) async => throw http.ClientException('Connection refused', request.url);
